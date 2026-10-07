@@ -1,0 +1,6 @@
+
+Checking parameters for BSIM 4.5 model xn1:nshort_model.16
+Fatal: u0 at current temperature = -0.0113935 is not positive.
+Fatal: Pclm = -0.0738517 is not positive.
+Fatal: Drout = -0.0148061 is negative.
+Warning: Pdibl1 = -0.0142035 is negative.

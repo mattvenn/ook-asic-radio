@@ -1,0 +1,24 @@
+* sizing: self-biased inverter (diode-connected) current vs W; nfet Id vs Vgs for diff pair half
+.lib /foss/pdks/sky130A/libs.tech/combined/sky130.lib.spice tt
+.param wn=10 wp=20
+vdd vdd 0 1.8
+xn1 a a 0 0 sky130_fd_pr__nfet_01v8 w={wn} l=0.15 nf=4
+xp1 a a vdd vdd sky130_fd_pr__pfet_01v8 w={wp} l=0.15 nf=4
+vd d 0 1.2
+vg g 0 0.6
+xn2 d g 0 0 sky130_fd_pr__nfet_01v8 w=10 l=0.15 nf=4
+.control
+foreach w 2 4 6 10 15
+  alterparam wn=$w
+  let wpp = 2*$w
+  alterparam wp=$&wpp
+  reset
+  op
+  let ia = -i(vdd)*1e6
+  echo "Wn=$w  Vbias=$&v(a)  I_uA=$&ia"
+end
+dc vg 0.4 0.8 0.05
+let id = -i(vd)*1e6
+print id
+.endc
+.end

@@ -32,33 +32,58 @@ Read **PLAN.md** first: it holds the decisions and the evidence for each. This f
   - No trim freeze/override yet.
   - The verilator path is untried.
 
-## Next: analog step 2, the LNA first-stage experiment (in progress, nothing generated yet)
-Goal: choose the input topology by comparing, at equal current (~0.6 mA per stage):
-- **(a) `lna_dp`:** NMOS differential pair, resistive loads (start with R ≈ 2 kΩ), tail from a mirror fed by an ideal Ibias in the testbench.
-- **(b) `lna_pinv`:** pseudo-differential self-biased inverters (Wn 10 / Wp 20 µm, L 0.15, Rf 20 kΩ). The smoke test gave ~12.8 dB at 433 MHz per stage at 0.3 mA.
+## Analog step 2: LNA first-stage experiment (first pass done)
+Files:
+- `xschem/gen/lna_blocks.py` writes `lna_dp` and `lna_pinv` (.sch + .sym). Sizes are global spice params, so they can be swept without regenerating.
+- `xschem/gen/tb_lna.py` writes `tb_lna_dp` / `tb_lna_pinv`: the tb_input front end, AC coupling, x1, and x2 as the load copy. The antenna common path goes through `Vcmi`; `mm` = 1 % p/n device mismatch.
+- `sim/lna/analyse.py` prints the comparison table and writes `sim/plots/tb_lna.png`. Run it with `~/work/asic-workshop/venv/bin/python` (system python has no numpy).
+- `sim/lna/noise_break.sh | noise_rank.py` gives per-device noise at 434 MHz; `sim/lna/sweep_pair.sh dp|dpp "widths"` sweeps NF/gain vs current and W; `sim/lna/variant.sh` runs a testbench with .param overrides as a named variant for analyse.py.
+- The xsch.py helpers `mos()`, `write_symbol()` and `ports()` now work: both netlists are clean.
 
-Common to both:
-- the same front end as `tb_input` (balanced 73 Ω dipole sources + pad_model per side);
-- on-chip AC coupling (~2 pF + bias resistor; the dipole arms float at DC);
-- each stage loaded by an identical copy of itself;
-- ideal R and C for now (poly and MIM later).
+Results at roughly equal current (dp 0.63, pinv 0.55 mA/stage), tt corner:
 
-Measure:
-1. Differential gain (out / antenna EMF) at 433.92 MHz.
-2. Common-mode gain: a source in the antenna common path, standing in for board/digital junk.
-3. PSRR: AC on VDPWR.
-4. NF: `.noise`, input-referred vs the antenna thermal noise √(4kT·73) = 1.10 nV/√Hz.
-5. Transient: weak 433 MHz signal + a 20 mV, 10 MHz common-mode interferer (our clock).
+| | dp (W 20, R 2k) | pinv (10/20, Rf 20k) |
+|---|---|---|
+| EMF → o1 gain @434 MHz | 11.8 dB | 10.3 dB |
+| stage gain, loaded by a copy | 14.2 dB | 12.7 dB (20 dB unloaded) |
+| −3 dB band | 4–496 MHz | 17–202 MHz |
+| CM → CM per stage @10 MHz / @434 MHz | −20 / −11 dB | **+7 / +10 dB** |
+| CMRR @434 MHz (1 % mismatch) | 69 dB | 43 dB |
+| VDD → output CM @434 MHz | 0 dB | +6 dB |
+| NF @434 MHz (incl. pad) | 14.3 dB | 13.4 dB |
+| tran: 20 mV 10 MHz CM → stage 2 output CM | 0.2 mV | **104 mV** |
 
-How:
-- Generator scripts in `xschem/gen/` using `tools/xsch.py`. It has `mos()`, `write_symbol()` and `ports()` helpers, just added and **not exercised yet**.
-- Netlist with `tools/osic bash -c 'xschem -n -s -q -o build xschem/<tb>.sch'`. Check the netlist for `IS MISSING`; don't trust the exit code.
-- Run ngspice in `build/`; plot with `tools/rawread.py` into `sim/plots/`.
+Takeaways:
+- **pinv amplifies common mode.** Every stage adds gain, so 60 dB would rail on our own 10 MHz clock unless CM feedback is added.
+- **dp is DC coupled, so offset accumulates:** 1 % mismatch → 8 mV at o1, ~50 mV at o2. A chain needs AC coupling or offset cancellation every 2–3 stages.
+- **Noise is dominated by the input devices** (~70–95 %):
+  - In these models, NMOS flicker noise is still ~40 % of the transistor noise at 434 MHz; PMOS has almost none.
+  - The pad's 50 Ω R2 contributes ~6–8 %; the antenna only ~4 %.
+- **dp NF sweep** (0.6 V load drop held, EMF→o1 gain stays ~9–11 dB):
+  - W=80: 11.7 dB at 0.6 mA, 10.0 dB at 1.2 mA, 8.7 dB at 2.4 mA.
+  - L=0.3 is ~1.5 dB worse than 0.15, so flicker is not the lever; gm/I and W are.
 
-Gotchas found so far:
-- xschem property values can't contain `{}`. Use ngspice `'expr'` quoting.
-- `.spiceinit` lives in `build/`.
-- The OSDI load errors from the image's global spiceinit are harmless.
+Follow-up: PMOS pair vs wider NMOS pair at higher current.
+- **`lna_dpp` (PMOS pair, n-well tied to tail, loads to ground):** at equal current and 2× W, NF is ~1–1.5 dB worse and gain 3–4 dB lower than NMOS. Its low flicker doesn't pay for the lower gm.
+  - Upside: VDD → output CM is −20 dB, against 0 dB for NMOS with resistor loads.
+- **NMOS candidates** (tt corner; NF is EMF-referred, pad included):
+
+| variant | I/stage | W | EMF→o1 gain | NF at o1 | NF at o2 (incl. stage 2) | −3 dB band |
+|---|---|---|---|---|---|---|
+| dp | 0.63 mA | 20 | 11.8 dB | 14.3 dB | 14.5 dB | 4–496 MHz |
+| dp_1m2 | 1.26 mA | 80 | 10.7 dB | **10.1 dB** | 10.3 dB | 4–432 MHz |
+| dp_2m4 | 2.52 mA | 160 | 9.8 dB | **7.4 dB** | 7.6 dB | 3–412 MHz |
+
+  - Stage 2 adds only ~0.2 dB of NF, so later stages can be small.
+  - CM rejection is unchanged with size (CMRR 64–71 dB).
+  - The wide pair's gate capacitance plus the pad pulls the band top just under 434 MHz.
+  - NF is lowest near 270 MHz in every variant; it's already rising at 434 MHz.
+- **Gain is capped by the 0.6 V load drop:** stage gain ≈ (gm/Id)·0.6 V ≈ 14 dB whatever the current. More gain would need active loads with CM feedback.
+
+**Decision (tentative): NMOS diff pair, ~1.2–2.4 mA, W 80–160 µm.** Open next:
+- input match / passive voltage gain from the pad + bond-wire L (should also move the NF minimum up to 434 MHz);
+- interstage AC coupling;
+- corners.
 
 ## Later in the chain (in order)
 1. Rest of the LNA/limiter chain to ~60 dB.

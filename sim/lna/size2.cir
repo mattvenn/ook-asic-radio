@@ -1,0 +1,34 @@
+* nfet Id at Vgs=0.7, Vds=1: W total 10um as (a) w=10 nf=1, (b) w=10 nf=4, (c) w=2.5 m=4, (d) w=5 m=2
+.lib /foss/pdks/sky130A/libs.tech/combined/sky130.lib.spice tt
+vg g 0 0.7
+va da 0 1
+vb db 0 1
+vc dc 0 1
+ve de 0 1
+xa da g 0 0 sky130_fd_pr__nfet_01v8 w=10 l=0.15 nf=1
+xb db g 0 0 sky130_fd_pr__nfet_01v8 w=10 l=0.15 nf=4
+xc dc g 0 0 sky130_fd_pr__nfet_01v8 w=2.5 l=0.15 nf=1 m=4
+xe de g 0 0 sky130_fd_pr__nfet_01v8 w=5 l=0.15 nf=1 m=2
+* inverters, diode connected, separate supplies
+v1 s1 0 1.8
+v2 s2 0 1.8
+v3 s3 0 1.8
+xn1 a1 a1 0 0 sky130_fd_pr__nfet_01v8 w=4 l=0.15 nf=1
+xp1 a1 a1 s1 s1 sky130_fd_pr__pfet_01v8 w=8 l=0.15 nf=1
+xn2 a2 a2 0 0 sky130_fd_pr__nfet_01v8 w=2 l=0.15 nf=1 m=3
+xp2 a2 a2 s2 s2 sky130_fd_pr__pfet_01v8 w=4 l=0.15 nf=1 m=3
+xn3 a3 a3 0 0 sky130_fd_pr__nfet_01v8 w=2 l=0.15 nf=1 m=5
+xp3 a3 a3 s3 s3 sky130_fd_pr__pfet_01v8 w=4 l=0.15 nf=1 m=5
+.control
+op
+let ia=-i(va)*1e6
+let ib=-i(vb)*1e6
+let ic=-i(vc)*1e6
+let ie=-i(ve)*1e6
+let i1=-i(v1)*1e6
+let i2=-i(v2)*1e6
+let i3=-i(v3)*1e6
+print ia ib ic ie
+print i1 i2 i3 v(a1) v(a2) v(a3)
+.endc
+.end
