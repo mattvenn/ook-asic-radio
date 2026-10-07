@@ -1,0 +1,2 @@
+#!/bin/sh
+exec "${OSS_CAD_SUITE:-$HOME/oss-cad-suite}/bin/iverilog" "$@"

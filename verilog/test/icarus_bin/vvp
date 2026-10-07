@@ -1,0 +1,4 @@
+#!/bin/sh
+# oss-cad-suite's bin/vvp runs vvp with its bundled glibc, which cannot load
+# the system libpython that cocotb embeds. Run the real binary with system libs.
+exec "${OSS_CAD_SUITE:-$HOME/oss-cad-suite}/libexec/vvp" "$@"

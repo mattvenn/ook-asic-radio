@@ -21,8 +21,16 @@ Read **PLAN.md** first: it holds the decisions and the evidence for each. This f
   - The core sees −2.2 dB of the dipole EMF at 433.92 MHz: ~3.8 mVpp diff at −50 dBm, ~24 µVpp at −94 dBm.
   - Plot: `sim/plots/tb_input.png`.
 
-## In flight
-- **RTL** (background agent): `verilog/rtl/*.v`, `verilog/test/{Makefile,test_radio.py}`, `openlane/radio_digital/pin_order.cfg`. Its report (tests, flip-flops/area per block, data-mode estimate) goes to **`verilog/RTL_REPORT.md`**. These files are **not committed yet**: review the report, run the tests (`! grep -q failure results.xml`), then commit.
+## RTL (done by an agent; see verilog/RTL_REPORT.md)
+- **Tests:** `verilog/rtl/` matches the model bit-exact on all 9 RX vectors, plus TX/debounce/raw/sc_phi tests: 13 cocotb tests, a ~11.5 min run. The `results.xml` left behind only holds a final 2-test run, so **rerun the full suite once to confirm**. Check with `! grep -q '<failure' results.xml` (plain 'failure' also matches failures="0").
+- **Size problem:** 716 flip-flops, ~24,300 µm² of cells, **~40,500 µm² placed = ~54% of the 2x2 tile**. Too big next to the analog. The 4 × 127-bit chip registers are 63% of it.
+  - Options: clock-gate the phase registers (−5,000 µm² cells, no behaviour change); 2 timing phases instead of 4 (−7,600 µm²; **re-run `model/e2e.py` first** to check sensitivity). Together → ~23,000 µm² placed (~31%).
+  - Data mode would add ~4,500 µm² of cells.
+- **Open items from the report:**
+  - Sample timing is offset by the registered reset + the 2-flop synchroniser (documented in `radio_digital.v`).
+  - The mode strap (`uio[7:4] == 1010`) risks contention if the RP2350 keeps driving it.
+  - No trim freeze/override yet.
+  - The verilator path is untried.
 
 ## Next: analog step 2, the LNA first-stage experiment (in progress, nothing generated yet)
 Goal: choose the input topology by comparing, at equal current (~0.6 mA per stage):
