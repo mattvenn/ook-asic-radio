@@ -188,6 +188,23 @@ Open next:
   - corners.
 - ngspice traps found here (in `docs/sim_learnings.md`): `option klu` breaks `.noise`; `inoise_total` overstates noise above a pole (use onoise_total / DC gain); `destroy all` deletes vectors, so keep values in `set` variables.
 
+## Whole-RX transient (sim/rx/, first pass done)
+Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated in one piece).
+- **RF** (`sim/rx/rf.sh` on tb_logdet), −60 dBm tone. Antenna EMF 0.76 mV → pad 0.59 → stage 1 2.9 → 12.7 → 57.6 → 261 → stage 5 1080 (starting to clip) → stage 6 1630 mV (limited, square). Carrier keyed on/off: det steps 1.52 → 1.19 V in ~0.1 µs.
+- **Baseband** (`xschem/gen/tb_rx_bb.py`, `sim/rx/bb.sh`): det → `lpf_rc` → `avg_sc` (digital phi timing) → `comp_ct`, with a B-source trim servo stand-in (±1 DAC LSB per 13 µs).
+  - Driven by `sim/rx/gen_det.py`: one Gold burst (code 0x5A) with NF 11 dB / 450 MHz noise, mapped through the measured 6-stage detector curve (shifted −3.8 dB to match the transistor-level noise run).
+  - The comparator is sampled every 13 µs and fed to the bit-exact `RxDigital`.
+- **Results:**
+  - −70 dBm: chips swing det by 104 mV; comparator = TX chip 98 %; correlator 127/127 → detected.
+  - −94 dBm: swing ~0.7 mV in ±3 mV of noise; comparator = chip 67 %; correlator **99/127** (threshold 97) → detected, just.
+  - This matches the behavioural model (75 % / 106 at −94 in `model/comparator_view.png`).
+- **Plots:** `sim/plots/rx_rf.png`, `sim/plots/rx_bb.png` (`sim/rx/plot_rx.py`). Runs: rf ~1 min, bb ~1 min per level.
+- **Not yet in the loop:**
+  - the real R2R DAC (ideal servo stand-in);
+  - noise in the RF half (handled by the calibrated det waveform);
+  - all three bursts / LED toggle (one burst only);
+  - corners.
+
 ## Area ballpark (sim/area_estimate.py)
 - RX analog ≈ 7.8 % of the 2x2 tile in devices (×2.5 routing) + 25.5 % MIM (can't overlap the digital). With the digital at 54 % the 2x2 is ~full once TX, DAC and overhead are added; ~76 % if the RTL size options are taken.
 - **Decision (2026-10-07): fine for now; go to 3x2 if needed** rather than shrink early.
