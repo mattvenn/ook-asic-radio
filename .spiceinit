@@ -10,4 +10,5 @@ set skywaterpdk
 set ng_nomodcheck
 set num_threads=8
 option noinit
-option klu
+* NOT 'option klu': ngspice 46 refuses .noise with KLU ("Noise simulation is
+* not (yet) supported with 'option KLU'"). Add it per deck for big transients.

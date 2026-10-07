@@ -166,11 +166,33 @@ Open next:
 - **The 0.5 ms averaging reference** for the comparator (−) input should be fed from the LPF output. It needs a switched-cap R (poly would be ~50 MΩ); that belongs with the comparator block.
 - Not checked: passive process spread (MOS corners don't move the passives; use the PDK's resistor/cap corner sections).
 
+## Analog step 6: comparator + averaging reference (xschem/gen/comp.py, first pass done)
+- **`comp_ct`, continuous-time** (no strobe, so no kickback onto the ~1 mV LPF node). The digital's 2-flop synchroniser samples it every 130 clocks.
+  - Stage 1: lvt NMOS pair W 20 / L 1, 10 µA tail, lvt PMOS mirror load, Cl ≈ 1 pF dominant pole (~340 kHz).
+  - Stage 2: PMOS common source + NMOS sink; then an inverter. ~20 µA total.
+  - **Trim:** degenerated lvt NMOS pair (1.4 MΩ xhigh poly between split tails) comparing `trim` (R2R DAC voltage) with an on-chip VDD/2 divider. This is the plan's attenuator. Raising `trim` acts like raising `inn`.
+- **`tb_comp` results:**
+  - Offset +0.5 to +1.8 mV over input CM 0.55–1.6 V (covers det from −10 dBm to idle).
+  - Trim 0.087 mV/LSB in its linear range (DAC ~0.6–1.8 V), −19 to +12 mV, monotonic.
+  - **Decision noise 28 µV rms** (output noise ÷ DC gain, 1 Hz–100 MHz) against the ≤ 0.5 mV budget.
+  - ±1 mV overdrive → 0.36 µs.
+- **`avg_sc`:** Cs (11×11 µm MIM, ~0.25 pF) shuttles in→out on `sc_phi1/2` into Cavg (5 × 30×30 µm, ~9.1 pF); transmission gates with local inverters.
+  - `tb_avg` (the digital's exact phi timing): **τ = 0.47–0.48 ms** at 0.6 / 1.0 / 1.4 / 1.5 V; offset ≤ 0.04 mV.
+- **Wiring for integration** (det falls with power):
+  - `avg_sc.in` = LPF out; `comp_ct.inp` = avg; `comp_ct.inn` = LPF out.
+  - So c = 1 when power is above its average, and trim↑ makes c = 1 rarer. That matches the model and the servo (trim += c).
+- Open:
+  - whole-RX transient (chain → det → LPF → avg → comp, digital-style phi);
+  - R2R DAC reuse and its output range vs the trim's linear range;
+  - power-down on `rx_en`;
+  - corners.
+- ngspice traps found here (in `docs/sim_learnings.md`): `option klu` breaks `.noise`; `inoise_total` overstates noise above a pole (use onoise_total / DC gain); `destroy all` deletes vectors, so keep values in `set` variables.
+
 ## Later in the chain (in order)
 1. ~~Rest of the LNA/limiter chain to ~60 dB.~~ First pass done (above).
 2. ~~Log (successive-detection) detector.~~ First pass done (above).
 3. ~~LPF~~ done (above); switched-cap averaging reference (τ ≈ 0.5 ms) goes with the comparator.
-4. Comparator (≤ 0.5 mV rms input noise per decision; offset few mV, trimmed).
+4. ~~Comparator~~ first pass done (above).
 5. R2R trim DAC + attenuator (reuse `mattvenn/tt08-analog-r2r-dac-3v3`).
 6. TX: ring resized to 433 MHz + 3.3 V antiphase drivers.
 7. Then layout and integration (PLAN.md phase 4).

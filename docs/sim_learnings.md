@@ -15,8 +15,11 @@ sky130A, run headless in Docker.
   set ng_nomodcheck
   set num_threads=8
   option noinit
-  option klu
   ```
+- **`option klu` breaks `.noise`** in ngspice 46 ("Noise simulation is not
+  (yet) supported with 'option KLU'"). Keep it out of the shared `.spiceinit`;
+  put `.options klu` only in decks that are big transients with no noise
+  analysis.
 - **Never `set ngbehavior=hsa`.** It changes the default element scale
   factor. Bin selection then fails for the binned HV FET models
   (`sky130_fd_pr__nfet_g5v0d10v5` / `pfet_g5v0d10v5`, which the TT pad model
@@ -118,6 +121,9 @@ sky130A, run headless in Docker.
   so you don't need it (`alterparam $what = $&val` works).
 - **Join echo output onto one line:** `echo "$a" NOEOL`, then
   `sed -z "s/ NOEOL\n/ /g"` on the output.
+- **`destroy all` deletes vectors, including `meas` results.** Keep values
+  you need later in control variables: `let x = vth` then `set xs = $&x`,
+  then use `$xs` (even inside `alter @v[pulse] = [ $lo $hi ... ]`).
 - `$&vec` puts a vector's value into a string; `{$t}` puts a loop variable
   into a node name: `v({$t}p)`.
 - **Switch AC sources in one run instead of separate decks:**
@@ -138,6 +144,14 @@ sky130A, run headless in Docker.
 - The OSDI load errors from the image's global spiceinit are harmless.
 
 ## Noise analysis recipes
+
+- **Comparator/amp decision noise = `onoise_total` / DC gain**, not
+  `inoise_total`. `inoise_total` integrates the input-referred density over
+  the whole sweep. Above the amp's pole the gain is tiny, so that density
+  explodes, and band-limiting looks like it *adds* noise (0.31 mV → 1.85 mV
+  here, where the real figure went 83 µV → 28 µV).
+- After `noise ... dec ...`, the *current* plot holds the totals
+  (`onoise_total`, `inoise_total`); `setplot previous` is the spectrum.
 
 - **NF from the noise analysis:**
   `NF = 10·log10(onoise² / (|G|² · 4kT·Rs))`. G is the AC gain from source

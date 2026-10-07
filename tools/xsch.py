@@ -28,6 +28,8 @@ LIB_PINS = {
     'devices/iopin.sym': {'p': (0, 0)},
     'sky130_fd_pr/nfet_01v8.sym': {'D': (20, -30), 'G': (-20, 0), 'S': (20, 30), 'B': (20, 0)},
     'sky130_fd_pr/pfet_01v8.sym': {'D': (20, 30), 'G': (-20, 0), 'S': (20, -30), 'B': (20, 0)},
+    'sky130_fd_pr/nfet_01v8_lvt.sym': {'D': (20, -30), 'G': (-20, 0), 'S': (20, 30), 'B': (20, 0)},
+    'sky130_fd_pr/pfet_01v8_lvt.sym': {'D': (20, 30), 'G': (-20, 0), 'S': (20, -30), 'B': (20, 0)},
     'sky130_fd_pr/res_high_po_0p35.sym': {'P': (0, -30), 'M': (0, 30), 'B': (-20, 0)},
     'sky130_fd_pr/res_xhigh_po_0p35.sym': {'P': (0, -30), 'M': (0, 30), 'B': (-20, 0)},
     'sky130_fd_pr/cap_mim_m3_1.sym': {'c0': (0, -30), 'c1': (0, 30)},
@@ -162,12 +164,14 @@ MOS_DEFAULTS = {
 }
 
 
-def mos(sch, kind, x, y, W, L, nf=1, mult=1, name=None, rot=0, flip=0):
-    """Place a sky130 1.8 V nfet/pfet with the PDK's standard property set."""
-    sym = f'sky130_fd_pr/{kind}fet_01v8.sym'
+def mos(sch, kind, x, y, W, L, nf=1, mult=1, name=None, rot=0, flip=0, vt=''):
+    """Place a sky130 1.8 V nfet/pfet with the PDK's standard property set.
+    vt='lvt' selects the low-Vt flavour (pfet_01v8_lvt needs L >= 0.35)."""
+    model = f'{kind}fet_01v8' + (f'_{vt}' if vt else '')
+    sym = f'sky130_fd_pr/{model}.sym'
     props = dict(MOS_DEFAULTS)
     props.update({'L': str(L), 'W': str(W), 'nf': str(nf), 'mult': str(mult),
-                  'model': f'{kind}fet_01v8', 'spiceprefix': 'X'})
+                  'model': model, 'spiceprefix': 'X'})
     return sch.place(sym, x, y, rot=rot, flip=flip, name=name or sch._name('M'), **props)
 
 
