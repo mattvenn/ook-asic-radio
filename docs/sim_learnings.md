@@ -138,6 +138,14 @@ sky130A, run headless in Docker.
   ```
 - **Measures:** `meas tran x pp v(a) from= to=`; also `avg`, `rms`,
   `find v(a) at=`. An AC measure needs `let g = db(...)` first.
+- **`trnoise` + clocked sources = "timestep too small"** when a source edge
+  lands on trnoise's sample grid (a breakpoint every NT, e.g. 50 ps): two
+  breakpoints a rounding error apart. Offset every pulse/PWL edge by NT/2
+  (e.g. `pulse(0 1.8 25p ...)`). Also: a hard ternary in a B-source (`a ? 1
+  : -1`) is better written as `tanh(k*x)` at ps timesteps.
+- **`.options interp`** + `tran <tstep> ... <tmax>` saves output only on the
+  tstep grid while the solver still steps at tmax. That's how 400 µs at 50 ps
+  steps gives a 2 MB raw file.
 - **`trnoise` isn't repeatable:** `.options seed`, `set rndseed` in .control
   and rndseed in .spiceinit were all ignored. For repeatable transient noise
   (so a signal can be found by difference), generate PWL sources in Python

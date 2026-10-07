@@ -11,6 +11,11 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
 - See `sim/plots/rx_rf.png` and `rx_bb.png`.
 - TX not started; RTL done but too big; layout not started.
 
+**Overnight job (started 2026-10-07 ~21:50):** the fully joined transistor-level RX, antenna → comparator with RF noise, 400 µs with real chip timing (off, on/off/on chips), at −70 then −90 dBm (`sim/rx/joined.sh`, ~2.5 h per level). It checks that the real detector feeds the baseband blocks the way the split model assumes.
+- Check: `cat build/joined_run.txt` (start/done lines); progress `tr '\r' '\n' < build/joined_-90.log | grep Reference | tail -1`.
+- Then: `~/work/asic-workshop/venv/bin/python sim/rx/plot_joined.py`, which prints joined vs split-model det/LPF levels and noise and writes `sim/plots/rx_joined.png`.
+- The split model predicts det swings of ~106 mV (−70) and ~1.8 mV (−90).
+
 **Next steps, in order:**
 1. **TX** (nothing designed yet):
    - ring resized for 433 MHz: **target ~500 MHz extracted-tt** (calibration below: silicon ran ×0.866 of extracted-tt). Std-cell ring ≈ 23 stages, but set it with the real load;
