@@ -13,3 +13,15 @@ sim_build/
 results.xml
 *.vcd
 *.fst
+# TT template
+.DS_Store
+.idea
+.vscode
+runs
+tt_submission
+src/user_config.tcl
+test/sim_build
+test/__pycache__/
+test/gate_level_netlist.v
+openlane/*/runs
+mag/*.def

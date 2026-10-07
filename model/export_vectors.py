@@ -1,7 +1,7 @@
 """
 Export cocotb test vectors from the bit-exact model (radio.py).
 
-RX digital vectors (test/vectors/rx_<name>.npz):
+RX digital vectors (verilog/test/vectors/rx_<name>.npz):
   comp    uint8[n]  comparator bit presented to the RTL at sample i
   trim    uint8[n]  trim DAC code the RTL must output after sample i
   events  int[k,2]  (chip time, max score) of each detection event, in order
@@ -10,11 +10,11 @@ RX digital vectors (test/vectors/rx_<name>.npz):
 Because the digital is deterministic given the comparator bits, replaying
 `comp` open-loop must reproduce `trim`, `events` and `toggles` exactly.
 
-TX vectors (test/vectors/tx_codes.npz):
+TX vectors (verilog/test/vectors/tx_codes.npz):
   chips   uint8[128,127]  chip sequence for each code
   lfsr2   uint8[128]      LFSR2 start state after `code` steps from SEED
 
-Timing contract (see test/vectors/README.md): sample i is taken at clock
+Timing contract (see verilog/test/vectors/README.md): sample i is taken at clock
 130*i after reset release; the chip counter increments on samples where
 i % 8 == 0 (before that sample is processed); phase p's 8-sample window
 ends on samples where (i % 8 - p) % 8 == 7.
@@ -33,7 +33,7 @@ import radio
 import e2e
 from gold import gold, LEN
 
-OUT = os.path.join(os.path.dirname(HERE), 'test', 'vectors')
+OUT = os.path.join(os.path.dirname(HERE), 'verilog', 'test', 'vectors')
 
 
 def clean_comps(code, lead=40, tail=300, sends=1, spacing=None):

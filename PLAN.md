@@ -149,7 +149,7 @@ See the tables above.
   - `model/e2e.py`, end to end:
     - all sends detected to −94 dBm in noise, −90 dBm with ±10 dB fading, −70 dBm with a bursty −60 dBm interferer (partial to −90);
     - zero false toggles (wrong-code RX on 75 sends, 9 signal-free records).
-  - `test/vectors/`: 9 RX scenarios + the TX code table, with the timing contract in `test/vectors/README.md`.
+  - `verilog/test/vectors/`: 9 RX scenarios + the TX code table, with the timing contract in `verilog/verilog/test/vectors/README.md`.
   - `docs/slicer.md`: how the comparator/servo works.
 - **Still to model:** data mode (Gold sync + Manchester + CRC, secondary) and the raw modes (pass-throughs). Do these alongside the RTL.
 - Choose the DAC range, bit width, sample rate and time constants. Confirm sensitivity stays ~−90 dBm and the slicer works from −40 to −90 dBm with the recordings.

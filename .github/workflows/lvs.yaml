@@ -1,0 +1,56 @@
+name: lvs
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  lvs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up environment variables
+        shell: bash
+        run: |
+          cat << EOF >> $GITHUB_ENV
+          PDK_ROOT=/home/runner/pdk
+          PDK=sky130A
+          MAGIC_VERSION=master
+          NETGEN_VERSION=master
+          EOF
+  
+      - name: Install Sky130 PDK
+        uses: TinyTapeout/volare-action@v1
+        with:
+          pdk_name: sky130
+          pdk_version: 7b70722e33c03fcb5dabcf4d479fb0822d9251c9  # matches the IIC-OSIC-TOOLS 2026.05 image used locally
+          pdk_root: /home/runner/pdk
+
+      - name: Magic
+        shell: bash
+        run: |
+            sudo apt-get install -y m4 python3 libx11-dev tcl-dev tk-dev libcairo2-dev mesa-common-dev libglu1-mesa-dev
+            git clone -b $MAGIC_VERSION https://github.com/RTimothyEdwards/magic /tmp/magic
+            cd /tmp/magic
+            ./configure
+            make -j4 
+            sudo make install
+
+      - name: Netgen
+        shell: bash
+        run: |
+            git clone -b $NETGEN_VERSION https://github.com/RTimothyEdwards/netgen /tmp/netgen
+            cd /tmp/netgen
+            ./configure
+            make -j4 
+            sudo make install
+
+      - name: Run LVS
+        shell: bash
+        run: |
+            cd mag
+            make lvs

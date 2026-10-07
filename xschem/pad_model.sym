@@ -1,0 +1,25 @@
+v {xschem version=3.4.5 file_version=1.2
+}
+G {}
+K {type=subcircuit
+format="@name @pinlist @symname"
+template="name=x1"
+}
+V {}
+S {}
+E {}
+L 4 -130 -30 130 -30 {}
+L 4 -130 30 130 30 {}
+L 4 -130 -30 -130 30 {}
+L 4 130 -30 130 30 {}
+L 7 130 -20 150 -20 {}
+L 7 -150 -20 -130 -20 {}
+L 7 -150 20 -130 20 {}
+B 5 -152.5 17.5 -147.5 22.5 {name=VGND dir=inout sim_pinnumber=1}
+B 5 -152.5 -22.5 -147.5 -17.5 {name=pin dir=inout sim_pinnumber=2}
+B 5 147.5 -22.5 152.5 -17.5 {name=mod dir=inout sim_pinnumber=3}
+T {@symname} -58.5 -6 0 0 0.3 0.3 {}
+T {@name} 135 -42 0 0 0.2 0.2 {}
+T {mod} 125 -24 0 1 0.2 0.2 {}
+T {pin} -105 -24 0 1 0.2 0.2 {}
+T {VGND} -95 16 0 1 0.2 0.2 {}
