@@ -144,8 +144,13 @@ Open next:
   - Detector change vs no signal: −100 dBm −0.38 mV, **−94 dBm −1.07 mV**, −88 dBm −3.4 mV, −80 dBm −17 mV.
   - Slope at the noise floor ≈ 11–14 mV/dB (plan assumed ~16).
   - So near sensitivity the signal is ~1 mV at the detector. The comparator trim (~0.08 mV/LSB) and the comparator's noise after the 15 kHz LPF must be well below that.
+- **e2e re-run with the real chain** (`model/e2e.py --nf 11 --brf 450e6 --slope 12`; new options also take offset, trim step and comparator noise in mV):
+  - Noise case: still decodes **−94 dBm** (11/12; −96 dBm 0/12): the edge is sharp. Fading: −90 dBm OK, −94 2/5 (baseline 3/5). Bursty −60 dBm interferer: −70 OK, −86 1/5 (baseline 3/5; 5 trials, coarse). No false toggles anywhere.
+  - PLAN's "0.27 dB / ~4 mV near sensitivity" was for ~−90 dBm. At −94 dBm the swing is ~0.08 dB ≈ 1 mV (0.11 dB in the original model).
+  - **Comparator noise budget: ≤ 0.5 mV rms per decision.** 0–0.4 mV costs nothing measurable at −94 (12 trials); 0.6 mV → 8/12; 1 mV → 0/5 (−90 still fine, so ~2–4 dB lost). Reason: the detector's own radiometer fluctuation after the 15 kHz LPF is ~0.025 dB ≈ 0.3 mV, and comparator noise above that adds to it.
+  - The 2 mV offset and 0.08 mV trim step, converted at 12 mV/dB, are fine.
+  - `AfeModel(noise_db=...)` defaults to 0, so exported vectors are unchanged (checked).
 - Open:
-  - recheck PLAN's "0.27 dB / 4 mV near sensitivity" against these numbers, and re-run model/e2e.py with NF 11 dB, ~450 MHz, 12 mV/dB;
   - overload recovery (key a −10 dBm tone on/off);
   - detector idle drift over temperature/corners (absorbed by the comparator's averaging reference, but check range);
   - bias generation; corners.
@@ -155,7 +160,7 @@ Open next:
 1. ~~Rest of the LNA/limiter chain to ~60 dB.~~ First pass done (above).
 2. ~~Log (successive-detection) detector.~~ First pass done (above).
 3. LPF + switched-cap averaging reference (τ ≈ 0.5 ms).
-4. Comparator.
+4. Comparator (≤ 0.5 mV rms input noise per decision; offset few mV, trimmed).
 5. R2R trim DAC + attenuator (reuse `mattvenn/tt08-analog-r2r-dac-3v3`).
 6. TX: ring resized to 433 MHz + 3.3 V antiphase drivers.
 7. Then layout and integration (PLAN.md phase 4).

@@ -128,19 +128,25 @@ class RxDigital:
 class AfeModel:
     """Behavioural receive chain after the log detector + LPF:
     comparator(+) = v (detector, in 0.44 dB 'LSB' units)
-    comparator(-) = switched-cap average of v + offset + trim_gain*(trim-128)"""
-    def __init__(self, tau=0.5e-3, offset_db=0.125, trim_lsb_db=0.005, lsb_db=0.44):
+    comparator(-) = switched-cap average of v + offset + trim_gain*(trim-128)
+    noise_db: comparator input-referred noise per decision (rms, in dB of
+    detector input via the detector slope); 0 = noiseless (bit-exact vectors)."""
+    def __init__(self, tau=0.5e-3, offset_db=0.125, trim_lsb_db=0.005, lsb_db=0.44,
+                 noise_db=0.0, rng=None):
         fs = CLK / SAMPLE_CLKS
         self.a = 1.0 / (tau * fs)
         self.off = offset_db / lsb_db
         self.tg = trim_lsb_db / lsb_db
+        self.noise = noise_db / lsb_db
+        self.rng = rng if rng is not None else np.random.default_rng(0)
         self.avg = None
 
     def compare(self, v, trim):
         if self.avg is None:
             self.avg = v
         self.avg += self.a * (v - self.avg)
-        return 1 if v > self.avg + self.off + self.tg * (trim - 128) else 0
+        n = self.noise * self.rng.standard_normal() if self.noise else 0.0
+        return 1 if v + n > self.avg + self.off + self.tg * (trim - 128) else 0
 
 
 def run_rx(v_samples, code, afe=None):
