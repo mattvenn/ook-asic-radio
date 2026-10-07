@@ -188,6 +188,11 @@ Open next:
   - corners.
 - ngspice traps found here (in `docs/sim_learnings.md`): `option klu` breaks `.noise`; `inoise_total` overstates noise above a pole (use onoise_total / DC gain); `destroy all` deletes vectors, so keep values in `set` variables.
 
+## Area ballpark (sim/area_estimate.py)
+- RX analog ≈ 7.8 % of the 2x2 tile in devices (×2.5 routing) + 25.5 % MIM (can't overlap the digital). With the digital at 54 % the 2x2 is ~full once TX, DAC and overhead are added; ~76 % if the RTL size options are taken.
+- **Decision (2026-10-07): fine for now; go to 3x2 if needed** rather than shrink early.
+- Easy cap savings if ever wanted: LPF 4 MΩ / 2.7 pF (the comparator has no kickback); avg Cs 0.1 p / Cavg 3.6 p; cdet 1 p; chain cin 1 p (NF check). Together 19k → ~8k µm² of MIM.
+
 ## Later in the chain (in order)
 1. ~~Rest of the LNA/limiter chain to ~60 dB.~~ First pass done (above).
 2. ~~Log (successive-detection) detector.~~ First pass done (above).
