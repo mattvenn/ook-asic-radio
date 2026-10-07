@@ -121,6 +121,11 @@ sky130A, run headless in Docker.
   so you don't need it (`alterparam $what = $&val` works).
 - **Join echo output onto one line:** `echo "$a" NOEOL`, then
   `sed -z "s/ NOEOL\n/ /g"` on the output.
+- **Temperature in a control loop:** `option temp = 60` *after* `reset`.
+  `set temp = 60` is silently ignored, and an `option temp` before `reset`
+  gets reset.
+- **`meas ... rise=N` counts from the first saved point** (`tstart` of
+  `tran`). Make sure edge N falls inside the run.
 - **`destroy all` deletes vectors, including `meas` results.** Keep values
   you need later in control variables: `let x = vth` then `set xs = $&x`,
   then use `$xs` (even inside `alter @v[pulse] = [ $lo $hi ... ]`).
@@ -180,6 +185,14 @@ sky130A, run headless in Docker.
 - Generate schematics from Python (asic-radio `tools/xsch.py`): place
   symbols, then put `lab_pin`s exactly on pin coordinates. It's repeatable,
   diffable, and parameter sweeps don't need GUI edits.
+
+## Silicon vs sim (ring oscillators)
+
+- **tt08/ttsky25b ring** (18 × inv_2 + nand2_2, extracted): 598 MHz at tt
+  extracted, measured 518 MHz, so ×0.866. That's between tt (598) and ss
+  (495). It isn't temperature (+0.5 % from 27 to 60 °C at 1.8 V) and it isn't
+  VDD (good on the demoboards). Use it as the empirical sim → silicon factor
+  for new rings.
 
 ## Silicon vs sim (mini-mosbius)
 

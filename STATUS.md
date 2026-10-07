@@ -188,6 +188,23 @@ Open next:
   - corners.
 - ngspice traps found here (in `docs/sim_learnings.md`): `option klu` breaks `.noise`; `inoise_total` overstates noise above a pole (use onoise_total / DC gain); `destroy all` deletes vectors, so keep values in `set` variables.
 
+## TX ring frequency calibration (sim/ring/ttsky25b_ring.sh)
+Measured ring: tt08/ttsky25b `tt_um_mattvenn_analog_ring_osc`, ring 1 = 18 × `sky130_fd_sc_hd__inv_2` + `nand2_2` (19 stages; std-cell PMOS are **hvt**). The "600 MHz" target was already from the *extracted* layout (`mag/ring.sim.spice`) with its driver + pad_model; measured **518 MHz**.
+- Re-simulated here (same extracted netlist), 1.8 V (VDD is good on the demoboards):
+
+| corner | 27 °C | 60 °C |
+|---|---|---|
+| ff | 678 | |
+| fs | 614 | |
+| **tt** | **598** | 601 |
+| sf | 573 | |
+| ss | 495 | 498 |
+
+- Measured / extracted-tt = **0.866**: between tt and ss, consistent with a slow part (the mini-mosbius chip fitted **ss**). Temperature is not the explanation (+0.5 % from 27 to 60 °C), and neither is VDD.
+- **Rule for the 433 MHz ring:** design to **433 / 0.866 ≈ 500 MHz extracted-tt**. With the same std-cell ring that's ~23 stages (22 inv + nand) if the load stays similar (f ∝ 1/N: 19 × 598 / 500 ≈ 22.7).
+  - If the new lot is really tt it lands ~500 MHz; if ss, ~414 MHz. Both are inside the RX band (330–560 MHz).
+- ngspice trap: in a control loop, `option temp = X` must come **after** `reset` (`set temp` does nothing).
+
 ## Whole-RX transient (sim/rx/, first pass done)
 Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated in one piece).
 - **RF** (`sim/rx/rf.sh` on tb_logdet), −60 dBm tone. Antenna EMF 0.76 mV → pad 0.59 → stage 1 2.9 → 12.7 → 57.6 → 261 → stage 5 1080 (starting to clip) → stage 6 1630 mV (limited, square). Carrier keyed on/off: det steps 1.52 → 1.19 V in ~0.1 µs.
