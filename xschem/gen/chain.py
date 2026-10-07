@@ -14,8 +14,8 @@ detector) and its testbench:
               shapes the low side of the band (FM broadcast, our 10 MHz clock)
               and stops offsets accumulating, without loading any node.
               Reference: ibias into a diode of unit W, so stage tail current =
-              mt x ibias. Stage outputs are internal nets o<i>p / o<i>n
-              (taps for the log detector later).
+              mt x ibias. Stage outputs o<i>p / o<i>n (i < N) are pins too:
+              the taps for the successive-detection log detector.
   tb_chain  : the tb_lna front end (dipole, pad_model) -> lna_chain.
 
     python xschem/gen/chain.py
@@ -29,7 +29,7 @@ from xsch import Sch, mos, ports, write_symbol
 from frontend import antenna_pad
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
-NSTAGES = 5
+NSTAGES = 6
 
 AMP_PARAMS = {'w': 20, 'l': 0.15, 'rl': '4k', 'wt': 6, 'mt': 5}
 AMPC_PARAMS = dict(AMP_PARAMS, mt=6, cs='0.6p')
@@ -77,7 +77,8 @@ def lna_chain(n=NSTAGES):
     s = Sch()
     s.text(-600, -760, f'lna_chain: {n} diff-pair stages; stage 1 sized for noise, 2..{n} cap-degenerated\n'
            'tail current of stage i = mt x ibias (one reference diode)', 0.4)
-    ports(s, -600, -660, ['VDD', 'VSS', 'ibias', 'vcm', 'inp', 'inn', 'outp', 'outn'])
+    taps = [f'o{i}{sd}' for i in range(1, n) for sd in 'pn']
+    ports(s, -600, -660, ['VDD', 'VSS', 'ibias', 'vcm', 'inp', 'inn', 'outp', 'outn'] + taps)
     md = mos(s, 'n', -400, 300, W=AMP_PARAMS['wt'], L=0.5, nf=2, name='Mref')
     s.connect(md, D='ibias', G='ibias', S='VSS', B='VSS')
     prev = ('inp', 'inn')
@@ -103,7 +104,8 @@ def lna_chain(n=NSTAGES):
         prev = (outp, outn)
     s.write(os.path.join(XDIR, 'lna_chain.sch'))
     write_symbol(os.path.join(XDIR, 'lna_chain.sym'), left=['inp', 'inn', 'ibias', 'vcm'],
-                 right=['outp', 'outn'], top=['VDD'], bottom=['VSS'], params=CHAIN_PARAMS)
+                 right=['outp', 'outn'] + taps, top=['VDD'], bottom=['VSS'], params=CHAIN_PARAMS,
+                 width=200)
 
 
 PARAMS = """
@@ -124,7 +126,7 @@ CONTROL = """
 op
 let idd = -i(vdpwr)
 print idd
-print v(x1.o1p)-v(x1.o1n) v(x1.o2p)-v(x1.o2n) v(out_p)-v(out_n)
+print v(o1p)-v(o1n) v(o2p)-v(o2n) v(out_p)-v(out_n)
 write tb_chain_op.raw
 ac dec 100 1meg 3g
 write tb_chain_acdiff.raw
@@ -154,7 +156,7 @@ def tb_chain():
     x1 = s.place('lna_chain.sym', -300, -150, name='x1', w1="'w1'", rl1="'rl1'", mt1="'mt1'",
                  w2="'w2'", rl2="'rl2'", mt2="'mt2'", cs="'cs'", cin="'cin'", rb="'rb'")
     s.connect(x1, inp='pad_p', inn='pad_n', ibias='ibias', vcm='vcm', outp='out_p', outn='out_n',
-              VDD='VDPWR', VSS='GND')
+              VDD='VDPWR', VSS='GND', **{f'o{i}{sd}': f'o{i}{sd}' for i in range(1, NSTAGES) for sd in 'pn'})
     ib = s.place('devices/isource.sym', -500, 250, name='Iref', value="'iref'")
     s.connect(ib, p='VDPWR', m='ibias')
     vcm = s.place('devices/vsource.sym', -300, 250, name='Vcm', value="'vcm_dc'")
@@ -166,8 +168,9 @@ def tb_chain():
     s.write(os.path.join(XDIR, 'tb_chain.sch'))
 
 
-amp_dp()
-amp_dpc()
-lna_chain()
-tb_chain()
-print('wrote amp_dp, amp_dpc, lna_chain (.sch/.sym), tb_chain.sch')
+if __name__ == '__main__':
+    amp_dp()
+    amp_dpc()
+    lna_chain()
+    tb_chain()
+    print('wrote amp_dp, amp_dpc, lna_chain (.sch/.sym), tb_chain.sch')

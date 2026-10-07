@@ -34,8 +34,8 @@ def db(x):
 def taps(v):
     """Stage output taps present in the raw, in order, ending with out."""
     t, i = [], 1
-    while f'v(x1.o{i}p)' in v:
-        t.append((f'o{i}', v[f'v(x1.o{i}p)'] - v[f'v(x1.o{i}n)']))
+    while f'v(o{i}p)' in v:
+        t.append((f'o{i}', v[f'v(o{i}p)'] - v[f'v(o{i}n)']))
         i += 1
     t.append(('out', v['v(out_p)'] - v['v(out_n)']))
     return t

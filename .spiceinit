@@ -1,0 +1,13 @@
+* ngspice startup flags. ngspice only reads .spiceinit from its current
+* directory, so tools/osic copies this file into build/ on every run.
+* (From mini-mosbius-configurator, where these were worked out.)
+*
+* Do NOT add `set ngbehavior=hsa`: it changes the default element scale
+* factor and breaks bin selection for the binned HV FET models
+* (sky130_fd_pr__nfet_g5v0d10v5, used in pad_model) -> "could not find a
+* valid modelname".
+set skywaterpdk
+set ng_nomodcheck
+set num_threads=8
+option noinit
+option klu

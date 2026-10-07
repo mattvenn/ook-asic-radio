@@ -9,6 +9,10 @@ case "$here" in
   "$HOST_ROOT"*) inner="/foss/designs${here#$HOST_ROOT}" ;;
   *) echo "run from inside $HOST_ROOT" >&2; exit 1 ;;
 esac
+# ngspice reads .spiceinit from its working directory: keep build/ in step
+# with the tracked one at the repo root
+repo=$(cd "$(dirname "$0")/.." && pwd -P)
+[ -d "$repo/build" ] && cp "$repo/.spiceinit" "$repo/build/.spiceinit"
 exec docker run --rm -i --user "$(id -u):$(id -g)" \
   -v "$HOST_ROOT:/foss/designs" -e PDK=sky130A -w "$inner" \
   --entrypoint /bin/bash "$IMAGE" -lc "$(printf '%q ' "$@")" 2>&1 | grep -v '^\[INFO\]'

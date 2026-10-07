@@ -5,8 +5,8 @@ K {}
 V {}
 S {}
 E {}
-T {tb_chain: dipole -> pad_model -> lna_chain} -1400 -760 0 0 0.6 0.6 {}
-T {analyse with: python sim/chain/analyse.py} -1400 -710 0 0 0.3 0.3 {}
+T {tb_logdet: dipole -> pad_model -> lna_chain -> log_det} -1400 -760 0 0 0.6 0.6 {}
+T {analyse with: python sim/logdet/analyse.py} -1400 -710 0 0 0.3 0.3 {}
 C {sky130_fd_pr/corner.sym} -1400 -620 0 0 {name=CORNER
 only_toplevel=true
 corner=tt}
@@ -154,22 +154,68 @@ sig_type=std_logic
 lab=vcm}
 C {devices/gnd.sym} -300 280 0 0 {name=l6
 lab=GND}
-C {devices/capa.sym} 100 100 0 0 {name=Cload_p
-value=50f
-m=1}
-C {devices/lab_pin.sym} 100 70 0 1 {name=p35
+C {log_det.sym} 500 -150 0 0 {name=x2
+wd='wd'
+rs='rs'
+cc='ccd'
+rb='rbd'
+rdet='rdet'
+cdet='cdet'}
+C {devices/lab_pin.sym} 380 90 0 0 {name=p35
+sig_type=std_logic
+lab=ibias_det}
+C {devices/lab_pin.sym} 620 -390 0 1 {name=p36
+sig_type=std_logic
+lab=det}
+C {devices/lab_pin.sym} 430 -440 0 0 {name=p37
+sig_type=std_logic
+lab=VDPWR}
+C {devices/gnd.sym} 430 140 0 0 {name=l7
+lab=GND}
+C {devices/lab_pin.sym} 380 -390 0 0 {name=p38
+sig_type=std_logic
+lab=o1p}
+C {devices/lab_pin.sym} 380 -350 0 0 {name=p39
+sig_type=std_logic
+lab=o1n}
+C {devices/lab_pin.sym} 380 -310 0 0 {name=p40
+sig_type=std_logic
+lab=o2p}
+C {devices/lab_pin.sym} 380 -270 0 0 {name=p41
+sig_type=std_logic
+lab=o2n}
+C {devices/lab_pin.sym} 380 -230 0 0 {name=p42
+sig_type=std_logic
+lab=o3p}
+C {devices/lab_pin.sym} 380 -190 0 0 {name=p43
+sig_type=std_logic
+lab=o3n}
+C {devices/lab_pin.sym} 380 -150 0 0 {name=p44
+sig_type=std_logic
+lab=o4p}
+C {devices/lab_pin.sym} 380 -110 0 0 {name=p45
+sig_type=std_logic
+lab=o4n}
+C {devices/lab_pin.sym} 380 -70 0 0 {name=p46
+sig_type=std_logic
+lab=o5p}
+C {devices/lab_pin.sym} 380 -30 0 0 {name=p47
+sig_type=std_logic
+lab=o5n}
+C {devices/lab_pin.sym} 380 10 0 0 {name=p48
 sig_type=std_logic
 lab=out_p}
-C {devices/gnd.sym} 100 130 0 0 {name=l7
-lab=GND}
-C {devices/capa.sym} 200 100 0 0 {name=Cload_n
-value=50f
-m=1}
-C {devices/lab_pin.sym} 200 70 0 1 {name=p36
+C {devices/lab_pin.sym} 380 50 0 0 {name=p49
 sig_type=std_logic
 lab=out_n}
-C {devices/gnd.sym} 200 130 0 0 {name=l8
-lab=GND}
+C {devices/isource.sym} 300 250 0 0 {name=Ibd
+value='ibias_det'}
+C {devices/lab_pin.sym} 300 220 0 1 {name=p50
+sig_type=std_logic
+lab=VDPWR}
+C {devices/lab_pin.sym} 300 280 0 1 {name=p51
+sig_type=std_logic
+lab=ibias_det}
 C {devices/code.sym} -1400 450 0 0 {name=SIMULATION
 only_toplevel=false
 value="
@@ -183,28 +229,27 @@ value="
 * chain sizing (passed to x1; sweep these)
 .param w1=80 rl1=1k mt1=20 w2=20 rl2=4k mt2=6 cs=0.6p cin=2p rb=20k
 
+* log detector
+.param ibias_det=2u wd=1 rs=10k ccd=100f rbd=200k rdet=8k cdet=5p
+
 .options method=GEAR
 .control
 op
 let idd = -i(vdpwr)
-print idd
-print v(o1p)-v(o1n) v(o2p)-v(o2n) v(out_p)-v(out_n)
-write tb_chain_op.raw
-ac dec 100 1meg 3g
-write tb_chain_acdiff.raw
-alter @vant_p[acmag]=0
-alter @vant_n[acmag]=0
-alter @vcmi[acmag]=1
-ac dec 100 1meg 3g
-write tb_chain_accm.raw
-alter @vcmi[acmag]=0
-alter @vdpwr[acmag]=1
-ac dec 100 1meg 3g
-write tb_chain_acpsrr.raw
-alter @vdpwr[acmag]=0
-noise v(out_p,out_n) vant_p dec 50 100meg 1.5g
-setplot previous
-write tb_chain_noise.raw
+print idd v(det) v(x2.ibias_det)
+write tb_logdet_op.raw
+* transfer: 434 MHz tone from -110 to -10 dBm available power
+echo Pin_dBm det_avg_V det_pp_V
+foreach p -110 -100 -95 -90 -85 -80 -75 -70 -65 -60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10
+  let ve = sqrt(8 * 73 * 1e-3 * 10^($p/10))
+  alterparam vemf = $&ve
+  reset
+  tran 50p 600n 400n
+  meas tran detavg avg v(det) from=500n to=600n
+  meas tran detpp pp v(det) from=500n to=600n
+  echo $p $&detavg $&detpp
+  destroy all
+end
 .endc
 "
 spice_ignore=false}

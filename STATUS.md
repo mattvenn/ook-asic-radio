@@ -133,9 +133,27 @@ Open next:
 - a current budget (stage 1 at 2.4 mA buys ~2.5 dB NF);
 - re-run e2e with NF 11 dB / 450 MHz.
 
+## Analog step 4: log detector (xschem/gen/logdet.py, first pass done)
+- **Chain is now 6 stages** (`NSTAGES` in chain.py; ~80 dB, ~2.9 mA). The 6th stage puts the chain's own noise floor (≈ −76 dBm equivalent) into the detector's log-linear range. With 5 stages it sat in the square-law tail at only 2–6 mV/dB. `lna_chain` exposes taps o1..o5 as pins.
+- **`det_cell`:** full-wave rectifier, two NMOS (W 1, L 0.15).
+  - Gates AC coupled (100 f / 200 k) and biased at ~Vth from `vb`; source degeneration rs 10 k.
+  - Idle current ~2 µA per side.
+- **`log_det`:** one det_cell per tap (o1..o5, out), drains summed into rdet 8 k ∥ cdet 5 p from VDD, so `det` falls with power. `vb` comes from a replica diode with the same rs, fed by ibias_det = 2 µA.
+- **CW transfer** (`tb_logdet`, tone sweep): log-linear from ~−80 to −10 dBm at ~12.6 mV/dB, ±~1 dB ripple. Saturates once stage 1 limits (above ~−5 dBm). Results: `sim/logdet/transfer_cw.txt`; noise runs in `sim/logdet/noise_tran_results.txt`.
+- **With noise** (`sim/logdet/noise_tran.sh`): repeatable PWL noise from `gen_noise.py` (3.9 nV/√Hz differential at the antenna ≈ NF 11 dB), 3 µs per case, ~1 min each.
+  - Detector change vs no signal: −100 dBm −0.38 mV, **−94 dBm −1.07 mV**, −88 dBm −3.4 mV, −80 dBm −17 mV.
+  - Slope at the noise floor ≈ 11–14 mV/dB (plan assumed ~16).
+  - So near sensitivity the signal is ~1 mV at the detector. The comparator trim (~0.08 mV/LSB) and the comparator's noise after the 15 kHz LPF must be well below that.
+- Open:
+  - recheck PLAN's "0.27 dB / 4 mV near sensitivity" against these numbers, and re-run model/e2e.py with NF 11 dB, ~450 MHz, 12 mV/dB;
+  - overload recovery (key a −10 dBm tone on/off);
+  - detector idle drift over temperature/corners (absorbed by the comparator's averaging reference, but check range);
+  - bias generation; corners.
+- Simulation learnings (speed, traps, noise recipes) are collected in `docs/sim_learnings.md`. Tracked `.spiceinit` at the root; `tools/osic` copies it into build/.
+
 ## Later in the chain (in order)
 1. ~~Rest of the LNA/limiter chain to ~60 dB.~~ First pass done (above).
-2. Log (successive-detection) detector.
+2. ~~Log (successive-detection) detector.~~ First pass done (above).
 3. LPF + switched-cap averaging reference (τ ≈ 0.5 ms).
 4. Comparator.
 5. R2R trim DAC + attenuator (reuse `mattvenn/tt08-analog-r2r-dac-3v3`).

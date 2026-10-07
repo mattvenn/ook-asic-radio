@@ -15,7 +15,7 @@ foreach p -100 -90 -80 -70 -60 -50 -40 -30 -20 -10
   tran 20p 120n 60n
   echo "$p" NOEOL
   foreach t o1 o2 o3 o4
-    let d = v(x1.{$t}p) - v(x1.{$t}n)
+    let d = v({$t}p) - v({$t}n)
     meas tran pp pp d from=80n to=120n
     let a = pp / 2 * 1e3
     echo "$&a" NOEOL
