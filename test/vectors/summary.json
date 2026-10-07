@@ -1,0 +1,204 @@
+[
+ {
+  "name": "clean",
+  "code": 90,
+  "samples": 7304,
+  "events": [
+   [
+    167,
+    127
+   ],
+   [
+    358,
+    127
+   ],
+   [
+    549,
+    127
+   ]
+  ],
+  "toggles": [
+   358
+  ],
+  "note": "ideal bits, one send: 3 events, 1 toggle"
+ },
+ {
+  "name": "holdoff",
+  "code": 90,
+  "samples": 13488,
+  "events": [
+   [
+    167,
+    127
+   ],
+   [
+    358,
+    127
+   ],
+   [
+    549,
+    127
+   ],
+   [
+    940,
+    127
+   ],
+   [
+    1131,
+    127
+   ],
+   [
+    1322,
+    127
+   ]
+  ],
+  "toggles": [
+   358
+  ],
+  "note": "second send inside holdoff: still 1 toggle"
+ },
+ {
+  "name": "two_sends",
+  "code": 90,
+  "samples": 87424,
+  "events": [
+   [
+    167,
+    127
+   ],
+   [
+    358,
+    127
+   ],
+   [
+    549,
+    127
+   ],
+   [
+    10182,
+    127
+   ],
+   [
+    10373,
+    127
+   ],
+   [
+    10564,
+    127
+   ]
+  ],
+  "toggles": [
+   358,
+   10373
+  ],
+  "note": "second send after holdoff: 2 toggles"
+ },
+ {
+  "name": "strong",
+  "code": 90,
+  "samples": 5864,
+  "events": [
+   [
+    168,
+    127
+   ],
+   [
+    359,
+    127
+   ],
+   [
+    550,
+    127
+   ]
+  ],
+  "toggles": [
+   359
+  ],
+  "note": "strong signal"
+ },
+ {
+  "name": "weak",
+  "code": 90,
+  "samples": 5864,
+  "events": [
+   [
+    168,
+    103
+   ],
+   [
+    359,
+    110
+   ],
+   [
+    550,
+    108
+   ]
+  ],
+  "toggles": [
+   359
+  ],
+  "note": "near sensitivity"
+ },
+ {
+  "name": "wrong_code",
+  "code": 17,
+  "samples": 5864,
+  "events": [],
+  "toggles": [],
+  "note": "strong signal, different code: no toggle"
+ },
+ {
+  "name": "bursty",
+  "code": 90,
+  "samples": 5864,
+  "events": [
+   [
+    168,
+    118
+   ],
+   [
+    359,
+    115
+   ],
+   [
+    550,
+    118
+   ]
+  ],
+  "toggles": [
+   359
+  ],
+  "note": "bursty -60 dBm interferer"
+ },
+ {
+  "name": "fading",
+  "code": 90,
+  "samples": 5864,
+  "events": [
+   [
+    168,
+    115
+   ],
+   [
+    359,
+    113
+   ],
+   [
+    550,
+    127
+   ]
+  ],
+  "toggles": [
+   359
+  ],
+  "note": "+/-10 dB fading"
+ },
+ {
+  "name": "no_signal",
+  "code": 90,
+  "samples": 5864,
+  "events": [],
+  "toggles": [],
+  "note": "noise only: no toggle"
+ }
+]

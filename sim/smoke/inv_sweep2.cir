@@ -1,0 +1,104 @@
+* inverter-stage width sweep: 6 independent copies (sky130 tt, 1.8 V)
+.lib /foss/pdks/sky130A/libs.tech/combined/sky130.lib.spice tt
+vdd0 vdd0 0 1.8
+vin0 in0 0 dc 0 ac 1
+cin0 in0 a0 10p
+xn1_0 o1_0 a0 0 0 sky130_fd_pr__nfet_01v8 w=1 l=0.15 nf=1
+xp1_0 o1_0 a0 vdd0 vdd0 sky130_fd_pr__pfet_01v8 w=2 l=0.15 nf=1
+rf1_0 a0 o1_0 20k
+cc0 o1_0 b0 10p
+xn2_0 o2_0 b0 0 0 sky130_fd_pr__nfet_01v8 w=1 l=0.15 nf=1
+xp2_0 o2_0 b0 vdd0 vdd0 sky130_fd_pr__pfet_01v8 w=2 l=0.15 nf=1
+rf2_0 b0 o2_0 20k
+vdd1 vdd1 0 1.8
+vin1 in1 0 dc 0 ac 1
+cin1 in1 a1 10p
+xn1_1 o1_1 a1 0 0 sky130_fd_pr__nfet_01v8 w=2 l=0.15 nf=1
+xp1_1 o1_1 a1 vdd1 vdd1 sky130_fd_pr__pfet_01v8 w=4 l=0.15 nf=1
+rf1_1 a1 o1_1 20k
+cc1 o1_1 b1 10p
+xn2_1 o2_1 b1 0 0 sky130_fd_pr__nfet_01v8 w=2 l=0.15 nf=1
+xp2_1 o2_1 b1 vdd1 vdd1 sky130_fd_pr__pfet_01v8 w=4 l=0.15 nf=1
+rf2_1 b1 o2_1 20k
+vdd2 vdd2 0 1.8
+vin2 in2 0 dc 0 ac 1
+cin2 in2 a2 10p
+xn1_2 o1_2 a2 0 0 sky130_fd_pr__nfet_01v8 w=5 l=0.15 nf=1
+xp1_2 o1_2 a2 vdd2 vdd2 sky130_fd_pr__pfet_01v8 w=10 l=0.15 nf=1
+rf1_2 a2 o1_2 20k
+cc2 o1_2 b2 10p
+xn2_2 o2_2 b2 0 0 sky130_fd_pr__nfet_01v8 w=5 l=0.15 nf=1
+xp2_2 o2_2 b2 vdd2 vdd2 sky130_fd_pr__pfet_01v8 w=10 l=0.15 nf=1
+rf2_2 b2 o2_2 20k
+vdd3 vdd3 0 1.8
+vin3 in3 0 dc 0 ac 1
+cin3 in3 a3 10p
+xn1_3 o1_3 a3 0 0 sky130_fd_pr__nfet_01v8 w=10 l=0.15 nf=1
+xp1_3 o1_3 a3 vdd3 vdd3 sky130_fd_pr__pfet_01v8 w=20 l=0.15 nf=1
+rf1_3 a3 o1_3 20k
+cc3 o1_3 b3 10p
+xn2_3 o2_3 b3 0 0 sky130_fd_pr__nfet_01v8 w=10 l=0.15 nf=1
+xp2_3 o2_3 b3 vdd3 vdd3 sky130_fd_pr__pfet_01v8 w=20 l=0.15 nf=1
+rf2_3 b3 o2_3 20k
+vdd4 vdd4 0 1.8
+vin4 in4 0 dc 0 ac 1
+cin4 in4 a4 10p
+xn1_4 o1_4 a4 0 0 sky130_fd_pr__nfet_01v8 w=20 l=0.15 nf=1
+xp1_4 o1_4 a4 vdd4 vdd4 sky130_fd_pr__pfet_01v8 w=40 l=0.15 nf=1
+rf1_4 a4 o1_4 20k
+cc4 o1_4 b4 10p
+xn2_4 o2_4 b4 0 0 sky130_fd_pr__nfet_01v8 w=20 l=0.15 nf=1
+xp2_4 o2_4 b4 vdd4 vdd4 sky130_fd_pr__pfet_01v8 w=40 l=0.15 nf=1
+rf2_4 b4 o2_4 20k
+vdd5 vdd5 0 1.8
+vin5 in5 0 dc 0 ac 1
+cin5 in5 a5 10p
+xn1_5 o1_5 a5 0 0 sky130_fd_pr__nfet_01v8 w=40 l=0.15 nf=1
+xp1_5 o1_5 a5 vdd5 vdd5 sky130_fd_pr__pfet_01v8 w=80 l=0.15 nf=1
+rf1_5 a5 o1_5 20k
+cc5 o1_5 b5 10p
+xn2_5 o2_5 b5 0 0 sky130_fd_pr__nfet_01v8 w=40 l=0.15 nf=1
+xp2_5 o2_5 b5 vdd5 vdd5 sky130_fd_pr__pfet_01v8 w=80 l=0.15 nf=1
+rf2_5 b5 o2_5 20k
+.control
+op
+let idd0 = -vdd0#branch/2*1e6
+let vb0 = v(a0)
+let idd1 = -vdd1#branch/2*1e6
+let vb1 = v(a1)
+let idd2 = -vdd2#branch/2*1e6
+let vb2 = v(a2)
+let idd3 = -vdd3#branch/2*1e6
+let vb3 = v(a3)
+let idd4 = -vdd4#branch/2*1e6
+let vb4 = v(a4)
+let idd5 = -vdd5#branch/2*1e6
+let vb5 = v(a5)
+ac dec 40 1meg 5g
+let g0 = db(v(o1_0)/v(a0))
+meas ac g518_0 find g0 at=518e6
+meas ac g10_0 find g0 at=10e6
+let g1 = db(v(o1_1)/v(a1))
+meas ac g518_1 find g1 at=518e6
+meas ac g10_1 find g1 at=10e6
+let g2 = db(v(o1_2)/v(a2))
+meas ac g518_2 find g2 at=518e6
+meas ac g10_2 find g2 at=10e6
+let g3 = db(v(o1_3)/v(a3))
+meas ac g518_3 find g3 at=518e6
+meas ac g10_3 find g3 at=10e6
+let g4 = db(v(o1_4)/v(a4))
+meas ac g518_4 find g4 at=518e6
+meas ac g10_4 find g4 at=10e6
+let g5 = db(v(o1_5)/v(a5))
+meas ac g518_5 find g5 at=518e6
+meas ac g10_5 find g5 at=10e6
+setplot op1
+print idd0 vb0
+print idd1 vb1
+print idd2 vb2
+print idd3 vb3
+print idd4 vb4
+print idd5 vb5
+.endc
+.end

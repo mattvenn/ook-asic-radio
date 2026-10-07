@@ -1,0 +1,31 @@
+* gain at 518 MHz vs device width for a self-biased inverter stage driving an identical stage
+.lib /foss/pdks/sky130A/libs.tech/combined/sky130.lib.spice tt
+.param wn=2 wp=4 l=0.15
+vdd vdd 0 1.8
+vin in 0 dc 0 ac 1
+cin in a 10p
+xn1 o1 a 0 0 sky130_fd_pr__nfet_01v8 w={wn} l={l} nf=1
+xp1 o1 a vdd vdd sky130_fd_pr__pfet_01v8 w={wp} l={l} nf=1
+rf1 a o1 20k
+cc o1 b 10p
+xn2 o2 b 0 0 sky130_fd_pr__nfet_01v8 w={wn} l={l} nf=1
+xp2 o2 b vdd vdd sky130_fd_pr__pfet_01v8 w={wp} l={l} nf=1
+rf2 b o2 20k
+.control
+foreach w 1 2 5 10 20 40
+  alterparam wn = $w
+  let wpv = 2*$w
+  alterparam wp = $&wpv
+  reset
+  op
+  let idd = -vdd#branch/2*1e6
+  ac dec 40 1meg 5g
+  let g = db(v(o1)/v(a))
+  meas ac g518 find g at=518e6
+  meas ac g10m find g at=10e6
+  meas ac f3db when g=g10m-3 fall=1
+  echo "RESULT wn=$w um  I/stage=$&idd  g10m=$&g10m  g518=$&g518  f3db=$&f3db"
+  destroy all
+end
+.endc
+.end

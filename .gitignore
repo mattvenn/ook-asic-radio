@@ -1,0 +1,15 @@
+# large raw bench captures and stimuli (kept locally; back up separately)
+bench/data/**/*.npz
+stim/*.pwl
+# simulation outputs
+*.raw
+sim/**/*.log
+# python / tools
+__pycache__/
+*.pyc
+.venv/
+# cocotb
+sim_build/
+results.xml
+*.vcd
+*.fst

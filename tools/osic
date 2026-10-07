@@ -1,0 +1,14 @@
+#!/bin/bash
+# Run a command inside the IIC-OSIC-TOOLS image (headless, throwaway container),
+# with ~/work/asic-workshop mounted at /foss/designs and the current directory
+# mapped to the same place inside. Example:  tools/osic ngspice -b sim/tb.cir
+IMAGE=${OSIC_IMAGE:-hpretl/iic-osic-tools:2026.05}
+HOST_ROOT=/home/matt/work/asic-workshop
+here=$(pwd -P)
+case "$here" in
+  "$HOST_ROOT"*) inner="/foss/designs${here#$HOST_ROOT}" ;;
+  *) echo "run from inside $HOST_ROOT" >&2; exit 1 ;;
+esac
+exec docker run --rm -i --user "$(id -u):$(id -g)" \
+  -v "$HOST_ROOT:/foss/designs" -e PDK=sky130A -w "$inner" \
+  --entrypoint /bin/bash "$IMAGE" -lc "$(printf '%q ' "$@")" 2>&1 | grep -v '^\[INFO\]'

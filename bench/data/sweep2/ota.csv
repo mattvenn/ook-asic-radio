@@ -1,0 +1,7 @@
+time,dist_cm,note,f_mhz,p_on_dbm,p_off_dbm,floor_dbm,snr_db
+20261007_132616,10,"phone powered, parallel",518.572,-24.4,nan,-100.4,76.0
+20261007_132656,20,"phone powered, parallel",518.475,-28.5,nan,-101.8,73.3
+20261007_132729,50,"phone powered, parallel",518.538,-43.4,nan,-102.2,58.7
+20261007_132801,100,"phone powered, parallel",518.552,-43.7,nan,-104.1,60.4
+20261007_132830,200,"phone powered, parallel",518.533,-54.0,nan,-104.8,50.8
+20261007_132905,400,"phone powered, parallel",518.451,-51.3,nan,-103.7,52.4

@@ -1,0 +1,98 @@
+* ttsky25b ring-osc driver into pad model + TT analog path + 50 ohm load, 518 MHz
+.lib /foss/pdks/sky130A/libs.tech/combined/sky130.lib.spice tt
+.param f0=518e6
+vdd0 vdd0 0 1.8
+vin0 in0 0 pulse(0 1.8 0 60p 60p {0.5/f0-60p} {1/f0})
+xp1_0 n0 in0 vdd0 vdd0 sky130_fd_pr__pfet_01v8 w=9 l=0.15 nf=1
+xn1_0 n0 in0 0 0 sky130_fd_pr__nfet_01v8 w=3 l=0.15 nf=1
+xp2_0 d0 n0 vdd0 vdd0 sky130_fd_pr__pfet_01v8 w=72 l=0.15 nf=8
+xn2_0 d0 n0 0 0 sky130_fd_pr__nfet_01v8 w=24 l=0.15 nf=8
+rpath0 d0 m0 0.001
+cm0 m0 0 250f
+rpad0 m0 x0 50
+c2_0 x0 0 3p
+l1_0 x0 y0 1n
+r1_0 y0 p0 1
+c1_0 p0 0 2p
+rload0 p0 0 50
+vdd1 vdd1 0 1.8
+vin1 in1 0 pulse(0 1.8 0 60p 60p {0.5/f0-60p} {1/f0})
+xp1_1 n1 in1 vdd1 vdd1 sky130_fd_pr__pfet_01v8 w=9 l=0.15 nf=1
+xn1_1 n1 in1 0 0 sky130_fd_pr__nfet_01v8 w=3 l=0.15 nf=1
+xp2_1 d1 n1 vdd1 vdd1 sky130_fd_pr__pfet_01v8 w=72 l=0.15 nf=8
+xn2_1 d1 n1 0 0 sky130_fd_pr__nfet_01v8 w=24 l=0.15 nf=8
+rpath1 d1 m1 150
+cm1 m1 0 250f
+rpad1 m1 x1 50
+c2_1 x1 0 3p
+l1_1 x1 y1 1n
+r1_1 y1 p1 1
+c1_1 p1 0 2p
+rload1 p1 0 50
+vdd2 vdd2 0 1.8
+vin2 in2 0 pulse(0 1.8 0 60p 60p {0.5/f0-60p} {1/f0})
+xp1_2 n2 in2 vdd2 vdd2 sky130_fd_pr__pfet_01v8 w=18 l=0.15 nf=2
+xn1_2 n2 in2 0 0 sky130_fd_pr__nfet_01v8 w=6 l=0.15 nf=2
+xp2_2 d2 n2 vdd2 vdd2 sky130_fd_pr__pfet_01v8 w=144 l=0.15 nf=16
+xn2_2 d2 n2 0 0 sky130_fd_pr__nfet_01v8 w=48 l=0.15 nf=16
+rpath2 d2 m2 150
+cm2 m2 0 250f
+rpad2 m2 x2 50
+c2_2 x2 0 3p
+l1_2 x2 y2 1n
+r1_2 y2 p2 1
+c1_2 p2 0 2p
+rload2 p2 0 50
+vdd3 vdd3 0 1.8
+vin3 in3 0 pulse(0 1.8 0 60p 60p {0.5/f0-60p} {1/f0})
+xp1_3 n3 in3 vdd3 vdd3 sky130_fd_pr__pfet_01v8 w=36 l=0.15 nf=4
+xn1_3 n3 in3 0 0 sky130_fd_pr__nfet_01v8 w=12 l=0.15 nf=4
+xp2_3 d3 n3 vdd3 vdd3 sky130_fd_pr__pfet_01v8 w=288 l=0.15 nf=32
+xn2_3 d3 n3 0 0 sky130_fd_pr__nfet_01v8 w=96 l=0.15 nf=32
+rpath3 d3 m3 150
+cm3 m3 0 250f
+rpad3 m3 x3 50
+c2_3 x3 0 3p
+l1_3 x3 y3 1n
+r1_3 y3 p3 1
+c1_3 p3 0 2p
+rload3 p3 0 50
+vdd4 vdd4 0 1.8
+vin4 in4 0 pulse(0 1.8 0 60p 60p {0.5/f0-60p} {1/f0})
+xp1_4 n4 in4 vdd4 vdd4 sky130_fd_pr__pfet_01v8 w=9 l=0.15 nf=1
+xn1_4 n4 in4 0 0 sky130_fd_pr__nfet_01v8 w=3 l=0.15 nf=1
+xp2_4 d4 n4 vdd4 vdd4 sky130_fd_pr__pfet_01v8 w=72 l=0.15 nf=8
+xn2_4 d4 n4 0 0 sky130_fd_pr__nfet_01v8 w=24 l=0.15 nf=8
+rpath4 d4 m4 300
+cm4 m4 0 250f
+rpad4 m4 x4 50
+c2_4 x4 0 3p
+l1_4 x4 y4 1n
+r1_4 y4 p4 1
+c1_4 p4 0 2p
+rload4 p4 0 50
+vdd5 vdd5 0 1.8
+vin5 in5 0 pulse(0 1.8 0 60p 60p {0.5/f0-60p} {1/f0})
+xp1_5 n5 in5 vdd5 vdd5 sky130_fd_pr__pfet_01v8 w=36 l=0.15 nf=4
+xn1_5 n5 in5 0 0 sky130_fd_pr__nfet_01v8 w=12 l=0.15 nf=4
+xp2_5 d5 n5 vdd5 vdd5 sky130_fd_pr__pfet_01v8 w=288 l=0.15 nf=32
+xn2_5 d5 n5 0 0 sky130_fd_pr__nfet_01v8 w=96 l=0.15 nf=32
+rpath5 d5 m5 300
+cm5 m5 0 250f
+rpad5 m5 x5 50
+c2_5 x5 0 3p
+l1_5 x5 y5 1n
+r1_5 y5 p5 1
+c1_5 p5 0 2p
+rload5 p5 0 50
+.tran 5p 40n 20n
+.control
+run
+fourier 518e6 v(p0)
+fourier 518e6 v(p1)
+fourier 518e6 v(p2)
+fourier 518e6 v(p3)
+fourier 518e6 v(p4)
+fourier 518e6 v(p5)
+.endc
+.end
