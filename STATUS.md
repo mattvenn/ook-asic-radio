@@ -1,6 +1,40 @@
-# Where we are (handoff, 2026-10-07)
+# Where we are (handoff, end of 2026-10-07)
 
-Read **PLAN.md** first: it holds the decisions and the evidence for each. This file is the "pick up from here" note.
+Read **PLAN.md** for the decisions and their evidence. This file is the "pick up from here" note: the summary and next steps first, per-block detail below.
+Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
+
+## Start here
+
+**State:** the whole RX analog chain has a working first pass at the tt corner, transistor level, from antenna to correlator:
+- pad → 6-stage limiting amp (66.6 dB / 5 stages; 6 for the detector) → successive-detection log detector → 14 kHz RC LPF → switched-cap average (τ 0.47 ms) → continuous comparator with DAC trim.
+- **The bit-exact digital detects a −94 dBm burst (score 99/127, threshold 97): right at the edge.** −70 dBm is clean (127/127).
+- See `sim/plots/rx_rf.png` and `rx_bb.png`.
+- TX not started; RTL done but too big; layout not started.
+
+**Next steps, in order:**
+1. **TX** (nothing designed yet):
+   - ring resized for 433 MHz: **target ~500 MHz extracted-tt** (calibration below: silicon ran ×0.866 of extracted-tt). Std-cell ring ≈ 23 stages, but set it with the real load;
+   - 1.8 → 3.3 V level shifter + two antiphase thick-oxide drivers (ttsky25b driver ×2, ≤ 10° phase error) into the pad/dipole; enable from `tx_en`;
+   - check frequency over corners, output power, keying chirp.
+2. **Make the RX real:**
+   - corners + temperature across the whole chain (sensitivity has no margin at tt);
+   - bias generation (60 µA chain reference, 1.2 V vcm, 2 µA detector, 1 µA comparator) instead of ideal sources;
+   - power-down on `rx_en`;
+   - hook up the reused R2R DAC (its range vs the trim's linear region ~0.6–1.8 V);
+   - overload recovery.
+3. **RTL:**
+   - rerun the full cocotb suite once (~11.5 min; can run in background);
+   - choose the size reduction (clock-gate phase regs; 2 phases instead of 4, which needs e2e first).
+4. **Layout + integration** (PLAN phase 4). Area ballpark below; **3x2 is the fallback** (confirm 3x2 is allowed for analog on this shuttle: the info.yaml template comment lists only 1x2 / 2x2).
+
+**PLAN.md is partly behind these results:** its RX architecture line and block table still say "inverter LNA" and assume 16 mV/dB. The analog sections below (and the comparator noise spec already added to PLAN) are current. Fold them into PLAN when convenient.
+
+**How to run things:**
+- Generators: `python3 xschem/gen/<x>.py`. Netlist: `tools/osic bash -c 'xschem -n -s -q -o build xschem/<tb>.sch'` (grep the netlist for `IS MISSING`).
+- Simulate in `build/` via `tools/osic`. Analysis/plots: `~/work/asic-workshop/venv/bin/python` (system python has no numpy).
+- `tools/osic` copies the tracked root `.spiceinit` into `build/` each run.
+- **Don't run ngspice processes in parallel** (each uses 8 threads), and **don't edit a script while it's running**.
+- **All the xschem/ngspice traps and speed lessons are in `docs/sim_learnings.md`.** Read that before writing a new testbench.
 
 ## Done
 - **Phase 0 bench** (bench/, results in PLAN.md): the ring osc as an OOK TX, path loss, drift, keying, phase noise, recorded packets, antenna test.
@@ -125,13 +159,9 @@ Results (tt, 1 % mismatch):
 - **CM→out diff and VDD→out diff are ~0 dB at 434 MHz** with 1 % mismatch (CMRR ≈ 70 dB, but the gain is 66 dB). Supply ripple at the 430/440 MHz clock harmonics reaches the output ~1:1, so supply isolation and decoupling matter (PLAN isolation row).
 - **vs the e2e model's assumptions** (NF 10 dB, 400 MHz; `bench/scheme_compare.py`): ~1 dB worse NF and ~0.5 dB wider bandwidth → roughly −92.5 instead of −94 dBm. Not re-run.
 
-Open next:
-- log detector taps (rectifier per stage output + summing) → LPF → comparator;
+Still open for the chain:
 - upper-side rejection: measure the real pad + dipole first (see above);
-- bias generation (ibias reference, vcm replica) instead of ideal sources;
-- corners/temperature;
-- a current budget (stage 1 at 2.4 mA buys ~2.5 dB NF);
-- re-run e2e with NF 11 dB / 450 MHz.
+- a current budget (stage 1 at 2.4 mA buys ~2.5 dB NF, which would give sensitivity margin).
 
 ## Analog step 4: log detector (xschem/gen/logdet.py, first pass done)
 - **Chain is now 6 stages** (`NSTAGES` in chain.py; ~80 dB, ~2.9 mA). The 6th stage puts the chain's own noise floor (≈ −76 dBm equivalent) into the detector's log-linear range. With 5 stages it sat in the square-law tail at only 2–6 mV/dB. `lna_chain` exposes taps o1..o5 as pins.
@@ -181,11 +211,6 @@ Open next:
 - **Wiring for integration** (det falls with power):
   - `avg_sc.in` = LPF out; `comp_ct.inp` = avg; `comp_ct.inn` = LPF out.
   - So c = 1 when power is above its average, and trim↑ makes c = 1 rarer. That matches the model and the servo (trim += c).
-- Open:
-  - whole-RX transient (chain → det → LPF → avg → comp, digital-style phi);
-  - R2R DAC reuse and its output range vs the trim's linear range;
-  - power-down on `rx_en`;
-  - corners.
 - ngspice traps found here (in `docs/sim_learnings.md`): `option klu` breaks `.noise`; `inoise_total` overstates noise above a pole (use onoise_total / DC gain); `destroy all` deletes vectors, so keep values in `set` variables.
 
 ## TX ring frequency calibration (sim/ring/ttsky25b_ring.sh)
@@ -226,12 +251,3 @@ Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated i
 - RX analog ≈ 7.8 % of the 2x2 tile in devices (×2.5 routing) + 25.5 % MIM (can't overlap the digital). With the digital at 54 % the 2x2 is ~full once TX, DAC and overhead are added; ~76 % if the RTL size options are taken.
 - **Decision (2026-10-07): fine for now; go to 3x2 if needed** rather than shrink early.
 - Easy cap savings if ever wanted: LPF 4 MΩ / 2.7 pF (the comparator has no kickback); avg Cs 0.1 p / Cavg 3.6 p; cdet 1 p; chain cin 1 p (NF check). Together 19k → ~8k µm² of MIM.
-
-## Later in the chain (in order)
-1. ~~Rest of the LNA/limiter chain to ~60 dB.~~ First pass done (above).
-2. ~~Log (successive-detection) detector.~~ First pass done (above).
-3. ~~LPF~~ done (above); switched-cap averaging reference (τ ≈ 0.5 ms) goes with the comparator.
-4. ~~Comparator~~ first pass done (above).
-5. R2R trim DAC + attenuator (reuse `mattvenn/tt08-analog-r2r-dac-3v3`).
-6. TX: ring resized to 433 MHz + 3.3 V antiphase drivers.
-7. Then layout and integration (PLAN.md phase 4).
