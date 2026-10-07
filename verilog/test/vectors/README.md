@@ -34,5 +34,5 @@ The digital is deterministic given the comparator bits, so **replaying `comp` op
 | `chips` (uint8[128,127]) | Chip sequence of each code (1 = carrier on) |
 | `lfsr2` (uint8[128]) | LFSR2 start state after `code` steps from the all-ones seed (code 127 = M1 only) |
 
-- **LFSR1:** taps (7,3). **LFSR2:** taps (7,3,2,1). Both are Fibonacci, output = stage 7 (MSB of the state).
+- **LFSR1:** taps (7,3). **LFSR2:** taps (7,3,2,1). Both are Fibonacci, output = stage 7, feedback into stage 1. In the `lfsr2` integers stage 1 is bit 6 and stage 7 (the output) is bit 0.
 - **A send:** 3 bursts, each 127 chips followed by 64 off-chips. One chip = 1040 clocks.

@@ -89,7 +89,7 @@ Area, cost and legality are not constraints. Workflow: measure, then model, then
 ## Block requirements (initial, to be refined by the golden model and simulation)
 | Block | Requirement |
 |---|---|
-| Ring osc + buffers (TX) | **433 MHz nominal at TT corner** (resize the ttsky25b ring: more stages/load than its 518 MHz); spread across corners is OK; two antiphase buffers (≤ ~10° phase error, matched layout) into a ~73 Ω dipole. **Reuse the ttsky25b driver (P72/N24 µm) at ×2.** Simulation (`sim/txdrv`) shows the TT analog path (~150–300 Ω) dominates: a ×4 driver gains only ~1 dB. The dipole has no DC path, so only RF current flows (into a 50 Ω scope there's ~2.8 mA DC + ~3 mA peak RF). Enable controlled by the digital logic. No 3.3 V: the pin current limit is already close |
+| Ring osc + buffers (TX) | **433 MHz nominal at TT corner** (resize the ttsky25b ring: more stages/load than its 518 MHz); spread across corners is OK; two antiphase buffers (≤ ~10° phase error, matched layout) into a ~73 Ω dipole. **Reuse the ttsky25b driver (P72/N24 µm) at ×2.** Simulation (`sim/txdrv`) shows the TT analog path (~150–300 Ω) dominates: a ×4 driver gains only ~1 dB. The dipole has no DC path, so only RF current flows (into a 50 Ω scope there's ~2.8 mA DC + ~3 mA peak RF). Enable controlled by the digital logic. **Output stage on 3.3 V (VAPWR)** with thick-oxide devices (`g5v0d10v5`) and a level shifter/pre-driver from the 1.8 V ring: +~5 dB. The current limit is not a concern (see Open questions). Needs a 433 MHz thick-oxide driver simulation |
 | LNA/limiter chain | **differential input**; ≥ 60 dB small-signal gain across ~330–560 MHz (433 ± ~25% to cover TX ring spread); NF ≲ 10 dB including pad and ESD; good common-mode rejection; the ~392 MHz signal measured on the bench will be in band, so rely on the correlator for it |
 | Log detector | ~50 dB dynamic range, roughly linear in dB (~16 mV/dB assumed); video bandwidth ≥ 100 kHz before the LPF; low noise and drift, since the signal near sensitivity is only ~0.3 dB |
 | LPF | ~15 kHz (RC on chip) |
@@ -207,7 +207,7 @@ See the tables above.
 - **ngspice in the IIC-OSIC image:** the OSDI load errors from the global spiceinit are harmless for sky130. Use `tools/osic` to run the image headless from the project.
 
 ## Open questions and risks
-- **TT analog-pin 4 mA limit:** is it DC, RMS or peak, and what does it protect (the mux switches or the routing)? This decides whether a 3.3 V TX driver (+5 dB) is allowed. Asked the TT chip architect; the 2x2_3v3 template keeps the option open meanwhile.
+- ~~TT analog-pin 4 mA limit~~ **Resolved (tnt, 2026-10-07):** the limit is electromigration (RMS, lifetime). Even 20 mA would outlive interest in the chip, and the ≤500 Ω path caps the current at 6.6 mA from 3.3 V anyway. OOK at ~50% duty lowers the RMS further. **So the 3.3 V TX driver is in (+~5 dB).**
 - LNA noise figure through the pad/ESD path; the 60 dB gain budget across corners and supply.
 - Self-interference from the chip's own digital logic into a 60 dB+ LNA.
 - Venue interferers (the 392 MHz-type signals); fade margin indoors (the fading and orientation test is still to do).
