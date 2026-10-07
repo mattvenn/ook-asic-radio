@@ -113,7 +113,10 @@ Blocks (instance params via symbol templates; `write_symbol(params=...)`):
 
 Results (tt, 1 % mismatch):
 - **Gain EMF→out:** 66.6 / 66.6 / 65.0 dB at 330 / 434 / 560 MHz; −3 dB band 237–625 MHz.
-- **Out-of-band:** 100 MHz (FM) −23 dB re band; 10 MHz −96 dB re band. 1 GHz is only −10 dB: **GSM-900 is a risk** (no upper-side shaping yet).
+- **Out-of-band:** 100 MHz (FM) −23 dB re band; 10 MHz −96 dB re band.
+- **Upper side:** 900 MHz −8 dB, 1 GHz −10 dB, 2 GHz −27 dB re 434 MHz. About half of that is the pad model (antenna→pad −2.3 dB at 434, −6.2 at 900) and half the chain (−4.3 dB at 900).
+  - The real rejection is likely better: the pad model is rough (more C or ESD loading rolls off harder), and the sim's antenna is a flat 73 Ω. A 434 MHz dipole is near full-wave at 900 MHz, a high reactive impedance into a pin with several pF.
+  - So **no on-chip upper shaping for now**. Measure the real pin + dipole response from 400 MHz to 1 GHz on the bench before spending in-band gain on it (GSM-900).
 - **Supply:** 2.56 mA total.
 - **NF:** 10.8 / 11.0 / 11.6 dB (330 / 434 / 560 MHz).
 - **Noise at the output:** 197 mV rms differential (447 MHz noise bandwidth). Limiting is ~1.35 V amplitude (~0.95 V rms), so the chain doesn't limit on its own noise.
@@ -124,7 +127,7 @@ Results (tt, 1 % mismatch):
 
 Open next:
 - log detector taps (rectifier per stage output + summing) → LPF → comparator;
-- upper-side band shaping (GSM-900);
+- upper-side rejection: measure the real pad + dipole first (see above);
 - bias generation (ibias reference, vcm replica) instead of ideal sources;
 - corners/temperature;
 - a current budget (stage 1 at 2.4 mA buys ~2.5 dB NF);
