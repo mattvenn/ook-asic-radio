@@ -153,6 +153,65 @@ class Sch:
             fh.write('\n'.join(lines) + '\n')
 
 
+MOS_DEFAULTS = {
+    'nf': '1', 'mult': '1',
+    'ad': '"\'int((nf+1)/2) * W/nf * 0.29\'"', 'pd': '"\'2*int((nf+1)/2) * (W/nf + 0.29)\'"',
+    'as': '"\'int((nf+2)/2) * W/nf * 0.29\'"', 'ps': '"\'2*int((nf+2)/2) * (W/nf + 0.29)\'"',
+    'nrd': '"\'0.29 / W\'"', 'nrs': '"\'0.29 / W\'"', 'sa': '0', 'sb': '0', 'sd': '0',
+}
+
+
+def mos(sch, kind, x, y, W, L, nf=1, mult=1, name=None, rot=0, flip=0):
+    """Place a sky130 1.8 V nfet/pfet with the PDK's standard property set."""
+    sym = f'sky130_fd_pr/{kind}fet_01v8.sym'
+    props = dict(MOS_DEFAULTS)
+    props.update({'L': str(L), 'W': str(W), 'nf': str(nf), 'mult': str(mult),
+                  'model': f'{kind}fet_01v8', 'spiceprefix': 'X'})
+    return sch.place(sym, x, y, rot=rot, flip=flip, name=name or sch._name('M'), **props)
+
+
+def write_symbol(path, left=(), right=(), top=(), bottom=(), width=160):
+    """Box symbol for a subcircuit: pins listed per side, 40 units apart.
+    Pin order in the netlist = order given (left, right, top, bottom)."""
+    nl, nr = len(left), len(right)
+    h = max(nl, nr, 1) * 40 + 20
+    w2, h2 = width // 2, h // 2
+    out = ['v {xschem version=3.4.5 file_version=1.2', '}', 'G {}',
+           'K {type=subcircuit', 'format="@name @pinlist @symname"', 'template="name=x1"', '}',
+           'V {}', 'S {}', 'E {}',
+           f'L 4 -{w2} -{h2} {w2} -{h2} {{}}', f'L 4 -{w2} {h2} {w2} {h2} {{}}',
+           f'L 4 -{w2} -{h2} -{w2} {h2} {{}}', f'L 4 {w2} -{h2} {w2} {h2} {{}}']
+    n = 0
+    def pin(name, x, y, tx, ty, flip):
+        nonlocal n
+        n += 1
+        out.append(f'B 5 {x-2.5} {y-2.5} {x+2.5} {y+2.5} {{name={name} dir=inout sim_pinnumber={n}}}')
+        out.append(f'T {{{name}}} {tx} {ty} 0 {flip} 0.2 0.2 {{}}')
+    for i, nm in enumerate(left):
+        y = -h2 + 30 + i * 40
+        out.append(f'L 7 -{w2+20} {y} -{w2} {y} {{}}'); pin(nm, -w2 - 20, y, -w2 + 5, y - 6, 0)
+    for i, nm in enumerate(right):
+        y = -h2 + 30 + i * 40
+        out.append(f'L 7 {w2} {y} {w2+20} {y} {{}}'); pin(nm, w2 + 20, y, w2 - 5, y - 6, 1)
+    for i, nm in enumerate(top):
+        x = -w2 + 30 + i * 40
+        out.append(f'L 7 {x} -{h2+20} {x} -{h2} {{}}'); pin(nm, x, -h2 - 20, x - 6, -h2 + 5, 0)
+    for i, nm in enumerate(bottom):
+        x = -w2 + 30 + i * 40
+        out.append(f'L 7 {x} {h2} {x} {h2+20} {{}}'); pin(nm, x, h2 + 20, x - 6, h2 - 20, 0)
+    out.append('T {@symname} -40 -6 0 0 0.3 0.3 {}')
+    out.append(f'T {{@name}} {w2-30} -{h2+20} 0 0 0.2 0.2 {{}}')
+    with open(path, 'w') as fh:
+        fh.write('\n'.join(out) + '\n')
+
+
+def ports(sch, x0, y0, names, kind='iopin'):
+    """Port symbols for a subcircuit schematic, stacked at (x0, y0)."""
+    for i, nm in enumerate(names):
+        sch.items.append(Inst(f'devices/{kind}.sym', x0, y0 + i * 30, 0, 0,
+                              {'name': sch._name('p'), 'lab': nm}))
+
+
 TT_MODELS = """
 ** opencircuitdesign pdks install
 .lib $::SKYWATER_MODELS/sky130.lib.spice tt
