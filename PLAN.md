@@ -207,6 +207,7 @@ See the tables above.
 - **ngspice in the IIC-OSIC image:** the OSDI load errors from the global spiceinit are harmless for sky130. Use `tools/osic` to run the image headless from the project.
 
 ## Open questions and risks
+- **TT analog-pin 4 mA limit:** is it DC, RMS or peak, and what does it protect (the mux switches or the routing)? This decides whether a 3.3 V TX driver (+5 dB) is allowed. Asked the TT chip architect; the 2x2_3v3 template keeps the option open meanwhile.
 - LNA noise figure through the pad/ESD path; the 60 dB gain budget across corners and supply.
 - Self-interference from the chip's own digital logic into a 60 dB+ LNA.
 - Venue interferers (the 392 MHz-type signals); fade margin indoors (the fading and orientation test is still to do).
