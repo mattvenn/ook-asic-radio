@@ -95,15 +95,43 @@ Results:
   - dp_2m4: NF 7.3 → **4.7 dB**.
   - Gain across 330/434/560 MHz becomes 15.4 / 14.4 / 10.5 dB (it tilts down).
 - **Tolerance** (dp_1m2, 18 nH): pad C ×0.7 / ×1.3 → NF 6.2 / 8.0 dB (none: 9.6 / 10.5 dB). Bond wire 0.5–2 nH: no effect.
-- Since the matching is off-chip, it can be **chosen and tuned on the bench against the real pad**. The chip doesn't depend on it, and it doesn't need to be in the chip sims beyond this experiment.
+- **But the project is wires only on the pins (no external parts), so off-chip matching is out.** The chain is designed without it (NF ≈ 11 dB).
+- Parked idea: get the series inductance from the wire itself (arms longer than resonant look inductive), or use a folded dipole (4× impedance, 2× EMF). Compare by noise referred to incident field. Needs a dipole impedance model (scipy isn't in the venv).
+
+## Analog step 3: gain chain (xschem/gen/chain.py, first pass done)
+Blocks (instance params via symbol templates; `write_symbol(params=...)`):
+- `amp_dp`: diff pair with the tail gate as pin `nb`.
+- `amp_dpc`: diff pair with a split tail and **Cs between the sources**. This capacitive degeneration gives full gain above ~gm/(2Cs) and ~0 differential gain at DC.
+- `lna_chain`, 5 stages:
+  - on-chip input coupling: `cin` 2 p + `rb` 20 k to `vcm`;
+  - stage 1: `amp_dp` W 80, rl 1 k, 1.2 mA;
+  - stages 2–5: `amp_dpc` W 20, rl 4 k, 0.36 mA, Cs 0.6 p, **DC coupled**;
+  - one reference diode; tail current = mt × ibias (60 µA).
+- `tb_chain`: the tb_lna front end → chain → 50 fF loads.
+  - Analyse: `sim/chain/analyse.py [variants]`. Variants: `sim/chain/variant.sh`. Level sweep: `sim/chain/levels.sh`.
+- Interstage AC coupling was tried first and dropped. A small bias R loads the previous stage in band (0.5 pF ≈ 730 Ω at 434 MHz), so raising the high-pass corner that way cost gain and NF.
+
+Results (tt, 1 % mismatch):
+- **Gain EMF→out:** 66.6 / 66.6 / 65.0 dB at 330 / 434 / 560 MHz; −3 dB band 237–625 MHz.
+- **Out-of-band:** 100 MHz (FM) −23 dB re band; 10 MHz −96 dB re band. 1 GHz is only −10 dB: **GSM-900 is a risk** (no upper-side shaping yet).
+- **Supply:** 2.56 mA total.
+- **NF:** 10.8 / 11.0 / 11.6 dB (330 / 434 / 560 MHz).
+- **Noise at the output:** 197 mV rms differential (447 MHz noise bandwidth). Limiting is ~1.35 V amplitude (~0.95 V rms), so the chain doesn't limit on its own noise.
+- **Offsets:** 3.8 mV at o1, 0.2 mV at the output (degeneration kills DC gain).
+- **Limiting** (434 MHz tone, available power): out limits from ~−55 dBm, o4 ~−45, o3 ~−35, o2 ~−25, o1 ~−10 dBm. The taps are ~13 dB apart; successive detection covers roughly −95 to −10 dBm.
+- **CM→out diff and VDD→out diff are ~0 dB at 434 MHz** with 1 % mismatch (CMRR ≈ 70 dB, but the gain is 66 dB). Supply ripple at the 430/440 MHz clock harmonics reaches the output ~1:1, so supply isolation and decoupling matter (PLAN isolation row).
+- **vs the e2e model's assumptions** (NF 10 dB, 400 MHz; `bench/scheme_compare.py`): ~1 dB worse NF and ~0.5 dB wider bandwidth → roughly −92.5 instead of −94 dBm. Not re-run.
 
 Open next:
-- the rest of the chain to ~60 dB (small later stages; stage 2 adds ~0.2 dB NF), with interstage AC coupling or offset cancellation every 2–3 stages;
-- a current budget to choose 1.2 vs 2.4 mA;
-- corners.
+- log detector taps (rectifier per stage output + summing) → LPF → comparator;
+- upper-side band shaping (GSM-900);
+- bias generation (ibias reference, vcm replica) instead of ideal sources;
+- corners/temperature;
+- a current budget (stage 1 at 2.4 mA buys ~2.5 dB NF);
+- re-run e2e with NF 11 dB / 450 MHz.
 
 ## Later in the chain (in order)
-1. Rest of the LNA/limiter chain to ~60 dB.
+1. ~~Rest of the LNA/limiter chain to ~60 dB.~~ First pass done (above).
 2. Log (successive-detection) detector.
 3. LPF + switched-cap averaging reference (τ ≈ 0.5 ms).
 4. Comparator.

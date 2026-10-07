@@ -20,6 +20,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
 from xsch import Sch
+from frontend import antenna_pad
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
 
@@ -85,20 +86,8 @@ def tb(kind):
     s.text(-1400, -710, 'dipole (36.5 ohm per side, common path through Vcmi) -> pad_model -> Cc -> x1 -> x2\n'
            'analyse with: python sim/lna/analyse.py', 0.3)
 
-    vd = s.place('devices/vsource.sym', -1300, -420, name='VDPWR', value='"dc 1.8 ac 0"')
-    s.connect(vd, p='VDPWR', m='GND')
-    vc = s.place('devices/vsource.sym', -1300, 300, name='Vcmi',
-                 value='"dc 0 ac 0 sin(0 \'vcmi\' \'fcmi\')"')
-    s.connect(vc, p='acm', m='GND')
-
-    for side, y, phase in (('p', -300, 0), ('n', 40, 180)):
-        v = s.place('devices/vsource.sym', -1300, y, name=f'Vant_{side}',
-                    value=f'"dc 0 ac 0.5 {phase} sin(0 \'vemf/2\' \'f0\' 0 0 {phase})"')
-        s.connect(v, p=f'emf_{side}', m='acm')
-        r = s.place('devices/res.sym', -1150, y - 60, rot=1, name=f'Rant_{side}', value='36.5', m='1')
-        s.connect(r, P=f'ant_{side}', M=f'emf_{side}')
-        pad = s.place('pad_model.sym', -850, y - 40, name=f'xpad_{side}')
-        s.connect(pad, pin=f'ant_{side}', mod=f'pad_{side}', VGND='GND')
+    antenna_pad(s)
+    for side, y in (('p', -300), ('n', 40)):
         c = s.place('devices/capa.sym', -600, y - 60, rot=1, name=f'Cc_{side}', value="'cc'", m='1')
         s.connect(c, p=f'in_{side}', m=f'pad_{side}')
         if kind != 'pinv':

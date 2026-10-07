@@ -170,14 +170,19 @@ def mos(sch, kind, x, y, W, L, nf=1, mult=1, name=None, rot=0, flip=0):
     return sch.place(sym, x, y, rot=rot, flip=flip, name=name or sch._name('M'), **props)
 
 
-def write_symbol(path, left=(), right=(), top=(), bottom=(), width=160):
+def write_symbol(path, left=(), right=(), top=(), bottom=(), width=160, params=None):
     """Box symbol for a subcircuit: pins listed per side, 40 units apart.
-    Pin order in the netlist = order given (left, right, top, bottom)."""
+    Pin order in the netlist = order given (left, right, top, bottom).
+    params = {name: default}: passed per instance; xschem puts the defaults on
+    the .subckt line, so the schematic can use them as 'name'."""
     nl, nr = len(left), len(right)
     h = max(nl, nr, 1) * 40 + 20
     w2, h2 = width // 2, h // 2
+    params = params or {}
+    fmt_p = ''.join(f' {k}=@{k}' for k in params)
+    tmpl_p = ''.join(f' {k}={v}' for k, v in params.items())
     out = ['v {xschem version=3.4.5 file_version=1.2', '}', 'G {}',
-           'K {type=subcircuit', 'format="@name @pinlist @symname"', 'template="name=x1"', '}',
+           'K {type=subcircuit', f'format="@name @pinlist @symname{fmt_p}"', f'template="name=x1{tmpl_p}"', '}',
            'V {}', 'S {}', 'E {}',
            f'L 4 -{w2} -{h2} {w2} -{h2} {{}}', f'L 4 -{w2} {h2} {w2} {h2} {{}}',
            f'L 4 -{w2} -{h2} -{w2} {h2} {{}}', f'L 4 {w2} -{h2} {w2} {h2} {{}}']

@@ -1,0 +1,40 @@
+v {xschem version=3.4.5 file_version=1.2
+}
+G {}
+K {type=subcircuit
+format="@name @pinlist @symname w1=@w1 rl1=@rl1 mt1=@mt1 w2=@w2 rl2=@rl2 mt2=@mt2 cs=@cs cin=@cin rb=@rb"
+template="name=x1 w1=80 rl1=1k mt1=20 w2=20 rl2=4k mt2=6 cs=0.6p cin=2p rb=20k"
+}
+V {}
+S {}
+E {}
+L 4 -80 -90 80 -90 {}
+L 4 -80 90 80 90 {}
+L 4 -80 -90 -80 90 {}
+L 4 80 -90 80 90 {}
+L 7 -100 -60 -80 -60 {}
+B 5 -102.5 -62.5 -97.5 -57.5 {name=inp dir=inout sim_pinnumber=1}
+T {inp} -75 -66 0 0 0.2 0.2 {}
+L 7 -100 -20 -80 -20 {}
+B 5 -102.5 -22.5 -97.5 -17.5 {name=inn dir=inout sim_pinnumber=2}
+T {inn} -75 -26 0 0 0.2 0.2 {}
+L 7 -100 20 -80 20 {}
+B 5 -102.5 17.5 -97.5 22.5 {name=ibias dir=inout sim_pinnumber=3}
+T {ibias} -75 14 0 0 0.2 0.2 {}
+L 7 -100 60 -80 60 {}
+B 5 -102.5 57.5 -97.5 62.5 {name=vcm dir=inout sim_pinnumber=4}
+T {vcm} -75 54 0 0 0.2 0.2 {}
+L 7 80 -60 100 -60 {}
+B 5 97.5 -62.5 102.5 -57.5 {name=outp dir=inout sim_pinnumber=5}
+T {outp} 75 -66 0 1 0.2 0.2 {}
+L 7 80 -20 100 -20 {}
+B 5 97.5 -22.5 102.5 -17.5 {name=outn dir=inout sim_pinnumber=6}
+T {outn} 75 -26 0 1 0.2 0.2 {}
+L 7 -50 -110 -50 -90 {}
+B 5 -52.5 -112.5 -47.5 -107.5 {name=VDD dir=inout sim_pinnumber=7}
+T {VDD} -56 -85 0 0 0.2 0.2 {}
+L 7 -50 90 -50 110 {}
+B 5 -52.5 107.5 -47.5 112.5 {name=VSS dir=inout sim_pinnumber=8}
+T {VSS} -56 70 0 0 0.2 0.2 {}
+T {@symname} -40 -6 0 0 0.3 0.3 {}
+T {@name} 50 -110 0 0 0.2 0.2 {}
