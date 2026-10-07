@@ -56,6 +56,7 @@ def parse_args():
     p.add_argument('--slope', type=float, default=16.0, help='detector slope, mV/dB')
     p.add_argument('--offset-mv', type=float, default=2.0, help='comparator offset, mV')
     p.add_argument('--trim-mv', type=float, default=0.08, help='trim DAC step, mV')
+    p.add_argument('--bv', type=float, default=15e3, help='post-detection RC LPF cutoff, Hz')
     p.add_argument('--comp-noise-mv', type=float, default=0.0,
                    help='comparator input noise per decision, mV rms')
     p.add_argument('--levels', type=float, nargs='+', default=list(LEVELS))
@@ -69,13 +70,14 @@ def main():
     a = parse_args()
     ch.rxm.NF_DB = a.nf
     ch.B_RF = a.brf
+    ch.rxm.B_V = a.bv
     levels, trials, cases = a.levels, a.trials, a.cases
     crng = np.random.default_rng(5)
 
     def afe():
         return radio.AfeModel(offset_db=a.offset_mv / a.slope, trim_lsb_db=a.trim_mv / a.slope,
                               noise_db=a.comp_noise_mv / a.slope, rng=crng)
-    desc = (f'NF {a.nf:g} dB, {a.brf / 1e6:.0f} MHz, {a.slope:g} mV/dB, offset {a.offset_mv:g} mV, '
+    desc = (f'NF {a.nf:g} dB, {a.brf / 1e6:.0f} MHz, LPF {a.bv / 1e3:g} kHz, {a.slope:g} mV/dB, offset {a.offset_mv:g} mV, '
             f'trim {a.trim_mv:g} mV/LSB, comp noise {a.comp_noise_mv:g} mV')
     print(desc)
     rng = np.random.default_rng(21)

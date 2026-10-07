@@ -156,10 +156,20 @@ Open next:
   - bias generation; corners.
 - Simulation learnings (speed, traps, noise recipes) are collected in `docs/sim_learnings.md`. Tracked `.spiceinit` at the root; `tools/osic` copies it into build/.
 
+## Analog step 5: post-detection LPF (xschem/gen/lpf.py, done)
+- **Options considered:** passive RC, MOS pseudo-resistor, switched-cap R, active Gm-C, integrate-and-dump. **Chosen: passive RC.** No clock, noise √(kT/C) ≈ 20 µV, and the e2e model doesn't care about the exact cutoff.
+- **e2e vs cutoff** (`--bv`; NF 11, 450 MHz, 12 mV/dB, 0.4 mV comparator noise, 12 trials). At −94 dBm, noise case 9/12, 12/12, 10/12 at 10 / 15 / 20 kHz; fading similar. So ±30 % RC spread is fine.
+- **`lpf_rc`:** `res_xhigh_po_0p35` L = 136 µm (7.37 kΩ/µm → ~1.0 MΩ) + 6 × 30×30 µm `cap_mim_m3_1` (1.82 pF each → 10.9 pF). The MIM can sit over other circuitry.
+  - `tb_lpf` (8 kΩ source like `det`): f−3dB = 14.4 kHz, rise 24 µs.
+  - The cap is kept large to soak up comparator kickback (the node carries ~1 mV of signal near sensitivity).
+- **Keep the `ua[4]` debug pin off the LPF output** (nA of pad/ESD leakage × 1 MΩ = mV of offset). Tap `det` (8 kΩ), or buffer.
+- **The 0.5 ms averaging reference** for the comparator (−) input should be fed from the LPF output. It needs a switched-cap R (poly would be ~50 MΩ); that belongs with the comparator block.
+- Not checked: passive process spread (MOS corners don't move the passives; use the PDK's resistor/cap corner sections).
+
 ## Later in the chain (in order)
 1. ~~Rest of the LNA/limiter chain to ~60 dB.~~ First pass done (above).
 2. ~~Log (successive-detection) detector.~~ First pass done (above).
-3. LPF + switched-cap averaging reference (τ ≈ 0.5 ms).
+3. ~~LPF~~ done (above); switched-cap averaging reference (τ ≈ 0.5 ms) goes with the comparator.
 4. Comparator (≤ 0.5 mV rms input noise per decision; offset few mV, trimmed).
 5. R2R trim DAC + attenuator (reuse `mattvenn/tt08-analog-r2r-dac-3v3`).
 6. TX: ring resized to 433 MHz + 3.3 V antiphase drivers.

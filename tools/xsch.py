@@ -29,6 +29,7 @@ LIB_PINS = {
     'sky130_fd_pr/nfet_01v8.sym': {'D': (20, -30), 'G': (-20, 0), 'S': (20, 30), 'B': (20, 0)},
     'sky130_fd_pr/pfet_01v8.sym': {'D': (20, 30), 'G': (-20, 0), 'S': (20, -30), 'B': (20, 0)},
     'sky130_fd_pr/res_high_po_0p35.sym': {'P': (0, -30), 'M': (0, 30), 'B': (-20, 0)},
+    'sky130_fd_pr/res_xhigh_po_0p35.sym': {'P': (0, -30), 'M': (0, 30), 'B': (-20, 0)},
     'sky130_fd_pr/cap_mim_m3_1.sym': {'c0': (0, -30), 'c1': (0, 30)},
     # pinless
     'sky130_fd_pr/corner.sym': {},
