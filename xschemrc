@@ -1,0 +1,13 @@
+# Launch xschem from the repo root so this file is read (xschem only looks
+# for xschemrc in its current directory). It loads the sky130A setup, puts
+# this repo's xschem/ on the symbol path, and sends netlists to build/.
+set radio_root [file dirname [file normalize [info script]]]
+if {[info exists env(PDK_ROOT)]} {
+    set radio_pdk_root $env(PDK_ROOT)
+} else {
+    set radio_pdk_root /foss/pdks
+}
+set env(PDK) sky130A
+source $radio_pdk_root/sky130A/libs.tech/xschem/xschemrc
+append XSCHEM_LIBRARY_PATH :[file join $radio_root xschem]
+set netlist_dir [file join $radio_root build]

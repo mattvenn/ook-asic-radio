@@ -25,3 +25,4 @@ test/__pycache__/
 test/gate_level_netlist.v
 openlane/*/runs
 mag/*.def
+build/
