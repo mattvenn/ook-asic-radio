@@ -80,9 +80,26 @@ Follow-up: PMOS pair vs wider NMOS pair at higher current.
   - NF is lowest near 270 MHz in every variant; it's already rising at 434 MHz.
 - **Gain is capped by the 0.6 V load drop:** stage gain ≈ (gm/Id)·0.6 V ≈ 14 dB whatever the current. More gain would need active loads with CM feedback.
 
-**Decision (tentative): NMOS diff pair, ~1.2–2.4 mA, W 80–160 µm.** Open next:
-- input match / passive voltage gain from the pad + bond-wire L (should also move the NF minimum up to 434 MHz);
-- interstage AC coupling;
+**Decision (tentative): NMOS diff pair, ~1.2–2.4 mA, W 80–160 µm.**
+
+### Input matching (sim/lna/match.sh)
+The pad model (`xschem/pad_model.sch`, tnt's TT analog-pin path) is **rough and ready**. Treat absolute NF and the exact L value as indicative only.
+- Per side the path is: 2 pF at the pin → 1 nH bond wire → 3 pF → 50 Ω → TT mux switch (plus an off switch) → 250 fF.
+- None of it can be changed from the chip side.
+
+Results:
+- **On-chip shunt spiral (Q 5): always worse.** Dropped.
+- **Off-chip differential shunt L across the pins (Q 30):** about 1 dB better at best (~40 nH).
+- **Off-chip series L in each antenna arm (Q 30): the winner.** The optimum is broad (~16–20 nH; within 0.5 dB from 12 to 26 nH):
+  - dp_1m2: NF 10.0 → **6.9 dB**, EMF→o1 gain at 434 MHz 10.7 → 14.4 dB;
+  - dp_2m4: NF 7.3 → **4.7 dB**.
+  - Gain across 330/434/560 MHz becomes 15.4 / 14.4 / 10.5 dB (it tilts down).
+- **Tolerance** (dp_1m2, 18 nH): pad C ×0.7 / ×1.3 → NF 6.2 / 8.0 dB (none: 9.6 / 10.5 dB). Bond wire 0.5–2 nH: no effect.
+- Since the matching is off-chip, it can be **chosen and tuned on the bench against the real pad**. The chip doesn't depend on it, and it doesn't need to be in the chip sims beyond this experiment.
+
+Open next:
+- the rest of the chain to ~60 dB (small later stages; stage 2 adds ~0.2 dB NF), with interstage AC coupling or offset cancellation every 2–3 stages;
+- a current budget to choose 1.2 vs 2.4 mA;
 - corners.
 
 ## Later in the chain (in order)
