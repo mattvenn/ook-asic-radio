@@ -122,20 +122,20 @@ Area, cost and legality are not constraints. Workflow: measure, then model, then
 - **Data mode (secondary):** Gold sync, length, Manchester payload, CRC-8, sent 3×.
 
 ## Repo layout
+This follows the TT analog template flow of `mattvenn/tt08-analog-r2r-dac-3v3`, updated to ttsky26d (see README.md):
 ```
 asic-radio/
-  PLAN.md
-  bench/          phase-0 tools: board.py, fw/ (ringkey, autorun), scope.py, rf.py,
-                  ota.py, drift.py, keying.py, phasenoise.py, record.py, rx_model.py, data/
-  stim/           recorded RF stimuli for ngspice (packet_{50cm,2m,4m}.pwl)
-  model/          golden integer model of the RX digital back end (Python)
-  src/            Verilog: tt_um_radio top, tx/ (gold, burst, manchester), rx/ (trim servo, chip slicer, correlator, burst pairing, manchester, crc), common/ (uart for RP2350)
-  test/           cocotb tests (golden-model vectors, recorded packets)
-  fpga/           FPGA build of the digital (TT FPGA board)
-  xschem/         analog schematics + testbenches (ring osc/buffer, LNA, log detector, comparator, DAC)
-  sim/            ngspice scripts and results
-  mag/ gds/ lef/ macro/   layout and hardened digital (phase 5)
-  info.yaml docs/         TT analog template files (phase 5)
+  info.yaml docs/info.md src/project.v   TT project files (src/project.v = LVS stub)
+  .github/workflows/                     gds + docs (@ttsky26d), lvs (magic/netgen)
+  mag/                                   Magic layout; make start / drc / lvs (2x2 + VAPWR template)
+  gds/ lef/                              layout outputs
+  xschem/ sim/                           analog schematics, testbenches, ngspice runs
+  verilog/rtl verilog/gl verilog/test    digital macro radio_digital; cocotb tests + vectors/
+  openlane/radio_digital/                hardening config for the digital macro
+  model/                                 bit-exact Python model + RX studies; exports verilog/test/vectors
+  bench/ stim/                           phase-0 bench tools, data, recorded RF stimuli
+  tools/osic                             run IIC-OSIC-TOOLS headless from the repo
+  PLAN.md docs/slicer.md
 ```
 
 ## Phases
