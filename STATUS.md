@@ -45,6 +45,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
    - ~~VAPWR decoupling + bond-wire droop~~ (done: ~50 pF on VAPWR, below);
    - ~~hook up the R2R DAC~~ (done: `r2r` schematic matching the reused layout, driven from `trim_out`, below);
    - overload recovery.
+   - ~~analog top schematic~~ (done 2026-10-08: `radio_analog`, `tt_um_mattvenn_radio`, `tb_radio_analog`, below).
 5. **RTL:** the full suite now passes (14/14, 2026-10-08). The digital size stays as is unless space is needed (then clock gating).
 6. **Layout + integration in a 3x2** (PLAN phase 4). Switch the template from 2x2 to 3x2.
 
@@ -376,6 +377,25 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
   - What's left is the R·C band shift (206–519 MHz at `hh`, 299–718 at `ll`).
   - Detector with tracking bias: idle 1.520 / 1.521 / 1.524 V (tt / hh / ll), so the comparator CM doesn't move. Slope at the noise floor 13.4 / 14.1 / 10.3 mV/dB: `ll` is ~−93 dBm, like ff 50 °C.
 - Not yet: integrating bias_gen into the RX testbenches/top (it feeds `iref`, `ibias_det`, `Ibc` and `vcm`, which are ideal sources today); stability margin check of the OTA loop (the start-up and en transients settle cleanly; no AC loop-gain run yet).
+
+## Analog top + TT top (xschem/gen/top.py, 2026-10-08)
+- **`radio_analog`:** every analog block wired as on the chip, real bias.
+  - `bias_gen` (en = rx_en) feeds vcm, the chain (60 µA), the detector (2 µA) and the comparator (1 µA).
+  - RX: `lna_chain` → `log_det` → det → `lpf_rc` → lpf; `avg_sc` (lpf, sc_phi1/2) → avg; `comp_ct` (inp avg, inn lpf, trim = `r2r`(trim[7:0]) + 1 pF MIM) → comp_out.
+  - det → `dbg_tg` (dbg_en) → dbg.
+  - TX: `tx_top` with key = en_p = tx_en, en_n = tx_en_n.
+- **`radio_digital.sym`:** black box for the hardened macro (`spice_sym_def`). Its netlist comes from the OpenLane run.
+- **`tt_um_mattvenn_radio.sch`:** the two together on the TT pins: ua[0]/ua[1] TX, ua[2]/ua[3] RX, ua[4] debug.
+- The chain's mismatch knob `mm` is now a subcircuit parameter (default 0; the testbenches pass their `.param mm`), so top-level netlists don't depend on a testbench global.
+- **`tb_radio_analog`** (pad models on all five pins, both dipoles, a 1 MΩ probe on ua[4], digital interface from sources; ~3 min):
+
+| case | result |
+|---|---|
+| RX on, no signal | VDPWR 2.97 mA, VAPWR 0; vcm 1.201 V, det = lpf 1.521 V, trim 0.949 V (code 135), TX pins 0 V |
+| all off (rx_en = tx_en = 0) | 0.9 µA (the comparator's unswitched VDD/2 divider) |
+| TX keyed, RX off | 484.8 MHz, +3.67 dBm, 3.3 / 3.9 ns on / off, VAPWR 11.25 mA, VDPWR 0.23 mA, the same as `tb_tx` |
+
+- Not in the loop yet: the digital (a mixed-signal run with the RTL, as tt08's `sim/mixed.cir`, would close it).
 
 ## VAPWR feed and decap (sim/tx/vapwr.sh + vapwr.py, 2026-10-08)
 - **Model:** tb_tx with an ideal 3.3 V source → 0.5 Ω → L (bond wire + package + board) → on-chip VAPWR, decap Cdec to ground. The ground return is still ideal. tt; ~1 min per case.

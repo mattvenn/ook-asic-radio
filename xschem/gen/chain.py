@@ -31,10 +31,10 @@ from frontend import antenna_pad
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
 NSTAGES = 6
 
-AMP_PARAMS = {'w': 20, 'l': 0.15, 'rl': '4k', 'wt': 6, 'mt': 5}
+AMP_PARAMS = {'w': 20, 'l': 0.15, 'rl': '4k', 'wt': 6, 'mt': 5, 'mm': 0}   # mm: test mismatch, 0 in silicon
 AMPC_PARAMS = dict(AMP_PARAMS, mt=6, cs='0.6p')
 CHAIN_PARAMS = {'w1': 80, 'rl1': '1k', 'mt1': 20, 'w2': 20, 'rl2': '4k', 'mt2': 6,
-                'cs': '0.6p', 'cin': '2p', 'rb': '20k'}
+                'cs': '0.6p', 'cin': '2p', 'rb': '20k', 'mm': 0}
 
 
 def amp_dp():
@@ -97,11 +97,11 @@ def lna_chain(n=NSTAGES):
                 rb = poly_r(s, x - 150, y + 60, 'rb', 'high', '0p35', name=f'Rb_{side}')
                 s.connect(rb, P='vcm', M=f'g1{side}', B='VSS')
             a = s.place('amp_dp.sym', x, -300, name='xa1',
-                        w="'w1'", l='0.15', rl="'rl1'", wt=AMP_PARAMS['wt'], mt="'mt1'")
+                        w="'w1'", l='0.15', rl="'rl1'", wt=AMP_PARAMS['wt'], mt="'mt1'", mm="'mm'")
             gp, gn = 'g1p', 'g1n'
         else:
             a = s.place('amp_dpc.sym', x, -300, name=f'xa{i}', w="'w2'", l='0.15', rl="'rl2'",
-                        wt=AMP_PARAMS['wt'], mt="'mt2'", cs="'cs'")
+                        wt=AMP_PARAMS['wt'], mt="'mt2'", cs="'cs'", mm="'mm'")
             gp, gn = prev
         s.connect(a, inp=gp, inn=gn, nb='ibias', outp=outp, outn=outn, VDD='VDD', VSS='VSS')
         prev = (outp, outn)
@@ -157,7 +157,7 @@ def tb_chain():
     s.text(-1400, -710, 'analyse with: python sim/chain/analyse.py', 0.3)
     antenna_pad(s)
     x1 = s.place('lna_chain.sym', -300, -150, name='x1', w1="'w1'", rl1="'rl1'", mt1="'mt1'",
-                 w2="'w2'", rl2="'rl2'", mt2="'mt2'", cs="'cs'", cin="'cin'", rb="'rb'")
+                 w2="'w2'", rl2="'rl2'", mt2="'mt2'", cs="'cs'", cin="'cin'", rb="'rb'", mm="'mm'")
     s.connect(x1, inp='pad_p', inn='pad_n', ibias='ibias', vcm='vcm', outp='out_p', outn='out_n',
               VDD='VDPWR', VSS='GND', **{f'o{i}{sd}': f'o{i}{sd}' for i in range(1, NSTAGES) for sd in 'pn'})
     ib = s.place('devices/isource.sym', -500, 250, name='Iref', value="'iref'")

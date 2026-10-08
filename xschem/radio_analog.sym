@@ -1,0 +1,64 @@
+v {xschem version=3.4.5 file_version=1.2
+}
+G {}
+K {type=subcircuit
+format="@name @pinlist @symname"
+template="name=x1"
+}
+V {}
+S {}
+E {}
+L 4 -120 -150 120 -150 {}
+L 4 -120 150 120 150 {}
+L 4 -120 -150 -120 150 {}
+L 4 120 -150 120 150 {}
+L 7 -140 -120 -120 -120 {}
+B 5 -142.5 -122.5 -137.5 -117.5 {name=rx_en dir=inout sim_pinnumber=1}
+T {rx_en} -115 -126 0 0 0.2 0.2 {}
+L 7 -140 -80 -120 -80 {}
+B 5 -142.5 -82.5 -137.5 -77.5 {name=tx_en dir=inout sim_pinnumber=2}
+T {tx_en} -115 -86 0 0 0.2 0.2 {}
+L 7 -140 -40 -120 -40 {}
+B 5 -142.5 -42.5 -137.5 -37.5 {name=tx_en_n dir=inout sim_pinnumber=3}
+T {tx_en_n} -115 -46 0 0 0.2 0.2 {}
+L 7 -140 0 -120 0 {}
+B 5 -142.5 -2.5 -137.5 2.5 {name=dbg_en dir=inout sim_pinnumber=4}
+T {dbg_en} -115 -6 0 0 0.2 0.2 {}
+L 7 -140 40 -120 40 {}
+B 5 -142.5 37.5 -137.5 42.5 {name=sc_phi1 dir=inout sim_pinnumber=5}
+T {sc_phi1} -115 34 0 0 0.2 0.2 {}
+L 7 -140 80 -120 80 {}
+B 5 -142.5 77.5 -137.5 82.5 {name=sc_phi2 dir=inout sim_pinnumber=6}
+T {sc_phi2} -115 74 0 0 0.2 0.2 {}
+L 7 -140 120 -120 120 {}
+B 5 -142.5 117.5 -137.5 122.5 {name=trim[7:0] dir=inout sim_pinnumber=7}
+T {trim[7:0]} -115 114 0 0 0.2 0.2 {}
+L 7 120 -120 140 -120 {}
+B 5 137.5 -122.5 142.5 -117.5 {name=comp_out dir=inout sim_pinnumber=8}
+T {comp_out} 115 -126 0 1 0.2 0.2 {}
+L 7 120 -80 140 -80 {}
+B 5 137.5 -82.5 142.5 -77.5 {name=tx_p dir=inout sim_pinnumber=9}
+T {tx_p} 115 -86 0 1 0.2 0.2 {}
+L 7 120 -40 140 -40 {}
+B 5 137.5 -42.5 142.5 -37.5 {name=tx_n dir=inout sim_pinnumber=10}
+T {tx_n} 115 -46 0 1 0.2 0.2 {}
+L 7 120 0 140 0 {}
+B 5 137.5 -2.5 142.5 2.5 {name=rx_p dir=inout sim_pinnumber=11}
+T {rx_p} 115 -6 0 1 0.2 0.2 {}
+L 7 120 40 140 40 {}
+B 5 137.5 37.5 142.5 42.5 {name=rx_n dir=inout sim_pinnumber=12}
+T {rx_n} 115 34 0 1 0.2 0.2 {}
+L 7 120 80 140 80 {}
+B 5 137.5 77.5 142.5 82.5 {name=dbg dir=inout sim_pinnumber=13}
+T {dbg} 115 74 0 1 0.2 0.2 {}
+L 7 -90 -170 -90 -150 {}
+B 5 -92.5 -172.5 -87.5 -167.5 {name=VDPWR dir=inout sim_pinnumber=14}
+T {VDPWR} -96 -145 0 0 0.2 0.2 {}
+L 7 -50 -170 -50 -150 {}
+B 5 -52.5 -172.5 -47.5 -167.5 {name=VAPWR dir=inout sim_pinnumber=15}
+T {VAPWR} -56 -145 0 0 0.2 0.2 {}
+L 7 -90 150 -90 170 {}
+B 5 -92.5 167.5 -87.5 172.5 {name=VGND dir=inout sim_pinnumber=16}
+T {VGND} -96 130 0 0 0.2 0.2 {}
+T {@symname} -40 -6 0 0 0.3 0.3 {}
+T {@name} 90 -170 0 0 0.2 0.2 {}

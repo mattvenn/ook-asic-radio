@@ -109,7 +109,7 @@ def tb_logdet():
     antenna_pad(s)
     taps = {f'o{i}{sd}': f'o{i}{sd}' for i in range(1, NTAPS) for sd in 'pn'}
     x1 = s.place('lna_chain.sym', -300, -150, name='x1', w1="'w1'", rl1="'rl1'", mt1="'mt1'",
-                 w2="'w2'", rl2="'rl2'", mt2="'mt2'", cs="'cs'", cin="'cin'", rb="'rb'")
+                 w2="'w2'", rl2="'rl2'", mt2="'mt2'", cs="'cs'", cin="'cin'", rb="'rb'", mm="'mm'")
     s.connect(x1, inp='pad_p', inn='pad_n', ibias='ibias', vcm='vcm', outp='out_p', outn='out_n',
               VDD='VDPWR', VSS='GND', **taps)
     ib = s.place('devices/isource.sym', -500, 250, name='Iref', value="'iref'")

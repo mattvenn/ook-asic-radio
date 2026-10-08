@@ -1,0 +1,68 @@
+v {xschem version=3.4.5 file_version=1.2
+}
+G {}
+K {type=subcircuit
+spice_sym_def="** radio_digital: hardened macro (openlane/radio_digital); gate-level netlist from the OpenLane run"
+format="@name @pinlist @symname"
+template="name=x1"
+}
+V {}
+S {}
+E {}
+L 4 -120 -210 120 -210 {}
+L 4 -120 210 120 210 {}
+L 4 -120 -210 -120 210 {}
+L 4 120 -210 120 210 {}
+L 7 -140 -180 -120 -180 {}
+B 5 -142.5 -182.5 -137.5 -177.5 {name=clk dir=inout sim_pinnumber=1}
+T {clk} -115 -186 0 0 0.2 0.2 {}
+L 7 -140 -140 -120 -140 {}
+B 5 -142.5 -142.5 -137.5 -137.5 {name=rst_n dir=inout sim_pinnumber=2}
+T {rst_n} -115 -146 0 0 0.2 0.2 {}
+L 7 -140 -100 -120 -100 {}
+B 5 -142.5 -102.5 -137.5 -97.5 {name=ui_in[7:0] dir=inout sim_pinnumber=3}
+T {ui_in[7:0]} -115 -106 0 0 0.2 0.2 {}
+L 7 -140 -60 -120 -60 {}
+B 5 -142.5 -62.5 -137.5 -57.5 {name=uio_in[7:0] dir=inout sim_pinnumber=4}
+T {uio_in[7:0]} -115 -66 0 0 0.2 0.2 {}
+L 7 -140 -20 -120 -20 {}
+B 5 -142.5 -22.5 -137.5 -17.5 {name=comp_in dir=inout sim_pinnumber=5}
+T {comp_in} -115 -26 0 0 0.2 0.2 {}
+L 7 120 -180 140 -180 {}
+B 5 137.5 -182.5 142.5 -177.5 {name=uo_out[7:0] dir=inout sim_pinnumber=6}
+T {uo_out[7:0]} 115 -186 0 1 0.2 0.2 {}
+L 7 120 -140 140 -140 {}
+B 5 137.5 -142.5 142.5 -137.5 {name=uio_out[7:0] dir=inout sim_pinnumber=7}
+T {uio_out[7:0]} 115 -146 0 1 0.2 0.2 {}
+L 7 120 -100 140 -100 {}
+B 5 137.5 -102.5 142.5 -97.5 {name=uio_oe[7:0] dir=inout sim_pinnumber=8}
+T {uio_oe[7:0]} 115 -106 0 1 0.2 0.2 {}
+L 7 120 -60 140 -60 {}
+B 5 137.5 -62.5 142.5 -57.5 {name=trim_out[7:0] dir=inout sim_pinnumber=9}
+T {trim_out[7:0]} 115 -66 0 1 0.2 0.2 {}
+L 7 120 -20 140 -20 {}
+B 5 137.5 -22.5 142.5 -17.5 {name=tx_en dir=inout sim_pinnumber=10}
+T {tx_en} 115 -26 0 1 0.2 0.2 {}
+L 7 120 20 140 20 {}
+B 5 137.5 17.5 142.5 22.5 {name=tx_en_n dir=inout sim_pinnumber=11}
+T {tx_en_n} 115 14 0 1 0.2 0.2 {}
+L 7 120 60 140 60 {}
+B 5 137.5 57.5 142.5 62.5 {name=rx_en dir=inout sim_pinnumber=12}
+T {rx_en} 115 54 0 1 0.2 0.2 {}
+L 7 120 100 140 100 {}
+B 5 137.5 97.5 142.5 102.5 {name=dbg_en dir=inout sim_pinnumber=13}
+T {dbg_en} 115 94 0 1 0.2 0.2 {}
+L 7 120 140 140 140 {}
+B 5 137.5 137.5 142.5 142.5 {name=sc_phi1 dir=inout sim_pinnumber=14}
+T {sc_phi1} 115 134 0 1 0.2 0.2 {}
+L 7 120 180 140 180 {}
+B 5 137.5 177.5 142.5 182.5 {name=sc_phi2 dir=inout sim_pinnumber=15}
+T {sc_phi2} 115 174 0 1 0.2 0.2 {}
+L 7 -90 -230 -90 -210 {}
+B 5 -92.5 -232.5 -87.5 -227.5 {name=VPWR dir=inout sim_pinnumber=16}
+T {VPWR} -96 -205 0 0 0.2 0.2 {}
+L 7 -90 210 -90 230 {}
+B 5 -92.5 227.5 -87.5 232.5 {name=VGND dir=inout sim_pinnumber=17}
+T {VGND} -96 190 0 0 0.2 0.2 {}
+T {@symname} -40 -6 0 0 0.3 0.3 {}
+T {@name} 90 -230 0 0 0.2 0.2 {}
