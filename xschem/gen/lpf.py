@@ -4,11 +4,11 @@ Generate the post-detection low-pass filter and its testbench:
   lpf_rc : passive single-pole RC between the log detector and the
            comparator: xhigh poly R (res_xhigh_po_0p35, ~7.37 kOhm per um of
            length at 0.35 um wide) and MIM caps (cap_mim_m3_1, 30x30 um =
-           1.82 pF each). Defaults: L = 136 um (~1.0 MOhm), 6 caps (~10.9 pF)
-           -> ~14.6 kHz. The e2e model is insensitive to 10-20 kHz, so the
-           +-20-30 % spread of an on-chip RC is fine. The cap is kept large
-           to soak up comparator kickback on a node that carries ~1 mV of
-           signal near sensitivity.
+           1.82 pF each). Defaults: L = 400 um (~2.95 MOhm), 2 caps (~3.7 pF)
+           -> ~14.6 kHz (was 136 um / 6 caps: shrunk 2026-10-08 for area). The e2e model is insensitive to 10-20 kHz, so the
+           +-20-30 % spread of an on-chip RC is fine. The comparator is
+           continuous-time (no kickback), so the cap only needs to be large
+           against the averager's Cs charge sharing (0.1 / 3.7 pF).
            Keep the ua[4] debug pin OFF this node (nA of pad/ESD leakage
            into 1 MOhm = mV of offset): tap 'det' instead.
   tb_lpf : AC response + step response, driven from an ideal source with the
@@ -24,13 +24,13 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
 from xsch import Sch, ports, write_symbol
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
-LPF_PARAMS = {'lr': 136, 'nc': 6}
+LPF_PARAMS = {'lr': 400, 'nc': 2}
 
 
 def lpf_rc():
     s = Sch()
     s.text(-400, -460, 'lpf_rc: xhigh poly R (L=lr um, 0.35 um wide) + nc x 30x30 um MIM caps\n'
-           'defaults ~1.0 MOhm, ~10.9 pF -> ~14.6 kHz', 0.4)
+           'defaults ~2.95 MOhm, ~3.7 pF -> ~14.6 kHz', 0.4)
     ports(s, -400, -360, ['VSS', 'in', 'out'])
     r = s.place('sky130_fd_pr/res_xhigh_po_0p35.sym', 0, -150, rot=1, name='R1',
                 L="'lr'", model='res_xhigh_po_0p35', mult='1', spiceprefix='X')
@@ -44,7 +44,7 @@ def lpf_rc():
 
 
 CODE = """
-.param lr=136 nc=6
+.param lr=400 nc=2
 .options method=GEAR
 .control
 ac dec 50 100 10meg

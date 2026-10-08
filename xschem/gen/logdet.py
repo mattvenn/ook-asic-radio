@@ -27,7 +27,7 @@ XDIR = os.path.normpath(os.path.join(HERE, '..'))
 NTAPS = chain.NSTAGES
 
 CELL_PARAMS = {'wd': 1, 'rs': '10k', 'cc': '100f', 'rb': '200k'}
-DET_PARAMS = {'wd': 1, 'rs': '10k', 'cc': '100f', 'rb': '200k', 'rdet': '8k', 'cdet': '5p'}
+DET_PARAMS = {'wd': 1, 'rs': '10k', 'cc': '100f', 'rb': '200k', 'rdet': '8k', 'cdet': '1p'}
 
 
 def det_cell():
@@ -62,7 +62,7 @@ def log_det(n=NTAPS):
     s.connect(rsb, P='sb', M='VSS', B='VSS')
     r = poly_r(s, -200, -500, 'rdet', 'high', '0p69', name='Rdet')
     s.connect(r, P='VDD', M='det', B='VSS')
-    c = mim(s, -100, -500, 'cdet', mf=4, name='Cdet')               # 4 x ~25 um; bottom plate on VDD
+    c = mim(s, -100, -500, 'cdet', name='Cdet')                     # ~22 um square; bottom plate on VDD
     s.connect(c, c0='det', c1='VDD')
     for i in range(1, n + 1):
         x = (i - 1) * 400
@@ -75,7 +75,7 @@ def log_det(n=NTAPS):
 
 PARAMS = chain.PARAMS + """
 * log detector
-.param ibias_det=2u wd=1 rs=10k ccd=100f rbd=200k rdet=8k cdet=5p
+.param ibias_det=2u wd=1 rs=10k ccd=100f rbd=200k rdet=8k cdet=1p
 """
 
 CONTROL = """

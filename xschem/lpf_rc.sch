@@ -6,7 +6,7 @@ V {}
 S {}
 E {}
 T {lpf_rc: xhigh poly R (L=lr um, 0.35 um wide) + nc x 30x30 um MIM caps
-defaults ~1.0 MOhm, ~10.9 pF -> ~14.6 kHz} -400 -460 0 0 0.4 0.4 {}
+defaults ~2.95 MOhm, ~3.7 pF -> ~14.6 kHz} -400 -460 0 0 0.4 0.4 {}
 C {devices/iopin.sym} -400 -360 0 0 {name=p1
 lab=VSS}
 C {devices/iopin.sym} -400 -330 0 0 {name=p2

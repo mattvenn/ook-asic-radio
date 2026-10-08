@@ -17,7 +17,8 @@ testbenches.
             - stage 2: PMOS common source (matched to the load, so the
               balanced point sits mid-rail), NMOS current sink, inverter out.
   avg_sc  : out = slow average of in. Cs (phi1: in, phi2: out) into cavg;
-            tau = cavg / (Cs * f_sample) ~ 9.1 p / (0.25 p * 77 kHz) ~ 0.47 ms.
+            tau = cavg / (Cs * f_sample) ~ 3.7 p / (0.1 p * 77 kHz) ~ 0.48 ms
+            (was 9.1 p / 0.25 p; shrunk 2026-10-08 for area).
             Transmission-gate switches with local phi inverters.
   tb_comp : DC threshold vs input CM, trim transfer, input-referred noise,
             1 mV overdrive transient.
@@ -101,7 +102,7 @@ def tgate(s, x, y, a, b, phi, phib, name):
 def avg_sc():
     s = Sch()
     s.text(-600, -660, 'avg_sc: switched-cap average, tau = cavg / (cs * f_phi)\n'
-           'phi1: cs <- in, phi2: cs -> out (cavg). cs = ncs x 11x11 um, cavg = nca x 30x30 um MIM', 0.4)
+           'phi1: cs <- in, phi2: cs -> out (cavg). cs = ncs x wcs x wcs um, cavg = nca x 30x30 um MIM', 0.4)
     ports(s, -600, -560, ['VDD', 'VSS', 'in', 'out', 'phi1', 'phi2'])
     for ph in ('phi1', 'phi2'):
         x = -300 if ph == 'phi1' else 300
@@ -112,14 +113,14 @@ def avg_sc():
     tgate(s, -300, 0, 'in', 'cs', 'phi1', 'phi1b', 'S1')
     tgate(s, 300, 0, 'cs', 'out', 'phi2', 'phi2b', 'S2')
     cs = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 100, 150, name='Cs', model='cap_mim_m3_1',
-                 W='11', L='11', MF="'ncs'", spiceprefix='X')
+                 W="'wcs'", L="'wcs'", MF="'ncs'", spiceprefix='X')
     s.connect(cs, c0='cs', c1='VSS')
     ca = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 700, 150, name='Cavg', model='cap_mim_m3_1',
                  W='30', L='30', MF="'nca'", spiceprefix='X')
     s.connect(ca, c0='out', c1='VSS')
     s.write(os.path.join(XDIR, 'avg_sc.sch'))
     write_symbol(os.path.join(XDIR, 'avg_sc.sym'), left=['in', 'phi1', 'phi2'], right=['out'],
-                 top=['VDD'], bottom=['VSS'], params={'ncs': 1, 'nca': 5})
+                 top=['VDD'], bottom=['VSS'], params={'ncs': 1, 'nca': 2, 'wcs': 7})
 
 
 COMP_CODE = """

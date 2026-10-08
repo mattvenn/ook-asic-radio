@@ -6,7 +6,7 @@ V {}
 S {}
 E {}
 T {avg_sc: switched-cap average, tau = cavg / (cs * f_phi)
-phi1: cs <- in, phi2: cs -> out (cavg). cs = ncs x 11x11 um, cavg = nca x 30x30 um MIM} -600 -660 0 0 0.4 0.4 {}
+phi1: cs <- in, phi2: cs -> out (cavg). cs = ncs x wcs x wcs um, cavg = nca x 30x30 um MIM} -600 -660 0 0 0.4 0.4 {}
 C {devices/iopin.sym} -600 -560 0 0 {name=p1
 lab=VDD}
 C {devices/iopin.sym} -600 -530 0 0 {name=p2
@@ -245,8 +245,8 @@ sig_type=std_logic
 lab=VDD}
 C {sky130_fd_pr/cap_mim_m3_1.sym} 100 150 0 0 {name=Cs
 model=cap_mim_m3_1
-W=11
-L=11
+W='wcs'
+L='wcs'
 MF='ncs'
 spiceprefix=X}
 C {devices/lab_pin.sym} 100 120 0 1 {name=p39

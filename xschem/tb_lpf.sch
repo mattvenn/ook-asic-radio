@@ -40,7 +40,7 @@ lab=out}
 C {devices/code.sym} -900 100 0 0 {name=SIMULATION
 only_toplevel=false
 value="
-.param lr=136 nc=6
+.param lr=400 nc=2
 .options method=GEAR
 .control
 ac dec 50 100 10meg

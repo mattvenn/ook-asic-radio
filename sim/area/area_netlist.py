@@ -126,7 +126,7 @@ def main(path):
         blocks[b][1] += c
         blocks[b][2] += 1
     names = {'xbias': 'bias generator', 'xchain': 'gain chain (6 stages)', 'xdet': 'log detector',
-             'xlpf': 'LPF (1 MOhm + 10.9 pF)', 'xavg': 'SC averager', 'xcomp': 'comparator + trim pair',
+             'xlpf': 'LPF (xhigh R + MIM)', 'xavg': 'SC averager', 'xcomp': 'comparator + trim pair',
              'xdac': 'R2R trim DAC (measured layout)', 'xctrim': 'trim filter cap', 'xdbg': 'debug TG',
              'xtx.xring': 'TX ring (measured layout)', 'xtx.xls': 'TX level shifter',
              'xtx.xlse_p': 'TX arm-enable LS (p)', 'xtx.xlse_n': 'TX arm-enable LS (n)',

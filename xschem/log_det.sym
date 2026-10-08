@@ -3,7 +3,7 @@ v {xschem version=3.4.5 file_version=1.2
 G {}
 K {type=subcircuit
 format="@name @pinlist @symname wd=@wd rs=@rs cc=@cc rb=@rb rdet=@rdet cdet=@cdet"
-template="name=x1 wd=1 rs=10k cc=100f rb=200k rdet=8k cdet=5p"
+template="name=x1 wd=1 rs=10k cc=100f rb=200k rdet=8k cdet=1p"
 }
 V {}
 S {}

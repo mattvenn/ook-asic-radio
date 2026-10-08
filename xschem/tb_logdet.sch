@@ -231,7 +231,7 @@ value="
 .param w1=80 rl1=1k mt1=20 w2=20 rl2=4k mt2=6 cs=0.6p cin=2p rb=20k
 
 * log detector
-.param ibias_det=2u wd=1 rs=10k ccd=100f rbd=200k rdet=8k cdet=5p
+.param ibias_det=2u wd=1 rs=10k ccd=100f rbd=200k rdet=8k cdet=1p
 
 .options method=GEAR
 .control

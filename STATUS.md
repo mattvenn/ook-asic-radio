@@ -378,6 +378,27 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
   - Detector with tracking bias: idle 1.520 / 1.521 / 1.524 V (tt / hh / ll), so the comparator CM doesn't move. Slope at the noise floor 13.4 / 14.1 / 10.3 mV/dB: `ll` is ~−93 dBm, like ff 50 °C.
 - Not yet: integrating bias_gen into the RX testbenches/top (it feeds `iref`, `ibias_det`, `Ibc` and `vcm`, which are ideal sources today); stability margin check of the OTA loop (the start-up and en transients settle cleanly; no AC loop-gain run yet).
 
+## Area and the cap shrink (sim/area/area_netlist.py, 2026-10-08)
+- **`sim/area/area_netlist.py`** evaluates the real `radio_analog` netlist (every device's W/L/nf/m, poly R and MIM geometry), grouped by block.
+  - Footprint rules: thin MOS (W/nf+1)·(nf·(L+0.6)+0.6); thick MOS with HV spacing; poly (W+1)·(L+3); MIM (W+1.5)·(L+1.5); ×2.5 routing.
+  - The ring and the R2R ladder use their measured layouts. **Each block counts as max(routed devices, its MIM).**
+  - Plus decap (VAPWR 50 pF, VDPWR ~30 pF) and 10 % for guard rings and spacing. Treat as ±25 %.
+- **Before the shrink:** analog 51.8k µm² against 43.1k left beside the digital (300 × 210 + 5 µm halo): **120 %**.
+- **Cap shrink, same time constants:**
+
+| | was | now | check |
+|---|---|---|---|
+| LPF | 1 MΩ (136 µm) + 6 × 30² MIM (10.9 pF) | **2.95 MΩ (400 µm) + 2 × 30² (3.7 pF)** | tb_lpf: 14.7 kHz (14.4), rise 23.7 µs (24) |
+| averager | Cs 11² (0.25 p), Cavg 5 × 30² (9.1 p) | **Cs 7² (0.1 p), Cavg 2 × 30² (3.7 p)** | tb_avg: τ 0.44–0.46 ms (0.47–0.48); offset ≤ 0.09 mV (≤ 0.04), static, trimmed out |
+| cdet | 5 pF | **1 pF** (det pole ~20 MHz) | CW transfer DC levels identical; 434/868 MHz ripple on det 2–18 mV pp (was 1–4), removed by the LPF |
+| chain cin | 2 pF | **kept at 2 pF** | 1 pF cost 0.6 dB NF (11.0 → 11.6) for ~1k µm²: not worth it |
+
+  - kT/C on the LPF is still ~35 µV. The comparator is continuous-time (no kickback), so the big LPF cap wasn't needed.
+  - tb_radio_analog unchanged: RX op, off current, TX; −60 dBm gives det 1.206 V.
+- **After: analog 42.2k against 43.1k: 98 %, about 99 % of the whole tile.** It fits, but with no margin for a ±25 % estimate.
+  - Next levers: clock-gate the digital's chip registers (~8–10k with fewer hold buffers); VAPWR decap 50 → 30 pF (~5k, ripple 0.05 → ~0.15 V); bias mirrors with fewer, wider units (~1.5k).
+- `sim/logdet/transfer_cw.txt` is an old curve (~40 mV below the current detector in the mid range). `gen_det.py` / `plot_joined.py` use it with their calibrated −3.8 dB shift, so it's left as is.
+
 ## Digital re-harden (LibreLane v3, openlane/radio_digital/config.json, 2026-10-08)
 - **Run:** `tools/longrun harden tools/osic bash -c 'cd openlane/radio_digital && librelane --pdk sky130A --run-tag <tag> --overwrite config.json'` (~5–10 min).
   - `config.json` replaces the OpenLane 1 `config.tcl` (kept for reference). The root Makefile's `harden` target is still the OpenLane 1 flow and doesn't work here.
