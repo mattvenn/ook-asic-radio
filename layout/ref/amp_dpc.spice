@@ -1,0 +1,13 @@
+* amp_dpc: xschem/amp_dpc.sch with {'w': 20, 'l': 0.15, 'rl': 4000.0, 'wt': 6, 'mt': 6, 'mm': 0, 'cs': 6e-13} (lay.write_ref)
+** sch_path: /foss/designs/ook/xschem/amp_dpc.sch
+.subckt amp_dpc inp inn nb outp outn VDD VSS
+*.PININFO VDD:B VSS:B nb:B inp:B inn:B outp:B outn:B
+XRl_p outn VDD VSS sky130_fd_pr__res_high_po_0p69 L=7.37736 mult=1
+XMp outn inp sp VSS sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=4
+XMtail_p sp nb VSS VSS sky130_fd_pr__nfet_01v8 L=0.5 W=6 nf=2 m=3
+XRl_n outp VDD VSS sky130_fd_pr__res_high_po_0p69 L=7.37736 mult=1
+XMn outp inn sn VSS sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=4
+XMtail_n sn nb VSS VSS sky130_fd_pr__nfet_01v8 L=0.5 W=6 nf=2 m=3
+XCs_a sn sp sky130_fd_pr__cap_mim_m3_1 W=12.0678 L=12.0678
+XCs_b sp sn sky130_fd_pr__cap_mim_m3_1 W=12.0678 L=12.0678
+.ends

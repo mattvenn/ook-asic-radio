@@ -38,6 +38,7 @@ class PolyRes:
         self._heads = sorted(m1, key=lambda b: b.bottom)            # bottom, top
         assert len(self._heads) == 2, m1
         self._poly = pya.Region(self.cell.begin_shapes_rec(ly.layer(*L['poly']))).bbox().to_dtype(ly.dbu)
+        self._psdm = pya.Region(self.cell.begin_shapes_rec(ly.layer(94, 20))).bbox().to_dtype(ly.dbu)
         self._bbox = self.cell.dbbox()
 
     def place(self, x, y):
@@ -66,6 +67,8 @@ class PolyRes:
         last_side = 0 if self.nseg % 2 == 0 else 1
         self.ends = (self.heads[0][0], self.heads[-1][last_side])
         self.bbox = self.segs[0] + self.segs[-1]
+        self.psdm = (self._psdm.moved(pya.DVector(dx, dy)) +
+                     self._psdm.moved(pya.DVector(dx + (self.nseg - 1) * self.pitch, dy)))
         self.poly = self._poly.moved(pya.DVector(dx, dy)) + self._poly.moved(pya.DVector(dx + (self.nseg - 1) * self.pitch, dy))
         return self
 
