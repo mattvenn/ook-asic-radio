@@ -168,7 +168,7 @@ def assign_tracks(P, N, nets, plans):
     while todo:
         t = dict(nets=[], w=0)
         end = -1e9
-        for net in sorted(todo, key=lambda n: span[n][0]):
+        for net in sorted(todo, key=lambda n: (span[n][0], n)):   # ties: by name (deterministic)
             if above[net] <= placed and span[net][0] > end + 1.0:
                 t['nets'].append(net)
                 end = span[net][1]
