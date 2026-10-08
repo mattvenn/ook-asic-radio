@@ -42,10 +42,12 @@ class Dev:
     """A FET in a row. roles per S/D strip: 'R' (to the segment's rail), 'D' (the drain
     net), a net name (pass devices: both sides are signals), or None (unconnected).
     gates: [(net, [finger indices])]. drain: net name. hb: drain bar height. rail: supply
-    net of the 'R' strips (P: VAPWR/VDD, N: VSS)."""
+    net of the 'R' strips (P: VAPWR/VDD, N: VSS). xmin (P row only): the device's
+    diffusion starts at x >= xmin, and it doesn't push the N device at its index."""
 
-    def __init__(self, fet, roles, gates, drain, hb=0.5, rail=None, dummy=False):
+    def __init__(self, fet, roles, gates, drain, hb=0.5, rail=None, dummy=False, xmin=None):
         self.f, self.roles, self.gates, self.drain, self.hb = fet, roles, gates, drain, hb
+        self.xmin = xmin
         self.rail = rail or ('VSS' if fet.kind == 'n' else 'VAPWR')
         self.hv = fet.vt == 'g5'
         self.dummy = dummy
@@ -208,11 +210,11 @@ def build(b, P, N, nets, rail_h=3.0, out_w=3.0, align_last=False, strip_w=0.45):
     for (kp, dp), (kn, dn) in zip(sP, sN):
         x = x0
         for d in dp:
-            d.f.place(x, 0)
+            d.f.place(x if d.xmin is None else max(x, d.xmin), 0)
             x = d.f.diff.right + DGAP
         x = x0
         for d, e in zip(dn, dp + [None] * len(dn)):
-            if e is not None:
+            if e is not None and e.xmin is None:
                 x = max(x, e.f.diff.left)
             d.f.place(x, 0)
             x = d.f.diff.right + DGAP
