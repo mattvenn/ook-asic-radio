@@ -1,5 +1,5 @@
 * avg_sc: xschem/avg_sc.sch with {'ncs': 1, 'nca': 2, 'wcs': 7} (lay.write_ref)
-** sch_path: /foss/designs/shuttle-ttsky26c/asic-radio/xschem/avg_sc.sch
+** sch_path: /Users/mattvenn/asic/ook-asic-radio/xschem/avg_sc.sch
 .subckt avg_sc in phi1 phi2 out VDD VSS
 *.PININFO VDD:B VSS:B in:B out:B phi1:B phi2:B
 XMiphi1p phi1b phi1 VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1

@@ -211,14 +211,28 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - Single-drain devices keep the old placement (`tx_ls` identical; in `tx_drv` only the NAND's in/en tracks swapped).
   - `build()` leaves `b.rows` (rails, tracks, track x spans) for generators that add more (caps, wiring).
 - **`lay.write_ref(name, sch, params, drop)`:** a parameter-substituted LVS/PEX reference from any xschem cell (netgen can't evaluate `W='wcs'`, `m='nca'`).
-- **`avg_sc`** (`layout/gen/avg_sc.py`, 74.5 × 43.6 µm):
-  - Layout: 8 thin FETs via rows.py (phase inverters, then S1 and S2 as transmission gates). Cs 7×7 under the switches; 2 × Cavg 30×30 to the right. Each MIM bottom plate abuts the VSS rail, which runs across the caps (`passives.mim`, the other session's).
-  - Cs's top plate rises on its own met4 strip to the `cs` track. The Cavg top plates share a met4 strip that rises to the `out` track at the switch block's edge.
-  - Checks: DRC/antenna/LVS clean; m3 density 65 % (the MIM plates).
-  - **Block test** (`sim/avg_sc/tb_avg_sc.py`, 20 cycles of the digital's 13 µs phi timing, tt): τ 0.458 ms (schematic) → **0.434 ms** (extracted).
-  - **Open:** the extracted hold drift is ±1.7–1.9 mV over 20 cycles (schematic −0.015), from phi/phib coupling imbalance onto `cs`/`out`, for example 1.15 fF to phi2 against 0.50 fF to phi2b. Moving the phase inverters only flipped its sign.
-    - Steady state is about ±4 mV static offset at the comparator: within the trim range (−19…+12 mV), but about a third of it.
-    - Fix if the trim gets tight: a symmetric layout (balanced phi/phib routing around `cs`/`out`, dummy half-switches).
+- **`avg_sc`** (`layout/gen/avg_sc.py`; v2 77.4 × 30.4 µm = 2.35k µm², v1 74.5 × 43.6 = 3.25k):
+  - **Why v2:** in steady state, any charge a clock leaves on `cs` or `out` per cycle shifts the average by ΔQ/Cs. Cavg doesn't dilute it, and Cs is only 0.1 pF. v1's phi/phib wiring imbalance (~0.19 fF on both `cs` and `out`) × 1.8 V / Cs ≈ 3.4 mV: the ±4 mV static offset seen in its block test.
+  - **Symmetric channel** (fixed track order, `rows.build(order=...)`), top to bottom: `phi2b phi1b | shield (VDD) | in out cs | shield (VSS) | phi1 phi2`.
+    - phib (P gates) on top, phi (N gates) at the bottom, mirrored. Each TG's P and N stubs sit at the same x, so a signal stub crosses phib going up exactly as its partner crosses phi going down. Gate stubs cross no signal track.
+    - The shields stop sideways coupling from phi1b into `in`, and from phi1/phi2 into `cs`. They rise to VDD and VSS right of the ring.
+    - **Nothing crosses the channel.** `cs` and `out` leave on met4 risers right of the ring, where only the `in`/`out`/`cs` tracks reach. The phi pins rise on met4 at the left end, over the inverters, where only clock tracks run. (v1's `cs` and `out` risers crossed the phi tracks.)
+    - phi2's inverter is flipped, so its rail strip, not its phi2b drain, faces S1's `in` strip.
+  - **Extracted clock coupling, v1 → v2:**
+
+    | Node | phi − phib imbalance, v1 | v2 |
+    |---|---|---|
+    | `cs`, phi1 − phi1b | +0.197 fF | −0.002 fF |
+    | `cs`, phi2 − phi2b | −0.042 | +0.011 |
+    | `out`, phi2 − phi2b | −0.194 | +0.004 |
+
+    - Expected offset from wiring: ~0.1–0.2 mV (was ~3–4).
+    - `in` still sees phi2 0.42 against phi2b 0.11 fF. That's harmless for the offset: phi2 only switches while S1 is open, and `in` is the LPF's continuously driven node, so it's a ~0.2 mV ripple decaying with the LPF τ (11 µs), not a held charge. (v1: phi2b 0.63 / phi2 0.11.)
+    - Device charge injection, which the TGs balance only roughly (N 0.5 / P 1), isn't in these numbers. That needs the block test.
+  - **Floorplan:** the Cavg pair is on the left, full height. The switch column is at the right with Cs hanging under its VSS rail (the plate abuts the rail). The VSS rail's met3 runs left into both Cavg bottom plates (bridging the 2 µm gap is DRC-clean in magic and KLayout). The `out` met4 strip runs along the bottom of the Cavg plates. The switches don't go under the caps: the row builder's tracks and rails are met3, the bottom-plate layer.
+  - **Pins:** `phi1` and `phi2` on the top edge (met4). `in` and `out` on the right edge (met3), adjacent, for `comp_ct` (`inn`, `inp`, both on its left edge). Mirror or rotate the cell at the top level as the floorplan needs. Keep top-level clock wiring off the Cavg top plates (`out`).
+  - Checks: DRC (magic and KLayout) 0, antenna 0, LVS match; m3 density 84 % (the MIM plates, now with no empty area around them).
+  - **Block test not re-run for v2** (`sim/avg_sc/tb_avg_sc.py --pex`). v1 numbers: τ 0.458 → 0.434 ms (schematic → extracted), hold drift ±1.7–1.9 mV over 20 cycles. v2's Cavg and Cs are unchanged, so τ should be the same. The offset is the thing to check.
 - **`comp_ct`** (`layout/gen/comp_ct.py`, 100.5 × 49.9 µm, ~5.0k µm² against the ~3.0k estimate; area pass later):
   - **Matching:** the input pair, trim pair and PMOS mirror are split into halves placed A B B A (1D common centroid, same orientation), with rail-tied dummies either side. The bias units (N 2/2) are folded per device.
   - **Dummies in the schematic too:** `Mdn*`/`Mdp*` in `xschem/gen/comp.py`, every terminal on the rail. Netgen doesn't ignore layout dummies (17 against 14 devices otherwise).

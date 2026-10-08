@@ -34,7 +34,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - **Leaf blocks done** (`layout/README.md` has viewer links):
     - TX: `tx_drv`, `tx_ls`, `tx_ls_en`, `tx_ring`.
     - Trim DAC: `r2r` (the tt08 layout reused; extracted error ≤ 0.02 LSB).
-    - RX: `avg_sc` (τ 0.434 ms extracted; **open:** ±~4 mV static offset from phi coupling, within the trim range); `lpf_rc` and `dbg_tg` (other sessions).
+    - RX: `avg_sc` **v2** (2.35k µm², was 3.25k; mirrored phi/phib channel with shields: extracted clock-coupling imbalance on cs/out 0.2 → ≤ 0.011 fF, so the ~4 mV offset should drop to ~0.2 mV; `tb_avg_sc --pex` not yet re-run); `lpf_rc` and `dbg_tg` (other sessions).
     - Also by other sessions: the decaps.
     - **`bias_gen`:** done, 80.2 × 49.1 µm (3.9k µm²): mirror array (123 units, ABBA common centroid) under Cc + 2 × Cvcm, the small devices (rows.py), the resistors under one Cvref. Clean; extracted currents and vcm within 0.1 % of the schematic over VDD 1.7–1.9 V, 10–50 °C (`sim/bias/tb_bias_gen.py`). Schematic changes: Cvcm / Cvref as 2 × 22 µm units, 5 array dummies `Mdum`, Rref as two 5 kΩ halves. Details in `docs/layout.md`.
     - **`comp_ct`:** done (ABBA pairs + dummies, passives, clean; extracted offset +0.56 mV, trim 0.0655 mV/LSB). 5.0k µm², larger than estimated. Matching dummies were added to the schematic (`Mdn*`/`Mdp*`).
