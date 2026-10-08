@@ -1,0 +1,62 @@
+magic
+tech sky130A
+magscale 1 2
+timestamp 0
+<< psubdiffcont >>
+rect -600 10700 12900 11100
+<< viali >>
+rect -500 10800 12800 11000
+<< metal1 >>
+rect -1000 11000 13300 11100
+rect -1000 10700 13300 10800
+rect 11300 300 11600 600
+rect 0 300 300 1000
+rect 1500 300 1800 1500
+rect 3000 300 3300 1000
+rect 4500 300 4800 1000
+rect 6000 300 6300 1000
+rect 7500 300 7800 1000
+rect 9000 300 9300 1000
+rect 10500 300 10800 1000
+rect 12000 300 12300 1000
+use r2r_startmod r2r_startmod_0
+timestamp 0
+transform 1 0 0 0 1 0
+box -1010 300 1810 11100
+use r2r_bittile r2r_bittile_0
+array 0 6 1500 0 0 1
+timestamp 0
+transform 1 0 0 0 1 0
+box 1000 300 3300 10432
+use r2r_endmod r2r_endmod_0
+timestamp 0
+transform 1 0 0 0 1 0
+box 12500 600 13300 11100
+<< labels >>
+flabel metal1 0 300 200 500 0 FreeSans 256 0 0 0 b0
+port 0 nsew
+flabel metal1 1500 300 1700 500 0 FreeSans 256 0 0 0 VGND
+port 1 nsew
+flabel metal1 3000 300 3200 500 0 FreeSans 256 0 0 0 b1
+port 2 nsew
+flabel metal1 4500 300 4700 500 0 FreeSans 256 0 0 0 b2
+port 3 nsew
+flabel metal1 6000 300 6200 500 0 FreeSans 256 0 0 0 b3
+port 4 nsew
+flabel metal1 7500 300 7700 500 0 FreeSans 256 0 0 0 b4
+port 5 nsew
+flabel metal1 9000 300 9200 500 0 FreeSans 256 0 0 0 b5
+port 6 nsew
+flabel metal1 10500 300 10700 500 0 FreeSans 256 0 0 0 b6
+port 7 nsew
+flabel metal1 12000 300 12200 500 0 FreeSans 256 0 0 0 b7
+port 8 nsew
+flabel metal1 11300 300 11500 500 0 FreeSans 256 0 0 0 out
+port 9 nsew
+flabel metal1 2000 600 2800 1000 0 FreeSans 1600 0 0 0 b
+flabel metal1 3500 600 4300 1000 0 FreeSans 1600 0 0 0 c
+flabel metal1 5000 600 5800 1000 0 FreeSans 1600 0 0 0 d
+flabel metal1 6500 600 7300 1000 0 FreeSans 1600 0 0 0 e
+flabel metal1 8000 600 8800 1000 0 FreeSans 1600 0 0 0 f
+flabel metal1 9500 600 10300 1000 0 FreeSans 1600 0 0 0 g
+<< end >>

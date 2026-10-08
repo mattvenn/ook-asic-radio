@@ -197,6 +197,10 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - The reference (`layout/ref/tx_ring.spice`) drops the schematic's `cw` caps: they're a wiring estimate, not devices.
   - **Block test** (`sim/tx/tb_tx_ring.py`, into the main level shifter, tt): schematic (cw 3.2 fF) 485.4 MHz → **extracted 508.5 MHz** (+4.8 %, less wiring than the ttsky25b calibration). Silicon estimate ×0.866 → **~440 MHz** (target 433.92), out duty 47.9 %. Keep 22 inverters.
   - Density reads 51–55 % on m1–m3, because the 4.2 µm-tall block is half rails; it averages out inside `tx_top`.
+- **`r2r`** (trim DAC, **reused** from tt08-analog-r2r-dac-3v3): the magic sources are copied unchanged into `layout/src/r2r/`; `layout/gen/r2r.sh` writes `layout/r2r.gds`. 71.8 × 54.1 µm (3,882 µm²; the area estimate had 3,866), pins on met1 along the bottom (b0..b7, out, VGND).
+  - Clean against `xschem/r2r.sch`, which was drawn to match the layout device for device: DRC 0, antenna 0, LVS match. Density m1 27 %.
+  - **Block test** (`sim/dac/tb_r2r.py`, tt): extracted output error ≤ 0.021 LSB; Rout 10.65 kΩ (schematic 10.64); the 127→128 carry into 1 pF settles to 0.1 LSB in 30.6 ns (schematic 24.6), irrelevant at the servo's µs steps.
+  - `check.sh`'s "feedback N" counts magic's extraction warnings too (2 here, from flattening); the antenna count is the 'Antenna violation' lines.
 - **Earlier note on the duty cycle:** Its skewed core (weak cross-coupled PMOS pull-up) is sensitive to the ~4.7 fF of wiring on A/B, comparable to its devices' own capacitance.
   - The schematic at kp 6 gives 36.3 %; the extracted run is pending.
   - What matters is the duty at the arms' outputs, so judge it with the level shifter + drivers together, not A alone.
