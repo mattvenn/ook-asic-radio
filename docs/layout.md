@@ -258,16 +258,25 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
 - **Shrink option (not taken, 2026-10-08):** the block is cap-limited (the 5 MIM units are ~3k of 3.9k µm²). The mirror is big because a 60 µA reference is copied 1:1 to the chain in 1 µA units (123 fingers). A 10 µA reference (Rref ~60 kΩ high_po, same tracking) with 10 / 2 / 1 µA outputs (23 units; the chain's local mirror takes the ×6) plus smaller caps (Cc has PM 90°; Cvcm / Cvref poles have room) could bring bias_gen to ~1.5–2k µm² and save ~100 µA. Needs bias_gen + lna_chain schematic changes and re-verification. Only shrinking both caps and mirror saves area.
 
 
-## log_det (2026-10-09)
-- **`layout/gen/log_det.py`:** six instances of `det_cell` (another agent's cell, copied in via `copy_tree`; pitch = its width, buses and rail abut), then an end section in the same frame.
-  - **End section:**
-    - Mbias as a diode: drain on the left to the gate pad and down to the `vb` bus, which sits above `out`, so nothing crosses;
+## log_det (2026-10-09; compacted to 2 x 3, 2026-10-08)
+- **`layout/gen/log_det.py`:** two rows of three `det_cell`s plus an end column. The cells are another agent's, copied in via `copy_tree` and unchanged.
+  - **Rows:** the top row (t1 t2 t3) is as drawn. The bottom row (t4 t5 t6) is mirrored in y, so both rows share one VSS rail (met1–3) in the middle.
+    - The inputs face out: the top row's along the top edge, the bottom row's along the bottom. t1 and t6 sit on opposite corners.
+  - **Bus joins (end column):** the out/vb buses (met2) of both rows run on into the column.
+    - out is joined by a met2 riser, which carries on down to Rdet's bottom end and the Cdet drop.
+    - vb is joined by a met1 riser, because it crosses the out buses.
+  - **End section** (bottom of the column, own p-tap ring, met1 + psdm bridged to t6's ring):
+    - Mbias as a diode, its drain up to the bottom vb bus in met2;
     - **Rs_b drawn exactly like the cells' Rs** (high-po 0.35, 2 segments), so the vb replica matches;
-    - Rdet (0.69, 3 adjacent segments, one RPM).
-  - **Cdet** (22²) above the end section on a VDD rail (met1–3). Its met4 riser drops over the end section: an earlier version, with the riser under the cap's overhang, shorted `det` to the last cell's `gn`.
-  - **Pins** t1p…t6n on the cells' bottom-plate met3 pins.
-- **Tiling:** neighbouring cells' ring implants end 0.2 µm apart (KLayout psdm.1); `log_det` bridges psdm across each boundary.
-- **Checks:** DRC/antenna/LVS clean. The reference strips the `det_cell` instances' parameters, since netgen compares instance properties otherwise.
-- **Block test** (`sim/logdet/tb_log_det.py`, tt): idle det 1.5197 → 1.4890 V; 100 mV on t6: −1.56 → −1.46 mV.
+    - Rdet (0.69, 3 segments, one RPM).
+  - **Cdet** (22²) is over the column, top-aligned, its bottom plate 1.2 µm clear of the cells' met3 (their rail ends at the column).
+    - Its top plate drops on a met4 strip to a met3 island 1.2 µm below the bottom plate, over the end section.
+    - The bottom plate's met3 continues as a 1.2 µm strip down the right edge: the **VDD pin** (via3 from the top level, outside capm). Rdet's top end reaches it in met2.
+  - **Pins:** `det` / `ibias_det` on the top row's buses at the left edge; VSS on the shared rail (met3) at the left edge.
+- **Size:** **87.3 × 31.0 µm (2.7k µm²)**, was 137.4 × 39.0 (5.4k bbox, an L shape with ~2.5k µm² empty above the cells).
+- **Tiling:** neighbouring cells' ring implants end 0.2 µm apart (KLayout psdm.1); `log_det` bridges psdm across each boundary in both rows. The rows' rings are 1.2 µm apart across the shared rail, so no bridge is needed there.
+- **Checks:** DRC (magic + KLayout) 0, antenna 0, LVS match. The reference strips the `det_cell` instances' parameters, since netgen compares instance properties otherwise.
+  - met3 density is 50 % (flagged): the 12 Cc plates + Cdet in a tight box. It's inherent to the cap content; there's no needless metal.
+- **Block test** (`sim/logdet/tb_log_det.py`, tt): idle det 1.5197 → 1.4888 V; 100 mV on t6: −1.56 → −1.46 mV. This is the same as the 1 × 6 layout (1.4890 V, −1.46 mV).
 - **Open:** the high-po fits have a per-device end term (0.35: 963 Ω, 0.69: 526 Ω). With Rs in 2 segments and Rdet in 3, the layout's Rs/Rdet are ~10 % high, which is the idle shift.
   - Harmless (the averaging reference absorbs it). For an exact match, draw them in the schematic as series segments.
