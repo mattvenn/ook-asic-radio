@@ -4,8 +4,8 @@
 *.PININFO VDD:B VAPWR:B VSS:B in:B A:B B:B
 XMi1p ctrl in VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1
 XMi1n ctrl in VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=0.42 nf=1
-XM8 ctrl_n ctrl VDD VDD sky130_fd_pr__pfet_01v8_hvt L=0.15 W=1 nf=1
-XM7 ctrl_n ctrl VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=0.42 nf=1
+XM8 ctrl_n ctrl VDD VDD sky130_fd_pr__pfet_01v8_hvt L=0.15 W=4 nf=1
+XM7 ctrl_n ctrl VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=1.68 nf=1
 XM9 A ctrl VSS VSS sky130_fd_pr__nfet_g5v0d10v5 L=0.5 W=0.42 nf=1
 XM10 B ctrl_n VSS VSS sky130_fd_pr__nfet_g5v0d10v5 L=0.5 W=0.42 nf=1
 XM11 A B VAPWR VAPWR sky130_fd_pr__pfet_g5v0d10v5 L=0.5 W=0.42 nf=1

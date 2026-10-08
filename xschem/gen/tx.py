@@ -79,10 +79,12 @@ def tx_ls():
     s.connect(p, D='ctrl', G='in', S='VDD', B='VDD')
     n = mos(s, 'n', -400, 100, W="'wni'", L=0.15, name='Mi1n')
     s.connect(n, D='ctrl', G='in', S='VSS', B='VSS')
-    # ctrl_n (as dac_drive: hvt PMOS W 1, NMOS W 0.42)
-    p = mos(s, 'p', -100, -150, W=1, L=0.15, name='M8', vt='hvt')
+    # ctrl_n inverter: was dac_drive's hvt PMOS 1 / NMOS 0.42, too weak for M10's thick
+    # gate + the ctrl_n wiring (extracted A duty 37 -> 28 %); now about as strong as the
+    # input inverter, so both paths into the core are balanced (2026-10-08)
+    p = mos(s, 'p', -100, -150, W=4, L=0.15, name='M8', vt='hvt')
     s.connect(p, D='ctrl_n', G='ctrl', S='VDD', B='VDD')
-    n = mos(s, 'n', -100, 100, W=0.42, L=0.15, name='M7')
+    n = mos(s, 'n', -100, 100, W=1.68, L=0.15, name='M7')
     s.connect(n, D='ctrl_n', G='ctrl', S='VSS', B='VSS')
     # thick core: pull-downs kn x, cross-coupled PMOS kp x
     for nm, x, g, d in (('M9', 200, 'ctrl', 'A'), ('M10', 500, 'ctrl_n', 'B')):

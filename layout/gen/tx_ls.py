@@ -1,7 +1,7 @@
 # tx_ls layouts: 1.8 -> 3.3 V level shifter (xschem/gen/tx.py:tx_ls), two variants:
 #   tx_ls     kn=10 kp=4 wpi=9 wni=3   (ring -> arms; the input inverter is the ring's load)
 #   tx_ls_en  kn=1  kp=1 wpi=1 wni=0.42 (the two arm enables)
-# in -> thin inverter (wpi/wni) -> ctrl -> thin inverter (hvt P 1, N 0.42) -> ctrl_n;
+# in -> thin inverter (wpi/wni) -> ctrl -> thin inverter (hvt P 4, N 1.68) -> ctrl_n;
 # thick core: NMOS pull-downs (0.42 kn; ctrl -> A, ctrl_n -> B), cross-coupled PMOS (0.42 kp).
 # Built with rows.py: LV column (thin, VDD = VDPWR) on the left, HV column (thick,
 # VAPWR) on the right; VSS along the bottom. in on the left edge, A / B on the right.
@@ -26,11 +26,11 @@ def make(name, kn, kp, wpi, wni):
         f = Fet(b, kind, W, l, gate='bottom' if kind == 'p' else 'top', vt=vt, bulk='None', nfmax=nfmax)
         return Dev(f, inverter_roles(f), [(gate_net, list(range(f.nf)))], drain, rail=rail)
     P = [dev('p', wpi, 0.15, '', 'in', 'ctrl', 'VDD', 3.0),          # Mi1p
-         dev('p', 1.0, 0.15, 'hvt', 'ctrl', 'ctrl_n', 'VDD', 3.0),   # M8
+         dev('p', 4.0, 0.15, 'hvt', 'ctrl', 'ctrl_n', 'VDD', 3.0),   # M8
          dev('p', 0.42 * kp, 0.5, 'g5', 'B', 'A', 'VAPWR', 3.0),     # M11
          dev('p', 0.42 * kp, 0.5, 'g5', 'A', 'B', 'VAPWR', 3.0)]     # M12
     N = [dev('n', wni, 0.15, '', 'in', 'ctrl', 'VSS', 3.0),          # Mi1n
-         dev('n', 0.42, 0.15, '', 'ctrl', 'ctrl_n', 'VSS', 3.0),     # M7
+         dev('n', 1.68, 0.15, '', 'ctrl', 'ctrl_n', 'VSS', 3.0),     # M7
          dev('n', 0.42 * kn, 0.5, 'g5', 'ctrl', 'A', 'VSS', 4.5),    # M9
          dev('n', 0.42 * kn, 0.5, 'g5', 'ctrl_n', 'B', 'VSS', 4.5)]  # M10
     return build(b, P, N, NETS, rail_h=2.0)
