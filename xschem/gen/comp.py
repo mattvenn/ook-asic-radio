@@ -88,6 +88,15 @@ def comp_ct():
     s.connect(ip, D='out', G='o2', S='VDD', B='VDD')
     i_n = mos(s, 'n', 1200, 100, W=1, L=0.15, name='Min')
     s.connect(i_n, D='out', G='o2', S='VSS', B='VSS')
+    # layout matching dummies (layout/gen/comp_ct.py: rail-tied dummies either side of the
+    # ABBA pairs and the bias units): all terminals on the rail, no electrical effect; drawn
+    # here so LVS sees the same devices (IIC etiquette: dummies belong in the schematic)
+    for nm, x, kind, W, L, vt, m in (('Mdn1', 1500, 'n', 5, 1, 'lvt', 2), ('Mdn2', 1700, 'n', 1, 1, 'lvt', 2),
+                                     ('Mdn3', 1900, 'n', 2, 2, '', 2), ('Mdp1', 1500, 'p', 2, 1, 'lvt', 2),
+                                     ('Mdp2', 1700, 'p', 4, 1, 'lvt', 1)):
+        rail = 'VSS' if kind == 'n' else 'VDD'
+        d = mos(s, kind, x, 100 if kind == 'n' else -150, W=W, L=L, mult=m, name=nm, vt=vt)
+        s.connect(d, D=rail, G=rail, S=rail, B=rail)
     s.write(os.path.join(XDIR, 'comp_ct.sch'))
     write_symbol(os.path.join(XDIR, 'comp_ct.sym'), left=['inp', 'inn', 'trim', 'ibias'],
                  right=['out'], top=['VDD'], bottom=['VSS'], params=COMP_PARAMS)

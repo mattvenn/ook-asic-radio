@@ -195,6 +195,14 @@ def cuts_needed(i_ma, cut):
     return max(1, int(-(-2 * i_ma // lim)))
 
 
+def _si(expr):
+    """SPICE number suffixes to Python (7.37k -> 7.37e3, 2Meg -> 2e6) for eval."""
+    import re
+    mult = {'t': 'e12', 'g': 'e9', 'meg': 'e6', 'k': 'e3', 'm': 'e-3', 'u': 'e-6', 'n': 'e-9', 'p': 'e-12', 'f': 'e-15'}
+    return re.sub(r'(?<![\w.])(\d+\.?\d*)(meg|[tgkmunpf])(?![a-z])',
+                  lambda m: m.group(1) + mult[m.group(2).lower()], expr, flags=re.I)
+
+
 def write_ref(name, sch, params, drop=None):
     """LVS/PEX reference layout/ref/<name>.spice: the xschem netlist of xschem/<sch>.sch
     (LVS mode, top as a subckt) with the parameters substituted into quoted expressions
@@ -213,7 +221,7 @@ def write_ref(name, sch, params, drop=None):
             ln = re.sub(r'\s+\w+=\S+', '', ln).replace(f'.subckt {sch}', f'.subckt {name}')
         if drop and re.match(drop, ln.split()[0] if ln.split() else ''):
             continue
-        ln = re.sub(r"(\w+)='([^']+)'", lambda m: f'{m.group(1)}={eval(m.group(2), {}, dict(params)):g}', ln)
+        ln = re.sub(r"(\w+)='([^']+)'", lambda m: f'{m.group(1)}={eval(_si(m.group(2)), {}, dict(params)):g}', ln)
         out.append(ln)
     os.makedirs(os.path.join(REPO, 'layout', 'ref'), exist_ok=True)
     with open(os.path.join(REPO, 'layout', 'ref', name + '.spice'), 'w') as fh:
