@@ -66,7 +66,7 @@ Area, cost and legality are not constraints. Workflow: measure, then model, then
   - **Fallback:** a digital TX option to drive only one output (single-ended / monopole mode), in case the antiphase buffers misbehave on silicon. Built into `tx_top` as per-arm enables (en_n = 0): ~7 dB less power.
   - TX is driven in antiphase from two `ua` pins (+3 dB drive, no ground return).
   - RX goes into a differential LNA, which rejects common-mode board ground and self-interference.
-- **TX** (first pass simulated, `sim/tx/`; see STATUS):
+- **TX** (first pass simulated, `sim/tx/`; see docs/history.md):
   - ring oscillator from std cells (nand2_2 enable + 22 × inv_2, as the ttsky25b ring but longer);
   - → the R2R DAC's 1.8 → 3.3 V level shifter with a **skewed core** (it fails at 433 MHz as built);
   - → thick-oxide buffer tapers on the latch's two complementary nodes (inherently antiphase);
@@ -74,7 +74,7 @@ Area, cost and legality are not constraints. Workflow: measure, then model, then
   - keyed directly as OOK by on-chip digital logic; no PLL, no calibration; the chirp and drift don't matter to an envelope RX.
   - **xschem blocks done** (`xschem/gen/tx.py`, `sim/tx/tb_tx.py`): +3.7…+3.9 dBm at all five process corners. Off state: both arms low (thick NAND gate at the head of each taper).
 - **RX: no superheterodyne, no SAR** (decided by `model/rx_eval.py`, `model/threshold_variants.py`, `model/tau_study.py`).
-  - **Analog** (first pass simulated at tt, transistor level, `xschem/gen/`; see STATUS):
+  - **Analog** (first pass simulated at tt, transistor level, `xschem/gen/`; see docs/history.md):
     - 6-stage NMOS differential-pair limiting chain: stage 1 low-noise (1.2 mA), stages 2–6 capacitively degenerated (band shaping, no offset build-up), ~80 dB;
     - → successive-detection log detector (one rectifier per stage tap);
     - → RC LPF (~14 kHz, poly R + MIM);

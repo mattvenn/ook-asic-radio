@@ -1,0 +1,32 @@
+* bias_gen: xschem/bias_gen.sch with {'rref': 10000.0, 'rdiv': 200000.0, 'rtail': 250000.0, 'wpu': 2, 'cc': 1e-12} (lay.write_ref)
+** sch_path: /Users/mattvenn/asic/ook-asic-radio/xschem/bias_gen.sch
+.subckt bias_gen en vcm ib_chain ib_det ib_comp VDD VSS
+*.PININFO VDD:B VSS:B en:B vcm:B ib_chain:B ib_det:B ib_comp:B
+XMeip enb en VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1
+XMein enb en VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=0.5 nf=1
+XRd1 vcm VDD VSS sky130_fd_pr__res_xhigh_po_0p35 L=27.1039 mult=1
+XRd2 vref vcm VSS sky130_fd_pr__res_xhigh_po_0p35 L=27.1039 mult=1
+XRd3 dsw vref VSS sky130_fd_pr__res_xhigh_po_0p35 L=27.1039 mult=1
+XMdsw dsw en VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=1 nf=1
+XCvcm vcm VSS sky130_fd_pr__cap_mim_m3_1 W=22.0326 L=22.0326 m=2
+XCvref vref VSS sky130_fd_pr__cap_mim_m3_1 W=22.0326 L=22.0326 m=2
+XMpb pb pb VDD VDD sky130_fd_pr__pfet_01v8 L=1 W=4 nf=1
+XRtail tsw pb VSS sky130_fd_pr__res_xhigh_po_0p35 L=33.8799 mult=1
+XMtsw tsw en VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=1 nf=1
+XMpt tail pb VDD VDD sky130_fd_pr__pfet_01v8 L=1 W=4 nf=1
+XM1 d1 vref tail VDD sky130_fd_pr__pfet_01v8 L=1 W=4 nf=1
+XM2 ota x tail VDD sky130_fd_pr__pfet_01v8 L=1 W=4 nf=1
+XM3 d1 d1 VSS VSS sky130_fd_pr__nfet_01v8 L=2 W=2 nf=1
+XM4 ota d1 VSS VSS sky130_fd_pr__nfet_01v8 L=2 W=2 nf=1
+XCc ota VSS sky130_fd_pr__cap_mim_m3_1 W=22.0326 L=22.0326
+XMpd ota enb VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=1 nf=1
+XMn pr ota x VSS sky130_fd_pr__nfet_01v8 L=0.5 W=20 nf=2
+XRref1 xr x VSS sky130_fd_pr__res_high_po_0p69 L=9.50096 mult=1
+XRref2 VSS xr VSS sky130_fd_pr__res_high_po_0p69 L=9.50096 mult=1
+XMpr pr pr VDD VDD sky130_fd_pr__pfet_01v8 L=1 W=2 nf=1 m=60
+XMpu pr en VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1
+XMo_ib_chain ib_chain pr VDD VDD sky130_fd_pr__pfet_01v8 L=1 W=2 nf=1 m=60
+XMo_ib_det ib_det pr VDD VDD sky130_fd_pr__pfet_01v8 L=1 W=2 nf=1 m=2
+XMo_ib_comp ib_comp pr VDD VDD sky130_fd_pr__pfet_01v8 L=1 W=2 nf=1
+XMdum VDD VDD VDD VDD sky130_fd_pr__pfet_01v8 L=1 W=2 nf=1 m=5
+.ends

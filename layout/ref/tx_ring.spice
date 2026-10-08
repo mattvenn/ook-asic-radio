@@ -1,5 +1,5 @@
 * tx_ring: xschem/tx_ring.sch without the cw wiring caps (layout/gen/tx_ring.py)
-** sch_path: /foss/designs/shuttle-ttsky26c/asic-radio/xschem/tx_ring.sch
+** sch_path: /Users/mattvenn/asic/ook-asic-radio/xschem/tx_ring.sch
 .subckt tx_ring en out VDD VSS
 *.PININFO VDD:B VSS:B en:B out:B
 xr0 en r22 VSS VSS VDD VDD out sky130_fd_sc_hd__nand2_2

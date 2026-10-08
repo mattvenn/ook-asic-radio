@@ -208,6 +208,7 @@ def write_ref(name, sch, params, drop=None):
     (LVS mode, top as a subckt) with the parameters substituted into quoted expressions
     (netgen can't evaluate W='0.42*kn'), the subckt renamed to name, and the lines whose
     instance name matches the regex drop removed (e.g. wiring-estimate caps)."""
+    import math
     import re
     import subprocess
     tmp = os.path.join(REPO, 'build', 'lay', 'ref')
@@ -221,7 +222,7 @@ def write_ref(name, sch, params, drop=None):
             ln = re.sub(r'\s+\w+=\S+', '', ln).replace(f'.subckt {sch}', f'.subckt {name}')
         if drop and re.match(drop, ln.split()[0] if ln.split() else ''):
             continue
-        ln = re.sub(r"(\w+)='([^']+)'", lambda m: f'{m.group(1)}={eval(_si(m.group(2)), {}, dict(params)):g}', ln)
+        ln = re.sub(r"(\w+)='([^']+)'", lambda m: f'{m.group(1)}={eval(_si(m.group(2)), {"sqrt": math.sqrt}, dict(params)):g}', ln)
         out.append(ln)
     os.makedirs(os.path.join(REPO, 'layout', 'ref'), exist_ok=True)
     with open(os.path.join(REPO, 'layout', 'ref', name + '.spice'), 'w') as fh:

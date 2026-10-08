@@ -1,0 +1,10 @@
+#!/bin/bash
+# Mac stand-in for tools/osic (which only works under /home/matt/work/asic-workshop):
+# the local iic-osic-tools image, the repo mounted at its own path, sky130A via .designinit.
+# Usage, from the repo root: tools/osic-mac <command...>
+REPO=/Users/mattvenn/asic/ook-asic-radio
+cp "$REPO/.spiceinit" "$REPO/build/.spiceinit"
+cd "$REPO"
+exec docker run --rm -i -v "$REPO:$REPO" -v /Users/mattvenn/asic/.designinit:/foss/designs/.designinit:ro \
+  -e PDK=sky130A -w "$REPO" --entrypoint /bin/bash hpretl/iic-osic-tools:2026.05 -lc "$(printf '%q ' "$@")" 2>&1 \
+  | grep -v '^\[INFO\]'
