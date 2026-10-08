@@ -197,6 +197,11 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - The reference (`layout/ref/tx_ring.spice`) drops the schematic's `cw` caps: they're a wiring estimate, not devices.
   - **Block test** (`sim/tx/tb_tx_ring.py`, into the main level shifter, tt): schematic (cw 3.2 fF) 485.4 MHz → **extracted 508.5 MHz** (+4.8 %, less wiring than the ttsky25b calibration). Silicon estimate ×0.866 → **~440 MHz** (target 433.92), out duty 47.9 %. Keep 22 inverters.
   - Density reads 51–55 % on m1–m3, because the 4.2 µm-tall block is half rails; it averages out inside `tx_top`.
+  - **Folded (v2, 2026-10-08):** two rows that share the middle VDD rail. Row 0 has inv 1–12 left → right. Row 1 is rotated R180 (`pya.DTrans.R180` placed at `(x + w, 2H)`) and has inv 13–22 + nand right → left.
+    - With a tap at each end, the pins line up vertically: inv12 Y / inv13 A at the turn, and nand Y / inv1 A at the left. Both crossings are short met2 verticals.
+    - The middle rail is m1 + m3, with m2 only between the two verticals. The VSS rails (bottom, top) are joined by a met2 strap at the right edge. `out` and `en` pins are on met3 at the left edge.
+    - Result: 17.9 × 7.0 µm (was 34.5 × 4.2). `out` 10.6 → 3.3 fF, `en` 11.5 → 1.6 fF.
+    - **Frequency:** extracted tt 508.5 → **529.9 MHz** (~459 MHz on silicon; the long `out` wire had been acting as ~7 fF of load). Within the untrimmed spread the RX band covers. To get back to ~433, use 24 inverters (~422).
 - **`r2r`** (trim DAC, **reused** from tt08-analog-r2r-dac-3v3): the magic sources are copied unchanged into `layout/src/r2r/`; `layout/gen/r2r.sh` writes `layout/r2r.gds`. 71.8 × 54.1 µm (3,882 µm²; the area estimate had 3,866), pins on met1 along the bottom (b0..b7, out, VGND).
   - Clean against `xschem/r2r.sch`, which was drawn to match the layout device for device: DRC 0, antenna 0, LVS match. Density m1 27 %.
   - **Block test** (`sim/dac/tb_r2r.py`, tt): extracted output error ≤ 0.021 LSB; Rout 10.65 kΩ (schematic 10.64); the 127→128 carry into 1 pF settles to 0.1 LSB in 30.6 ns (schematic 24.6), irrelevant at the servo's µs steps.

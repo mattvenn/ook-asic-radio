@@ -27,7 +27,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - **Power pins:** met4 straps (≥ 1.2 µm, full height) on both the left and the right of the tile.
   - **TX blocks:** `tx_drv`, `tx_ls`, `tx_ls_en` laid out with the row builder `layout/gen/rows.py`; all clean. Previews: `layout/README.md` (TT GDS viewer links).
   - **Level shifter:** its ctrl_n inverter was upsized (M8/M7 4 / 1.68): extracted A duty 28 → 36 %, arm outputs 39 / 44 % (schematic 44 / 48 %). This schematic change isn't in `tb_tx` results yet.
-  - **Ring:** `tx_ring` laid out (std cells, 34.5 × 4.2 µm, clean). Extracted 508.5 MHz tt → **~440 MHz on silicon** (×0.866).
+  - **Ring:** `tx_ring` laid out, **folded into two rows** so there's no long feedback wire (std cells, 17.9 × 7.0 µm, clean). Extracted 529.9 MHz tt → **~459 MHz on silicon** (×0.866), +5.8 % on 433.92. The ring is untrimmed and the RX band is 330–560 MHz, so this is fine. 24 inverters would give ~422.
   - **Plan (Matt, 2026-10-08):** a first take on every leaf block, then floorplan the whole tile; assemble `tx_top` as part of that floorplan.
     - Outputs exit the bottom of the tile: ua[0] = 136.6, ua[1] = 117.3 µm in the 3x2 DEF, so the TX goes there.
     - The digital macro's `tx_en`/`tx_en_n` leave its west edge near the bottom.
