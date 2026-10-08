@@ -3,6 +3,31 @@
 Moved out of STATUS.md (2026-10-08) to keep the start-up read short. Sections are in the order they were
 written; grep for the block or topic you need.
 
+## Chain stability with the extracted stages and the laid-out chain (2026-10-08 night)
+Re-run of `sim/chain/stability.sh` (see "Re-verify … chain stability" below for the method) after the layouts of `amp_dp`, `amp_dpc` and `lna_chain`. All runs: 2 nH supply/ground, 30 pF decap, coupling `Ccpl` from out_p to pad_p, 1 µA / 1 ns kick. Decks in `build/real*` (tb_chain netlisted with xschem, then edited):
+- `real`: schematic as before (mm = 0.01); `real_mm0`: schematic, mm = 0 (the extractions have no mismatch; the two agree to 0.05 dB);
+- `real_pex`: the six stages swapped for `layout/pex/amp_dp.spice` / `amp_dpc.spice` (instance parameters dropped);
+- `real_full`: the whole `lna_chain` swapped for `layout/pex/lna_chain.spice` (Cin, Rb, Mref, the stages and all inter-stage wiring), no Ccpl.
+
+**Pass criterion (agreed):** at every corner (ss 10 °C is the worst), the kick decays (late/early ≪ 1), the AC peak is ≤ +1 dB above the same chain's no-coupling peak, and the 434 MHz gain is within ~0.5 dB. The coupling budget is the largest Ccpl that passes; the real layout should come in at ≤ half of it.
+
+| Ccpl out_p → pad_p | schematic (mm 0) tt: growth / peak | extracted stages tt | schematic ss 10 °C | extracted stages ss 10 °C |
+|---|---|---|---|---|
+| none | 2e-10 / 80.6 dB (80.4 at 434) | 5e-10 / 80.4 (79.9) | 2e-10 / 84.8 (84.7) | 7e-10 / 84.7 (84.2) |
+| 0.05 fF | | | +0.0 dB | +0.05 dB |
+| 0.1 fF | +0.1 dB | +0.2 dB | **+0.9 dB** | **+1.0 dB** |
+| 0.2 fF | | | +5.9 dB | +5.1 dB |
+| 0.3 fF | +4.9 dB | +4.3 dB | 115 dB peak, growth 0.003 | 99 dB peak, decays |
+| 0.5 fF | growth 0.39 (0.7 V pp late) | decays, +15.8 dB | **oscillates** (0.95, 2.2 V pp) | **oscillates** (0.93, 2.1 V pp) |
+| 1 fF | **oscillates** | **oscillates** | | |
+
+- **Budget: ≤ 0.1 fF** asymmetric output → input coupling (ss 10 °C), the same with the extracted stages as with the schematic: aim for ≤ 0.05 fF in the layout. It was already this tight on the schematic: the chain now has 84.7 dB at ss 10 °C (81.2 in the run below), and 0.1 fF gives +0.9 dB of peaking (+0.2 below).
+- **The extracted stages don't add loop gain in the chain.** Alone, each extracted stage has more gain than its schematic (amp_dpc +0.5 dB, amp_dp +1.1 dB at tt; mostly the sky130 models giving a 4-finger device written as nf=4 less gain than the same fingers listed separately, which is how magic extracts them; see `sim/amp_dpc/tb_amp_dpc.py --fingers`). In the chain each stage's extra parasitics load its neighbours, and the chain gain comes out the same or slightly lower.
+- **The laid-out chain (`real_full`, no Ccpl): stable, no peaking.** tt: growth 6e-10, 78.5 dB at 434 MHz, peak 79.1 dB at 347 MHz; ss 10 °C: growth 1e-9, 82.8 dB, peak 83.2 dB. VDPWR moves 22 / 40 µV pp after the kick (the rails' resistance is now in). The chain loses ~2 dB to its inter-stage wiring and input section (vs 80.4 / 84.7 dB schematic).
+- **No wiring coupling from the late stages back to the input.** The full extraction has no capacitance between o4 / o5 / out and inp / inn / g1 / o1: the straight line puts the output ~200 µm from the input, outside magic's coupling range.
+- **Not modelled:** substrate coupling (the extraction ties the substrate to VSS) and anything outside `lna_chain` (log_det's det line, the TX, the pads). Keep the chain's output end, and anything carrying its signal, away from its input end; the budget above still applies to those.
+- Run times: schematic ~20 s per case; extracted stages several minutes; the full chain ~15–30 min per case (8.7k R).
+
 ## Re-verify: rdeg 2 MΩ, decaps, chain stability (2026-10-08 evening)
 Run from `build/vfy` (its own `.spiceinit` with `num_threads=4`, so it can share the CPU with another ngspice).
 - **Comparator** (`tb_comp`, and `TBS=comp sim/corners/rx_corners.sh`, which now has trim points 0.6 0.8 0.9 1.0 1.1 1.2 1.8 V):
