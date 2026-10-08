@@ -25,17 +25,16 @@ module rd_gold (
 );
     localparam [6:0] SEED = 7'h7f;
 
-    function [6:0] step1(input [6:0] s);
-        step1 = {s[0] ^ s[4], s[6:1]};
-    endfunction
-    function [6:0] step2(input [6:0] s);
-        step2 = {s[0] ^ s[4] ^ s[5] ^ s[6], s[6:1]};
-    endfunction
-
     reg [6:0] code_q;
     reg [6:0] pre_cnt;
     reg [6:0] l2_start;
     reg [6:0] l1, l2;
+
+    // LFSR steps (wires, not functions: Yosys' pre-synthesis check flags
+    // function-local wires inside always blocks as undriven)
+    wire [6:0] l1_next  = {l1[0] ^ l1[4], l1[6:1]};
+    wire [6:0] l2_next  = {l2[0] ^ l2[4] ^ l2[5] ^ l2[6], l2[6:1]};
+    wire [6:0] l2s_next = {l2_start[0] ^ l2_start[4] ^ l2_start[5] ^ l2_start[6], l2_start[6:1]};
 
     always @(posedge clk) begin
         if (rst || load_code) begin
@@ -43,7 +42,7 @@ module rd_gold (
             pre_cnt  <= code_in;
             l2_start <= SEED;
         end else if (pre_cnt != 7'd0) begin
-            l2_start <= step2(l2_start);
+            l2_start <= l2s_next;
             pre_cnt  <= pre_cnt - 7'd1;
         end
     end
@@ -56,8 +55,8 @@ module rd_gold (
             l1 <= SEED;
             l2 <= l2_start;
         end else if (step) begin
-            l1 <= step1(l1);
-            l2 <= step2(l2);
+            l1 <= l1_next;
+            l2 <= l2_next;
         end
     end
 
