@@ -286,7 +286,9 @@ Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated i
   - all three bursts / LED toggle (one burst only);
   - corners.
 
-## Area ballpark (sim/area_estimate.py)
-- RX analog ≈ 7.8 % of the 2x2 tile in devices (×2.5 routing) + 25.5 % MIM (can't overlap the digital). With the digital at 54 % the 2x2 is ~full once TX, DAC and overhead are added; ~76 % if the RTL size options are taken.
-- **Decision (2026-10-07): fine for now; go to 3x2 if needed** rather than shrink early.
+## Area ballpark (sim/area_estimate.py, updated 2026-10-08 with TX, DAC, bias)
+- Analog, all blocks now first-passed: devices ~15,700 µm² (×2.5 routing; ring and R2R ladder from measured layouts: 228 µm² for 19 stages, 3,864 µm² for the ladder) + MIM ~21,300 µm² (28 % of a 2x2; can't overlap the digital).
+- **2x2:** ~102 % with the digital as is (40,500 µm² placed); **~79 %** with the RTL size reduction (~23,000 µm²). Both before decap, guard rings and power routing.
+- **3x2** (~113,000 µm²): ~68 % / ~53 %.
+- **Decision (2026-10-07): fine for now; go to 3x2 if needed** rather than shrink early. Check that 3x2 is allowed for analog on ttsky26d.
 - Easy cap savings if ever wanted: LPF 4 MΩ / 2.7 pF (the comparator has no kickback); avg Cs 0.1 p / Cavg 3.6 p; cdet 1 p; chain cin 1 p (NF check). Together 19k → ~8k µm² of MIM.
