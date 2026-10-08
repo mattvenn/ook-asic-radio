@@ -9,4 +9,8 @@
 * using matplotlib etc to model the whole chain and make predictions about range
 * using differential antennas with 2 pins each for better signal tx and rx
 * flops with clock gates to avoid adding a mux to each flop for the gold code comparitors
+* layout was very automatic, proceeded by each block, with parasitics, lvs, drc, antenna checks
+* took guidance from Harald's courses and my own learnings
+* bias generator was suprisingly the most complex
+* 3 different agents built on my mac, the cloud and my desktop
 
