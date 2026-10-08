@@ -234,6 +234,13 @@ Measured ring: tt08/ttsky25b `tt_um_mattvenn_analog_ring_osc`, ring 1 = 18 × `s
 - **Rule for the 433 MHz ring:** design to **433 / 0.866 ≈ 500 MHz extracted-tt**. With the same std-cell ring that's ~23 stages (22 inv + nand) if the load stays similar (f ∝ 1/N: 19 × 598 / 500 ≈ 22.7).
   - If the new lot is really tt it lands ~500 MHz; if ss, ~414 MHz. Both are inside the RX band (330–560 MHz).
 - ngspice trap: in a control loop, `option temp = X` must come **after** `reset` (`set temp` does nothing).
+- **Schematic vs extracted:** the original schematic (10 fF wiring per stage in `inverter`) gives only **357 MHz** against 598 extracted, so it was very pessimistic. **3.2 fF per stage** reproduces the extracted ring (`sim/ring/ttsky25b_ring_sch.sh` sweeps it).
+- **New ring sizing** with that calibrated model (`sim/ring/ring_stages.sh`; nand2_2 enable + N × inv_2, same first-driver load):
+  - 18 inverters: 590 MHz (check vs 598);
+  - 20: 538 → ~466 on silicon;
+  - **22: 494 MHz → ~428 MHz on silicon (×0.866). Choose 22 inverters + nand (23 stages).**
+  - 24: 457 → ~396.
+  - Keep the ring's load the same as the ttsky25b driver's first inverter (W 9/3), so the next stage (level shift / pre-driver) should present that input.
 
 ## Whole-RX transient (sim/rx/, first pass done)
 Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated in one piece).
