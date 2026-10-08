@@ -108,3 +108,14 @@ The radio is **half-duplex** (`ui[7]` sets the role). In RX the ring's enable (`
 
 ## Done when
 Matt has picked a variant and `layout/floorplan/floorplan.json` is committed, along with any open questions it settles (straps vs macro, decap size). Then: `layout/gen/top.py` places the GDS from it. The chain and decap layouts drop into their reserved outlines.
+
+## The page as built (2026-10-08, cloud session)
+- **Sources:** `layout/floorplan/page/` holds `page.html` (UI) and `engine.js` (orientations, pins, nets, ranked-rule checks, `floorplan.json` export/import). `tools/floorplan_page.py [out.html] [--dev]` inlines them with `blocks.json`/`tile.json` into one artifact page (`--dev` also embeds `variants.json` for a local preview without the store).
+- **Shared state:** the artifact's database: one document per variant in `variants`, and the thresholds in `config/settings`. Matt's drags are saved there (debounced), and Claude reads and writes the same documents.
+- **Variants:** `layout/floorplan/page/place.js` anneals the movable blocks of each variant around fixed anchors, fills the leftover space with decap and picks clear strap lanes, then writes `layout/floorplan/variants.json` (seeded into the store). `node layout/floorplan/page/check.js [variants.json | floorplan.json]` prints the same checklist as the page.
+- **`blocks.json`** now also has `lna_chain` and, per cell, `m4`: merged met4 + capm (MIM) boxes, for the strap-lane check (`tools/floorplan_blocks.py`).
+- **Findings that change the spec:**
+  - **The straight `lna_chain` (268.1 × 35.3 µm) fits nowhere in the tile.** It's wider than the ~223 µm beside the macro, and taller than the tile (226 µm) when rotated; under the macro there are at most ~31 µm. The page shows it **folded after stage 3** as two GDS-true parts, `xchain.a` (input section + stages 1-3, 171.5 µm) and `xchain.b` (stages 4-6, 96.6 µm), hatched as "fold proposal". The chain layout needs a fold (an L: up from the pads, then along the top) before `top.py`.
+  - **The macro's north pins need a routing channel.** The 42 TT pins (x 15-131) go to the macro's north pins (pin_order.cfg, ~x 231-360 with the macro at the right), so ~42 tracks run horizontally above the analog area and enter the macro from above: ~12 µm of channel (the page's "TT pin channel", editable). With the macro body on the top edge (variant B) the north pins can't be reached at all, unless the macro is re-hardened with them on the west edge.
+  - **The macro's comp_in / sc_phi / trim pins are in the lower part of its west edge** (y ~72-117 with the macro at y 23.76); the even pin spread is an estimate until the DEF is read.
+  - **Area:** with the real chain (9.45k, was a 6.2k estimate) the signal blocks are 31.3k. The variants place ~10-16k of the 22.1k decap target, so the VAPWR decap is the lever (50 → ~30 pF).

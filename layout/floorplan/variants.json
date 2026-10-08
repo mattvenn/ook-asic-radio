@@ -1,0 +1,517 @@
+{
+ "variants": [
+  {
+   "id": "A",
+   "name": "A: RX left, TX middle, macro right",
+   "note": "The spec's A with the chain folded into two GDS-true parts. Stages 1-3 run up from the pads (input end at ua[2]/ua[3], bias_gen beside it for short ib_chain / vcm), stages 4-6 turn right along the top, so the stage-6 output ends ~150 µm from the input. log_det sits in the corner of the L and takes taps from both legs. TX drivers sit on ua[0]/ua[1], between the RX input and the macro. The macro sits 12 µm below the top edge to leave the TT-pin channel to its north pins.\nOpen: the chain fold needs a lna_chain re-layout (the straight 268 µm chain fits nowhere in the tile); decap is short of 50 + 30 pF.",
+   "order": 0,
+   "place": {
+    "macro": {
+     "x": 228.12,
+     "y": 23.76,
+     "orient": "R0"
+    },
+    "xchain.a": {
+     "x": 51.6,
+     "y": 3,
+     "orient": "MXR90"
+    },
+    "xchain.b": {
+     "x": 89.36,
+     "y": 176,
+     "orient": "R0"
+    },
+    "xdet": {
+     "x": 89.36,
+     "y": 142.4,
+     "orient": "MX"
+    },
+    "xbias": {
+     "x": 0,
+     "y": 3,
+     "orient": "R270"
+    },
+    "xtx.xdrv_n": {
+     "x": 102.7,
+     "y": 3,
+     "orient": "MYR90"
+    },
+    "xtx.xdrv_p": {
+     "x": 131.9,
+     "y": 3,
+     "orient": "R270"
+    },
+    "xlpf": {
+     "x": 98.69466926029928,
+     "y": 60.23099976629979,
+     "orient": "MX"
+    },
+    "xavg": {
+     "x": 188.50485652815644,
+     "y": 107.60861038361007,
+     "orient": "MYR90"
+    },
+    "xcomp": {
+     "x": 89.64774538128748,
+     "y": 97.81379914193293,
+     "orient": "R180"
+    },
+    "xctrim": {
+     "x": 188.5,
+     "y": 187.5,
+     "orient": "R180"
+    },
+    "xdac": {
+     "x": 166.42967043601254,
+     "y": 33.26435839047503,
+     "orient": "R90"
+    },
+    "xdbg": {
+     "x": 165.60372182330417,
+     "y": 123.59516036428452,
+     "orient": "R180"
+    },
+    "xtx.xring": {
+     "x": 186.6645882208298,
+     "y": 3.980861755559603,
+     "orient": "R0"
+    },
+    "xtx.xls": {
+     "x": 165.16404347966127,
+     "y": 4.4925922928136215,
+     "orient": "MXR90"
+    },
+    "xtx.xlse_p": {
+     "x": 223.5,
+     "y": 3,
+     "orient": "R180"
+    },
+    "xtx.xlse_n": {
+     "x": 207.5,
+     "y": 3,
+     "orient": "R180"
+    }
+   },
+   "est": {},
+   "decaps": {
+    "xdeca": [
+     {
+      "x": 0,
+      "y": 86,
+      "w": 49,
+      "h": 127
+     },
+     {
+      "x": 240,
+      "y": 2,
+      "w": 253,
+      "h": 16
+     }
+    ],
+    "xdecd": [
+     {
+      "x": 174,
+      "y": 108,
+      "w": 12,
+      "h": 31
+     },
+     {
+      "x": 52,
+      "y": 177,
+      "w": 34,
+      "h": 36
+     },
+     {
+      "x": 215,
+      "y": 188,
+      "w": 8,
+      "h": 25
+     },
+     {
+      "x": 103,
+      "y": 47,
+      "w": 60,
+      "h": 10
+     },
+     {
+      "x": 162,
+      "y": 22,
+      "w": 61,
+      "h": 8
+     }
+    ]
+   },
+   "straps": [
+    {
+     "net": "VGND",
+     "x": 49.6,
+     "w": 1.2
+    },
+    {
+     "net": "VDPWR",
+     "x": 87.6,
+     "w": 1.2
+    },
+    {
+     "net": "VAPWR",
+     "x": 221.4,
+     "w": 1.2
+    },
+    {
+     "net": "VGND",
+     "x": 488.6,
+     "w": 1.2
+    },
+    {
+     "net": "VDPWR",
+     "x": 490.2,
+     "w": 1.2
+    }
+   ]
+  },
+  {
+   "id": "B",
+   "name": "B: A with the macro at the top edge",
+   "note": "A with the macro body on the top edge, so the strip under the macro becomes one ~31 µm decap band (easier to tile).\nFails as hardened: the macro's 42 north pins can then only be reached from outside the tile. B needs the macro re-hardened with those pins moved to the top of its west edge (pin_order.cfg #W), which also shortens the TT-pin wiring.",
+   "order": 1,
+   "place": {
+    "macro": {
+     "x": 228.12,
+     "y": 35.76,
+     "orient": "R0"
+    },
+    "xchain.a": {
+     "x": 51.6,
+     "y": 3,
+     "orient": "MXR90"
+    },
+    "xchain.b": {
+     "x": 89.36,
+     "y": 176,
+     "orient": "R0"
+    },
+    "xdet": {
+     "x": 89.36,
+     "y": 142.4,
+     "orient": "MX"
+    },
+    "xbias": {
+     "x": 0,
+     "y": 3,
+     "orient": "R270"
+    },
+    "xtx.xdrv_n": {
+     "x": 102.7,
+     "y": 3,
+     "orient": "MYR90"
+    },
+    "xtx.xdrv_p": {
+     "x": 131.9,
+     "y": 3,
+     "orient": "R270"
+    },
+    "xlpf": {
+     "x": 185.1450415326407,
+     "y": 108.22645837690104,
+     "orient": "R270"
+    },
+    "xavg": {
+     "x": 105.29335933109874,
+     "y": 108.15036252818773,
+     "orient": "MX"
+    },
+    "xcomp": {
+     "x": 176.61049335622917,
+     "y": 32.156412336998656,
+     "orient": "MYR90"
+    },
+    "xctrim": {
+     "x": 161.42500092863204,
+     "y": 6.0653909514499835,
+     "orient": "R0"
+    },
+    "xdac": {
+     "x": 102.35166143133266,
+     "y": 51.49260380209149,
+     "orient": "MX"
+    },
+    "xdbg": {
+     "x": 214.02431477263235,
+     "y": 176.14349003505612,
+     "orient": "R0"
+    },
+    "xtx.xring": {
+     "x": 195.04348227505298,
+     "y": 5.826065051330564,
+     "orient": "MX"
+    },
+    "xtx.xls": {
+     "x": 187.4265096986774,
+     "y": 15.32119862610488,
+     "orient": "R90"
+    },
+    "xtx.xlse_p": {
+     "x": 219,
+     "y": 14,
+     "orient": "R180"
+    },
+    "xtx.xlse_n": {
+     "x": 234.89408944704877,
+     "y": 15.138879261534452,
+     "orient": "R180"
+    }
+   },
+   "est": {},
+   "decaps": {
+    "xdeca": [
+     {
+      "x": 0,
+      "y": 86,
+      "w": 49,
+      "h": 127
+     },
+     {
+      "x": 251,
+      "y": 2,
+      "w": 242,
+      "h": 28
+     }
+    ],
+    "xdecd": [
+     {
+      "x": 52,
+      "y": 177,
+      "w": 34,
+      "h": 36
+     },
+     {
+      "x": 90,
+      "y": 50,
+      "w": 9,
+      "h": 89
+     },
+     {
+      "x": 189,
+      "y": 176,
+      "w": 22,
+      "h": 37
+     },
+     {
+      "x": 216,
+      "y": 2,
+      "w": 32,
+      "h": 9
+     }
+    ]
+   },
+   "straps": [
+    {
+     "net": "VGND",
+     "x": 49.6,
+     "w": 1.2
+    },
+    {
+     "net": "VDPWR",
+     "x": 87.6,
+     "w": 1.2
+    },
+    {
+     "net": "VAPWR",
+     "x": 221.4,
+     "w": 1.2
+    },
+    {
+     "net": "VGND",
+     "x": 488.6,
+     "w": 1.2
+    },
+    {
+     "net": "VDPWR",
+     "x": 490.2,
+     "w": 1.2
+    }
+   ]
+  },
+  {
+   "id": "C",
+   "name": "C: chain far left, signal path along the top",
+   "note": "The chain at the far left edge, its late stages along the top-left, and the detector -> LPF -> avg -> comp path in the upper middle, away from the chain input. bias_gen is free to move, so ib_chain / vcm get longer.\nThe macro's comp_in / sc_phi pins are low on its west edge (y ~72-80), so those wires climb along the macro in the halo gap; moving them up the west edge (pin_order.cfg) would shorten them.",
+   "order": 2,
+   "place": {
+    "macro": {
+     "x": 228.12,
+     "y": 23.76,
+     "orient": "R0"
+    },
+    "xchain.a": {
+     "x": 2,
+     "y": 3,
+     "orient": "MXR90"
+    },
+    "xchain.b": {
+     "x": 39.76,
+     "y": 176,
+     "orient": "R0"
+    },
+    "xdet": {
+     "x": 39.76,
+     "y": 142.4,
+     "orient": "MX"
+    },
+    "xtx.xdrv_n": {
+     "x": 102.7,
+     "y": 3,
+     "orient": "MYR90"
+    },
+    "xtx.xdrv_p": {
+     "x": 131.9,
+     "y": 3,
+     "orient": "R270"
+    },
+    "xbias": {
+     "x": 40,
+     "y": 45,
+     "orient": "MYR90"
+    },
+    "xlpf": {
+     "x": 141.70116332870546,
+     "y": 115.055778715805,
+     "orient": "R90"
+    },
+    "xavg": {
+     "x": 139.07889758480638,
+     "y": 183.35523787992088,
+     "orient": "MX"
+    },
+    "xcomp": {
+     "x": 179.35214409447207,
+     "y": 107.34276766857806,
+     "orient": "MYR90"
+    },
+    "xctrim": {
+     "x": 115.69600053470306,
+     "y": 116.28504329222315,
+     "orient": "MX"
+    },
+    "xdac": {
+     "x": 150.94577297738863,
+     "y": 50.709646888743,
+     "orient": "R180"
+    },
+    "xdbg": {
+     "x": 103,
+     "y": 123.5,
+     "orient": "R180"
+    },
+    "xtx.xring": {
+     "x": 178,
+     "y": 38.5,
+     "orient": "R0"
+    },
+    "xtx.xls": {
+     "x": 161.08585021782704,
+     "y": 29.00220451269536,
+     "orient": "MY"
+    },
+    "xtx.xlse_p": {
+     "x": 161.10183334957748,
+     "y": 10.928247870117204,
+     "orient": "R180"
+    },
+    "xtx.xlse_n": {
+     "x": 110.5,
+     "y": 46.5,
+     "orient": "R270"
+    }
+   },
+   "est": {},
+   "decaps": {
+    "xdeca": [
+     {
+      "x": 92,
+      "y": 47,
+      "w": 16,
+      "h": 13
+     },
+     {
+      "x": 129,
+      "y": 47,
+      "w": 19,
+      "h": 13
+     },
+     {
+      "x": 199,
+      "y": 39,
+      "w": 24,
+      "h": 9
+     },
+     {
+      "x": 178,
+      "y": 21,
+      "w": 45,
+      "h": 15
+     },
+     {
+      "x": 177,
+      "y": 2,
+      "w": 316,
+      "h": 16
+     }
+    ],
+    "xdecd": [
+     {
+      "x": 40,
+      "y": 128,
+      "w": 60,
+      "h": 11
+     },
+     {
+      "x": 130,
+      "y": 143,
+      "w": 9,
+      "h": 30
+     },
+     {
+      "x": 0,
+      "y": 177,
+      "w": 37,
+      "h": 36
+     },
+     {
+      "x": 92,
+      "y": 63,
+      "w": 56,
+      "h": 49
+     }
+    ]
+   },
+   "straps": [
+    {
+     "net": "VGND",
+     "x": 38.5,
+     "w": 1.2
+    },
+    {
+     "net": "VDPWR",
+     "x": 0.6,
+     "w": 1.2
+    },
+    {
+     "net": "VAPWR",
+     "x": 221.4,
+     "w": 1.2
+    },
+    {
+     "net": "VGND",
+     "x": 488.6,
+     "w": 1.2
+    },
+    {
+     "net": "VDPWR",
+     "x": 490.2,
+     "w": 1.2
+    }
+   ]
+  }
+ ]
+}
