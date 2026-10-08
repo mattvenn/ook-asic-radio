@@ -98,6 +98,11 @@ class Block:
         self.cell.shapes(self.li(PIN[lay])).insert(b)
         self.cell.shapes(self.li(LBL[lay])).insert(pya.DText(name, pya.DTrans(b.center().x, b.center().y)))
 
+    def label(self, lay, b, name):
+        """Net name on a metal (text only, no pin shape): names internal nets in the
+        extracted netlist and the LVS report instead of magic's a_123_456#."""
+        self.cell.shapes(self.li(LBL[lay])).insert(pya.DText(name, pya.DTrans(b.center().x, b.center().y)))
+
     def place(self, cell, x, y):
         return self.cell.insert(pya.DCellInstArray(cell.cell_index(), pya.DTrans(pya.DVector(snap(x), snap(y)))))
 

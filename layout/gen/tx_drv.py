@@ -247,6 +247,8 @@ def build():
         b.rect('m3', box(x0, t['y0'], max(xs[net]) + 0.1, t['y1']))
         if net in ('in', 'en'):
             b.pin('m3', box(0, t['y0'], 0.5, t['y1']), net)
+        else:
+            b.label('m3', box(min(xs[net]), t['y0'], max(xs[net]), t['y1']), net)
     # out riser (met2+met3) on the right edge, spanning only between the two output
     # drain bars (not to the rails)
     riser = box(rx0, min(o.bottom for o in outbars), xmax, max(o.top for o in outbars))

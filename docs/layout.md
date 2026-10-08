@@ -11,8 +11,9 @@ Developed on `tx_drv` first; the same steps apply to every analog block.
      - `Fet` wraps a pcell (W total, split over nf) and reads its terminals from the geometry: met1 S/D strips, gate pads, guard ring outer/hole, diffusion;
      - `Block.via` fills DRC-safe cut arrays (per-axis enclosure for narrow strips);
      - `Block.stack` builds metal stacks; `Block.pin` adds pins.
-3. **Check:** `tools/osic bash layout/check.sh <block>` (~5 s) runs:
+3. **Check:** `tools/osic bash layout/check.sh <block>` (~10 s) runs:
    - magic DRC (full), the KLayout `sky130A_mr.drc` deck (feol + beol);
+   - magic antenna check (flattened, own session) and a per-layer metal density report;
    - netgen LVS of the magic extraction against the xschem netlist (`top_subckt`, `lvs_netlist`).
    - Results in `build/lvs/<block>/`.
 4. **Extract:** `tools/osic bash layout/pex.sh <block>` (magic, flattened; extresist + C to 0 fF).
@@ -20,6 +21,56 @@ Developed on `tx_drv` first; the same steps apply to every analog block.
    - Output: `layout/pex/<block>.spice`.
 5. **Re-simulate:** `tools/pexswap.py` `swap(deck, [blocks])` removes the schematic subckt from a netlist and includes the extracted one.
    - `sim/tx/tb_tx.py --pex <corners>` does this for `tx_drv`; outputs are tagged `_pex`.
+
+## Checklist (every block, and the top level)
+From the IIC-JKU guides and our own lessons:
+- the circuit designer's etiquette: <https://github.com/iic-jku/analog-circuit-design/blob/main/content/appendix/_app_circuit_designers_etiquette.qmd>
+- the layout chapter: <https://github.com/iic-jku/design-complex-ic/blob/main/content/layout/_sec_layout.qmd>
+
+**Before drawing**
+- [ ] **Floorplan first, top-down** (their "common mistake": lots of cells, then a mess at assembly). Each block gets a target outline, pin sides and rail heights from the floorplan.
+- [ ] **Unit devices in the schematic for anything matched:** same W and L, a ratio from multiples of a unit. Fix it in the schematic, not in layout.
+- [ ] **Digital controls into analog blocks are buffered locally**, by an inverter on the block's own supply (`sc_phi1/2`, `rx_en`, `dbg_en`, `trim[7:0]`).
+- [ ] **A defined off state:** no floating nodes when powered down. The block testbench covers off and start-up, not just on.
+
+**Supplies, grounds, noise**
+- [ ] **Noisy and quiet are separate.** TX (VAPWR + its VSS) and RX get their own supply/ground routing, joined only at the met4 straps / met5 PDN.
+  - Guard rings and substrate ties of the RX go to the RX's own quiet ground, never to a TX return.
+  - TX far from the RX input.
+- [ ] **VDD and VSS run as a pair** (small loop): each met4 strap of one net next to a strap of the other, on both the left and the right of the tile.
+- [ ] **Decouple to the right potential,** and check the bond-wire L + on-chip C resonance (`sim/chain/stability.sh`).
+- [ ] **Hot spots:** the TX drivers dissipate ~50 mW. Keep matched devices far away or on a symmetry line through the hot spot.
+
+**Devices**
+- [ ] **PMOS grouped, NMOS grouped** (rows): the diffusion-to-nwell spacing is large.
+- [ ] **Series devices of equal W share a diffusion** (multi-finger pcell, e.g. the NAND's series NMOS).
+- [ ] **RF gates:** each gate finger's resistance < 1/gm. Watch finger width, and contact both ends for the LNA chain if needed.
+- [ ] **Matching:**
+  - identical units, the same orientation and the **same current direction** (no snaking);
+  - dummies at the edges, **tied to a defined potential, never floating**;
+  - common centroid for pairs, symmetric wiring parasitics;
+  - no low-level metal over sensitive devices;
+  - matched PMOS away from nwell edges (well-proximity effect).
+- [ ] **Matched R and C arrays:** unit elements at a constant pitch, dummies tied off, common centroid for ratios.
+
+**Wiring**
+- [ ] **Measure the currents** in the block testbench, then size widths and **cut counts** (≥ 2× the tech-LEF limits; table below). The generator prints the cut check.
+- [ ] **Label internal nets** (`Block.label`), so LVS and PEX name them (`y4`, not `a_4018_655#`).
+- [ ] **No met5** (TT PDN). Power pins: met4, ≥ 1.2 µm, full height.
+- [ ] **Good neighbour on density:** TT adds fill after submission, but the PDK rule is ≥ 40 % clear area per layer (li, met1–met3), so stay **well under 60 % metal** in any region.
+  - No needless solid plates; rails only as wide as the current needs.
+  - Mind the decaps: MIM fills met3/met4 over its whole area. `check.sh` reports density per layer and flags > 50 %.
+
+**Checks (`layout/check.sh`)**
+- [ ] Magic DRC 0, KLayout `sky130A_mr` DRC 0.
+- [ ] **Antenna 0** (Magic `antennacheck`, flattened, in its own session; verified to catch a deliberate violation).
+- [ ] LVS match, with pins equivalent.
+- [ ] Density per layer under 50 %.
+- [ ] PEX + block testbench: the extracted result is close enough to the schematic.
+
+**Extraction for the final end-to-end run**
+- Full RC per block is fine (~2 min). A full-chip RC run will be slow. Consider coupling-C-only for most of the chip, with RC only on the RF path.
+- KLayout-PEX (`kpex`, sky130A supported) can cross-check magic's extraction.
 
 ## Verification policy: block tests, one end-to-end at the end
 - **Per block, a small dedicated testbench** (`tb_<block>`): ideal stimulus, the block's real load, and measurement of just what the block must do.
@@ -113,3 +164,9 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
 - **A riser spanning rail to rail shorts `out` to both supplies.** LVS shows it as "(no pin, node is out)" for VAPWR/VSS.
 - **Narrow met2 stubs:** via2 needs 0.04 µm met2 enclosure on two sides and 0.085 µm on the other two. That fits a 0.28 µm stub, with the track (met3) extended 0.1 µm past the end stubs.
 - **Magic DRC locations:** `check.sh` now prints them in µm (`cif scale out`). Magic's `what -list` needs a `select area` first.
+- **Magic's `antennacheck` can silently report nothing.** It is only trustworthy:
+  - on a **flattened** cell: on the hierarchy it misses pcell gates driven by metal in the parent;
+  - in a **fresh session**: after the LVS extraction in the same session it found nothing;
+  - with **`antennacheck debug`**: otherwise violations only go to the feedback list.
+  - Verified with a deliberate violation (`layout/gen/ant_test.py`: a 0.5 × 0.42 µm g5 gate on 300 µm² of met1, ratio 1033 > 400).
+- **Net labels:** text on the metal's label purpose (e.g. 70/5) without a pin shape names the net in magic's extraction without making it a port.
