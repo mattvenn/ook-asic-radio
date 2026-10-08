@@ -12,7 +12,7 @@ A rough-and-ready radio link between two TT demo boards that select the same TT 
 
 Area, cost and legality are not constraints. Workflow: measure, then model, then schematic and RTL, then ASIC.
 
-**Target: ttsky26d (tapeout November 2026), 2×2 analog tile, sky130.** This is ~6–8 weeks from 2026-10-07, so the analog is the critical path and stretch goals are out of scope.
+**Target: ttsky26d (tapeout November 2026), 3×2 analog tile (available; the repo is still set up as 2×2 + VAPWR), sky130.** This is ~6–8 weeks from 2026-10-07, so the analog is the critical path and stretch goals are out of scope.
 
 ## What phase 0 measured (bench/, data in bench/data/)
 | Item | Result |
@@ -66,20 +66,27 @@ Area, cost and legality are not constraints. Workflow: measure, then model, then
   - **Fallback:** a digital TX option to drive only one output (single-ended / monopole mode), in case the antiphase buffers misbehave on silicon.
   - TX is driven in antiphase from two `ua` pins (+3 dB drive, no ground return).
   - RX goes into a differential LNA, which rejects common-mode board ground and self-interference.
-- **TX:**
-  - a ring oscillator plus two antiphase output buffers, reusing the proven ttsky25b design;
-  - keyed directly as OOK by on-chip digital logic;
-  - no PLL, no calibration; the chirp and drift don't matter to an envelope RX.
+- **TX** (first pass simulated, `sim/tx/`; see STATUS):
+  - ring oscillator from std cells (nand2_2 enable + 22 × inv_2, as the ttsky25b ring but longer);
+  - → the R2R DAC's 1.8 → 3.3 V level shifter with a **skewed core** (it fails at 433 MHz as built);
+  - → thick-oxide buffer tapers on the latch's two complementary nodes (inherently antiphase);
+  - → final drivers N 48 / P 144 µm on VAPWR (3.3 V) → `ua` pins → dipole;
+  - keyed directly as OOK by on-chip digital logic; no PLL, no calibration; the chirp and drift don't matter to an envelope RX.
 - **RX: no superheterodyne, no SAR** (decided by `model/rx_eval.py`, `model/threshold_variants.py`, `model/tau_study.py`).
-  - **Analog:** differential inverter LNA/limiter → log envelope detector → RC LPF (~15 kHz) → **one comparator**.
-    - (+) input: the LPF output.
-    - (−) input: a **slow average of the detector output** (τ ≈ 0.3–1 ms, switched-capacitor resistor) **+ a fine offset trim** from the reused **R2R DAC**, attenuated to ~±10 mV (~0.005 dB/LSB).
+  - **Analog** (first pass simulated at tt, transistor level, `xschem/gen/`; see STATUS):
+    - 6-stage NMOS differential-pair limiting chain: stage 1 low-noise (1.2 mA), stages 2–6 capacitively degenerated (band shaping, no offset build-up), ~80 dB;
+    - → successive-detection log detector (one rectifier per stage tap);
+    - → RC LPF (~14 kHz, poly R + MIM);
+    - → **one continuous-time comparator** (no strobe, so no kickback), sampled by the digital.
+    - Comparator inputs: the LPF output, and a **slow switched-cap average of the LPF output** (τ ≈ 0.47 ms). The **fine offset trim** from the reused **R2R DAC** enters through a degenerated trim pair inside the comparator (~0.087 mV/LSB).
+    - Chosen over the inverter LNA because pseudo-differential inverters amplify common mode, so a 60 dB chain would rail on our own 10 MHz clock.
   - **Why:** near sensitivity the whole signal swing is ~0.27 dB (~4 mV) at −90 dBm, and only ~0.08 dB (~1 mV at the simulated 12 mV/dB) at −94 dBm, below the noise in the RF band. A full-range 8-bit DAC threshold (0.44 dB/LSB) fails below −80 to −90 dBm, and an untrimmed 2 mV comparator offset loses 4+ dB.
   - **Digital:**
     - **Trim servo:** steps the DAC to keep the comparator's 1s density at 50%.
     - **Code mode:** 1-bit chip decisions (majority of 8 samples/chip) at 4 chip-timing phases → 127-bit shift registers → sequential XNOR-popcount against the RX's own Gold code → threshold ≥ 97/127 (z = 6) → 2-of-3 bursts with the right spacing → toggle LED.
     - **Signal strength:** the correlation score is the link-quality indicator for the 7-seg.
   - **Modelled sensitivity:** ≈ −94 dBm, within ~2 dB of a multi-bit soft correlator, at ~10× less storage. Robust to fading; works with a bursty −60 dBm interferer down to ≈ −66..−72 dBm signal.
+  - **With the simulated chain** (NF ≈ 11 dB, ~450 MHz noise bandwidth, 12 mV/dB): −94 dBm still decodes, but only just: score 99/127 against a threshold of 97 in the whole-RX transistor-level transient. Margin across corners is the main open analog question.
 - **Clock: ~10 MHz** from the RP2350 (`config.ini`), not 50 MHz. The digital needs only ~1 MHz (comparator sampled every 130 clocks, sequential popcount).
   - **The harmonics are still in the LNA band**, every 10 MHz, including 430 and 440 MHz either side of 433.92 MHz.
   - **But they're weaker:** each line is ~14 dB weaker at ~450 MHz than a 50 MHz harmonic, total in-band power is ~7 dB lower, and the average supply noise is ~5× lower.
@@ -89,13 +96,13 @@ Area, cost and legality are not constraints. Workflow: measure, then model, then
 ## Block requirements (initial, to be refined by the golden model and simulation)
 | Block | Requirement |
 |---|---|
-| Ring osc + buffers (TX) | **433 MHz nominal at TT corner** (resize the ttsky25b ring: more stages/load than its 518 MHz); spread across corners is OK; two antiphase buffers (≤ ~10° phase error, matched layout) into a ~73 Ω dipole. **Reuse the ttsky25b driver (P72/N24 µm) at ×2.** Simulation (`sim/txdrv`) shows the TT analog path (~150–300 Ω) dominates: a ×4 driver gains only ~1 dB. The dipole has no DC path, so only RF current flows (into a 50 Ω scope there's ~2.8 mA DC + ~3 mA peak RF). Enable controlled by the digital logic. **Output stage on 3.3 V (VAPWR)** with thick-oxide devices (`g5v0d10v5`) and a level shifter/pre-driver from the 1.8 V ring: +~5 dB. The current limit is not a concern (see Open questions). Needs a 433 MHz thick-oxide driver simulation |
-| LNA/limiter chain | **differential input**; ≥ 60 dB small-signal gain across ~330–560 MHz (433 ± ~25% to cover TX ring spread); NF ≲ 10 dB including pad and ESD; good common-mode rejection; the ~392 MHz signal measured on the bench will be in band, so rely on the correlator for it |
+| Ring osc + buffers (TX) | **~433 MHz on silicon.** The ttsky25b ring measured 518 MHz against 598 extracted-tt (×0.866), so **design to ~500 MHz extracted-tt**: nand + 22 inv_2 → 484 MHz tt sim → ~419 MHz expected (20 inv → ~466). Spread across corners is OK (RX band 330–560). Antiphase arms from the level shifter's complementary nodes: phase within 1.2° (≤ 10° budget). **3.3 V output stage** (thick-oxide `g5v0d10v5`): **+3.3…+4.0 dBm into the 73 Ω dipole across corners, +4.2 dB over the old 1.8 V driver**; ~10 mA from VAPWR, only ~0.2 mA step on VDPWR (so less turn-on chirp). Larger drivers gain nothing (the pad/mux path dominates). The dipole has no DC path. Enable from the digital; on/off in a few ns |
+| LNA/limiter chain | **differential input**; ≥ 60 dB small-signal gain across ~330–560 MHz (433 ± ~25% to cover TX ring spread); NF ≲ 10 dB including pad and ESD; good common-mode rejection; the ~392 MHz signal measured on the bench will be in band, so rely on the correlator for it. **Simulated (tt):** 5 stages 66.6 dB flat 330–434 MHz; 6 stages (~80 dB) used so the noise floor sits in the detector's log range. NF ≈ 11 dB, wires only: off-chip matching would give ~3 dB but is not allowed. FM −23 dB, 10 MHz −96 dB re band; ~2.9 mA |
 | Log detector | ~50 dB dynamic range, roughly linear in dB (~16 mV/dB assumed; simulated 12.6 mV/dB, ~11–14 at the noise floor); video bandwidth ≥ 100 kHz before the LPF; low noise and drift, since the signal near sensitivity is only ~0.3 dB |
-| LPF | ~15 kHz (RC on chip) |
-| Averaging reference | τ ≈ 0.3–1 ms (model insensitive to 0.3–5 ms); switched-capacitor resistor clocked at the sample rate |
-| Comparator + trim DAC | Comparator: decisions at ~77 kS/s (every 130 clocks at 10 MHz); offset of a few mV OK (trimmed); **input noise ≤ 0.5 mV rms per decision** (e2e with the simulated chain: 0.6 mV starts losing −94 dBm, 1 mV costs ~2–4 dB).<br>**Reuse the ttsky25b R2R DAC** (`mattvenn/tt08-analog-r2r-dac-3v3`, 8-bit poly ladder, R ≈ 10 kΩ) driven from 1.8 V and **attenuated to ~±10 mV** as the comparator offset trim (~0.08 mV/LSB); servoed digitally |
-| Digital | ~10 MHz clock. Trim servo; 4 × 127-bit chip registers; sequential popcount (127 cycles per chip-phase, 4 phases per 1040-clock chip); 2-of-3 burst timing; LED toggle with holdoff; correlation score to the 7-seg; Gold TX chip generator (two 7-bit LFSRs, `model/gold.py`); data mode: Gold sync + Manchester (half-bit 1s counts) + CRC; UART only at the RP2350 interface |
+| LPF | ~15 kHz (RC on chip). **Done:** 1 MΩ xhigh poly + 10.9 pF MIM, 14.4 kHz; the e2e model is insensitive to 10–20 kHz |
+| Averaging reference | τ ≈ 0.3–1 ms (model insensitive to 0.3–5 ms); switched-capacitor resistor clocked at the sample rate. **Done:** 0.25 pF ↔ 9.1 pF on the digital's sc_phi1/2, τ = 0.47 ms, offset ≤ 0.04 mV |
+| Comparator + trim DAC | Comparator: decisions at ~77 kS/s (every 130 clocks at 10 MHz); offset of a few mV OK (trimmed); **input noise ≤ 0.5 mV rms per decision** (e2e with the simulated chain: 0.6 mV starts losing −94 dBm, 1 mV costs ~2–4 dB).<br>**Reuse the ttsky25b R2R DAC** (`mattvenn/tt08-analog-r2r-dac-3v3`, 8-bit poly ladder, R ≈ 10 kΩ) driven from 1.8 V and **attenuated to ~±10 mV** as the comparator offset trim (~0.08 mV/LSB); servoed digitally. **Simulated comparator:** continuous-time, low-Vt NMOS pair; offset +0.5…1.8 mV over input CM 0.55–1.6 V; decision noise 28 µV rms; 0.36 µs at 1 mV overdrive; trim 0.087 mV/LSB |
+| Digital | **Size:** ~40,500 µm² placed as is. It fits a 3×2; if space is needed, clock-gate the chip registers first (−8,400 µm², `dlclkp` has sky130 silicon evidence). ~10 MHz clock. Trim servo; 4 × 127-bit chip registers; sequential popcount (127 cycles per chip-phase, 4 phases per 1040-clock chip); 2-of-3 burst timing; LED toggle with holdoff; correlation score to the 7-seg; Gold TX chip generator (two 7-bit LFSRs, `model/gold.py`); data mode: Gold sync + Manchester (half-bit 1s counts) + CRC; UART only at the RP2350 interface |
 | Isolation | quiet digital during RX; separate analog supply routing, guard rings, decoupling capacitance in spare area; keep the chip's own ~10 MHz clock harmonics (every 10 MHz through the band) well below the LNA's compression point; clock-gate unused logic during reception |
 
 ## Draft pin map (finalize against tt-demo-pcb)
@@ -163,7 +170,7 @@ See the tables above.
 - **FPGA, RX:** runs the RX digital with comparator decisions replayed from the golden model on the recordings. The analog front end isn't available until silicon.
 - **Gate:** all tests pass; real FPGA-generated packets decode off-air; the RX digital decodes the replayed recordings on the FPGA.
 
-**Phase 3: analog schematics** (`xschem/`, `sim/`; IIC-OSIC-TOOLS docker with the sky130 PDK)
+**Phase 3: analog schematics** (`xschem/`, `sim/`; IIC-OSIC-TOOLS docker with the sky130 PDK). **Status 2026-10-08:** every RX block has a first pass at tt and the whole RX transient detects −94 dBm (just); the TX has a first pass in raw spice. Still to do: corners/temperature, bias generation, power-down, R2R DAC hookup, TX as xschem blocks. See STATUS.md.
 - LNA/limiter chain, log detector, LPF, comparator, R-2R/capacitor DAC, ring osc and buffer (from ttsky25b).
 - Testbenches drive the RX input with `stim/packet_*.pwl` through a pad model (~200–500 Ω, few pF) and compare the detector output against the model.
 - **Gate:**
@@ -172,7 +179,7 @@ See the tables above.
   - self-interference is simulated (digital switching coupled to the LNA input).
 
 **Phase 4: mixed-signal integration**
-- Analog plus hardened digital macro in the TT analog template, **following the ttsky25b R2R DAC project's flow**:
+- Analog plus hardened digital macro in the TT analog template (**3×2**), **following the ttsky25b R2R DAC project's flow**:
   - the digital is hardened with OpenLane as a macro (pin-order config);
   - it's placed in the Magic top level with the analog;
   - `src/project.v` is the LVS stub;
@@ -208,8 +215,10 @@ See the tables above.
 
 ## Open questions and risks
 - ~~TT analog-pin 4 mA limit~~ **Resolved (tnt, 2026-10-07):** the limit is electromigration (RMS, lifetime). Even 20 mA would outlive interest in the chip, and the ≤500 Ω path caps the current at 6.6 mA from 3.3 V anyway. OOK at ~50% duty lowers the RMS further. **So the 3.3 V TX driver is in (+~5 dB).**
-- LNA noise figure through the pad/ESD path; the 60 dB gain budget across corners and supply.
+- LNA noise figure through the pad/ESD path: NF ≈ 11 dB at tt (sensitivity −94 dBm only just). **Gain, detector slope and comparator margin across corners and supply are the main open analog risk.**
+- The pad model (`xschem/pad_model.sch`) is rough: absolute NF and the upper-band rejection (GSM-900 ≈ −8 dB re band in sim) are indicative. Measure the real pin + dipole before adding on-chip shaping.
+- TX frequency lands ~419 MHz on silicon if the lot is as slow as the ttsky25b part; the spread is inside the RX band.
 - Self-interference from the chip's own digital logic into a 60 dB+ LNA.
 - Venue interferers (the 392 MHz-type signals); fade margin indoors (the fading and orientation test is still to do).
-- TT mixed-signal flow details (digital macro inside the analog template, power domains, 3.3 V use).
+- TT mixed-signal flow details (digital macro inside the analog template, power domains, 3.3 V use). The VAPWR 10 mA TX step needs decoupling.
 - Pin choice for antennas on the demo-board header (ua order: must use pins in order from ua[0]).

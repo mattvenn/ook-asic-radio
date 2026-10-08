@@ -1,38 +1,51 @@
-# Where we are (handoff, end of 2026-10-07)
+# Where we are (handoff, end of 2026-10-08)
 
 Read **PLAN.md** for the decisions and their evidence. This file is the "pick up from here" note: the summary and next steps first, per-block detail below.
 Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
 
 ## Start here
 
-**State:** the whole RX analog chain has a working first pass at the tt corner, transistor level, from antenna to correlator:
-- pad → 6-stage limiting amp (66.6 dB / 5 stages; 6 for the detector) → successive-detection log detector → 14 kHz RC LPF → switched-cap average (τ 0.47 ms) → continuous comparator with DAC trim.
-- **The bit-exact digital detects a −94 dBm burst (score 99/127, threshold 97): right at the edge.** −70 dBm is clean (127/127).
-- See `sim/plots/rx_rf.png` and `rx_bb.png`.
-- TX not started; RTL done but too big; layout not started.
+**State (end of 2026-10-08):**
+- **RX:** every analog block has a working first pass at tt, transistor level: pad → 6-stage NMOS diff-pair limiting chain → successive-detection log detector → 14 kHz RC LPF → switched-cap average (τ 0.47 ms) → continuous comparator with DAC trim.
+  - The bit-exact digital detects a −94 dBm burst (score 99/127, threshold 97): **right at the edge.** −70 dBm is clean.
+  - Plots: `sim/plots/rx_rf.png`, `rx_bb.png`.
+- **TX:** first pass in **raw spice** (`sim/tx/tx_explore.py`, plot `sim/plots/tx.png`): ring (nand + 22 inv_2) → skewed level shifter → thick buffers → antiphase drivers → pad → dipole. +3.3…+4.0 dBm across corners; ~419 MHz expected on silicon. Not yet xschem blocks.
+- **Area:** fits a **3x2** (available) with the digital as is. Clock gating is the first lever if space runs short.
+- **PLAN.md was brought up to date on 2026-10-08** (architecture, block table, open risks).
+- RTL done (not resized); layout not started.
 
-**Overnight job (started 2026-10-07 ~21:50; status 2026-10-08):** −70 dBm was at 232/400 µs at 10:30. It's far slower than estimated (the carrier-on chips force tiny steps), and the PC suspended overnight. `build/watch_joined.sh` (under systemd-inhibit) stops the container once `joined_-70.raw` is written, so −90 doesn't start. **Re-run −90 shorter** (TSTOP=250u: off, one on chip, off) with `tools/longrun`. Original description: the fully joined transistor-level RX, antenna → comparator with RF noise, 400 µs with real chip timing (off, on/off/on chips), at −70 then −90 dBm (`sim/rx/joined.sh`, ~2.5 h per level). It checks that the real detector feeds the baseband blocks the way the split model assumes.
-- Check: `cat build/joined_run.txt` (start/done lines); progress `tr '\r' '\n' < build/joined_-90.log | grep Reference | tail -1`.
-- Then: `~/work/asic-workshop/venv/bin/python sim/rx/plot_joined.py`, which prints joined vs split-model det/LPF levels and noise and writes `sim/plots/rx_joined.png`.
-- The split model predicts det swings of ~106 mV (−70) and ~1.8 mV (−90).
+**The joined overnight run (2026-10-07/08):** the fully joined transistor-level RX at −70 dBm (antenna → comparator, with RF noise, 400 µs, real chip timing; `sim/rx/joined.sh`) was at 394/400 µs at ~13:00 on 2026-10-08. `build/watch_joined.sh` stops the container once `build/joined_-70.raw` is written, so −90 doesn't start.
+- **Plot it:** `~/work/asic-workshop/venv/bin/python sim/rx/plot_joined.py -70`. It prints joined vs split-model det/LPF levels and noise and writes `sim/plots/rx_joined.png`. The split model predicts a ~106 mV det swing at −70.
+- If `joined_-70.raw` is missing, check `cat build/watch_joined.txt` and the end of `build/joined_-70.log`.
+- **Optional −90 run, shorter:**
+  ```
+  tools/longrun joined90 tools/osic bash -c 'cd build && LEVELS=-90 TSTOP=250u ../sim/rx/joined.sh'
+  ```
+  ~6–10 h, keeps the PC awake.
 
 **Next steps, in order:**
-1. **TX** (nothing designed yet):
-   - ring resized for 433 MHz: **target ~500 MHz extracted-tt** (calibration below: silicon ran ×0.866 of extracted-tt). Std-cell ring ≈ 23 stages, but set it with the real load;
-   - 1.8 → 3.3 V level shifter + two antiphase thick-oxide drivers (ttsky25b driver ×2, ≤ 10° phase error) into the pad/dipole; enable from `tx_en`;
-   - check frequency over corners, output power, keying chirp.
-2. **Make the RX real:**
-   - corners + temperature across the whole chain (sensitivity has no margin at tt);
-   - bias generation (60 µA chain reference, 1.2 V vcm, 2 µA detector, 1 µA comparator) instead of ideal sources;
-   - power-down on `rx_en`;
-   - hook up the reused R2R DAC (its range vs the trim's linear region ~0.6–1.8 V);
+1. **Joined-run check:** plot `joined_-70.raw` (above). If the real detector and filter match the split model, the RX first pass is confirmed.
+2. **TX into xschem blocks** (like the RX generators in `xschem/gen/`):
+   - `tx_ring` (nand2_2 + 22 inv_2; schematic wiring cap 3.2 fF/stage is the calibrated stand-in for layout);
+   - `tx_ls` (skewed `dac_drive` core: NMOS ×10 W 4.2, PMOS kp 4 W 1.7, thick L 0.5; thin W 9/3 input inverter);
+   - `tx_drv` (thick taper ×4 to N 48 / P 144 per arm);
+   - `tb_tx`.
+   - Decide the disabled state: both arms low rather than one at 3.3 V.
+   - Sizes and results are in "TX chain, first pass" below.
+3. **Corners and temperature, whole design** (the main open risk):
+   - RX gain, NF, detector slope, comparator offset/trim range, and −94 dBm margin at ss/ff/sf/fs, −20…85 °C;
+   - TX frequency and power spread.
+   - Use `option temp` after `reset` (see `docs/sim_learnings.md`).
+4. **Make the analog real:**
+   - bias generation (60 µA chain reference, 1.2 V vcm, 2 µA detector, 1 µA comparator; ideal sources today);
+   - power-down on `rx_en`/`tx_en`;
+   - VAPWR decoupling + bond-wire droop (10 mA TX step);
+   - hook up the R2R DAC (its range vs the trim's linear region ~0.6–1.8 V);
    - overload recovery.
-3. **RTL:**
-   - rerun the full cocotb suite once (~11.5 min; can run in background);
-   - choose the size reduction (clock-gate phase regs; 2 phases instead of 4, which needs e2e first).
-4. **Layout + integration** (PLAN phase 4). Area ballpark below; **3x2 is the fallback** (confirm 3x2 is allowed for analog on this shuttle: the info.yaml template comment lists only 1x2 / 2x2).
+5. **RTL:** rerun the full cocotb suite once (~11.5 min, background; check `grep -c '<failure' results.xml` = 0). The digital size stays as is unless space is needed (then clock gating).
+6. **Layout + integration in a 3x2** (PLAN phase 4). Switch the template from 2x2 to 3x2.
 
-**PLAN.md is partly behind these results:** its RX architecture line and block table still say "inverter LNA" and assume 16 mV/dB. The analog sections below (and the comparator noise spec already added to PLAN) are current. Fold them into PLAN when convenient.
+**Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
 
 **How to run things:**
 - Generators: `python3 xschem/gen/<x>.py`. Netlist: `tools/osic bash -c 'xschem -n -s -q -o build xschem/<tb>.sch'` (grep the netlist for `IS MISSING`).
