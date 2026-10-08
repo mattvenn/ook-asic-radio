@@ -49,7 +49,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 - **Chain layout rule:** keep chain output → input coupling (pad or stage-2 input) **≤ 0.1 fF** asymmetric. At the highest-gain corner (ss 10 °C, 81 dB), 0.2 fF gives +2.8 dB of peaking near 600 MHz and **0.5 fF oscillates** (1 fF at tt). Supply/ground L up to 5 nH with the 30 pF decap is fine.
 
 **Next steps, in order:**
-1. **Floorplan** (with Matt):
+1. **Floorplan** (with Matt), on an interactive page: **spec in `docs/floorplan_spec.md`** (data in `layout/floorplan/`):
    - the macro at the right of the tile (the pin order assumes it), the analog on the left next to the ua pins;
    - analog block placement, decap, guard rings;
    - TX away from the RX input; deep n-well for the RX chain or not;
