@@ -11,7 +11,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
 - See `sim/plots/rx_rf.png` and `rx_bb.png`.
 - TX not started; RTL done but too big; layout not started.
 
-**Overnight job (started 2026-10-07 ~21:50):** the fully joined transistor-level RX, antenna → comparator with RF noise, 400 µs with real chip timing (off, on/off/on chips), at −70 then −90 dBm (`sim/rx/joined.sh`, ~2.5 h per level). It checks that the real detector feeds the baseband blocks the way the split model assumes.
+**Overnight job (started 2026-10-07 ~21:50; status 2026-10-08):** −70 dBm was at 232/400 µs at 10:30. It's far slower than estimated (the carrier-on chips force tiny steps), and the PC suspended overnight. `build/watch_joined.sh` (under systemd-inhibit) stops the container once `joined_-70.raw` is written, so −90 doesn't start. **Re-run −90 shorter** (TSTOP=250u: off, one on chip, off) with `tools/longrun`. Original description: the fully joined transistor-level RX, antenna → comparator with RF noise, 400 µs with real chip timing (off, on/off/on chips), at −70 then −90 dBm (`sim/rx/joined.sh`, ~2.5 h per level). It checks that the real detector feeds the baseband blocks the way the split model assumes.
 - Check: `cat build/joined_run.txt` (start/done lines); progress `tr '\r' '\n' < build/joined_-90.log | grep Reference | tail -1`.
 - Then: `~/work/asic-workshop/venv/bin/python sim/rx/plot_joined.py`, which prints joined vs split-model det/LPF levels and noise and writes `sim/plots/rx_joined.png`.
 - The split model predicts det swings of ~106 mV (−70) and ~1.8 mV (−90).

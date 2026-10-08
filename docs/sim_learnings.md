@@ -54,7 +54,16 @@ sky130A, run headless in Docker.
   50+ min; 1 Ω / 1e9 Ω ran in seconds. ngspice also silently swaps a 0 Ω
   resistor for 1e-12.
 - **Small probe first:** time a short run (e.g. 0.2 µs instead of 3 µs) and
-  extrapolate before committing to a long one.
+  extrapolate before committing to a long one. **But the probe has to cover
+  the hardest regime.** A 2 µs probe with the carrier still off predicted
+  2.5 h per 400 µs. Once the carrier was on, the limiting stages switched
+  hard and the run went ~5–10× slower.
+- **Long runs: keep the PC awake and detach.** The PC suspended overnight;
+  the job survived but made no progress. Use
+  `systemd-inhibit --what=sleep:idle ...` around the job (asic-radio:
+  `tools/longrun <name> <cmd>`, detached, logged, with a done marker).
+- **`write` only happens at the end of a batch run:** a killed or crashed
+  long run leaves nothing. Split very long runs into pieces when you can.
 
 ## Watching a running ngspice
 

@@ -1,0 +1,17 @@
+#!/bin/bash
+# Run a long job detached from this shell, with the PC kept awake while it
+# runs (systemd-inhibit sleep:idle, released when the job ends).
+#   tools/longrun <name> <command...>
+#   tools/longrun joined90 tools/osic bash -c 'cd build && LEVELS=-90 TSTOP=250u ../sim/rx/joined.sh'
+# Output: build/<name>.log (stdout+stderr), build/<name>.done ("exit <rc> <date>")
+# when it finishes. Check: systemd-inhibit --list | grep asic-radio
+set -e
+name=$1; shift
+repo=$(cd "$(dirname "$0")/.." && pwd -P)
+mkdir -p "$repo/build"
+log="$repo/build/$name.log"; done_="$repo/build/$name.done"
+rm -f "$done_"
+cd "$repo"
+DONE="$done_" setsid nohup systemd-inhibit --what=sleep:idle --who=asic-radio --why="$name" \
+  bash -c '"$@"; rc=$?; echo "exit $rc $(date)" > "$DONE"' _ "$@" > "$log" 2>&1 < /dev/null &
+echo "started '$name' (pid $!): log $log, done-marker $done_"
