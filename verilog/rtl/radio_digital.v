@@ -12,6 +12,9 @@
 //                 00 code (default)   01 raw TX (tx_en = uio_in[2])
 //                 10 data (reserved; behaves as code mode for now)
 //                 11 reserved (code mode)
+//   uio_in[3]   single-ended TX strap, latched at reset release ONLY with
+//               the same magic: 1 = drive ua[0] only (monopole fallback;
+//               tx_en_n stays 0). Default (no magic / floating): both arms.
 //               uio_oe is 0 during reset so the RP2350 can drive the strap
 //               on uio[7:4]; it must release those pins right after reset.
 //   uio_in[2]   raw TX key (mode 01): drives tx_en combinationally
@@ -29,7 +32,9 @@
 //                 raw mode: 'r'; dp = tx_en (TX) / comparator bit (RX)
 //   comp_in     comparator output (asynchronous; 2-flop synchroniser)
 //   trim_out    8-bit trim DAC code (servo)
-//   tx_en       ring oscillator enable
+//   tx_en       ring oscillator enable; also the out_p arm enable (tx_top en_p)
+//   tx_en_n     out_n arm enable (tx_top en_n) = tx_en unless single-ended.
+//               A disabled arm is parked low.
 //   rx_en       RX analog power enable (role = RX)
 //   sc_phi1/2   non-overlapping switched-cap clocks, one cycle per sample
 //
@@ -49,6 +54,7 @@ module radio_digital (
     input  wire       comp_in,
     output wire [7:0] trim_out,
     output wire       tx_en,
+    output wire       tx_en_n,
     output wire       rx_en,
     output reg        sc_phi1,
     output reg        sc_phi2
@@ -60,11 +66,13 @@ module radio_digital (
     reg       role_tx;
     reg [1:0] mode;
     reg       oe;
+    reg       se;
     always @(posedge clk) begin
         rst <= ~rst_n;
         if (rst) begin
             role_tx <= ui_in[7];
             mode    <= (uio_in[7:4] == 4'b1010) ? uio_in[1:0] : M_CODE;
+            se      <= (uio_in[7:4] == 4'b1010) & uio_in[3];
             oe      <= 1'b0;
         end else begin
             oe      <= 1'b1;
@@ -169,7 +177,8 @@ module radio_digital (
         .gold_load(tx_load), .gold_step(tx_step),
         .busy(tx_busy), .burst(burst), .tx_en(tx_code_en)
     );
-    assign tx_en = raw ? uio_in[2] : tx_code_en;
+    assign tx_en   = raw ? uio_in[2] : tx_code_en;
+    assign tx_en_n = tx_en & ~se;
 
     // ---------------------------------------------------------------- 7-segment
     // link quality digit = (score - 97) * 21 / 64  -> 97..127 maps to 0..9

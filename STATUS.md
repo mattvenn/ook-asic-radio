@@ -32,7 +32,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
 
 **Next steps, in order:**
 1. ~~Joined-run check~~ (done: matches). ~~TX into xschem blocks~~ (done, "TX xschem blocks" below).
-2. **Digital for the TX enables:** `tx_top` has `key` (ring) plus `en_p` / `en_n` (per-arm gates). The RTL drives `key` today; tie `en_p = key`, `en_n = key & !single_ended`, and add the single-ended option bit.
+2. ~~Digital for the TX enables~~ (done 2026-10-08): `radio_digital` has a new output `tx_en_n` (= `tx_en` unless single-ended); `tx_en` drives both the ring `key` and `en_p`. The single-ended strap is `uio_in[3]`, latched at reset only with the `1010` magic. **Full cocotb suite 14/14 pass** (incl. the new `test_single_ended_strap`; run with the project venv first on PATH, see below). Not re-hardened.
 3. **Corners and temperature, whole design** (the main open risk):
    - RX gain, NF, detector slope, comparator offset/trim range, and −94 dBm margin at ss/ff/sf/fs, −20…85 °C;
    - TX: process corners done (`sim/tx/tb_tx.py`); temperature still to do.
@@ -43,12 +43,13 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
    - VAPWR decoupling + bond-wire droop (10 mA TX step);
    - hook up the R2R DAC (its range vs the trim's linear region ~0.6–1.8 V);
    - overload recovery.
-5. **RTL:** rerun the full cocotb suite once (~11.5 min, background; check `grep -c '<failure' results.xml` = 0). The digital size stays as is unless space is needed (then clock gating).
+5. **RTL:** the full suite now passes (14/14, 2026-10-08). The digital size stays as is unless space is needed (then clock gating).
 6. **Layout + integration in a 3x2** (PLAN phase 4). Switch the template from 2x2 to 3x2.
 
 **Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
 
 **How to run things:**
+- cocotb: `cd verilog/test && PATH=$HOME/work/asic-workshop/venv/bin:/usr/bin:/bin make` (~12 min). With the login PATH, oss-cad-suite's python (no numpy) gets picked up and the run dies at import. `COCOTB_TEST_FILTER` takes one test name (a `|` alternative matched nothing).
 - Generators: `python3 xschem/gen/<x>.py`. Netlist: `tools/osic bash -c 'xschem -n -s -q -o build xschem/<tb>.sch'` (grep the netlist for `IS MISSING`).
 - Simulate in `build/` via `tools/osic`. Analysis/plots: `~/work/asic-workshop/venv/bin/python` (system python has no numpy).
 - `tools/osic` copies the tracked root `.spiceinit` into `build/` each run.

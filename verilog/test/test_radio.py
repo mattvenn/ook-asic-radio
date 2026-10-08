@@ -209,6 +209,31 @@ async def test_raw_and_straps(dut):
         await FallingEdge(dut.clk)
         assert int(dut.tx_en.value) == int(dut.u_tx.tx_en.value)
     assert int(dut.u_tx.busy.value) == 1      # code-mode send in progress
+    # both arms follow tx_en by default
+    assert int(dut.tx_en_n.value) == int(dut.tx_en.value)
+
+
+@cocotb.test()
+async def test_single_ended_strap(dut):
+    """uio[3] with the magic -> single-ended: tx_en_n held 0 while tx_en keys.
+    Without the magic uio[3] is ignored (both arms)."""
+    start_clock(dut)
+    for uio, se in ((0b1010_1001, 1), (0b0000_1001, 0), (0b1010_0001, 0)):
+        await reset(dut, role=1, code=5, uio=uio)
+        dut.uio_in.value = 0
+        raw = (uio >> 4) == 0b1010
+        for v in (1, 0, 1):
+            if raw:                            # raw TX: key directly
+                dut.uio_in.value = v << 2
+                await Timer(1, unit='ns')
+            else:                              # code mode: wait for a send to key
+                for _ in range(8 * CHIP):
+                    await FallingEdge(dut.clk)
+                    if int(dut.tx_en.value) == v:
+                        break
+            assert int(dut.tx_en.value) == v
+            assert int(dut.tx_en_n.value) == (v & (1 - se)), f'uio {uio:08b} v {v}'
+            await FallingEdge(dut.clk)
 
 
 @cocotb.test()
