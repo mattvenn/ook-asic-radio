@@ -1,7 +1,7 @@
 # Where we are (handoff, end of 2026-10-08)
 
 Read **PLAN.md** for the decisions and their evidence. This file is the "pick up from here" note: the summary and next steps first, per-block detail below.
-Repo: github.com/mattvenn/ook-asic-radio (`main`; **the commits from 2026-10-08 afternoon are not pushed**).
+Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
