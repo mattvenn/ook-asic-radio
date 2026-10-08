@@ -38,7 +38,9 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
     - Also by other sessions: the decaps.
     - **`bias_gen`:** done, 80.2 × 49.1 µm (3.9k µm²): mirror array (123 units, ABBA common centroid) under Cc + 2 × Cvcm, the small devices (rows.py), the resistors under one Cvref. Clean; extracted currents and vcm within 0.1 % of the schematic over VDD 1.7–1.9 V, 10–50 °C (`sim/bias/tb_bias_gen.py`). Schematic changes: Cvcm / Cvref as 2 × 22 µm units, 5 array dummies `Mdum`, Rref as two 5 kΩ halves. Details in `docs/layout.md`.
     - **`comp_ct`:** done (ABBA pairs + dummies, passives, clean; extracted offset +0.56 mV, trim 0.0655 mV/LSB). 5.0k µm², larger than estimated. Matching dummies were added to the schematic (`Mdn*`/`Mdp*`).
-    - **Still to do here:** `log_det`, `lna_chain` (last, after the stability check).
+    - **`det_cell`** (another agent) / **`log_det`:** done. Six cells + the vb replica (Rs_b drawn like the cells' Rs, so it matches), Rdet, Cdet above; clean. 137 × 16 µm + Cdet 22² above the end.
+      - Extracted idle det 1.520 → 1.489 V (high-po contact term per segment: Rs/Rdet ~10 % high); 100 mV on t6 −1.56 → −1.46 mV.
+    - **Still to do here:** `lna_chain` (last; layout rule from the stability check: ≤ 0.1 fF output → input coupling).
 
 **Re-verified (2026-10-08 evening): rdeg 2 MΩ, decap blocks, chain stability.** Details in docs/history.md, "Re-verify: rdeg 2 MΩ, decaps, chain stability".
 - Trim step at the operating point (DAC 0.8–1.2 V) is **0.062–0.076 mV/LSB at all corners, 10–50 °C**. e2e at −94 dBm: tt 11/12, fs 50 °C 8/12, ff 50 °C 10/12; −92 dBm 12/12.
