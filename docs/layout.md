@@ -201,6 +201,35 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - Clean against `xschem/r2r.sch`, which was drawn to match the layout device for device: DRC 0, antenna 0, LVS match. Density m1 27 %.
   - **Block test** (`sim/dac/tb_r2r.py`, tt): extracted output error ≤ 0.021 LSB; Rout 10.65 kΩ (schematic 10.64); the 127→128 carry into 1 pF settles to 0.1 LSB in 30.6 ns (schematic 24.6), irrelevant at the servo's µs steps.
   - `check.sh`'s "feedback N" counts magic's extraction warnings too (2 here, from flattening); the antenna count is the 'Antenna violation' lines.
+- **Row builder: pass devices.** A strip role can now be any net name, so both sides of a transmission gate can be signals.
+  - With several strip nets on a device, all its stubs are packed side by side in natural x order across the device, up to DGAP/2 into the gaps. Bars and straps extend to their stubs.
+  - Single-drain devices keep the old placement (`tx_ls` identical; in `tx_drv` only the NAND's in/en tracks swapped).
+  - `build()` leaves `b.rows` (rails, tracks, track x spans) for generators that add more (caps, wiring).
+- **`lay.write_ref(name, sch, params, drop)`:** a parameter-substituted LVS/PEX reference from any xschem cell (netgen can't evaluate `W='wcs'`, `m='nca'`).
+- **`avg_sc`** (`layout/gen/avg_sc.py`, 74.5 × 43.6 µm):
+  - Layout: 8 thin FETs via rows.py (phase inverters, then S1 and S2 as transmission gates). Cs 7×7 under the switches; 2 × Cavg 30×30 to the right. Each MIM bottom plate abuts the VSS rail, which runs across the caps (`passives.mim`, the other session's).
+  - Cs's top plate rises on its own met4 strip to the `cs` track. The Cavg top plates share a met4 strip that rises to the `out` track at the switch block's edge.
+  - Checks: DRC/antenna/LVS clean; m3 density 65 % (the MIM plates).
+  - **Block test** (`sim/avg_sc/tb_avg_sc.py`, 20 cycles of the digital's 13 µs phi timing, tt): τ 0.458 ms (schematic) → **0.434 ms** (extracted).
+  - **Open:** the extracted hold drift is ±1.7–1.9 mV over 20 cycles (schematic −0.015), from phi/phib coupling imbalance onto `cs`/`out`, for example 1.15 fF to phi2 against 0.50 fF to phi2b. Moving the phase inverters only flipped its sign.
+    - Steady state is about ±4 mV static offset at the comparator: within the trim range (−19…+12 mV), but about a third of it.
+    - Fix if the trim gets tight: a symmetric layout (balanced phi/phib routing around `cs`/`out`, dummy half-switches).
+- **`comp_ct`** (`layout/gen/comp_ct.py`, 100.5 × 49.9 µm, ~5.0k µm² against the ~3.0k estimate; area pass later):
+  - **Matching:** the input pair, trim pair and PMOS mirror are split into halves placed A B B A (1D common centroid, same orientation), with rail-tied dummies either side. The bias units (N 2/2) are folded per device.
+  - **Dummies in the schematic too:** `Mdn*`/`Mdp*` in `xschem/gen/comp.py`, every terminal on the rail. Netgen doesn't ignore layout dummies (17 against 14 devices otherwise).
+  - **Passives below the VSS rail:**
+    - Cl (22²) at the left, rising to `d2`;
+    - Rdeg (14 × 19.4 µm xhigh) and the Rr1+Rr2 divider (one 16-segment serpentine, `vref` at the middle link) in a p-tap ring, with Cref (10²) to the right;
+    - every connection rises on met4 to its channel track.
+    - The placement follows the tracks: `sa`/`sb`/`vref` only exist at the right (the trim pair), and `vref` can't extend left past `ibias`, which shares its track.
+  - **Checks:** DRC/antenna/LVS clean; density ≤ 24 % per layer.
+  - **Block test** (`sim/comp_ct/tb_comp_ct.py`, tt): offset +0.80 → +0.56 mV, trim 0.0650 → 0.0655 mV/LSB, ±1 mV response 1.11/0.07 → 0.71/0.16 µs (schematic → extracted).
+- **Row builder additions (for `comp_ct`):**
+  - **`rows.dummy(fet, rail)`:** all strips and the gate on the rail. The gate strap joins the ring at a row end, or a met1 jumper in the gap to a neighbouring dummy (so dummies go at row ends or in adjacent pairs).
+  - **Strip groups:** a run of one net's strips with no other signal net between gets its own bar and stub. A pair half `tail | d | tail` has two tail groups; one tail bar across `d` had shorted tail, d1 and d2.
+  - **`b.rows['xs']`** spans and the `land()` pattern (in comp_ct.py): extend a track to a riser only where no other net on that track is near.
+- **`lay.write_ref`** understands SPICE suffixes (`L='rdeg/7.37k'`).
+- **ngspice:** element names are case-insensitive, so `VD` (supply) and `Vd` (a differential source) collide: "device already exists, bail out".
 - **Earlier note on the duty cycle:** Its skewed core (weak cross-coupled PMOS pull-up) is sensitive to the ~4.7 fF of wiring on A/B, comparable to its devices' own capacitance.
   - The schematic at kp 6 gives 36.3 %; the extracted run is pending.
   - What matters is the duty at the arms' outputs, so judge it with the level shifter + drivers together, not A alone.
