@@ -1,0 +1,31 @@
+* log_det: xschem/log_det.sch with {'wd': 1, 'rs': 10000.0, 'cc': 1e-13, 'rb': 200000.0, 'rdet': 8000.0, 'cdet': 1e-12} (lay.write_ref)
+** sch_path: /foss/designs/shuttle-ttsky26c/asic-radio/xschem/log_det.sch
+.subckt log_det t1p t1n t2p t2n t3p t3n t4p t4n t5p t5n t6p t6n ibias_det det VDD VSS
+*.PININFO VDD:B VSS:B ibias_det:B det:B t1p:B t1n:B t2p:B t2n:B t3p:B t3n:B t4p:B t4n:B t5p:B t5n:B t6p:B t6n:B
+XMbias ibias_det ibias_det sb VSS sky130_fd_pr__nfet_01v8 L=0.15 W=1 nf=1
+XRs_b VSS sb VSS sky130_fd_pr__res_high_po_0p35 L=9.08241 mult=1
+XRdet det VDD VSS sky130_fd_pr__res_high_po_0p69 L=15.8717 mult=1
+XCdet det VDD sky130_fd_pr__cap_mim_m3_1 W=22.0326 L=22.0326
+xd1 t1p t1n ibias_det det VSS det_cell
+xd2 t2p t2n ibias_det det VSS det_cell
+xd3 t3p t3n ibias_det det VSS det_cell
+xd4 t4p t4n ibias_det det VSS det_cell
+xd5 t5p t5n ibias_det det VSS det_cell
+xd6 t6p t6n ibias_det det VSS det_cell
+.ends
+
+* expanding   symbol:  det_cell.sym # of pins=5
+** sym_path: /foss/designs/shuttle-ttsky26c/asic-radio/xschem/det_cell.sym
+** sch_path: /foss/designs/shuttle-ttsky26c/asic-radio/xschem/det_cell.sch
+.subckt det_cell inp inn vb out VSS  wd=1 rs=10k cc=100f rb=200k
+*.PININFO VSS:B vb:B inp:B inn:B out:B
+XCc_p gp inp sky130_fd_pr__cap_mim_m3_1 W=6.96733 L=6.96733
+XRb_p gp vb VSS sky130_fd_pr__res_xhigh_po_0p35 L=27.1039 mult=1
+XMp out gp sp VSS sky130_fd_pr__nfet_01v8 L=0.15 W=1 nf=1
+XRs_p VSS sp VSS sky130_fd_pr__res_high_po_0p35 L=9.08241 mult=1
+XCc_n gn inn sky130_fd_pr__cap_mim_m3_1 W=6.96733 L=6.96733
+XRb_n gn vb VSS sky130_fd_pr__res_xhigh_po_0p35 L=27.1039 mult=1
+XMn out gn sn VSS sky130_fd_pr__nfet_01v8 L=0.15 W=1 nf=1
+XRs_n VSS sn VSS sky130_fd_pr__res_high_po_0p35 L=9.08241 mult=1
+.ends
+

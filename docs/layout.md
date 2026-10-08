@@ -257,3 +257,17 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
 - **Area / density:** met3 is 73 % (five MIM plates). The resistors could move under the top caps (~550 µm² less) if area gets tight.
 - **Shrink option (not taken, 2026-10-08):** the block is cap-limited (the 5 MIM units are ~3k of 3.9k µm²). The mirror is big because a 60 µA reference is copied 1:1 to the chain in 1 µA units (123 fingers). A 10 µA reference (Rref ~60 kΩ high_po, same tracking) with 10 / 2 / 1 µA outputs (23 units; the chain's local mirror takes the ×6) plus smaller caps (Cc has PM 90°; Cvcm / Cvref poles have room) could bring bias_gen to ~1.5–2k µm² and save ~100 µA. Needs bias_gen + lna_chain schematic changes and re-verification. Only shrinking both caps and mirror saves area.
 
+
+## log_det (2026-10-09)
+- **`layout/gen/log_det.py`:** six instances of `det_cell` (another agent's cell, copied in via `copy_tree`; pitch = its width, buses and rail abut), then an end section in the same frame.
+  - **End section:**
+    - Mbias as a diode: drain on the left to the gate pad and down to the `vb` bus, which sits above `out`, so nothing crosses;
+    - **Rs_b drawn exactly like the cells' Rs** (high-po 0.35, 2 segments), so the vb replica matches;
+    - Rdet (0.69, 3 adjacent segments, one RPM).
+  - **Cdet** (22²) above the end section on a VDD rail (met1–3). Its met4 riser drops over the end section: an earlier version, with the riser under the cap's overhang, shorted `det` to the last cell's `gn`.
+  - **Pins** t1p…t6n on the cells' bottom-plate met3 pins.
+- **Tiling:** neighbouring cells' ring implants end 0.2 µm apart (KLayout psdm.1); `log_det` bridges psdm across each boundary.
+- **Checks:** DRC/antenna/LVS clean. The reference strips the `det_cell` instances' parameters, since netgen compares instance properties otherwise.
+- **Block test** (`sim/logdet/tb_log_det.py`, tt): idle det 1.5197 → 1.4890 V; 100 mV on t6: −1.56 → −1.46 mV.
+- **Open:** the high-po fits have a per-device end term (0.35: 963 Ω, 0.69: 526 Ω). With Rs in 2 segments and Rdet in 3, the layout's Rs/Rdet are ~10 % high, which is the idle shift.
+  - Harmless (the averaging reference absorbs it). For an exact match, draw them in the schematic as series segments.

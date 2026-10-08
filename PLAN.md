@@ -196,6 +196,11 @@ See the tables above.
 - FSK via a trimmed ring.
 - An on-chip regulator for the ring.
 - A met3/met4 spiral-inductor LC test structure.
+- **Periodic-steady-state simulation with VACASK** (in the latest IIC-OSIC image; the 2026.05 image we use only has HB). Needs the sky130 ngspice models converted (`ng2vc.py`) and checked against ngspice first. In order of value here:
+  - **PNOISE / HBNOISE:** detector output noise including noise folding through the rectifier, i.e. sensitivity directly instead of statistical transient-noise runs; ring phase noise (bench: −85 dBc/Hz at 1 MHz).
+  - **Autonomous PSS:** ring frequency / duty over corners, supply and temperature without long transients.
+  - **HB:** fast steady state for the driven parts (detector CW slope, chain gain / compression / IM3 vs the 392 MHz interferer, TX power into the dipole).
+  - **HBAC / PAC:** only if the superheterodyne stretch happens (mixer conversion gain).
 
 ## Lessons from earlier TT projects (multi-seg-monitor, ring osc, R2R DAC)
 - **cocotb:**
