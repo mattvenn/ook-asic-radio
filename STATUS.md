@@ -46,7 +46,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
    - ~~hook up the R2R DAC~~ (done: `r2r` schematic matching the reused layout, driven from `trim_out`, below);
    - overload recovery.
    - ~~analog top schematic~~ (done 2026-10-08: `radio_analog`, `tt_um_mattvenn_radio`, `tb_radio_analog`, below).
-5. **RTL:** the full suite now passes (14/14, 2026-10-08). The digital size stays as is unless space is needed (then clock gating).
+5. **RTL:** the full suite now passes (15/15, 2026-10-08); re-hardened with LibreLane (below). The digital size stays as is unless space is needed (then clock gating).
 6. **Layout + integration in a 3x2** (PLAN phase 4). Switch the template from 2x2 to 3x2.
 
 **Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
@@ -377,6 +377,29 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
   - What's left is the R·C band shift (206–519 MHz at `hh`, 299–718 at `ll`).
   - Detector with tracking bias: idle 1.520 / 1.521 / 1.524 V (tt / hh / ll), so the comparator CM doesn't move. Slope at the noise floor 13.4 / 14.1 / 10.3 mV/dB: `ll` is ~−93 dBm, like ff 50 °C.
 - Not yet: integrating bias_gen into the RX testbenches/top (it feeds `iref`, `ibias_det`, `Ibc` and `vcm`, which are ideal sources today); stability margin check of the OTA loop (the start-up and en transients settle cleanly; no AC loop-gain run yet).
+
+## Digital re-harden (LibreLane v3, openlane/radio_digital/config.json, 2026-10-08)
+- **Run:** `tools/longrun harden tools/osic bash -c 'cd openlane/radio_digital && librelane --pdk sky130A --run-tag <tag> --overwrite config.json'` (~5–10 min).
+  - `config.json` replaces the OpenLane 1 `config.tcl` (kept for reference). The root Makefile's `harden` target is still the OpenLane 1 flow and doesn't work here.
+- **Synthesis:** 27,704 µm² of cells, 55 % flip-flops (717).
+  - `rd_gold.v`'s LFSR step functions became wires: Yosys' pre-synthesis check flags function-local wires in always blocks as undriven (a false positive; the post-synthesis check was clean). cocotb 15/15 after the change.
+- **Size trials:**
+
+| die (µm) | result |
+|---|---|
+| 300 × 150 | detailed placement fails: after CTS, ~850 hold buffers push utilisation over |
+| 340 × 170 | detailed routing doesn't converge (~3,100 violations, 1,847 global-route overflows, mostly horizontal); killed |
+| **300 × 210** | **clean** |
+
+- **300 × 210 µm, final pin order** (run `pins_300x210`):
+  - 0 DRC (router, magic), 0 LVS, 0 antenna violations;
+  - setup slack ≥ 26.8 ns and hold ≥ 0.11 ns at all corners (50 ns constraint; it runs at 100 ns);
+  - utilisation 75 %, incl. 841 hold buffers (~10.4k µm², from the shift registers' flop-to-flop paths);
+  - warnings: max slew, marginal (worst 0.756 vs 0.75 ns at tt; 179 across corners, mostly ss); max fanout on clock-tree leaves (14 vs 10). Harmless at 10 MHz; tighten in the final run.
+- **Pin order** (`pin_order.cfg`, rationale in `PIN_ORDER.md`), assuming the macro sits at the **right end of the tile** with the analog to its west near the `ua` pins:
+  - **North:** the 42 TT pins in the template's left-to-right order, at the template's own 2.76 µm pitch, x 37.5–150.7 from the macro's west edge: uio_oe[7..0], uio_out[7..0], uo_out[7..0], uio_in[7..0], ui_in[7..0], rst_n, clk.
+  - **West, bottom → top:** tx_en, tx_en_n (12–17 µm); rx_en, dbg_en (33–37); comp_in, sc_phi1/2 (53–62); trim_out[0..7] contiguous (74–102).
+- **The 3x2 template** (`tt_analog_3x2_3v3.def`, 493.12 × 225.76 µm): all pins are in the tile's left ~140 µm. TT digital pins along the top at x 15–131; ua[0..7] along the bottom (ua[0] 137, ua[1] 117, ua[2] 98, ua[3] 79, ua[4] 59 µm). With a 300 × 210 macro at the right, the analog gets ~190 × 226 µm (~43k µm²) next to the ua pins. Tight against the area estimate, so clock gating (−8k µm²) may be needed. That's for the floorplan.
 
 ## Analog top + TT top (xschem/gen/top.py, 2026-10-08)
 - **`radio_analog`:** every analog block wired as on the chip, real bias.

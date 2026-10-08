@@ -5,7 +5,7 @@
   "CLOCK_PORT": "clk",
   "CLOCK_PERIOD": 50,
   "FP_SIZING": "absolute",
-  "DIE_AREA": [0, 0, 340, 170],
+  "DIE_AREA": [0, 0, 300, 210],
   "PL_TARGET_DENSITY_PCT": 60,
   "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
   "FP_IO_HLENGTH": 2,
