@@ -42,7 +42,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
    - Use `option temp` after `reset` (see `docs/sim_learnings.md`).
 4. **Make the analog real:**
    - ~~real passives in chain + detector~~, ~~bias generator with power-down on rx_en~~ (done 2026-10-08, below); integrate bias_gen at the top;
-   - VAPWR decoupling + bond-wire droop (10 mA TX step);
+   - ~~VAPWR decoupling + bond-wire droop~~ (done: ~50 pF on VAPWR, below);
    - ~~hook up the R2R DAC~~ (done: `r2r` schematic matching the reused layout, driven from `trim_out`, below);
    - overload recovery.
 5. **RTL:** the full suite now passes (14/14, 2026-10-08). The digital size stays as is unless space is needed (then clock gating).
@@ -376,6 +376,22 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
   - What's left is the R·C band shift (206–519 MHz at `hh`, 299–718 at `ll`).
   - Detector with tracking bias: idle 1.520 / 1.521 / 1.524 V (tt / hh / ll), so the comparator CM doesn't move. Slope at the noise floor 13.4 / 14.1 / 10.3 mV/dB: `ll` is ~−93 dBm, like ff 50 °C.
 - Not yet: integrating bias_gen into the RX testbenches/top (it feeds `iref`, `ibias_det`, `Ibc` and `vcm`, which are ideal sources today); stability margin check of the OTA loop (the start-up and en transients settle cleanly; no AC loop-gain run yet).
+
+## VAPWR feed and decap (sim/tx/vapwr.sh + vapwr.py, 2026-10-08)
+- **Model:** tb_tx with an ideal 3.3 V source → 0.5 Ω → L (bond wire + package + board) → on-chip VAPWR, decap Cdec to ground. The ground return is still ideal. tt; ~1 min per case.
+
+| L | Cdec | P into dipole | VAPWR min at turn-on | ripple while on |
+|---|---|---|---|---|
+| 2 nH | 0 | +3.64 dBm | 2.94 V | 0.53 V pp |
+| 5 nH | 0 | +3.75 | 2.61 | 1.01 |
+| 5 nH | 20 pF | +3.75 | 3.06 | 0.31 |
+| 5 nH | **50 pF** | +3.67 | 3.18 | **0.05** |
+| 5 nH | 100 pF | +3.65 | 3.21 | 0.04 |
+| 10 nH | 0 | +3.85 | 2.42 | 1.20 |
+| 10 nH | 50 pF | +3.66 | 3.12 | 0.07 |
+
+- **The TX doesn't need the decap:** power and frequency (the ring is on VDPWR) don't move.
+- **But without it ~1 V pp of 434 MHz rides on the chip's 3.3 V net**, which is other projects' supply and another radiator. **Reserve ~50 pF on VAPWR** (above that, little gain): roughly 10–12k µm² as thick-oxide MOS cap with MIM over it. Add it to the area estimate and floorplan.
 
 ## Trim DAC (xschem/gen/dac.py, 2026-10-08)
 - **`r2r`:** an 8-bit R-2R schematic matching the reused tt08 layout (`tt08-analog-r2r-dac-3v3/mag/r2r.mag`, its `r2r.lvs.spice`) device for device, so LVS lines up:
