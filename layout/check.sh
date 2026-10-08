@@ -12,7 +12,9 @@ mkdir -p "$OUT"; cd "$OUT"
 RC=$PDK_ROOT/$PDK/libs.tech/magic/sky130A.magicrc
 
 # schematic netlist (top as a subckt, LVS mode)
-(cd "$REPO" && xschem -n -s -q --tcl "set top_subckt 1; set lvs_netlist 1" -o "$OUT" xschem/$B.sch >/dev/null 2>&1)
+# (a parameter variant has its reference in layout/ref/<block>.spice, written by its generator)
+if [ -f "$REPO/layout/ref/$B.spice" ]; then cp "$REPO/layout/ref/$B.spice" $B.spice
+else (cd "$REPO" && xschem -n -s -q --tcl "set top_subckt 1; set lvs_netlist 1" -o "$OUT" xschem/$B.sch >/dev/null 2>&1); fi
 [ -s $B.spice ] || echo "(no schematic xschem/$B.sch: LVS skipped)"
 
 # magic: DRC (full) and LVS extraction, from the GDS

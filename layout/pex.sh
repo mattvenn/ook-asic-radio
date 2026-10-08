@@ -14,7 +14,8 @@ mkdir -p "$OUT" "$REPO/layout/pex"; cd "$OUT"
 RC=$PDK_ROOT/$PDK/libs.tech/magic/sky130A.magicrc
 
 # schematic netlist, for the port order
-(cd "$REPO" && xschem -n -s -q --tcl "set top_subckt 1; set lvs_netlist 1" -o "$OUT" xschem/$B.sch >/dev/null 2>&1)
+if [ -f "$REPO/layout/ref/$B.spice" ]; then cp "$REPO/layout/ref/$B.spice" $B.spice
+else (cd "$REPO" && xschem -n -s -q --tcl "set top_subckt 1; set lvs_netlist 1" -o "$OUT" xschem/$B.sch >/dev/null 2>&1); fi
 
 cat > pex.tcl <<EOF
 gds read $GDS

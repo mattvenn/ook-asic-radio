@@ -123,11 +123,13 @@ class Fet:
 
     def __init__(self, blk, kind, W, l, nf=1, gate='top', vt='g5', bulk='guard ring', nfmax=None):
         typ = {('n', 'g5'): 'sky130_fd_pr__nfet_g5v0d10v5', ('p', 'g5'): 'sky130_fd_pr__pfet_g5v0d10v5',
-               ('n', ''): 'sky130_fd_pr__nfet_01v8', ('p', ''): 'sky130_fd_pr__pfet_01v8'}[(kind, vt)]
+               ('n', ''): 'sky130_fd_pr__nfet_01v8', ('p', ''): 'sky130_fd_pr__pfet_01v8',
+               ('p', 'hvt'): 'sky130_fd_pr__pfet_01v8_hvt', ('n', 'lvt'): 'sky130_fd_pr__nfet_01v8_lvt',
+               ('p', 'lvt'): 'sky130_fd_pr__pfet_01v8_lvt'}[(kind, vt)]
         if nfmax:                      # fold: fingers no taller than nfmax um
             nf = max(nf, -(-W // nfmax))
             nf = int(nf)
-        self.blk, self.kind, self.nf = blk, kind, nf
+        self.blk, self.kind, self.nf, self.vt = blk, kind, nf, vt
         self.W, self.w = W, snap(W / nf)
         self.cell = blk.ly.create_cell('pfet' if kind == 'p' else 'nfet', 'skywater130',
                                        dict(type=typ, w=self.w, l=l, nf=nf, bulk=bulk,

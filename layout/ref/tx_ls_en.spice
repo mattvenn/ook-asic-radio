@@ -1,0 +1,13 @@
+* tx_ls_en: xschem/tx_ls.sch with {'kn': 1, 'kp': 1, 'wpi': 1, 'wni': 0.42} (layout/gen/tx_ls.py)
+** sch_path: /foss/designs/shuttle-ttsky26c/asic-radio/xschem/tx_ls.sch
+.subckt tx_ls_en in A B VDD VAPWR VSS
+*.PININFO VDD:B VAPWR:B VSS:B in:B A:B B:B
+XMi1p ctrl in VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1
+XMi1n ctrl in VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=0.42 nf=1
+XM8 ctrl_n ctrl VDD VDD sky130_fd_pr__pfet_01v8_hvt L=0.15 W=1 nf=1
+XM7 ctrl_n ctrl VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=0.42 nf=1
+XM9 A ctrl VSS VSS sky130_fd_pr__nfet_g5v0d10v5 L=0.5 W=0.42 nf=1
+XM10 B ctrl_n VSS VSS sky130_fd_pr__nfet_g5v0d10v5 L=0.5 W=0.42 nf=1
+XM11 A B VAPWR VAPWR sky130_fd_pr__pfet_g5v0d10v5 L=0.5 W=0.42 nf=1
+XM12 B A VAPWR VAPWR sky130_fd_pr__pfet_g5v0d10v5 L=0.5 W=0.42 nf=1
+.ends
