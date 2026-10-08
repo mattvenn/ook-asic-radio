@@ -211,24 +211,50 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - Single-drain devices keep the old placement (`tx_ls` identical; in `tx_drv` only the NAND's in/en tracks swapped).
   - `build()` leaves `b.rows` (rails, tracks, track x spans) for generators that add more (caps, wiring).
 - **`lay.write_ref(name, sch, params, drop)`:** a parameter-substituted LVS/PEX reference from any xschem cell (netgen can't evaluate `W='wcs'`, `m='nca'`).
-- **`avg_sc`** (`layout/gen/avg_sc.py`, 74.5 × 43.6 µm):
-  - Layout: 8 thin FETs via rows.py (phase inverters, then S1 and S2 as transmission gates). Cs 7×7 under the switches; 2 × Cavg 30×30 to the right. Each MIM bottom plate abuts the VSS rail, which runs across the caps (`passives.mim`, the other session's).
-  - Cs's top plate rises on its own met4 strip to the `cs` track. The Cavg top plates share a met4 strip that rises to the `out` track at the switch block's edge.
-  - Checks: DRC/antenna/LVS clean; m3 density 65 % (the MIM plates).
-  - **Block test** (`sim/avg_sc/tb_avg_sc.py`, 20 cycles of the digital's 13 µs phi timing, tt): τ 0.458 ms (schematic) → **0.434 ms** (extracted).
-  - **Open:** the extracted hold drift is ±1.7–1.9 mV over 20 cycles (schematic −0.015), from phi/phib coupling imbalance onto `cs`/`out`, for example 1.15 fF to phi2 against 0.50 fF to phi2b. Moving the phase inverters only flipped its sign.
-    - Steady state is about ±4 mV static offset at the comparator: within the trim range (−19…+12 mV), but about a third of it.
-    - Fix if the trim gets tight: a symmetric layout (balanced phi/phib routing around `cs`/`out`, dummy half-switches).
-- **`comp_ct`** (`layout/gen/comp_ct.py`, 100.5 × 49.9 µm, ~5.0k µm² against the ~3.0k estimate; area pass later):
-  - **Matching:** the input pair, trim pair and PMOS mirror are split into halves placed A B B A (1D common centroid, same orientation), with rail-tied dummies either side. The bias units (N 2/2) are folded per device.
-  - **Dummies in the schematic too:** `Mdn*`/`Mdp*` in `xschem/gen/comp.py`, every terminal on the rail. Netgen doesn't ignore layout dummies (17 against 14 devices otherwise).
-  - **Passives below the VSS rail:**
-    - Cl (22²) at the left, rising to `d2`;
-    - Rdeg (14 × 19.4 µm xhigh) and the Rr1+Rr2 divider (one 16-segment serpentine, `vref` at the middle link) in a p-tap ring, with Cref (10²) to the right;
-    - every connection rises on met4 to its channel track.
-    - The placement follows the tracks: `sa`/`sb`/`vref` only exist at the right (the trim pair), and `vref` can't extend left past `ibias`, which shares its track.
-  - **Checks:** DRC/antenna/LVS clean; density ≤ 24 % per layer.
-  - **Block test** (`sim/comp_ct/tb_comp_ct.py`, tt): offset +0.80 → +0.56 mV, trim 0.0650 → 0.0655 mV/LSB, ±1 mV response 1.11/0.07 → 0.71/0.16 µs (schematic → extracted).
+- **`avg_sc`** (`layout/gen/avg_sc.py`; v2 77.4 × 30.4 µm = 2.35k µm², v1 74.5 × 43.6 = 3.25k):
+  - **Why v2:** in steady state, any charge a clock leaves on `cs` or `out` per cycle shifts the average by ΔQ/Cs. Cavg doesn't dilute it, and Cs is only 0.1 pF. v1's phi/phib wiring imbalance (~0.19 fF on both `cs` and `out`) × 1.8 V / Cs ≈ 3.4 mV: the ±4 mV static offset seen in its block test.
+  - **Symmetric channel** (fixed track order, `rows.build(order=...)`), top to bottom: `phi2b phi1b | shield (VDD) | in out cs | shield (VSS) | phi1 phi2`.
+    - phib (P gates) on top, phi (N gates) at the bottom, mirrored. Each TG's P and N stubs sit at the same x, so a signal stub crosses phib going up exactly as its partner crosses phi going down. Gate stubs cross no signal track.
+    - The shields stop sideways coupling from phi1b into `in`, and from phi1/phi2 into `cs`. They rise to VDD and VSS right of the ring.
+    - **Nothing crosses the channel.** `cs` and `out` leave on met4 risers right of the ring, where only the `in`/`out`/`cs` tracks reach. The phi pins rise on met4 at the left end, over the inverters, where only clock tracks run. (v1's `cs` and `out` risers crossed the phi tracks.)
+    - phi2's inverter is flipped, so its rail strip, not its phi2b drain, faces S1's `in` strip.
+  - **Extracted clock coupling, v1 → v2:**
+
+    | Node | phi − phib imbalance, v1 | v2 |
+    |---|---|---|
+    | `cs`, phi1 − phi1b | +0.197 fF | −0.002 fF |
+    | `cs`, phi2 − phi2b | −0.042 | +0.011 |
+    | `out`, phi2 − phi2b | −0.194 | +0.004 |
+
+    - Expected offset from wiring: ~0.1–0.2 mV (was ~3–4).
+    - `in` still sees phi2 0.42 against phi2b 0.11 fF. That's harmless for the offset: phi2 only switches while S1 is open, and `in` is the LPF's continuously driven node, so it's a ~0.2 mV ripple decaying with the LPF τ (11 µs), not a held charge. (v1: phi2b 0.63 / phi2 0.11.)
+    - Device charge injection, which the TGs balance only roughly (N 0.5 / P 1), isn't in these numbers. That needs the block test.
+  - **Floorplan:** the Cavg pair is on the left, full height. The switch column is at the right with Cs hanging under its VSS rail (the plate abuts the rail). The VSS rail's met3 runs left into both Cavg bottom plates (bridging the 2 µm gap is DRC-clean in magic and KLayout). The `out` met4 strip runs along the bottom of the Cavg plates. The switches don't go under the caps: the row builder's tracks and rails are met3, the bottom-plate layer.
+  - **Pins:** `phi1` and `phi2` on the top edge (met4). `in` and `out` on the right edge (met3), adjacent, for `comp_ct` (`inn`, `inp`, both on its left edge). Mirror or rotate the cell at the top level as the floorplan needs. Keep top-level clock wiring off the Cavg top plates (`out`).
+  - Checks: DRC (magic and KLayout) 0, antenna 0, LVS match; m3 density 84 % (the MIM plates, now with no empty area around them).
+  - **Block test** (`sim/avg_sc/tb_avg_sc.py --pex`, tt; `OSIC=$PWD/tools/osic-mac` on the Mac), schematic → v1 → v2:
+
+    | Quantity | Schematic | v1 extracted | v2 extracted |
+    |---|---|---|---|
+    | τ | 0.458 ms | 0.434 ms | 0.423 ms |
+    | hold drift, 20 cycles | −0.015 mV | ±1.7–1.9 mV | **+0.070 mV** |
+    | static offset (drift / (1 − (1 − a)^20) ≈ drift / 0.46) | — | ~4 mV | **~0.15 mV** |
+
+    - τ is 2.5 % shorter than in v1: `cs` carries a little more wiring C (the riser and track extension).
+- **`comp_ct`** (`layout/gen/comp_ct.py`, v2 2026-10-08: **73.5 × 42.0 µm, 3.08k µm²**; v1 was 100.5 × 49.9, 5.0k):
+  - **Matching:** the input pair, trim pair and PMOS mirror are split into halves placed A B B A (1D common centroid, same orientation), with rail-tied dummies either side.
+  - **N row order:** core first (main pair, then the trim pair on the same d1/d2), then bias, stage 2, inverter. Mp3/Mip sit over Mn3/Min (`Dev.xmin`), so o2/out only exist at the right end of the channel.
+    - v1 had the trim pair at the far right: d1/d2 ran ~90 µm and paralleled out/o2. Extracted **d2–out 7.4 fF and d1–o2 6.2 fF**, both positive feedback. v2: 0 / 0 fF.
+  - **Bias devices folded into 4.55 µm fingers** (the row height) instead of 2 µm units: Mt1 4 × 4.55 (was 10 × 2), Mn3 2 × 4.55 (was 5 × 2); Mta stays 2 × 2 µm each.
+    - Different W bin from Mb's 2 µm: 4.55 µm fingers give ~12 % more current per µm, so the total W is 0.91 × the units'. Against 10 / 5 units: +0.2 % tt, +3.5 % ss, −3.0 % ff, −3.4 % sf, +3.9 % fs.
+    - **Schematic as W per finger × mult** (`W='0.455*mt1' mult=4`), the way magic extracts it. **W total with `nf` simulates differently under `.spiceinit`'s `set skywaterpdk`**: W 18.2 nf 4 gave 10.6 µA, not 9.8 (trim step 0.0590 instead of 0.0650). A finger sweep run without `.spiceinit` hid this.
+  - **Dummies in the schematic too:** `Mdn*`/`Mdp*` in `xschem/gen/comp.py`, every terminal on the rail. Netgen doesn't ignore layout dummies.
+  - **Passives: a band below the VSS rail, as wide as the rows (18.8 µm tall):**
+    - Rdeg (30 × 9.0 µm xhigh) and Rr1+Rr2 (32 × 8.5 µm; a multiple of 4 so the middle link, `vref`, is a bottom one) in one p-tap ring.
+    - Cl (now **2 × 22 × 11**, `MF=2`, same area) and Cref (10²) **over the ring**; their VSS met3 bottom plates shield the resistors. Order: Cl_a | risers | Cref | Cl_b.
+    - Resistor ends run on **met2 lanes under the caps** to one column of met4 risers (sa, sb, VDD, vref) at x ≈ 24–27, where the sa/sb/vref tracks already are. Cref's top plate joins the vref riser on met4. Cl's two top plates rise straight to `d2`.
+  - **Checks:** DRC (magic + KLayout) 0, antenna 0, LVS match; density ≤ 33 % per layer (m3, the MIM plates).
+  - **Block test** (`sim/comp_ct/tb_comp_ct.py [--pex]`, tt): offset +0.795 → +0.560 mV, trim 0.0649 → 0.0656 mV/LSB, ±1 mV response 1.12/0.07 → 0.76/0.15 µs (schematic → extracted). v1 extracted: +0.56 mV, 0.0655, 0.71/0.16. The faster extracted rise isn't the out→d2 coupling (now 0); not chased.
 - **Row builder additions (for `comp_ct`):**
   - **`rows.dummy(fet, rail)`:** all strips and the gate on the rail. The gate strap joins the ring at a row end, or a met1 jumper in the gap to a neighbouring dummy (so dummies go at row ends or in adjacent pairs).
   - **Strip groups:** a run of one net's strips with no other signal net between gets its own bar and stub. A pair half `tail | d | tail` has two tail groups; one tail bar across `d` had shorted tail, d1 and d2.
@@ -258,16 +284,25 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
 - **Shrink option (not taken, 2026-10-08):** the block is cap-limited (the 5 MIM units are ~3k of 3.9k µm²). The mirror is big because a 60 µA reference is copied 1:1 to the chain in 1 µA units (123 fingers). A 10 µA reference (Rref ~60 kΩ high_po, same tracking) with 10 / 2 / 1 µA outputs (23 units; the chain's local mirror takes the ×6) plus smaller caps (Cc has PM 90°; Cvcm / Cvref poles have room) could bring bias_gen to ~1.5–2k µm² and save ~100 µA. Needs bias_gen + lna_chain schematic changes and re-verification. Only shrinking both caps and mirror saves area.
 
 
-## log_det (2026-10-09)
-- **`layout/gen/log_det.py`:** six instances of `det_cell` (another agent's cell, copied in via `copy_tree`; pitch = its width, buses and rail abut), then an end section in the same frame.
-  - **End section:**
-    - Mbias as a diode: drain on the left to the gate pad and down to the `vb` bus, which sits above `out`, so nothing crosses;
+## log_det (2026-10-09; compacted to 2 x 3, 2026-10-08)
+- **`layout/gen/log_det.py`:** two rows of three `det_cell`s plus an end column. The cells are another agent's, copied in via `copy_tree` and unchanged.
+  - **Rows:** the top row (t1 t2 t3) is as drawn. The bottom row (t4 t5 t6) is mirrored in y, so both rows share one VSS rail (met1–3) in the middle.
+    - The inputs face out: the top row's along the top edge, the bottom row's along the bottom. t1 and t6 sit on opposite corners.
+  - **Bus joins (end column):** the out/vb buses (met2) of both rows run on into the column.
+    - out is joined by a met2 riser, which carries on down to Rdet's bottom end and the Cdet drop.
+    - vb is joined by a met1 riser, because it crosses the out buses.
+  - **End section** (bottom of the column, own p-tap ring, met1 + psdm bridged to t6's ring):
+    - Mbias as a diode, its drain up to the bottom vb bus in met2;
     - **Rs_b drawn exactly like the cells' Rs** (high-po 0.35, 2 segments), so the vb replica matches;
-    - Rdet (0.69, 3 adjacent segments, one RPM).
-  - **Cdet** (22²) above the end section on a VDD rail (met1–3). Its met4 riser drops over the end section: an earlier version, with the riser under the cap's overhang, shorted `det` to the last cell's `gn`.
-  - **Pins** t1p…t6n on the cells' bottom-plate met3 pins.
-- **Tiling:** neighbouring cells' ring implants end 0.2 µm apart (KLayout psdm.1); `log_det` bridges psdm across each boundary.
-- **Checks:** DRC/antenna/LVS clean. The reference strips the `det_cell` instances' parameters, since netgen compares instance properties otherwise.
-- **Block test** (`sim/logdet/tb_log_det.py`, tt): idle det 1.5197 → 1.4890 V; 100 mV on t6: −1.56 → −1.46 mV.
+    - Rdet (0.69, 3 segments, one RPM).
+  - **Cdet** (22²) is over the column, top-aligned, its bottom plate 1.2 µm clear of the cells' met3 (their rail ends at the column).
+    - Its top plate drops on a met4 strip to a met3 island 1.2 µm below the bottom plate, over the end section.
+    - The bottom plate's met3 continues as a 1.2 µm strip down the right edge: the **VDD pin** (via3 from the top level, outside capm). Rdet's top end reaches it in met2.
+  - **Pins:** `det` / `ibias_det` on the top row's buses at the left edge; VSS on the shared rail (met3) at the left edge.
+- **Size:** **87.3 × 31.0 µm (2.7k µm²)**, was 137.4 × 39.0 (5.4k bbox, an L shape with ~2.5k µm² empty above the cells).
+- **Tiling:** neighbouring cells' ring implants end 0.2 µm apart (KLayout psdm.1); `log_det` bridges psdm across each boundary in both rows. The rows' rings are 1.2 µm apart across the shared rail, so no bridge is needed there.
+- **Checks:** DRC (magic + KLayout) 0, antenna 0, LVS match. The reference strips the `det_cell` instances' parameters, since netgen compares instance properties otherwise.
+  - met3 density is 50 % (flagged): the 12 Cc plates + Cdet in a tight box. It's inherent to the cap content; there's no needless metal.
+- **Block test** (`sim/logdet/tb_log_det.py`, tt): idle det 1.5197 → 1.4888 V; 100 mV on t6: −1.56 → −1.46 mV. This is the same as the 1 × 6 layout (1.4890 V, −1.46 mV).
 - **Open:** the high-po fits have a per-device end term (0.35: 963 Ω, 0.69: 526 Ω). With Rs in 2 segments and Rdet in 3, the layout's Rs/Rdet are ~10 % high, which is the idle shift.
   - Harmless (the averaging reference absorbs it). For an exact match, draw them in the schematic as series segments.

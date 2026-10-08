@@ -1,0 +1,110 @@
+# Top-level floorplan: spec for the interactive floorplan page
+
+Written 2026-10-08 for a Claude session (cloud) to pick up. Read this, then `STATUS.md` (where we are),
+then the parts of `docs/layout.md` you need (block notes, power rules). Don't read `docs/history.md` whole.
+
+## Goal
+Matt and Claude agree the top-level floorplan of the 3x2 analog tile together:
+- An **interactive floorplan page** (a claude.ai artifact) that both can see and edit.
+- Matt drags blocks around. Claude proposes **named variants**. Matt flips between them, tweaks one and picks.
+- The chosen placement is exported to **`layout/floorplan/floorplan.json`** in the repo. A later `layout/gen/top.py` reads that file to build the real top-level GDS, so nothing is re-typed.
+
+## Data (in the repo)
+- **`layout/floorplan/tile.json`**: the tile outline (493.12 × 225.76 µm) and all 51 signal pins (met4, 1 µm deep, on the top and bottom edges), from tt-support-tools `tech/sky130A/def/analog/tt_analog_3x2_3v3.def`.
+  - Note: `def/tt_block_3x2_pg.def` is the *digital* 3x2 (508.76 µm wide, no `ua` pins). Not ours.
+  - Bottom edge: `ua[0]` x 136.6, `ua[1]` 117.3, `ua[2]` 98.0, `ua[3]` 78.7, `ua[4]` 59.3, `ua[5]` 40.0 (free), `ua[6]`/`ua[7]` not usable (`src/project.v`).
+  - Top edge: the TT digital pins between x 15 and 131 (`uio_oe` 15–35, `uio_out` 37–57, `uo_out` 59–79, `uio_in` 81–101, `ui_in` 103–123, `rst_n` 125.6, `clk` 128.3, `ena` 131.1).
+  - Nothing to the right of x ≈ 137: the whole right part of the tile is free.
+- **`layout/floorplan/blocks.json`**: every laid-out block's bbox (w × h, µm, origin at its lower-left) and its labels (pins plus some internal nets), with the layer and position.
+  - Regenerate with `tools/floorplan_blocks.py` when a block changes. It needs the `klayout` Python module: `pip install klayout` works on Linux. On Matt's Mac it runs via `tools/osic-mac`.
+- **`layout/README.md`**: the same sizes plus TT GDS viewer links for each block.
+
+## What goes in the tile
+
+| instance | cell | size (µm) | status | notes |
+|---|---|---|---|---|
+| macro | `radio_digital` | 260 × 190, +5 halo | hardened (`openlane/radio_digital/runs/cg_260x190`) | Pins: N = TT digital pins (fanning in from the top-left), W = analog interface (see Nets). Max layer met4. |
+| xchain | `lna_chain` | **estimate** ~6.2k µm² | **layout in progress (another session)** | 1 × `amp_dp` (36.4 × 20.7) + 5 × `amp_dpc` (30.5 × 21.2) + 2 × Cin (2 pF MIM, ~32.7² each) + 2 × Rb (~1.4 × 22) + Mref. Shape flexible until its GDS lands; it replaces the estimate. |
+| xdet | `log_det` | 87.3 × 31.0 | done | Taps all six stage outputs, so it pairs tightly with the chain. Top row t1 t2 t3 inputs on the top edge, bottom row t4 t5 t6 on the bottom edge; t1 and t6 on opposite corners. `det`/`ibias_det` at the left edge, VDD strip down the right edge. |
+| xlpf | `lpf_rc` | 65.2 × 35.0 | done | |
+| xavg | `avg_sc` | 77.3 × 30.4 | done | `phi1`/`phi2` on the top edge (met4); `in`/`out` on the right edge (met3), adjacent, meant to face `comp_ct`'s left edge. Keep clock wiring off the Cavg top plates. |
+| xcomp | `comp_ct` | 73.5 × 42.0 | done | `inn`/`inp` on its left edge. |
+| xdac | `r2r` | 71.8 × 54.1 | done | `b0..b7` from the macro's `trim_out[0..7]`; `out` → Ctrim → `comp_ct.trim`. |
+| Ctrim | 1 pF MIM | ~23.5 × 23.5 | **not laid out** (top-level cap) | On the `trim` node. |
+| xbias | `bias_gen` | 80.2 × 49.1 | done | `en` left (met3); `ib_chain`/`ib_det`/`ib_comp` right (met2); `vcm` right (met3). VDD rail is in the *middle* (met3, x 0–27.7), VSS at top and bottom. |
+| xdbg | `dbg_tg` | 5.7 × 16.3 | done | Switches `det` onto `ua[4]`. |
+| xtx.xring | `tx_ring` | 18.3 × 7.0 | done | |
+| xtx.xls | `tx_ls` | 14.2 × 19.0 | done | |
+| xtx.xlse_p, xtx.xlse_n | `tx_ls_en` | 13.3 × 15.5 each | done | Assumed: the two arm-enable shifters use the `tx_ls_en` layout. Check `xschem/tx_top.sch`. |
+| xtx.xdrv_p, xtx.xdrv_n | `tx_drv` | 40.9 × 26.7 each | done | Outputs on met3 (2.5 µm) to `ua[0]`/`ua[1]`. |
+| xdeca | `decap_vapwr` | **estimate** ~18k µm² | **not laid out** | 50 pF on VAPWR: n = 100 units of 2 × thick-oxide MOS (10 × 5) + one 10×10 MIM. 18k is `sim/area/area_netlist.py`'s footprint rule; a dense tile could be ~13–14k. |
+| xdecd | `decap_vdpwr` | **estimate** ~4.1k µm² | **not laid out** | 30 pF on VDPWR: n = 30 units, thin MOS. |
+
+The TX is assembled as `tx_top` at the top level (STATUS: "assemble `tx_top` as part of that floorplan"), so its parts can be placed as a group or individually.
+
+## Nets between blocks (for flylines and wire-length checks)
+- **RX path:** `ua[2]` → chain `inp` (rx_p); `ua[3]` → chain `inn` (rx_n). Stage k outputs → `log_det` tk (differential, k = 1..6; t6 = the chain output). `log_det.det` → `lpf_rc.in` and → `dbg_tg` → `ua[4]`. `lpf_rc.out` → `avg_sc.in` and `comp_ct.inp`; `avg_sc.out` → `comp_ct.inn`. `comp_ct.out` → macro `comp_in`.
+- **Trim:** macro `trim_out[0..7]` → `r2r.b0..b7`; `r2r.out` → Ctrim → `comp_ct.trim`.
+- **Clocks and enables from the macro:** `sc_phi1`/`sc_phi2` → `avg_sc.phi1`/`phi2`; `rx_en` → `bias_gen.en`; `dbg_en` → `dbg_tg.en`; `tx_en`/`tx_en_n` → TX.
+- **Bias:** `bias_gen.ib_chain` → chain, `ib_det` → `log_det.ibias_det`, `ib_comp` → `comp_ct.ibias`, `vcm` → chain (Rb).
+- **TX:** ring → `tx_ls` → `tx_ls_en` (×2) → `tx_drv` (×2) → `ua[0]` (tx_p) / `ua[1]` (tx_n).
+- **Macro west-edge pin order**, bottom → top (`openlane/radio_digital/pin_order.cfg`): `tx_en`, `tx_en_n`, then `rx_en`, `dbg_en`, then `comp_in`, `sc_phi1`, `sc_phi2`, then `trim_out[0..7]`, all in the lower part of the edge.
+
+## Rules, ranked
+The radio is **half-duplex** (`ui[7]` sets the role). In RX the ring's enable (`key`) is low, so the ring is stopped and both TX arms are held low. Nothing in the TX switches while we receive. So TX ↔ RX separation is a *soft* preference. What switches during RX are the aggressors.
+1. **Chain input far from the digital macro.** At a 10 MHz clock, the 43rd and 44th harmonics are 430 and 440 MHz, in the chain's 330–560 MHz band, and the correlator runs all the time in RX. Maximise the distance from the macro (and its supply) to the `ua[2]/[3]` → stage-1 input. Keep macro → analog signal wires off the chain.
+2. **Chain output → input coupling ≤ 0.1 fF** (asymmetric). The ss 10 °C corner oscillates at 0.5 fF. Keep stages 5–6, `log_det` t5/t6 and anything carrying full-swing 434 MHz away from the pads, the `ua[2]/[3]` wires and stage 1. No wire from the late stages should run alongside the input.
+3. **Keep clock edges off the RX:** `sc_phi1/2` (macro → `avg_sc` top edge) and `comp_ct.out` (→ macro) stay away from the chain and `log_det`. Don't route them over the Cavg top plates.
+4. **Short analog signal path:** `log_det` → `lpf_rc` → `avg_sc` → `comp_ct`, and `r2r` → Ctrim → `comp_ct`. `avg_sc.in/out` face `comp_ct`'s left edge.
+5. **TX at `ua[0]/ua[1]`** with short, wide (met3, 2.5 µm) driver → pad wires. `tx_en`/`tx_en_n` come from the bottom of the macro's west edge.
+6. **Bias:** `bias_gen` near the chain (ib_chain and vcm are the sensitive ones), with reasonable reach to `log_det` and `comp_ct`.
+7. **Decaps as fill:** close to their supply straps. The strip above or below the macro (~270 × 26 µm, or one ~31 µm band if the macro is pushed to the top or bottom edge) is decap-only space.
+8. **TX vs RX distance:** soft. Nice to have, not at the cost of rules 1–2.
+9. **Spacing:** ≥ ~2–3 µm between blocks for guard rings (a "keep-out" setting on the page; the area check adds 10 %).
+
+## Power and layer constraints (`docs/layout.md`, "Power: how the TT PDN connects")
+- Power pins are **vertical met4 straps**, ≥ 1.2 µm wide, running from within 10 µm of the bottom edge to within 10 µm of the top. Several per net are allowed; they must not touch each other. Nets: VDPWR, VAPWR, VGND.
+- **No met5** (reserved for the TT PDN, which runs horizontal met5 stripes at 57.12 µm pitch).
+- Plan: straps on both the left and right of the analog area, plus a mid strap if needed. Blocks connect from their met3 rails with via3 where a strap crosses, or with short met3 spurs.
+- **Straps need clear met4 lanes.** MIM top plates are met4 (`cap_mim_m3_1`), and some pins are met4 (`avg_sc` phi1/phi2 and its `out` strip). A full-height strap can't cross those. The page should show the strap lanes and flag a strap crossing a block that uses met4.
+- **Open question: the right-edge straps vs the macro.** The macro routes up to met4, so straps can't cross it. Either leave a lane at the tile's right edge (shift the macro left by ~10–15 µm), or put the "right" straps between the analog area and the macro.
+
+## Area budget (2026-10-08 fit check)
+- Tile 111.3k µm². Macro + halo 270 × 200 = 54.0k µm². Left: **~57.3k**. That's a ~223 × 226 µm rectangle (~50.4k) plus the strip by the macro (~7k, decap only).
+- Signal blocks ~28k (laid-out ~25.3k, chain inputs ~2.2k and Ctrim ~0.55k estimated). Decaps ~22k (estimated). Spacing ~2.8k. **Total ~53k ≈ 92 % of the space left.**
+- A hand packing of the real outlines puts the signal blocks in ~160 µm of the 226 µm height, leaving ~11–14k below them plus the 7k strip for ~22k of decap. Tight.
+- Levers if it doesn't fit: VAPWR decap 50 → 30 pF (−7k; ripple ~0.05 → ~0.15 V), a denser decap tile, the macro pushed to the top or bottom edge, a re-hardened denser macro.
+
+## The page
+- **Canvas:** the tile to scale, with zoom and pan and a µm grid (snap 0.5 µm). Tile pins drawn and labelled at their DEF positions; the macro with its halo; strap lanes.
+- **Blocks:** rectangles at real size, labelled, with their pins from `blocks.json` drawn as small marks.
+  - Drag; rotate 90°; mirror X/Y. Use the GDS orientations R0/R90/R180/R270/MX/MY/MXR90/MYR90 so the export maps straight onto a KLayout `DCplxTrans`.
+  - Estimated blocks (chain, decaps, Ctrim) drawn hatched, with an editable w × h. The decaps can be split into several rectangles of a given total area.
+  - The macro is draggable too, but it starts at the right.
+- **Flylines** for the nets above, from block pin to block pin, coloured by class (RX signal, clock/digital, bias, TX, trim). Each net's Manhattan length is shown on hover and listed.
+- **Live checklist** for the ranked rules, each pass/warn/fail with the number behind it. For example: "chain input ↔ macro 182 µm", "stage 6 ↔ stage-1 input 64 µm", "phi lines cross RX: no", "overlaps: none", "strap lane blocked by avg_sc met4". Thresholds editable on the page.
+- **Area panel:** used / free, signal blocks vs decap vs spacing, matching the budget above.
+- **Variants:** named, each with the placement and a short note. Claude writes variants into the page's shared state, and Matt's edits are saved there as well, so each side can read the other's. Flip, duplicate, rename, delete.
+- **Export/import** of `floorplan.json`:
+
+```json
+{
+  "variant": "A: RX left, TX middle, macro right",
+  "tile": {"w": 493.12, "h": 225.76},
+  "blocks": [
+    {"inst": "xdet", "cell": "log_det", "x": 12.0, "y": 140.0, "orient": "R0", "estimate": false},
+    {"inst": "xdeca", "cell": "decap_vapwr", "x": 230.0, "y": 0.0, "w": 260.0, "h": 30.0, "orient": "R0", "estimate": true}
+  ],
+  "straps": [{"net": "VGND", "x": 2.0, "w": 2.0}, {"net": "VAPWR", "x": 6.0, "w": 2.0}]
+}
+```
+  `x`, `y` are the lower-left corner of the placed (transformed) bbox, in tile µm. `w`, `h` only for estimated blocks.
+- Follow the repo's artifact flow: claude.ai artifact, private by default, shared state through the artifact's database. Give Matt the link.
+
+## Starting variants (Claude's suggestions; refine them on the page)
+- **A: RX left, TX middle, macro right.** Chain + `log_det` along the left with the input near `ua[2]/[3]` (x 79–98, bottom). Detector → LPF → avg → comp going up and right, `bias_gen` next to the chain. TX in the middle-bottom at `ua[0]/[1]`, as the idle buffer between the macro and the RX. `r2r` + Ctrim beside `comp_ct` near the macro's trim pins. Decap in the leftover rectangles and the strip by the macro.
+- **B: A with the macro pushed to the top edge.** The strip by the macro becomes one ~31 µm decap band along the bottom right. That's easier to tile, and keeps the macro's top-edge pins short to the TT pins.
+- **C: chain input low-left, signal path along the top.** The chain runs bottom-left to bottom-centre from the pads, `log_det` above it, and LPF → avg → comp along the top, toward the macro's west pins. This keeps clocks and comparator wires in the upper half, away from the chain. The TX sits at the bottom between the chain's late stages and the macro. Check rule 2: the chain's output end is near the TX pads then, which is fine since the TX is idle in RX.
+
+## Done when
+Matt has picked a variant and `layout/floorplan/floorplan.json` is committed, along with any open questions it settles (straps vs macro, decap size). Then: `layout/gen/top.py` places the GDS from it. The chain and decap layouts drop into their reserved outlines.

@@ -109,6 +109,11 @@ sky130A, run headless in Docker.
   - `W` is the *total* width (split over `nf` fingers); `mult` multiplies the
     device.
   - Narrow fingers carry noticeably less current per µm.
+  - **Mirror ratios across fingers of different W:** each finger W is its own model bin
+    (4.55 µm fingers give ~12 % more current per µm than 2 µm ones at L 2). Under
+    `.spiceinit`'s `set skywaterpdk`, `W` total + `nf` also bins differently from the same
+    fingers written as `W` per finger × `mult` (which is how magic extracts them): write
+    folded devices that way. Run device sweeps from `build/`, so `.spiceinit` is read.
   - Instance names get the `X` spiceprefix: `M1` becomes `XM1`, and internal
     nodes are `x1.node`.
 - Corners: put `corner.sym` in the schematic and rewrite the `.lib ... tt`

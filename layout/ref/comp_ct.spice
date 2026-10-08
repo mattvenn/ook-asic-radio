@@ -1,9 +1,9 @@
 * comp_ct: xschem/comp_ct.sch with {'w1': 20, 'l1': 1, 'mt1': 10, 'rdeg': 2000000.0, 'mta': 2, 'lref': 136, 'wcl': 22} (lay.write_ref)
-** sch_path: /foss/designs/shuttle-ttsky26c/asic-radio/xschem/comp_ct.sch
+** sch_path: /Users/mattvenn/asic/ook-asic-radio/xschem/comp_ct.sch
 .subckt comp_ct inp inn trim ibias out VDD VSS
 *.PININFO VDD:B VSS:B ibias:B inp:B inn:B trim:B out:B
 XMb ibias ibias VSS VSS sky130_fd_pr__nfet_01v8 L=2 W=2 nf=1
-XMt1 tail ibias VSS VSS sky130_fd_pr__nfet_01v8 L=2 W=2 nf=1 m=10
+XMt1 tail ibias VSS VSS sky130_fd_pr__nfet_01v8 L=2 W=4.55 nf=1 m=4
 XM1 d1 inp tail VSS sky130_fd_pr__nfet_01v8_lvt L=1 W=20 nf=4
 XM2 d2 inn tail VSS sky130_fd_pr__nfet_01v8_lvt L=1 W=20 nf=4
 XMp1 d1 d1 VDD VDD sky130_fd_pr__pfet_01v8_lvt L=1 W=4 nf=1
@@ -16,14 +16,14 @@ XRdeg sa sb VSS sky130_fd_pr__res_xhigh_po_0p35 L=271.37 mult=1
 XRr1 vref VDD VSS sky130_fd_pr__res_xhigh_po_0p35 L=136 mult=1
 XRr2 VSS vref VSS sky130_fd_pr__res_xhigh_po_0p35 L=136 mult=1
 XCref vref VSS sky130_fd_pr__cap_mim_m3_1 W=10 L=10
-XCl d2 VSS sky130_fd_pr__cap_mim_m3_1 W=22 L=22
+XCl d2 VSS sky130_fd_pr__cap_mim_m3_1 W=22 L=11 m=2
 XMp3 o2 d2 VDD VDD sky130_fd_pr__pfet_01v8_lvt L=1 W=4 nf=1
-XMn3 o2 ibias VSS VSS sky130_fd_pr__nfet_01v8 L=2 W=2 nf=1 m=5
+XMn3 o2 ibias VSS VSS sky130_fd_pr__nfet_01v8 L=2 W=4.55 nf=1 m=2
 XMip out o2 VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=2 nf=1
 XMin out o2 VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=1 nf=1
 XMdn1 VSS VSS VSS VSS sky130_fd_pr__nfet_01v8_lvt L=1 W=5 nf=1 m=2
 XMdn2 VSS VSS VSS VSS sky130_fd_pr__nfet_01v8_lvt L=1 W=1 nf=1 m=2
-XMdn3 VSS VSS VSS VSS sky130_fd_pr__nfet_01v8 L=2 W=2 nf=1 m=2
+XMdn3 VSS VSS VSS VSS sky130_fd_pr__nfet_01v8 L=2 W=2 nf=1
 XMdp1 VDD VDD VDD VDD sky130_fd_pr__pfet_01v8_lvt L=1 W=2 nf=1 m=2
 XMdp2 VDD VDD VDD VDD sky130_fd_pr__pfet_01v8_lvt L=1 W=4 nf=1
 .ends

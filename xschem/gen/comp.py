@@ -46,7 +46,11 @@ def comp_ct():
     # bias: ibias into a diode (unit W 2, L 2); tails are multiples of it
     md = mos(s, 'n', -600, 300, W=2, L=2, name='Mb')
     s.connect(md, D='ibias', G='ibias', S='VSS', B='VSS')
-    mt = mos(s, 'n', 0, 300, W=2, L=2, mult="'mt1'", name='Mt1')
+    # Mt1 / Mn3 are 4.55 um fingers (the layout's row height) instead of 2 um units: that W
+    # bin gives ~12 % more current per um than Mb's, so the total W is 0.91 x the units'
+    # (10 / 5 units within +1.4 / -1 % over tt/ss/ff/sf/fs). Written as W per finger x mult,
+    # as magic extracts them: with .spiceinit's skywaterpdk mode, W/nf bins differently.
+    mt = mos(s, 'n', 0, 300, W="'0.455*mt1'", L=2, mult=4, name='Mt1')
     s.connect(mt, D='tail', G='ibias', S='VSS', B='VSS')
     # main pair: inp -> d1 (diode side), inn -> d2 (output side)
     for nm, x, g, d in (('M1', -100, 'inp', 'd1'), ('M2', 100, 'inn', 'd2')):
@@ -76,12 +80,12 @@ def comp_ct():
     # band-limit stage 1 (dominant pole ~100 kHz): cuts the integrated noise;
     # a decision only has to settle within one 13 us sample
     cl = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 200, -50, name='Cl', model='cap_mim_m3_1',
-                 W="'wcl'", L="'wcl'", MF='1', spiceprefix='X')
+                 W="'wcl'", L="'wcl/2'", MF='2', spiceprefix='X')   # 2 x (wcl x wcl/2): fits the layout's band
     s.connect(cl, c0='d2', c1='VSS')
     # stage 2: PMOS CS (same W/L as the load) + NMOS sink (5 x unit); out2 low when inp > inn
     mp = mos(s, 'p', 900, -150, W=4, L=1, name='Mp3', vt='lvt')
     s.connect(mp, D='o2', G='d2', S='VDD', B='VDD')
-    mn = mos(s, 'n', 900, 100, W=2, L=2, mult=5, name='Mn3')
+    mn = mos(s, 'n', 900, 100, W=4.55, L=2, mult=2, name='Mn3')
     s.connect(mn, D='o2', G='ibias', S='VSS', B='VSS')
     # output inverter
     ip = mos(s, 'p', 1200, -150, W=2, L=0.15, name='Mip')
@@ -92,7 +96,7 @@ def comp_ct():
     # ABBA pairs and the bias units): all terminals on the rail, no electrical effect; drawn
     # here so LVS sees the same devices (IIC etiquette: dummies belong in the schematic)
     for nm, x, kind, W, L, vt, m in (('Mdn1', 1500, 'n', 5, 1, 'lvt', 2), ('Mdn2', 1700, 'n', 1, 1, 'lvt', 2),
-                                     ('Mdn3', 1900, 'n', 2, 2, '', 2), ('Mdp1', 1500, 'p', 2, 1, 'lvt', 2),
+                                     ('Mdn3', 1900, 'n', 2, 2, '', 1), ('Mdp1', 1500, 'p', 2, 1, 'lvt', 2),
                                      ('Mdp2', 1700, 'p', 4, 1, 'lvt', 1)):
         rail = 'VSS' if kind == 'n' else 'VDD'
         d = mos(s, kind, x, 100 if kind == 'n' else -150, W=W, L=L, mult=m, name=nm, vt=vt)

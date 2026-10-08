@@ -42,10 +42,12 @@ class Dev:
     """A FET in a row. roles per S/D strip: 'R' (to the segment's rail), 'D' (the drain
     net), a net name (pass devices: both sides are signals), or None (unconnected).
     gates: [(net, [finger indices])]. drain: net name. hb: drain bar height. rail: supply
-    net of the 'R' strips (P: VAPWR/VDD, N: VSS)."""
+    net of the 'R' strips (P: VAPWR/VDD, N: VSS). xmin (P row only): the device's
+    diffusion starts at x >= xmin, and it doesn't push the N device at its index."""
 
-    def __init__(self, fet, roles, gates, drain, hb=0.5, rail=None, dummy=False):
+    def __init__(self, fet, roles, gates, drain, hb=0.5, rail=None, dummy=False, xmin=None):
         self.f, self.roles, self.gates, self.drain, self.hb = fet, roles, gates, drain, hb
+        self.xmin = xmin
         self.rail = rail or ('VSS' if fet.kind == 'n' else 'VAPWR')
         self.hv = fet.vt == 'g5'
         self.dummy = dummy
@@ -158,8 +160,11 @@ def plan(d, nets, strip_w):
     return dict(sw=sw, groups=groups, gst=gst)
 
 
-def assign_tracks(P, N, nets, plans):
-    """Constrained left-edge channel routing over the planned stubs."""
+def assign_tracks(P, N, nets, plans, order=None):
+    """Constrained left-edge channel routing over the planned stubs. order (optional):
+    the tracks top to bottom as lists of net names, checked against the stub constraints
+    instead of assigned; a name with no stubs reserves an empty track (e.g. a shield the
+    generator draws itself)."""
     stubs = []                                       # (net, x0, x1, 'P'/'N')
     for row, side in ((P, 'P'), (N, 'N')):
         for d in row:
@@ -180,6 +185,13 @@ def assign_tracks(P, N, nets, plans):
         for nb, b0, b1, sb in stubs:
             if sa == 'P' and sb == 'N' and na != nb and a0 < b1 + M2S and b0 < a1 + M2S:
                 above[nb].add(na)
+    if order is not None:
+        rank = {n: i for i, t in enumerate(order) for n in t}
+        assert set(span) <= set(rank), f'order misses {sorted(set(span) - set(rank))}'
+        for nb, aa in above.items():
+            for na in aa:
+                assert rank[na] < rank[nb], f'order: {na} must be above {nb}'
+        return [dict(nets=list(t), w=max(nets[n].track for n in t)) for t in order]
     tracks, placed, todo = [], set(), set(span)
     while todo:
         t = dict(nets=[], w=0)
@@ -197,8 +209,9 @@ def assign_tracks(P, N, nets, plans):
     return tracks
 
 
-def build(b, P, N, nets, rail_h=3.0, out_w=3.0, align_last=False, strip_w=0.45):
-    """Place, ring, rail and route rows P (top) and N (bottom) into Block b."""
+def build(b, P, N, nets, rail_h=3.0, out_w=3.0, align_last=False, strip_w=0.45, order=None):
+    """Place, ring, rail and route rows P (top) and N (bottom) into Block b.
+    order: a fixed track order (see assign_tracks)."""
     sP, sN = segments(P), segments(N)
     assert [k[0] for k, _ in sP] == [k[0] for k, _ in sN], 'P and N rows need the same segment (oxide) order'
 
@@ -208,11 +221,11 @@ def build(b, P, N, nets, rail_h=3.0, out_w=3.0, align_last=False, strip_w=0.45):
     for (kp, dp), (kn, dn) in zip(sP, sN):
         x = x0
         for d in dp:
-            d.f.place(x, 0)
+            d.f.place(x if d.xmin is None else max(x, d.xmin), 0)
             x = d.f.diff.right + DGAP
         x = x0
         for d, e in zip(dn, dp + [None] * len(dn)):
-            if e is not None:
+            if e is not None and e.xmin is None:
                 x = max(x, e.f.diff.left)
             d.f.place(x, 0)
             x = d.f.diff.right + DGAP
@@ -227,7 +240,7 @@ def build(b, P, N, nets, rail_h=3.0, out_w=3.0, align_last=False, strip_w=0.45):
 
     # --- channel: plan stubs, assign tracks; then the rows either side
     plans = {id(d): plan(d, nets, strip_w) for d in P + N}
-    tracks = assign_tracks(P, N, nets, plans)
+    tracks = assign_tracks(P, N, nets, plans, order)
     ch_h = sum(t['w'] for t in tracks) + M3S * (len(tracks) + 1)
     padP = min(p.bottom for d in P for p in d.f.pads)
     padN = max(max(p.top for p in d.f.pads) - d.f.w for d in N)
@@ -377,6 +390,8 @@ def build(b, P, N, nets, rail_h=3.0, out_w=3.0, align_last=False, strip_w=0.45):
                 b.rect('m1', box(xa, sy0, xb, sy1))
 
     for net, t in tby.items():
+        if net not in xs:                            # reserved (empty) track: the generator's
+            continue
         io = nets[net].io
         xa = 0 if io == 'L' else min(xs[net]) - 0.1
         xb = xmax if io == 'R' else max(xs[net]) + 0.1

@@ -34,12 +34,12 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - **Leaf blocks done** (`layout/README.md` has viewer links):
     - TX: `tx_drv`, `tx_ls`, `tx_ls_en`, `tx_ring`.
     - Trim DAC: `r2r` (the tt08 layout reused; extracted error ≤ 0.02 LSB).
-    - RX: `avg_sc` (τ 0.434 ms extracted; **open:** ±~4 mV static offset from phi coupling, within the trim range); `lpf_rc` and `dbg_tg` (other sessions).
+    - RX: `avg_sc` **v2** (2.35k µm², was 3.25k; mirrored phi/phib channel with shields: extracted clock-coupling imbalance on cs/out 0.2 → ≤ 0.011 fF, extracted hold drift ±1.8 → +0.07 mV over 20 cycles, i.e. static offset ~4 → ~0.15 mV; τ 0.423 ms); `lpf_rc` and `dbg_tg` (other sessions).
     - Also by other sessions: the decaps.
     - **`bias_gen`:** done, 80.2 × 49.1 µm (3.9k µm²): mirror array (123 units, ABBA common centroid) under Cc + 2 × Cvcm, the small devices (rows.py), the resistors under one Cvref. Clean; extracted currents and vcm within 0.1 % of the schematic over VDD 1.7–1.9 V, 10–50 °C (`sim/bias/tb_bias_gen.py`). Schematic changes: Cvcm / Cvref as 2 × 22 µm units, 5 array dummies `Mdum`, Rref as two 5 kΩ halves. Details in `docs/layout.md`.
-    - **`comp_ct`:** done (ABBA pairs + dummies, passives, clean; extracted offset +0.56 mV, trim 0.0655 mV/LSB). 5.0k µm², larger than estimated. Matching dummies were added to the schematic (`Mdn*`/`Mdp*`).
-    - **`det_cell`** (another agent) / **`log_det`:** done. Six cells + the vb replica (Rs_b drawn like the cells' Rs, so it matches), Rdet, Cdet above; clean. 137 × 16 µm + Cdet 22² above the end.
-      - Extracted idle det 1.520 → 1.489 V (high-po contact term per segment: Rs/Rdet ~10 % high); 100 mV on t6 −1.56 → −1.46 mV.
+    - **`comp_ct`:** done, v2 **73.5 × 42.0 µm (3.08k µm², was 5.0k)**: trim pair next to the main pair (out/o2 → d1/d2 coupling 7.4 / 6.2 fF → 0), bias tails folded into 4.55 µm fingers, Cl (2 × 22 × 11) + Cref over the resistor ring. Clean; extracted offset +0.56 mV, trim 0.0656 mV/LSB. Matching dummies are in the schematic (`Mdn*`/`Mdp*`).
+    - **`det_cell`** (another agent) / **`log_det`:** done, **compacted to 2 rows × 3 cells: 87.3 × 31.0 µm (2.7k µm², was 5.4k bbox)**. The rows share the VSS rail (bottom row mirrored), so the inputs face out top and bottom, with t1 and t6 on opposite corners. The vb replica (Rs_b drawn like the cells' Rs) and Rdet sit in an end column under Cdet. VDD is a met3 strip down the right edge. Clean.
+      - Extracted idle det 1.520 → 1.489 V (high-po contact term per segment: Rs/Rdet ~10 % high); 100 mV on t6 −1.56 → −1.46 mV. Unchanged from the 1 × 6 layout.
     - **Still to do here:** `lna_chain` (last; layout rule from the stability check: ≤ 0.1 fF output → input coupling).
 
 **Re-verified (2026-10-08 evening): rdeg 2 MΩ, decap blocks, chain stability.** Details in docs/history.md, "Re-verify: rdeg 2 MΩ, decaps, chain stability".
@@ -49,7 +49,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 - **Chain layout rule:** keep chain output → input coupling (pad or stage-2 input) **≤ 0.1 fF** asymmetric. At the highest-gain corner (ss 10 °C, 81 dB), 0.2 fF gives +2.8 dB of peaking near 600 MHz and **0.5 fF oscillates** (1 fF at tt). Supply/ground L up to 5 nH with the 30 pF decap is fine.
 
 **Next steps, in order:**
-1. **Floorplan** (with Matt):
+1. **Floorplan** (with Matt), on an interactive page: **spec in `docs/floorplan_spec.md`** (data in `layout/floorplan/`):
    - the macro at the right of the tile (the pin order assumes it), the analog on the left next to the ua pins;
    - analog block placement, decap, guard rings;
    - TX away from the RX input; deep n-well for the RX chain or not;
