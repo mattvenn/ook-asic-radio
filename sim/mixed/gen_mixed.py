@@ -28,7 +28,6 @@ OUT = os.path.join(ROOT, 'build', 'mixed')
 OBJ = os.path.join(OUT, 'radio_digital_obj_dir')
 CODE = 0x5A
 SUBCKTS = ('lpf_rc', 'avg_sc', 'comp_ct', 'r2r')
-COMP = 'w1=20 l1=1 mt1=10 rdeg=1.4Meg mta=2 lref=136 wcl=22'
 
 
 def ports(header):
@@ -94,7 +93,7 @@ def main(level, tstop):
           'Ibc VDD ibc 1u',
           'x11 det lpf 0 lpf_rc',
           'x12 lpf sc_phi1_a sc_phi2_a avg VDD 0 avg_sc',
-          f'x13 avg lpf trim ibc comp VDD 0 comp_ct {COMP}',
+          'x13 avg lpf trim ibc comp VDD 0 comp_ct',          # symbol defaults, as in radio_analog
           'xdac ' + ' '.join(f'trim_out_{i}_a' for i in range(8)) + ' trim 0 r2r',
           'Ctrim trim 0 1p',
           '.ic v(avg)=1.438 v(x12.cs)=1.438 v(lpf)=1.438',

@@ -1,7 +1,7 @@
 """
 Generate the analog top, the TT top level and a whole-analog testbench.
 
-  radio_analog          : every analog block, wired as on the chip, real bias:
+  radio_analog          : every analog block, wired as on the chip, real bias, decap:
       bias_gen (en = rx_en) -> vcm, ib_chain 60 uA, ib_det 2 uA, ib_comp 1 uA
       RX: rx_p/rx_n -> lna_chain -> log_det -> det -> lpf_rc -> lpf
           avg_sc (in lpf, sc_phi1/2) -> avg; comp_ct inp avg, inn lpf,
@@ -69,6 +69,11 @@ def radio_analog():
     t = s.place('tx_top.sym', -500, 700, name='xtx')
     s.connect(t, key='tx_en', en_p='tx_en', en_n='tx_en_n', out_p='tx_p', out_n='tx_n', VDPWR='VDPWR',
               VAPWR='VAPWR', VSS='VGND')
+    # supply decoupling (xschem/gen/decap.py): ~50 pF on VAPWR (TX), ~30 pF on VDPWR (RX)
+    da = s.place('decap_vapwr.sym', 0, 700, name='xdeca')
+    s.connect(da, VAPWR='VAPWR', VGND='VGND')
+    dd = s.place('decap_vdpwr.sym', 300, 700, name='xdecd')
+    s.connect(dd, VDPWR='VDPWR', VGND='VGND')
     s.write(os.path.join(XDIR, 'radio_analog.sch'))
     write_symbol(os.path.join(XDIR, 'radio_analog.sym'), left=ANA_IF_IN, right=['comp_out'] + ANA_PADS,
                  top=['VDPWR', 'VAPWR'], bottom=['VGND'], width=240)

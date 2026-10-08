@@ -8,7 +8,8 @@ testbenches.
             - stage 1: low-Vt NMOS pair (W 20, L 1, weak inversion), tail
               10 x ibias, low-Vt PMOS mirror load. Low Vt stretches the input
               CM range (det runs ~0.6 V at -20 dBm to ~1.52 V idle).
-            - trim: small low-Vt NMOS pair with split tails and rdeg (1.4 M) between
+            - trim: small low-Vt NMOS pair with split tails and rdeg (2 M; was 1.4 M,
+              raised 2026-10-08 so the step is ~0.075-0.107 mV/LSB over corners) between
               its sources, on the same loads: offset ~ (trim - VDD/2) *
               (1/rdeg) / gm1; trim from the R2R DAC, VDD/2 from an on-chip
               xhigh-poly divider. Raising 'trim' acts like raising inn.
@@ -34,7 +35,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
 from xsch import Sch, mos, ports, write_symbol
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
-COMP_PARAMS = {'w1': 20, 'l1': 1, 'mt1': 10, 'rdeg': '1.4Meg', 'mta': 2, 'lref': 136, 'wcl': 22}
+COMP_PARAMS = {'w1': 20, 'l1': 1, 'mt1': 10, 'rdeg': '2Meg', 'mta': 2, 'lref': 136, 'wcl': 22}
 
 
 def comp_ct():

@@ -10,7 +10,8 @@ Footprint rules (budgeting only; same spirit as sim/area_estimate.py):
   poly R        (W + 1.0) x (L + 3.0) um, x m                  (two contact heads)
   MIM           (W + 1.5) x (L + 1.5) um, x MF                 (met3/capm: may sit over devices)
   std cells     cell area (sky130_fd_sc_hd)
-  routing       x ROUTE on device sums; measured layouts (ring, R2R ladder) as they are
+  routing       x ROUTE on device sums; measured layouts (ring, R2R ladder) as they are;
+                decap arrays (xdeca / xdecd) are dense tiles: x 1, no routing factor
   block area    max(routed devices, MIM): MIM can sit over a block's own devices, but a
                 block that is mostly capacitor (LPF, averager) is as big as its MIM
 Plus the items that aren't in the schematic yet (decap, guard rings).
@@ -26,12 +27,13 @@ from collections import defaultdict
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 ROUTE = 2.5
 TILE = 493.12 * 225.76                       # 3x2 analog tile (tt_analog_3x2_3v3.def)
-DIGITAL = (300, 210)                         # hardened macro (openlane run pins_300x210)
+DIGITAL = (260, 190)                         # hardened macro, clock-gated (openlane run cg_260x190)
 HALO = 5                                     # keep-out around the macro, um
 STDCELL = {'sky130_fd_sc_hd__inv_2': 3.7536, 'sky130_fd_sc_hd__nand2_2': 6.256}
 POLY_W = {'0p35': 0.35, '0p69': 0.69, '1p41': 1.41, '2p85': 2.85, '5p73': 5.73}
 # measured layouts: ttsky25b ring (19 stages 228 um^2, magic bbox) scaled to 23; tt08 r2r 71.6 x 54.0
 MEASURED = {'xring': 228 * 23 / 19, 'xdac': 71.6 * 54.0}
+DENSE = ('xdeca', 'xdecd')                   # tiled decap arrays: no routing factor
 
 SUFFIX = {'t': 1e12, 'g': 1e9, 'meg': 1e6, 'k': 1e3, 'm': 1e-3, 'u': 1e-6, 'n': 1e-9, 'p': 1e-12, 'f': 1e-15}
 NUM = re.compile(r'(?<![A-Za-z_0-9.])(\d+\.?\d*(?:[eE][-+]?\d+)?)(meg|[tgkmunpf])?(?![A-Za-z_0-9])', re.I)
@@ -130,22 +132,27 @@ def main(path):
              'xdac': 'R2R trim DAC (measured layout)', 'xctrim': 'trim filter cap', 'xdbg': 'debug TG',
              'xtx.xring': 'TX ring (measured layout)', 'xtx.xls': 'TX level shifter',
              'xtx.xlse_p': 'TX arm-enable LS (p)', 'xtx.xlse_n': 'TX arm-enable LS (n)',
-             'xtx.xdrv_p': 'TX driver arm p', 'xtx.xdrv_n': 'TX driver arm n'}
+             'xtx.xdrv_p': 'TX driver arm p', 'xtx.xdrv_n': 'TX driver arm n',
+             'xdeca': 'VAPWR decap (thick MOS + MIM)', 'xdecd': 'VDPWR decap (thin MOS + MIM)'}
     print(f'{"block":34s} {"devices":>5s} {"dev um2":>9s} {"x route":>9s} {"MIM um2":>9s} {"block":>9s}')
-    tot_r = tot_c = tot_b = 0
+    tot_r = tot_c = tot_b = tot_blk = 0
     for b in sorted(blocks, key=lambda k: list(names).index(k) if k in names else 99):
         d, c, n = blocks[b]
         leaf = b.split('.')[-1]
-        routed = MEASURED[leaf] if leaf in MEASURED else d * ROUTE
+        routed = MEASURED[leaf] if leaf in MEASURED else d * (1.0 if leaf in DENSE else ROUTE)
         tot_r += routed
         tot_c += c
         tot_b += max(routed, c)
+        if leaf not in DENSE:
+            tot_blk = tot_blk + max(routed, c)
         print(f'{names.get(b, b):34s} {n:5d} {d:9,.0f} {routed:9,.0f} {c:9,.0f} {max(routed, c):9,.0f}')
     print(f'{"analog (schematic) total":34s} {"":5s} {"":9s} {tot_r:9,.0f} {tot_c:9,.0f} {tot_b:9,.0f}')
     # not in the schematic yet
-    extra = {'VAPWR decap 50 pF (thick MOS ~3 fF/um2 + MIM above, +20 %)': 50e-12 / 5e-15 * 1.2,
-             'VDPWR decap ~30 pF for the RX (thin MOS ~8 fF/um2 + MIM, +20 %)': 30e-12 / 10e-15 * 1.2,
-             'guard rings / block spacing (~10 % of analog)': 0.10 * tot_b}
+    extra = {}
+    if 'xdeca' not in blocks:            # older netlists: decap not in the schematic yet
+        extra['VAPWR decap 50 pF (estimate)'] = 50e-12 / 5e-15 * 1.2
+        extra['VDPWR decap ~30 pF (estimate)'] = 30e-12 / 10e-15 * 1.2
+    extra['guard rings / block spacing (~10 % of the blocks)'] = 0.10 * tot_blk
     for k, v in extra.items():
         print(f'{k:34s} {"":5s} {"":9s} {v:9,.0f}')
     analog = tot_b + sum(extra.values())
