@@ -39,7 +39,8 @@ class Net:
 
 
 class Dev:
-    """A FET in a row. roles per S/D strip: 'R' (to the segment's rail), 'D' (drain net), None.
+    """A FET in a row. roles per S/D strip: 'R' (to the segment's rail), 'D' (the drain
+    net), a net name (pass devices: both sides are signals), or None (unconnected).
     gates: [(net, [finger indices])]. drain: net name. hb: drain bar height. rail: supply
     net of the 'R' strips (P: VAPWR/VDD, N: VSS)."""
 
@@ -63,35 +64,82 @@ def segments(row):
     return segs
 
 
+def strip_net(d, r):
+    return d.drain if r == 'D' else (None if r == 'R' else r)
+
+
 def plan(d, nets, strip_w):
-    """x positions of a device's stubs (independent of y): strip width, D strips,
-    gate stubs [net, x0, x1, fingers], drain stub (x0, x1) or None (riser nets)."""
+    """x positions of a device's stubs (independent of y): strip width, strip indices per
+    net (didx), gate stubs [net, x0, x1, fingers], strip-net stubs {net: (x0, x1)}
+    (none for riser nets).
+    One strip net (inverters): gate stub on the pads' left, drain stub at the drain
+    strip furthest from it (the tx_drv / tx_ls layouts). Several (pass devices): all
+    stubs packed side by side in natural x order across the device, reaching up to
+    DGAP/2 into the gaps either side; bars and straps extend to their stubs."""
     f = d.f
     sw = min(strip_w, snap(f.strips[1].center().x - f.strips[0].center().x - 0.18))
-    dstrips = [s for s, r in zip(f.strips, d.roles) if r == 'D']     # x only: y moves later
-    didx = [k for k, r in enumerate(d.roles) if r == 'D']
-    gst = []
-    for k, (net, fingers) in enumerate(d.gates):
-        pads = [f.pads[i] for i in fingers]
-        w = nets[net].stub_g
-        if k == 0:                                   # first gate group: stub on its left edge
-            gst.append([net, pads[0].left, pads[0].left + w, fingers])
-        else:                                        # later groups (NAND en): on the right edge
-            gst.append([net, pads[-1].right - w, pads[-1].right, fingers])
-    dst = None
-    if nets[d.drain].io != 'riser':
-        wd = nets[d.drain].stub_d
-        best = max(dstrips, key=lambda s: min(abs(s.center().x - (g[1] + g[2]) / 2) for g in gst))
-        dx0 = best.center().x - wd / 2
-        for g in gst:                                # keep clear of the gate stubs
-            if dx0 + wd > g[1] - M2S and dx0 < g[2] + M2S:
-                dx0 = g[2] + M2S if best.center().x >= (g[1] + g[2]) / 2 else g[1] - M2S - wd
-        dst = (snap(dx0), snap(dx0 + wd))
-    for g in gst:                                    # gate stubs stop short of the drain stub
-        if dst and g[2] > dst[0] - M2S and g[1] < dst[0]:
-            g[2] = dst[0] - M2S
-        assert g[2] - g[1] >= 0.28 - 1e-9, (d.drain, g)
-    return dict(sw=sw, didx=didx, gst=gst, dst=dst)
+    snets = []
+    for r in d.roles:
+        n = strip_net(d, r)
+        if n is not None and n not in snets:
+            snets.append(n)
+    didx = {n: [k for k, r in enumerate(d.roles) if strip_net(d, r) == n] for n in snets}
+    gst, dsts = [], {}
+    if snets == [d.drain]:
+        dstrips = [f.strips[k] for k in didx[d.drain]]
+        for k, (net, fingers) in enumerate(d.gates):
+            pads = [f.pads[i] for i in fingers]
+            w = nets[net].stub_g
+            if k == 0:                               # first gate group: stub on its left edge
+                gst.append([net, pads[0].left, pads[0].left + w, fingers])
+            else:                                    # later groups (NAND en): on the right edge
+                gst.append([net, pads[-1].right - w, pads[-1].right, fingers])
+        dst = None
+        if nets[d.drain].io != 'riser':
+            wd = nets[d.drain].stub_d
+            best = max(dstrips, key=lambda s: min(abs(s.center().x - (g[1] + g[2]) / 2) for g in gst))
+            dx0 = best.center().x - wd / 2
+            for g in gst:                            # keep clear of the gate stubs
+                if dx0 + wd > g[1] - M2S and dx0 < g[2] + M2S:
+                    dx0 = g[2] + M2S if best.center().x >= (g[1] + g[2]) / 2 else g[1] - M2S - wd
+            dst = (snap(dx0), snap(dx0 + wd))
+            dsts[d.drain] = dst
+        for g in gst:                                # gate stubs stop short of the drain stub
+            if dst and g[2] > dst[0] - M2S and g[1] < dst[0]:
+                g[2] = dst[0] - M2S
+            assert g[2] - g[1] >= 0.28 - 1e-9, (d.drain, g)
+    else:
+        items = []                                   # (natural x, width, net, fingers or None)
+        for net, fingers in d.gates:
+            xs = [f.pads[i].center().x for i in fingers]
+            items.append((sum(xs) / len(xs), nets[net].stub_g, net, fingers))
+        for net in snets:
+            assert nets[net].io != 'riser', 'riser nets need a single-drain device'
+            xs = [f.strips[k].center().x for k in didx[net]]
+            items.append((sum(xs) / len(xs), nets[net].stub_d, net, None))
+        items.sort(key=lambda t: t[0])
+        lo = f.diff.left - (DGAP - M2S) / 2
+        hi = f.diff.right + (DGAP - M2S) / 2
+        pos, x = [], lo
+        for nx, w, net, fingers in items:
+            x0 = max(nx - w / 2, x)
+            pos.append([x0, x0 + w])
+            x = x0 + w + M2S
+        over = pos[-1][1] - hi
+        if over > 0:                                 # pull back from the right, keep the order
+            x = hi
+            for q in reversed(pos):
+                w = q[1] - q[0]
+                q[1] = min(q[1], x)
+                q[0] = q[1] - w
+                x = q[0] - M2S
+        assert pos[0][0] >= lo - 1e-9, (d.drain, 'stubs do not fit', pos)
+        for (nx, w, net, fingers), (x0, x1) in zip(items, pos):
+            if fingers is None:
+                dsts[net] = (snap(x0), snap(x1))
+            else:
+                gst.append([net, snap(x0), snap(x1), fingers])
+    return dict(sw=sw, didx=didx, gst=gst, dsts=dsts)
 
 
 def assign_tracks(P, N, nets, plans):
@@ -101,8 +149,7 @@ def assign_tracks(P, N, nets, plans):
         for d in row:
             p = plans[id(d)]
             stubs += [(g[0], g[1], g[2], side) for g in p['gst']]
-            if p['dst']:
-                stubs.append((d.drain, p['dst'][0], p['dst'][1], side))
+            stubs += [(n, x0, x1, side) for n, (x0, x1) in p['dsts'].items()]
     span = {}
     for net, a, c, _ in stubs:
         s = span.get(net, (1e9, -1e9))
@@ -238,33 +285,39 @@ def build(b, P, N, nets, rail_h=3.0, out_w=3.0, align_last=False, strip_w=0.45):
             hb = min(d.hb, max(0.32, f.w - 0.3))         # drain bar (met2), via1 on each drain strip
             yb0, yb1 = ((f.diff.bottom + 0.14, f.diff.bottom + 0.14 + hb) if up
                         else (f.diff.top - 0.14 - hb, f.diff.top - 0.14))
-            nv = 0
-            dstrips = [f.strips[k] for k in p['didx']]
-            for s in dstrips:
-                xc = s.center().x
-                v0, v1 = max(yb0, s.bottom), min(yb1, s.top)
-                if v1 - v0 < 0.32:
-                    yc = s.center().y
-                    v0, v1 = yc - 0.16, yc + 0.16
-                    b.rect('m1', box(xc - sw / 2, v0, xc + sw / 2, v1))
-                    yb0, yb1 = min(yb0, v0), max(yb1, v1)
-                nv += b.via('via1', box(xc - sw / 2, v0, xc + sw / 2, v1), enc=((sw - 0.15) / 2, 0.085))
-            bx0 = dstrips[0].center().x - sw / 2
-            bx1 = dstrips[-1].center().x + sw / 2
-            if p['dst']:
-                bx0, bx1 = min(bx0, p['dst'][0]), max(bx1, p['dst'][1])
-            if nets[d.drain].io == 'riser':
-                ob = box(bx0, yb0, rx0, yb1)
-                b.stack(ob, 'm2', 'm3')
-                outbars[d.drain].append(ob)
-            else:
-                dx0, dx1 = p['dst']
+            # one bar band for all strip nets (x-separated): grow it where a strip is short
+            for idx in p['didx'].values():
+                for s in (f.strips[k] for k in idx):
+                    if min(yb1, s.top) - max(yb0, s.bottom) < 0.32:
+                        yc = s.center().y
+                        yb0, yb1 = min(yb0, yc - 0.16), max(yb1, yc + 0.16)
+            for net, idx in p['didx'].items():
+                strips = [f.strips[k] for k in idx]
+                nv = 0
+                for s in strips:
+                    xc = s.center().x
+                    v0, v1 = max(yb0, s.bottom), min(yb1, s.top)
+                    if v1 - v0 < 0.32:
+                        yc = s.center().y
+                        v0, v1 = yc - 0.16, yc + 0.16
+                        b.rect('m1', box(xc - sw / 2, v0, xc + sw / 2, v1))
+                    nv += b.via('via1', box(xc - sw / 2, v0, xc + sw / 2, v1), enc=((sw - 0.15) / 2, 0.085))
+                bx0 = strips[0].center().x - sw / 2
+                bx1 = strips[-1].center().x + sw / 2
+                if net in p['dsts']:
+                    bx0, bx1 = min(bx0, p['dsts'][net][0]), max(bx1, p['dsts'][net][1])
+                if nets[net].io == 'riser':
+                    ob = box(bx0, yb0, rx0, yb1)
+                    b.stack(ob, 'm2', 'm3')
+                    outbars[net].append(ob)
+                    continue
+                dx0, dx1 = p['dsts'][net]
                 b.rect('m2', box(bx0, yb0, bx1, yb1))
-                t = tby[d.drain]
+                t = tby[net]
                 b.rect('m2', box(dx0, yb0 if up else yb1, dx1, t['y0'] if up else t['y1']))
                 n2 = b.via('via2', box(dx0, t['y0'], dx1, t['y1']), enc=V2ENC)
-                xs[d.drain] += [dx0, dx1]
-                report.append((d.drain, f'{f.kind} drain', nv, n2))
+                xs[net] += [dx0, dx1]
+                report.append((net, f'{f.kind} strip', nv, n2))
             for net, gx0, gx1, fingers in p['gst']:      # gate straps (met1), stubs (met2), cuts
                 pads = [f.pads[i] for i in fingers]
                 sy0, sy1 = min(q.bottom for q in pads), max(q.top for q in pads)
@@ -294,6 +347,9 @@ def build(b, P, N, nets, rail_h=3.0, out_w=3.0, align_last=False, strip_w=0.45):
         b.stack(riser, 'm2', 'm3')
         b.pin('m3', riser, net)
 
+    # for generators that add to the block (caps, extra wiring): rails, tracks, extents
+    b.rows = dict(ytop=ytop, ybot=ybot, rail_h=rail_h, xmax=xmax, tracks=tby,
+                  xs={n: (min(v), max(v)) for n, v in xs.items()})
     print(f'{b.name}: net     where      via1  via2   need via1/via2 (2x margin)')
     for net, where, n1, n2 in report:
         i = nets[net].irms

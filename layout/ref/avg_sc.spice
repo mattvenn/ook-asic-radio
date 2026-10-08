@@ -1,0 +1,15 @@
+* avg_sc: xschem/avg_sc.sch with {'ncs': 1, 'nca': 2, 'wcs': 7} (lay.write_ref)
+** sch_path: /foss/designs/shuttle-ttsky26c/asic-radio/xschem/avg_sc.sch
+.subckt avg_sc in phi1 phi2 out VDD VSS
+*.PININFO VDD:B VSS:B in:B out:B phi1:B phi2:B
+XMiphi1p phi1b phi1 VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1
+XMiphi1n phi1b phi1 VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=0.5 nf=1
+XMiphi2p phi2b phi2 VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1
+XMiphi2n phi2b phi2 VSS VSS sky130_fd_pr__nfet_01v8 L=0.15 W=0.5 nf=1
+XS1n in phi1 cs VSS sky130_fd_pr__nfet_01v8 L=0.15 W=0.5 nf=1
+XS1p in phi1b cs VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1
+XS2n cs phi2 out VSS sky130_fd_pr__nfet_01v8 L=0.15 W=0.5 nf=1
+XS2p cs phi2b out VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1
+XCs cs VSS sky130_fd_pr__cap_mim_m3_1 W=7 L=7 m=1
+XCavg out VSS sky130_fd_pr__cap_mim_m3_1 W=30 L=30 m=2
+.ends
