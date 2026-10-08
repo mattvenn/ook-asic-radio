@@ -60,7 +60,7 @@ Vin in 0 {vin}
 {loads}
 .options method=GEAR
 .control
-save v(in) v(a) v(b) i(VD) i(VA)
+save v(in) v(a) v(b) v(out_p) v(out_n) i(VD) i(VA)
 tran 2p {tstop:.4e} 0
 let t0 = {t0:.4e}
 let t1 = {tstop:.4e}
@@ -75,6 +75,10 @@ meas tran tdf TRIG v(in) VAL=0.9 FALL={n} TARG v(a) VAL=1.65 FALL={n}
         src += """let ah = v(a) gt 1.65
 meas tran duty avg ah from=$&t0 to=$&t1
 meas tran tdbr TRIG v(in) VAL=0.9 FALL=3 TARG v(b) VAL=1.65 RISE=3
+let oph = v(out_p) gt 1.65
+let onh = v(out_n) gt 1.65
+meas tran dutyp avg oph from=$&t0 to=$&t1
+meas tran dutyn avg onh from=$&t0 to=$&t1
 """
     src += 'echo RESULTS\n.endc\n.end\n'
     return src
@@ -101,6 +105,7 @@ if __name__ == '__main__':
     line = (f'{v} {corner} {"pex" if pex else "sch"}: A tr/tf {r["tr"] * 1e12:.0f}/{r["tf"] * 1e12:.0f} ps, '
             f'delay in->A r/f {r["tdr"] * 1e12:.0f}/{r["tdf"] * 1e12:.0f} ps')
     if 'duty' in r:
-        line += f', A duty {r["duty"] * 100:.1f} %, in->B {r["tdbr"] * 1e12:.0f} ps'
+        line += (f', A duty {r["duty"] * 100:.1f} %, in->B {r["tdbr"] * 1e12:.0f} ps; '
+                 f'arm out duty p/n {r["dutyp"] * 100:.1f}/{r["dutyn"] * 100:.1f} %')
     line += f'; I(VDD) {-r["ivd"] * 1e3:.3f} mA, I(VAPWR) {-r["iva"] * 1e3:.3f} mA'
     print(line)

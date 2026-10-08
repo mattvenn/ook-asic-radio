@@ -188,6 +188,9 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
 | `tx_ls` (kn 10, kp 4, wpi/wni 9/3) | 13.8 × 19.0 µm | clean | A edges ~100 → ~190 ps; in→A rise 392 → 660 ps; **A duty 37.3 → 28.4 %** |
 | `tx_ls_en` (all ~minimum) | 12.9 × 12.5 µm | clean | delay 1.1 → 3.4 ns (irrelevant: the enables switch at chip rate) |
 
-- **Open: the main shifter's duty cycle.** Its skewed core (weak cross-coupled PMOS pull-up) is sensitive to the ~4.7 fF of wiring on A/B, comparable to its devices' own capacitance.
+- **Fixed (mostly): the main shifter's duty cycle.** The slow path was in → ctrl → **ctrl_n** (dac_drive's tiny hvt P 1 / N 0.42 inverter driving M10's thick gate + the ctrl_n wiring). kp 6 didn't help (extracted 27.8 %).
+  - **M8/M7 upsized to 4 / 1.68** (`xschem/gen/tx.py`). tt extracted: A duty 28.4 → **35.8 %** (schematic 41.8 %); arm output duty 38.6 / 43.7 % (schematic 44.1 / 47.6 %), about −0.4 dB of fundamental vs schematic.
+  - Judge the rest in `tx_top`, with the shifter right against the drivers' inputs.
+- **Earlier note on the duty cycle:** Its skewed core (weak cross-coupled PMOS pull-up) is sensitive to the ~4.7 fF of wiring on A/B, comparable to its devices' own capacitance.
   - The schematic at kp 6 gives 36.3 %; the extracted run is pending.
   - What matters is the duty at the arms' outputs, so judge it with the level shifter + drivers together, not A alone.
