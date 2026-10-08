@@ -20,7 +20,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 B = os.path.join(ROOT, 'build')
-OSIC = os.path.join(ROOT, 'tools', 'osic')
+OSIC = os.environ.get('OSIC', os.path.join(ROOT, 'tools', 'osic'))
 T, NCYC, V0, DV = 13e-6, 20, 1.0, 0.010
 PRM = 'ncs=1 nca=2 wcs=7'
 

@@ -34,7 +34,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - **Leaf blocks done** (`layout/README.md` has viewer links):
     - TX: `tx_drv`, `tx_ls`, `tx_ls_en`, `tx_ring`.
     - Trim DAC: `r2r` (the tt08 layout reused; extracted error ≤ 0.02 LSB).
-    - RX: `avg_sc` **v2** (2.35k µm², was 3.25k; mirrored phi/phib channel with shields: extracted clock-coupling imbalance on cs/out 0.2 → ≤ 0.011 fF, so the ~4 mV offset should drop to ~0.2 mV; `tb_avg_sc --pex` not yet re-run); `lpf_rc` and `dbg_tg` (other sessions).
+    - RX: `avg_sc` **v2** (2.35k µm², was 3.25k; mirrored phi/phib channel with shields: extracted clock-coupling imbalance on cs/out 0.2 → ≤ 0.011 fF, extracted hold drift ±1.8 → +0.07 mV over 20 cycles, i.e. static offset ~4 → ~0.15 mV; τ 0.423 ms); `lpf_rc` and `dbg_tg` (other sessions).
     - Also by other sessions: the decaps.
     - **`bias_gen`:** done, 80.2 × 49.1 µm (3.9k µm²): mirror array (123 units, ABBA common centroid) under Cc + 2 × Cvcm, the small devices (rows.py), the resistors under one Cvref. Clean; extracted currents and vcm within 0.1 % of the schematic over VDD 1.7–1.9 V, 10–50 °C (`sim/bias/tb_bias_gen.py`). Schematic changes: Cvcm / Cvref as 2 × 22 µm units, 5 array dummies `Mdum`, Rref as two 5 kΩ halves. Details in `docs/layout.md`.
     - **`comp_ct`:** done, v2 **73.5 × 42.0 µm (3.08k µm², was 5.0k)**: trim pair next to the main pair (out/o2 → d1/d2 coupling 7.4 / 6.2 fF → 0), bias tails folded into 4.55 µm fingers, Cl (2 × 22 × 11) + Cref over the resistor ring. Clean; extracted offset +0.56 mV, trim 0.0656 mV/LSB. Matching dummies are in the schematic (`Mdn*`/`Mdp*`).

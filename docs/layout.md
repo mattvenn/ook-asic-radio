@@ -232,7 +232,15 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - **Floorplan:** the Cavg pair is on the left, full height. The switch column is at the right with Cs hanging under its VSS rail (the plate abuts the rail). The VSS rail's met3 runs left into both Cavg bottom plates (bridging the 2 µm gap is DRC-clean in magic and KLayout). The `out` met4 strip runs along the bottom of the Cavg plates. The switches don't go under the caps: the row builder's tracks and rails are met3, the bottom-plate layer.
   - **Pins:** `phi1` and `phi2` on the top edge (met4). `in` and `out` on the right edge (met3), adjacent, for `comp_ct` (`inn`, `inp`, both on its left edge). Mirror or rotate the cell at the top level as the floorplan needs. Keep top-level clock wiring off the Cavg top plates (`out`).
   - Checks: DRC (magic and KLayout) 0, antenna 0, LVS match; m3 density 84 % (the MIM plates, now with no empty area around them).
-  - **Block test not re-run for v2** (`sim/avg_sc/tb_avg_sc.py --pex`). v1 numbers: τ 0.458 → 0.434 ms (schematic → extracted), hold drift ±1.7–1.9 mV over 20 cycles. v2's Cavg and Cs are unchanged, so τ should be the same. The offset is the thing to check.
+  - **Block test** (`sim/avg_sc/tb_avg_sc.py --pex`, tt; `OSIC=$PWD/tools/osic-mac` on the Mac), schematic → v1 → v2:
+
+    | Quantity | Schematic | v1 extracted | v2 extracted |
+    |---|---|---|---|
+    | τ | 0.458 ms | 0.434 ms | 0.423 ms |
+    | hold drift, 20 cycles | −0.015 mV | ±1.7–1.9 mV | **+0.070 mV** |
+    | static offset (drift / (1 − (1 − a)^20) ≈ drift / 0.46) | — | ~4 mV | **~0.15 mV** |
+
+    - τ is 2.5 % shorter than in v1: `cs` carries a little more wiring C (the riser and track extension).
 - **`comp_ct`** (`layout/gen/comp_ct.py`, v2 2026-10-08: **73.5 × 42.0 µm, 3.08k µm²**; v1 was 100.5 × 49.9, 5.0k):
   - **Matching:** the input pair, trim pair and PMOS mirror are split into halves placed A B B A (1D common centroid, same orientation), with rail-tied dummies either side.
   - **N row order:** core first (main pair, then the trim pair on the same d1/d2), then bias, stage 2, inverter. Mp3/Mip sit over Mn3/Min (`Dev.xmin`), so o2/out only exist at the right end of the channel.
