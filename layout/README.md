@@ -5,6 +5,7 @@ Viewer links work once the GDS is pushed to `main`. This table is written by `to
 
 | block | size (incl. shape overhang) | preview | source |
 |---|---|---|---|
+| `dbg_tg` | 5.7 × 16.3 µm (93 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/dbg_tg.gds) | `layout/gen/` |
 | `lpf_rc` | 65.8 × 49.8 µm (3,280 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/lpf_rc.gds) | `layout/gen/` |
 | `tx_drv` | 40.9 × 26.7 µm (1,091 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/tx_drv.gds) | `layout/gen/` |
 | `tx_ls` | 14.2 × 19.0 µm (271 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/tx_ls.gds) | `layout/gen/` |
