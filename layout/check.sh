@@ -99,6 +99,17 @@ print('count', sum(c.values()))
 for k, v in c.most_common(): print(v, k)
 EOF
 
-# netgen LVS
-[ -s $B.spice ] && netgen -batch lvs "${B}_lay.spice $B" "$B.spice $B" $PDK_ROOT/$PDK/libs.tech/netgen/sky130A_setup.tcl lvs.report > netgen.log 2>&1
+# netgen LVS (blocks with std cells: the hd library goes on the schematic side)
+SETUP=$PDK_ROOT/$PDK/libs.tech/netgen/sky130A_setup.tcl
+if [ -s $B.spice ] && grep -q sky130_fd_sc_hd__ $B.spice; then
+  cat > lvs.tcl <<EOF
+set lay [readnet spice ${B}_lay.spice]
+set sch [readnet spice $PDK_ROOT/$PDK/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice]
+readnet spice $B.spice \$sch
+lvs "\$lay $B" "\$sch $B" $SETUP lvs.report
+EOF
+  netgen -batch source lvs.tcl > netgen.log 2>&1
+elif [ -s $B.spice ]; then
+  netgen -batch lvs "${B}_lay.spice $B" "$B.spice $B" $SETUP lvs.report > netgen.log 2>&1
+fi
 [ -s $B.spice ] && echo "== LVS" && grep -E "Circuits match|do not match|Netlists match|Final result" lvs.report | tail -3

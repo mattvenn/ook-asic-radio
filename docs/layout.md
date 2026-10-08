@@ -191,6 +191,12 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
 - **Fixed (mostly): the main shifter's duty cycle.** The slow path was in → ctrl → **ctrl_n** (dac_drive's tiny hvt P 1 / N 0.42 inverter driving M10's thick gate + the ctrl_n wiring). kp 6 didn't help (extracted 27.8 %).
   - **M8/M7 upsized to 4 / 1.68** (`xschem/gen/tx.py`). tt extracted: A duty 28.4 → **35.8 %** (schematic 41.8 %); arm output duty 38.6 / 43.7 % (schematic 44.1 / 47.6 %), about −0.4 dB of fundamental vs schematic.
   - Judge the rest in `tx_top`, with the shifter right against the drivers' inputs.
+- **`tx_ring`** (`layout/gen/tx_ring.py`): std cells (PDK GDS copied in): one row of 22 `inv_2` + `nand2_2` + 4 taps, 34.5 × 4.2 µm.
+  - Stage straps on met1 (mcon on the li pins), the `out` return on met2, `en` on met3 from the left edge. Block rails 1 µm (m1–m3) over the cells' rails.
+  - **LVS with std cells:** `check.sh` loads the hd spice library on the schematic side (netgen tcl).
+  - The reference (`layout/ref/tx_ring.spice`) drops the schematic's `cw` caps: they're a wiring estimate, not devices.
+  - **Block test** (`sim/tx/tb_tx_ring.py`, into the main level shifter, tt): schematic (cw 3.2 fF) 485.4 MHz → **extracted 508.5 MHz** (+4.8 %, less wiring than the ttsky25b calibration). Silicon estimate ×0.866 → **~440 MHz** (target 433.92), out duty 47.9 %. Keep 22 inverters.
+  - Density reads 51–55 % on m1–m3, because the 4.2 µm-tall block is half rails; it averages out inside `tx_top`.
 - **Earlier note on the duty cycle:** Its skewed core (weak cross-coupled PMOS pull-up) is sensitive to the ~4.7 fF of wiring on A/B, comparable to its devices' own capacitance.
   - The schematic at kp 6 gives 36.3 %; the extracted run is pending.
   - What matters is the duty at the arms' outputs, so judge it with the level shifter + drivers together, not A alone.

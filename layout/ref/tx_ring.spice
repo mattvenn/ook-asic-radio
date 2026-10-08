@@ -1,0 +1,28 @@
+* tx_ring: xschem/tx_ring.sch without the cw wiring caps (layout/gen/tx_ring.py)
+** sch_path: /foss/designs/shuttle-ttsky26c/asic-radio/xschem/tx_ring.sch
+.subckt tx_ring en out VDD VSS
+*.PININFO VDD:B VSS:B en:B out:B
+xr0 en r22 VSS VSS VDD VDD out sky130_fd_sc_hd__nand2_2
+xr1 out VSS VSS VDD VDD r1 sky130_fd_sc_hd__inv_2
+xr2 r1 VSS VSS VDD VDD r2 sky130_fd_sc_hd__inv_2
+xr3 r2 VSS VSS VDD VDD r3 sky130_fd_sc_hd__inv_2
+xr4 r3 VSS VSS VDD VDD r4 sky130_fd_sc_hd__inv_2
+xr5 r4 VSS VSS VDD VDD r5 sky130_fd_sc_hd__inv_2
+xr6 r5 VSS VSS VDD VDD r6 sky130_fd_sc_hd__inv_2
+xr7 r6 VSS VSS VDD VDD r7 sky130_fd_sc_hd__inv_2
+xr8 r7 VSS VSS VDD VDD r8 sky130_fd_sc_hd__inv_2
+xr9 r8 VSS VSS VDD VDD r9 sky130_fd_sc_hd__inv_2
+xr10 r9 VSS VSS VDD VDD r10 sky130_fd_sc_hd__inv_2
+xr11 r10 VSS VSS VDD VDD r11 sky130_fd_sc_hd__inv_2
+xr12 r11 VSS VSS VDD VDD r12 sky130_fd_sc_hd__inv_2
+xr13 r12 VSS VSS VDD VDD r13 sky130_fd_sc_hd__inv_2
+xr14 r13 VSS VSS VDD VDD r14 sky130_fd_sc_hd__inv_2
+xr15 r14 VSS VSS VDD VDD r15 sky130_fd_sc_hd__inv_2
+xr16 r15 VSS VSS VDD VDD r16 sky130_fd_sc_hd__inv_2
+xr17 r16 VSS VSS VDD VDD r17 sky130_fd_sc_hd__inv_2
+xr18 r17 VSS VSS VDD VDD r18 sky130_fd_sc_hd__inv_2
+xr19 r18 VSS VSS VDD VDD r19 sky130_fd_sc_hd__inv_2
+xr20 r19 VSS VSS VDD VDD r20 sky130_fd_sc_hd__inv_2
+xr21 r20 VSS VSS VDD VDD r21 sky130_fd_sc_hd__inv_2
+xr22 r21 VSS VSS VDD VDD r22 sky130_fd_sc_hd__inv_2
+.ends

@@ -24,7 +24,8 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - **Policy:** each block gets a small `tb_<block>` (schematic vs extracted). One end-to-end run on the full extracted design at the end.
   - **Power pins:** met4 straps (≥ 1.2 µm, full height) on both the left and the right of the tile.
   - **TX blocks:** `tx_drv`, `tx_ls`, `tx_ls_en` laid out with the row builder `layout/gen/rows.py`; all clean. Previews: `layout/README.md` (TT GDS viewer links).
-  - **Level shifter:** its ctrl_n inverter was upsized (M8/M7 4 / 1.68): extracted A duty 28 → 36 %, arm outputs 39 / 44 % (schematic 44 / 48 %). This schematic change isn't in `tb_tx` results yet. Next on the TX: the ring (std cells), then `tx_top`.
+  - **Level shifter:** its ctrl_n inverter was upsized (M8/M7 4 / 1.68): extracted A duty 28 → 36 %, arm outputs 39 / 44 % (schematic 44 / 48 %). This schematic change isn't in `tb_tx` results yet.
+  - **Ring:** `tx_ring` laid out (std cells, 34.5 × 4.2 µm, clean). Extracted 508.5 MHz tt → **~440 MHz on silicon** (×0.866). Next on the TX: `tx_top` (assemble the ring, 3 level shifters, 2 drivers).
 
 **Re-verified (2026-10-08 evening): rdeg 2 MΩ, decap blocks, chain stability.** Details in "Re-verify: rdeg 2 MΩ, decaps, chain stability" below.
 - Trim step at the operating point (DAC 0.8–1.2 V) is **0.062–0.076 mV/LSB at all corners, 10–50 °C**. e2e at −94 dBm: tt 11/12, fs 50 °C 8/12, ff 50 °C 10/12; −92 dBm 12/12.
