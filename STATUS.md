@@ -29,7 +29,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 **Re-verified (2026-10-08 evening): rdeg 2 MΩ, decap blocks, chain stability.** Details in "Re-verify: rdeg 2 MΩ, decaps, chain stability" below.
 - Trim step at the operating point (DAC 0.8–1.2 V) is **0.062–0.076 mV/LSB at all corners, 10–50 °C**. e2e at −94 dBm: tt 11/12, fs 50 °C 8/12, ff 50 °C 10/12; −92 dBm 12/12.
 - Decaps: **50.06 pF** (VAPWR) and **29.9 pF** (VDPWR), flat to 434 MHz and over ±10 % supply.
-- `tb_radio_analog`: unchanged. Bias OTA loop: PM ~90° at all corners. R/C corners: trim step 0.056–0.085 mV/LSB.
+- `tb_radio_analog`: unchanged. Mixed-signal −94 dBm (real servo loop) still detects the burst. Bias OTA loop: PM ~90° at all corners. R/C corners: trim step 0.056–0.085 mV/LSB.
 - **Chain layout rule:** keep chain output → input coupling (pad or stage-2 input) **≤ 0.1 fF** asymmetric. At the highest-gain corner (ss 10 °C, 81 dB), 0.2 fF gives +2.8 dB of peaking near 600 MHz and **0.5 fF oscillates** (1 fF at tt). Supply/ground L up to 5 nH with the 30 pF decap is fine.
 
 **Next steps, in order:**
@@ -62,6 +62,8 @@ Run from `build/vfy` (its own `.spiceinit` with `num_threads=4`, so it can share
 - **Passive (R/C) corners, comparator** (`CORNERS="hh ll ss_hh fs_ll" TEMPS="10 50" TBS=comp`): the local step is 0.056–0.060 at hh / ss_hh and 0.072–0.085 mV/LSB at ll / fs_ll, ∝ 1/rdeg as expected. Offsets are unchanged. **The whole MOS × R/C × temperature span is 0.056–0.085 mV/LSB.**
   - The averager's τ is a cap ratio, so it doesn't move. The LPF corner moves with R·C (~11 kHz at hh, ~20 kHz at ll), inside the 10–20 kHz span the e2e `--bv` sweep already covered.
 - **Bias OTA loop** (`sim/bias/loop.sh`): the loop is broken at M2's gate (Middlebrook voltage injection) in tb_bias, with real diode loads. At all 5 MOS corners × 10/27/50 °C: **PM 90–91.5°**, unity gain 0.75–2.2 MHz (Cc dominant pole), −180° near 100–115 MHz (large gain margin), DC loop gain 28–35 dB. That loop error is why tb_bias shows 59.4 rather than 60 µA.
+- **Mixed-signal −94 dBm with rdeg 2 MΩ** (RTL servo → real `r2r` → real `comp_ct`; `sim/plots/mixed_-94.png`): pin order OK (1172 settled steps, all ±1). The servo goes 128 → mean 109 and dithers 102–118 (std 3.4 LSB ≈ 0.24 mV at ~0.07 mV/LSB; before: 105–122, std 3.2 LSB at the larger step). **The burst is detected: the event pin opens at 14.67 ms**, the same as with 1.4 MΩ.
+  - The `tools/longrun` done marker says `exit 1` for these runs. That's the `grep -v` at the end of `tools/osic`, which exits 1 when all output went to a log. Check the log tail instead.
 - **Decaps** (`sim/decap/decap_ac.sh`; C = Im(I)/ωV, ESR = Re(1/Y)):
   - decap_vapwr **50.06 pF**, ESR 0.011 Ω; decap_vdpwr **29.9 pF**, ESR 0.069 Ω. Same at 1 / 100 / 434 MHz and at supply ±10 %. One 10×10 MIM unit is 206 fF, so the MOS part is ~29.4 pF thick-oxide (2.9 fF/µm²) and ~23.8 pF thin (7.9 fF/µm²).
   - BSIM here is quasi-static, so it shows no channel resistance. Hand estimate: ~1–2 Ω for the parallel L = 5 µm channels, an RC corner of several GHz. Fine.
