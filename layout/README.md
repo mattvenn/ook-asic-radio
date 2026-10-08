@@ -5,9 +5,9 @@ Viewer links work once the GDS is pushed to `main`. This table is written by `to
 
 | block | size (incl. shape overhang) | preview | source |
 |---|---|---|---|
-| `lpf_rc` | 65.8 × 49.8 µm (3,280 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/lpf_rc.gds) | `layout/gen/` |
-| `r2r` | 71.8 × 80.4 µm (5,769 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/r2r.gds) | `layout/gen/` |
+| `lpf_rc` | 65.2 × 35.0 µm (2,284 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/lpf_rc.gds) | `layout/gen/` |
+| `r2r` | 71.8 × 54.1 µm (3,883 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/r2r.gds) | `layout/gen/` |
 | `tx_drv` | 40.9 × 26.7 µm (1,091 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/tx_drv.gds) | `layout/gen/` |
 | `tx_ls` | 14.2 × 19.0 µm (271 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/tx_ls.gds) | `layout/gen/` |
 | `tx_ls_en` | 13.3 × 15.5 µm (207 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/tx_ls_en.gds) | `layout/gen/` |
-| `tx_ring` | 34.7 × 4.2 µm (147 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/tx_ring.gds) | `layout/gen/` |
+| `tx_ring` | 34.9 × 4.2 µm (148 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/tx_ring.gds) | `layout/gen/` |

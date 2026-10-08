@@ -1,11 +1,10 @@
 """Write layout/README.md: a table of every layout/*.gds with a TT GDS viewer link
-(works once the file is pushed to github main) and its size.
+(works once the file is pushed to github main) and its size (top cell bbox, KLayout).
 
-    python3 tools/gds_links.py
+    ~/work/asic-workshop/venv/bin/python tools/gds_links.py      (needs the klayout module)
 """
 import glob
 import os
-import struct
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 RAW = 'https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/'
@@ -13,27 +12,13 @@ VIEW = 'https://gds-viewer.tinytapeout.com/?url='
 
 
 def bbox_um(path):
-    """Bounding box of all BOUNDARY/BOX/PATH points in a GDS (um), without klayout."""
-    data = open(path, 'rb').read()
-    i, unit, xs, ys = 0, 1e-3, [], []
-    while i + 4 <= len(data):
-        n, rt = struct.unpack('>HH', data[i:i + 4])
-        if n < 4:
-            break
-        body = data[i + 4:i + n]
-        if rt == 0x0305:                      # UNITS: user unit, db unit in m
-            def real8(b):
-                s = -1 if b[0] & 0x80 else 1
-                e = (b[0] & 0x7f) - 64
-                m = int.from_bytes(b[1:8], 'big') / 2 ** 56
-                return s * m * 16 ** e
-            unit = real8(body[8:16]) * 1e6        # db unit in um
-        elif rt == 0x1003:                    # XY
-            v = struct.unpack('>%di' % (len(body) // 4), body)
-            xs += v[0::2]
-            ys += v[1::2]
-        i += n
-    return (max(xs) - min(xs)) * unit, (max(ys) - min(ys)) * unit
+    """Top cell bounding box (um). The raw XY scan this replaced mixed subcell-local
+    coordinates into hierarchical GDS (r2r read 80 um tall instead of 54)."""
+    import klayout.db as kdb
+    ly = kdb.Layout()
+    ly.read(path)
+    b = ly.top_cell().dbbox()
+    return b.width(), b.height()
 
 
 def main():
