@@ -53,7 +53,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
    - TX away from the RX input; deep n-well for the RX chain or not;
    - the chain coupling rule above: keep the chain's last stages and the detector away from the pads and stage 1.
 2. **Layout of the remaining blocks with the same flow** (`layout/gen/<block>.py`, `layout/check.sh`, `layout/pex.sh`, a `tb_<block>`), then **integration in the 3x2.** Switch `mag/Makefile` to `tt_analog_3x2_3v3.def`, `make start`, place the hardened macro (`openlane/radio_digital/runs/cg_260x190`).
-3. Not blocking: overload recovery (key a −10 dBm tone), TX at 10/50 °C, the −90 dBm joined run, the max-slew warnings in the harden (marginal, mostly ss).
+3. Not blocking: **ring inverter count**: the folded `tx_ring` runs ~459 MHz on silicon (+5.8 %). 24 inverters would give ~422 MHz (−2.7 %), closer to 433.92. That means `NINV` in `xschem/gen/tx.py` and `layout/gen/tx_ring.py`, then re-running `tb_tx_ring --pex` and `tb_tx`. Undecided (Matt). Also overload recovery (key a −10 dBm tone), TX at 10/50 °C, the −90 dBm joined run, the max-slew warnings in the harden (marginal, mostly ss).
 
 **Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
 
