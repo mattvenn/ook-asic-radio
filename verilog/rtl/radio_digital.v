@@ -12,6 +12,9 @@
 //                 00 code (default)   01 raw TX (tx_en = uio_in[2])
 //                 10 data (reserved; behaves as code mode for now)
 //                 11 reserved (code mode)
+//   uio_in[2]   at reset release, with the same magic: 1 = analog debug,
+//               dbg_en = 1 connects the detector output (det) to ua[4]
+//               through a transmission gate. Default: off (det isolated).
 //   uio_in[3]   single-ended TX strap, latched at reset release ONLY with
 //               the same magic: 1 = drive ua[0] only (monopole fallback;
 //               tx_en_n stays 0). Default (no magic / floating): both arms.
@@ -36,6 +39,7 @@
 //   tx_en_n     out_n arm enable (tx_top en_n) = tx_en unless single-ended.
 //               A disabled arm is parked low.
 //   rx_en       RX analog power enable (role = RX)
+//   dbg_en      det -> ua[4] transmission gate enable (debug strap)
 //   sc_phi1/2   non-overlapping switched-cap clocks, one cycle per sample
 //
 // Timing vs test/vectors/README.md: sample i is processed at the clock edge
@@ -56,6 +60,7 @@ module radio_digital (
     output wire       tx_en,
     output wire       tx_en_n,
     output wire       rx_en,
+    output wire       dbg_en,
     output reg        sc_phi1,
     output reg        sc_phi2
 );
@@ -67,18 +72,21 @@ module radio_digital (
     reg [1:0] mode;
     reg       oe;
     reg       se;
+    reg       dbg;
     always @(posedge clk) begin
         rst <= ~rst_n;
         if (rst) begin
             role_tx <= ui_in[7];
             mode    <= (uio_in[7:4] == 4'b1010) ? uio_in[1:0] : M_CODE;
             se      <= (uio_in[7:4] == 4'b1010) & uio_in[3];
+            dbg     <= (uio_in[7:4] == 4'b1010) & uio_in[2];
             oe      <= 1'b0;
         end else begin
             oe      <= 1'b1;
         end
     end
     wire raw = (mode == M_RAW);
+    assign dbg_en = dbg;
 
     // ---------------------------------------------------------------- synchronisers
     reg       comp_s1, comp_s2;

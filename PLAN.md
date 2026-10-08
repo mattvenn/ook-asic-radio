@@ -120,7 +120,7 @@ Area, cost and legality are not constraints. Workflow: measure, then model, then
 | `uio[4..7]` | debug: burst detected, pair/toggle event, trim-servo direction, TX active |
 | `ua[0]` / `ua[1]` | TX dipole: antiphase buffer outputs. The header position depends on where TT places the project, so it's not necessarily adjacent; see the antenna assembly note |
 | `ua[2]` / `ua[3]` | RX dipole: differential LNA input |
-| `ua[4]` | debug: detector / LPF output |
+| `ua[4]` | debug: detector output `det`, through a transmission gate that is **on only in debug mode** (strap: magic `1010` + `uio_in[2]` = 1 at reset). Off, det is isolated from the pin. On, a scope sees det (656 kHz bandwidth), or an AWG can drive det (×0.65 from 50 Ω) to test the baseband without RF. Thin devices: keep the pin within 0–1.8 V |
 
 ## Bursts and false-trigger protection
 - **Code mode:**

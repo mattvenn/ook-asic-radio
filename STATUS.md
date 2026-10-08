@@ -32,6 +32,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
 
 **Next steps, in order:**
 1. ~~Joined-run check~~ (done: matches). ~~TX into xschem blocks~~ (done, "TX xschem blocks" below).
+1b. ~~ua[4] debug~~ (done 2026-10-08: det via a debug-only transmission gate, `dbg_en` strap).
 2. ~~Digital for the TX enables~~ (done 2026-10-08): `radio_digital` has a new output `tx_en_n` (= `tx_en` unless single-ended); `tx_en` drives both the ring `key` and `en_p`. The single-ended strap is `uio_in[3]`, latched at reset only with the `1010` magic. **Full cocotb suite 14/14 pass** (incl. the new `test_single_ended_strap`; run with the project venv first on PATH, see below). Not re-hardened.
 3. **Corners and temperature, whole design** (the main open risk):
    - **Operating range is 10–50 °C only** (decided 2026-10-08): no design effort for extremes.
@@ -220,7 +221,7 @@ Still open for the chain:
 - **`lpf_rc`:** `res_xhigh_po_0p35` L = 136 µm (7.37 kΩ/µm → ~1.0 MΩ) + 6 × 30×30 µm `cap_mim_m3_1` (1.82 pF each → 10.9 pF). The MIM can sit over other circuitry.
   - `tb_lpf` (8 kΩ source like `det`): f−3dB = 14.4 kHz, rise 24 µs.
   - The cap is kept large to soak up comparator kickback (the node carries ~1 mV of signal near sensitivity).
-- **Keep the `ua[4]` debug pin off the LPF output** (nA of pad/ESD leakage × 1 MΩ = mV of offset). Tap `det` (8 kΩ), or buffer.
+- **Keep the `ua[4]` debug pin off the LPF output** (nA of pad/ESD leakage × 1 MΩ = mV of offset). Tap `det` (8 kΩ), or buffer. **Decided 2026-10-08: det via `dbg_tg`** ("ua[4] debug switch" below).
 - **The 0.5 ms averaging reference** for the comparator (−) input should be fed from the LPF output. It needs a switched-cap R (poly would be ~50 MΩ); that belongs with the comparator block.
 - Not checked: passive process spread (MOS corners don't move the passives; use the PDK's resistor/cap corner sections).
 
@@ -326,6 +327,14 @@ Ideal bias and ideal chain/detector passives (MOS variation only). Detector at 4
 
   - So NF moves ~0.4 dB per 10 °C; over 10–50 °C that's roughly ±0.8 dB about 27 °C.
   - The comparator's trim step is 0.125–0.154 mV/LSB (0.6→1.2 V DAC) and its range covers the offsets everywhere.
+
+## ua[4] debug switch (xschem/gen/dbg.py, done 2026-10-08)
+- **`dbg_tg`:** thin transmission gate (N W 2, P W 4, L 0.15, local inverter) from `det` to the ua[4] pad. `dbg_en` comes from the digital: magic `1010` + `uio_in[2]` = 1 at reset (cocotb `test_debug_strap`). Default off.
+  - Raw TX + debug together works, but `uio_in[2]` = 1 during reset then also keys the TX until reset is released.
+- **`tb_dbg`** (det as 8 kΩ ∥ 5 pF, pad_model, pin source; tt):
+  - **Off:** pin → det below −145 dB (10 kHz–100 MHz) in the model. In layout, a stray fF between the det and pad wires dominates (~−70…−90 dB against 5 pF): still plenty. det DC shift < 0.1 µV with the pin at 0 or 1.8 V.
+  - **On, scope (1 MΩ ∥ 15 pF):** 0 dB, −3 dB at 656 kHz.
+  - **On, 50 Ω generator:** det follows the pin at ×0.65 (−3.8 dB; Ron ≈ 4.4 kΩ), so an AWG can drive the baseband (LPF → avg → comparator → digital) with no RF.
 
 ## Whole-RX transient (sim/rx/, first pass done)
 Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated in one piece).

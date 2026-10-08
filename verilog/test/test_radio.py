@@ -237,6 +237,20 @@ async def test_single_ended_strap(dut):
 
 
 @cocotb.test()
+async def test_debug_strap(dut):
+    """uio[2] with the magic at reset -> dbg_en (det on ua[4]); without the
+    magic, or with uio[2] = 0, off. Independent of role, mode and uio after reset."""
+    start_clock(dut)
+    for role, uio, want in ((0, 0b1010_0100, 1), (1, 0b1010_0101, 1), (0, 0b0000_0100, 0),
+                            (0, 0b1010_0000, 0), (1, 0b1010_1001, 0)):
+        await reset(dut, role=role, code=5, uio=uio)
+        for v in (0, 0b100, 0xff):                # later uio activity doesn't change it
+            dut.uio_in.value = v
+            await FallingEdge(dut.clk)
+            assert int(dut.dbg_en.value) == want, f'role {role} uio {uio:08b}'
+
+
+@cocotb.test()
 async def test_sc_phases(dut):
     """sc_phi1/sc_phi2 non-overlapping, one cycle per 130-clock sample."""
     start_clock(dut)
