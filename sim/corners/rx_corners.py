@@ -8,7 +8,7 @@ sits, ~-76 dBm equivalent at tt), level at -40 dBm; comparator offset spread
 over input CM 0.6..1.55 V; trim offset at DAC 0.6 / 1.8 V and the trim step
 per DAC LSB (1.8/256 V) between 0.6 and 1.2 V.
 
-    python sim/corners/rx_corners.py
+    python sim/corners/rx_corners.py          (CORNERS_DIR=... for another run)
 """
 import glob
 import os
@@ -21,7 +21,7 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from rawread import read_raw
 
-D = os.path.join(ROOT, 'build', 'corners')
+D = os.environ.get('CORNERS_DIR', os.path.join(ROOT, 'build', 'corners'))
 KT4_ANT = 4 * 1.380649e-23 * 300.15 * 73
 BAND = (330e6, 433.92e6, 560e6)
 LSB = 1.8 / 256

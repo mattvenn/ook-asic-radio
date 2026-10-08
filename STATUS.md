@@ -34,8 +34,10 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
 1. ~~Joined-run check~~ (done: matches). ~~TX into xschem blocks~~ (done, "TX xschem blocks" below).
 2. ~~Digital for the TX enables~~ (done 2026-10-08): `radio_digital` has a new output `tx_en_n` (= `tx_en` unless single-ended); `tx_en` drives both the ring `key` and `en_p`. The single-ended strap is `uio_in[3]`, latched at reset only with the `1010` magic. **Full cocotb suite 14/14 pass** (incl. the new `test_single_ended_strap`; run with the project venv first on PATH, see below). Not re-hardened.
 3. **Corners and temperature, whole design** (the main open risk):
-   - RX gain, NF, detector slope, comparator offset/trim range, and −94 dBm margin at ss/ff/sf/fs, −20…85 °C;
-   - TX: process corners done (`sim/tx/tb_tx.py`); temperature still to do.
+   - **Operating range is 10–50 °C only** (decided 2026-10-08): no design effort for extremes.
+   - RX gain, NF, detector slope, comparator offset/trim range, and −94 dBm margin at ss/ff/sf/fs, 10 / 27 / 50 °C. **Running** (`sim/corners/rx_corners.sh`, table: `sim/corners/rx_corners.py`); results in "RX corners" below.
+   - Caveat: the chain and detector R/C are still ideal (`devices/res`, `devices/capa`), and bias is ideal, so this is MOS variation only. Converting them to poly/MIM (and a bias whose gm tracks the load poly) belongs to step 4.
+   - TX: process corners done (`sim/tx/tb_tx.py`); 10/50 °C still to do.
    - Use `option temp` after `reset` (see `docs/sim_learnings.md`).
 4. **Make the analog real:**
    - bias generation (60 µA chain reference, 1.2 V vcm, 2 µA detector, 1 µA comparator; ideal sources today);
@@ -312,6 +314,18 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
   - Single-ended is ~7 dB below antiphase (half the drive voltage gives −6 dB).
   - ×0.866 is the extracted-tt → silicon factor, so only the tt row maps to silicon that way. The sim spread (401–547 MHz) sits inside the RX band (330–560).
 - Still open for the TX: temperature; extracted-style wiring beyond the ring's 3.2 fF; VAPWR decoupling and bond-wire droop (11 mA step); layout.
+
+## RX corners (sim/corners/, in progress 2026-10-08)
+Ideal bias and ideal chain/detector passives (MOS variation only). Detector at 4 levels (−110 idle, −80/−70 for the slope at the noise floor, −40). ~35 min per corner for 3 temperatures.
+- A first run at −20/27/85 °C (tt, ss; kept in `build/corners/wide/`, `CORNERS_DIR=build/corners/wide python sim/corners/rx_corners.py`):
+
+| corner | T °C | gain @434 | NF @434 | det slope (−80…−70) | comp offset over CM | e2e at this NF/slope |
+|---|---|---|---|---|---|---|
+| tt | −20 / 27 / 85 | 80.2 / 76.8 / 74.2 dB | 8.5 / 11.0 / 12.8 dB | 14.9 / 13.6 / 10.7 mV/dB | +0.5…+1.4 mV | ≤ −96 / −94 (10/12) / −92 dBm (10/12) |
+| ss | −20 / 27 / 85 | 83.1 / 81.2 / 79.4 dB | 8.9 / 11.1 / 12.8 dB | 13.9 / 13.9 / 13.3 mV/dB | +0.4…+3.7 mV | |
+
+  - So NF moves ~0.4 dB per 10 °C; over 10–50 °C that's roughly ±0.8 dB about 27 °C.
+  - The comparator's trim step is 0.125–0.154 mV/LSB (0.6→1.2 V DAC) and its range covers the offsets everywhere.
 
 ## Whole-RX transient (sim/rx/, first pass done)
 Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated in one piece).
