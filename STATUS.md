@@ -25,7 +25,16 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - **Power pins:** met4 straps (≥ 1.2 µm, full height) on both the left and the right of the tile.
   - **TX blocks:** `tx_drv`, `tx_ls`, `tx_ls_en` laid out with the row builder `layout/gen/rows.py`; all clean. Previews: `layout/README.md` (TT GDS viewer links).
   - **Level shifter:** its ctrl_n inverter was upsized (M8/M7 4 / 1.68): extracted A duty 28 → 36 %, arm outputs 39 / 44 % (schematic 44 / 48 %). This schematic change isn't in `tb_tx` results yet.
-  - **Ring:** `tx_ring` laid out (std cells, 34.5 × 4.2 µm, clean). Extracted 508.5 MHz tt → **~440 MHz on silicon** (×0.866). Next on the TX: `tx_top` (assemble the ring, 3 level shifters, 2 drivers).
+  - **Ring:** `tx_ring` laid out (std cells, 34.5 × 4.2 µm, clean). Extracted 508.5 MHz tt → **~440 MHz on silicon** (×0.866).
+  - **Plan (Matt, 2026-10-08):** a first take on every leaf block, then floorplan the whole tile; assemble `tx_top` as part of that floorplan.
+    - Outputs exit the bottom of the tile: ua[0] = 136.6, ua[1] = 117.3 µm in the 3x2 DEF, so the TX goes there.
+    - The digital macro's `tx_en`/`tx_en_n` leave its west edge near the bottom.
+  - **Leaf blocks done** (`layout/README.md` has viewer links):
+    - TX: `tx_drv`, `tx_ls`, `tx_ls_en`, `tx_ring`.
+    - Trim DAC: `r2r` (the tt08 layout reused; extracted error ≤ 0.02 LSB).
+    - RX: `avg_sc` (τ 0.434 ms extracted; **open:** ±~4 mV static offset from phi coupling, within the trim range); `lpf_rc` and `dbg_tg` (other sessions).
+    - Also by other sessions: `bias_gen` (in progress), the decaps.
+    - **Still to do here:** `comp_ct`, `log_det`, `lna_chain` (last, after the stability check).
 
 **Re-verified (2026-10-08 evening): rdeg 2 MΩ, decap blocks, chain stability.** Details in "Re-verify: rdeg 2 MΩ, decaps, chain stability" below.
 - Trim step at the operating point (DAC 0.8–1.2 V) is **0.062–0.076 mV/LSB at all corners, 10–50 °C**. e2e at −94 dBm: tt 11/12, fs 50 °C 8/12, ff 50 °C 10/12; −92 dBm 12/12.
