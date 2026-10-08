@@ -82,13 +82,20 @@ module rd_corr (
     wire en2 = clr | (busy ? (sel == 2'd2) : (wend && qend == 2'd2));
     wire en3 = clr | (busy ? (sel == 2'd3) : (wend && qend == 2'd3));
 
-    // chip registers (no reset: see clr)
-    always @(posedge clk) begin
-        if (en0) sr0 <= {sr0[125:0], din};
-        if (en1) sr1 <= {sr1[125:0], din};
-        if (en2) sr2 <= {sr2[125:0], din};
-        if (en3) sr3 <= {sr3[125:0], din};
-    end
+    // chip registers (no reset: see clr). Each register is clocked only
+    // when it shifts or rotates: an integrated clock gate per register
+    // (rd_cg) replaces 127 enable muxes per register. Each register is idle
+    // most of the time (one shift per 8 samples, a 127-clock rotation every
+    // 4th window end).
+    wire gclk0, gclk1, gclk2, gclk3;
+    rd_cg u_cg0 (.clk(clk), .en(en0), .gclk(gclk0));
+    rd_cg u_cg1 (.clk(clk), .en(en1), .gclk(gclk1));
+    rd_cg u_cg2 (.clk(clk), .en(en2), .gclk(gclk2));
+    rd_cg u_cg3 (.clk(clk), .en(en3), .gclk(gclk3));
+    always @(posedge gclk0) sr0 <= {sr0[125:0], din};
+    always @(posedge gclk1) sr1 <= {sr1[125:0], din};
+    always @(posedge gclk2) sr2 <= {sr2[125:0], din};
+    always @(posedge gclk3) sr3 <= {sr3[125:0], din};
 
     wire match = ~(msb ^ tmpl);
 

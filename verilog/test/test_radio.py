@@ -16,6 +16,18 @@ from cocotb.clock import Clock
 from cocotb.triggers import FallingEdge, RisingEdge, Timer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# GL=1 (make GL=1): gate-level netlist. Internal signals don't survive
+# synthesis, so the monitors use pins only: event close = falling edge of
+# uio_out[4] (ev_open), score = the 7-seg digit, LED = uo_out[7] (DP).
+GL = os.environ.get('GL') == '1'
+PINMON = GL or os.environ.get('PINMON') == '1'      # pin monitors on RTL too, to validate them
+SEG = [0b0111111, 0b0000110, 0b1011011, 0b1001111, 0b1100110,
+       0b1101101, 0b1111101, 0b0000111, 0b1111111, 0b1101111]
+
+
+def score_digit(score):
+    """radio_digital.v: digit = ((score[4:0] - 1) mod 32) * 21 >> 6."""
+    return ((((score & 31) - 1) & 31) * 21) >> 6
 VEC = os.path.join(HERE, 'vectors')
 
 T_NS = 100            # 10 MHz
@@ -68,6 +80,33 @@ async def run_rx_vector(dut, name):
             await dut.u_rx.led.value_change
             i = state['i']
             toggles.append(i // 8 + 1 - 8)
+
+    async def mon_events_gl():
+        prev = 0
+        while True:
+            await dut.uio_out.value_change
+            now = (int(dut.uio_out.value) >> 4) & 1
+            if prev and not now:                       # event closed
+                i = state['i']
+                assert i % 8 == 0, f'event closed at sample {i}, not a chip tick'
+                for _ in range(3):                     # recent -> sym -> uo_q
+                    await FallingEdge(dut.clk)
+                seg = int(dut.uo_out.value) & 0x7f
+                events.append((i // 8 + 1 - 8, SEG.index(seg) if seg in SEG else -seg))
+            prev = now
+
+    async def mon_toggles_gl():
+        prev = 0
+        while True:
+            await dut.uo_out.value_change
+            now = int(dut.uo_out.value) >> 7
+            if now != prev:
+                toggles.append(state['i'] // 8 + 1 - 8)
+            prev = now
+
+    if PINMON:
+        exp_events = [(c, score_digit(sc)) for c, sc in exp_events]
+        mon_events, mon_toggles = mon_events_gl, mon_toggles_gl
 
     m1 = cocotb.start_soon(mon_events())
     m2 = cocotb.start_soon(mon_toggles())
@@ -154,7 +193,7 @@ async def test_tx_codes(dut):
         assert int(dut.rx_en.value) == 0
         await check_send(dut, code, timeout_chips=2)
         # precomputed LFSR2 start matches the model
-        if code != 127:
+        if code != 127 and not GL:
             assert int(dut.u_gold.l2_start.value) == int(TX['lfsr2'][code])
         # no second send without a code change
         for _ in range(60):
@@ -207,8 +246,9 @@ async def test_raw_and_straps(dut):
     dut.uio_in.value = 0b100
     for _ in range(300):                      # send starts at the first chip tick
         await FallingEdge(dut.clk)
-        assert int(dut.tx_en.value) == int(dut.u_tx.tx_en.value)
-    assert int(dut.u_tx.busy.value) == 1      # code-mode send in progress
+        if not GL:
+            assert int(dut.tx_en.value) == int(dut.u_tx.tx_en.value)
+    assert (int(dut.uio_out.value) >> 7) & 1 == 1   # code-mode send in progress (tx_busy)
     # both arms follow tx_en by default
     assert int(dut.tx_en_n.value) == int(dut.tx_en.value)
 
