@@ -11,7 +11,7 @@
 # Run in the osic image from build/ (after netlisting tb_chain, tb_logdet,
 # tb_comp):  CORNERS="tt ss" TEMPS="-20 27 85" ../sim/corners/rx_corners.sh
 # Output: build/corners/*.raw, build/corners/rx_<tb>_<corner>.log (RESULT
-# lines). Analyse: python sim/corners/rx_corners.py
+# lines). TBS="comp" runs only some testbenches. Analyse: python sim/corners/rx_corners.py
 corners=${CORNERS:-"tt ss ff sf fs"}
 temps=${TEMPS:-"-20 27 85"}
 levels=${LEVELS:-"-110 -90 -80 -70 -60 -50 -40 -30"}
@@ -82,7 +82,7 @@ foreach t $temps
     echo RESULT comp_cm $c \$t \$cm \$&off
     destroy all
   end
-  foreach tr 0.6 1.2 1.8
+  foreach tr 0.6 0.8 0.9 1.0 1.1 1.2 1.8
     alterparam vcm = 1.0
     alterparam vtrim = \$tr
     reset
@@ -97,7 +97,7 @@ end
 .endc
 .end
 CTL
-  for tb in chain logdet comp; do
+  for tb in ${TBS:-chain logdet comp}; do
     echo "start $tb $c: $(date)"
     ngspice -b corners/rx_${tb}_$c.spice > corners/rx_${tb}_$c.log 2>&1
     echo "done  $tb $c: $(date), $(grep -c RESULT corners/rx_${tb}_$c.log) results, $(grep -ci error corners/rx_${tb}_$c.log) errors"

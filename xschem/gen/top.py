@@ -112,6 +112,9 @@ def tt_top():
 TB_CODE = chain.PARAMS + """
 .param ven_rx=1.8 ven_tx=0 vdbg=0
 .options method=GEAR
+* save only what is measured: the 80 ns TX run with every node saved trips
+* ngspice's memory check (it counts free RAM, not page cache)
+.save v(xana.vcm) v(xana.det) v(xana.lpf) v(xana.trim) v(tx_p) v(tx_n) v(ant_tx_p) v(ant_tx_n) i(va) i(vdpwr)
 .control
 * 1: RX on, TX off, no signal: operating point
 op

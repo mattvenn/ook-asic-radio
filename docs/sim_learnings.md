@@ -53,6 +53,7 @@ sky130A, run headless in Docker.
 - **Avoid extreme resistor ratios.** 1e-12 Ω / 1e12 Ω ties hung ngspice for
   50+ min; 1 Ω / 1e9 Ω ran in seconds. ngspice also silently swaps a 0 Ω
   resistor for 1e-12.
+- **"memory required ... is more than memory available" is about *free* RAM, not available RAM.** ngspice doesn't count the page cache. With 19 GiB available but 0.4 GiB free, an 80 ns / 2 ps transient saving every node died. `.save` only the measured vectors (it applies to `op` too, so list the ones the op echoes read).
 - **Small probe first:** time a short run (e.g. 0.2 µs instead of 3 µs) and
   extrapolate before committing to a long one. **But the probe has to cover
   the hardest regime.** A 2 µs probe with the carrier still off predicted

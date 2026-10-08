@@ -5,7 +5,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
-**State (end of 2026-10-08): pre-layout work done; layout not started.**
+**State (end of 2026-10-08): pre-layout work done and re-verified; layout started (TX driver, see `docs/layout.md`).**
 - **RX:** every block is transistor level with real PDK passives and a real bias generator.
   - Chain: pad → 6-stage NMOS diff-pair limiting chain.
   - Detector: successive-detection log detector → 14 kHz RC LPF (2.95 MΩ / 3.7 pF).
@@ -24,21 +24,58 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - **Policy:** each block gets a small `tb_<block>` (schematic vs extracted). One end-to-end run on the full extracted design at the end.
   - **Power pins:** met4 straps (≥ 1.2 µm, full height) on both the left and the right of the tile.
 
-**Changed since the last simulations (schematic only, not re-simulated yet):**
-- comparator `rdeg` 1.4 → 2 MΩ, to bring the trim step back to ~0.075–0.107 mV/LSB. The e2e model showed 0.15 mV/LSB (the ss/fs corners) dropping −94 dBm from 10/12 to 4/12;
-- `decap_vapwr` / `decap_vdpwr` added to `radio_analog` (capacitance per unit is estimated from oxide thickness).
+**Re-verified (2026-10-08 evening): rdeg 2 MΩ, decap blocks, chain stability.** Details in "Re-verify: rdeg 2 MΩ, decaps, chain stability" below.
+- Trim step at the operating point (DAC 0.8–1.2 V) is **0.062–0.076 mV/LSB at all corners, 10–50 °C**. e2e at −94 dBm: tt 11/12, fs 50 °C 8/12, ff 50 °C 10/12; −92 dBm 12/12.
+- Decaps: **50.06 pF** (VAPWR) and **29.9 pF** (VDPWR), flat to 434 MHz and over ±10 % supply.
+- `tb_radio_analog`: unchanged.
+- **Chain layout rule:** keep chain output → input coupling (pad or stage-2 input) **≤ 0.1 fF** asymmetric. At the highest-gain corner (ss 10 °C, 81 dB), 0.2 fF gives +2.8 dB of peaking near 600 MHz and **0.5 fF oscillates** (1 fF at tt). Supply/ground L up to 5 nH with the 30 pF decap is fine.
 
 **Next steps, in order:**
-1. **Re-verify the schematic changes** (sims): `tb_comp` (trim range and step with rdeg 2 MΩ), e2e with the new step, AC on the two decap blocks (are they ~50 / ~30 pF?), and re-run `tb_radio_analog`.
-2. **Chain stability check:** `sim/chain/stability.sh` (written, not run). Real supply/ground L + Cdec + 0–1 fF output→input coupling; kick + AC. It sets layout rules for the chain.
-3. **Floorplan** (with Matt):
+1. **Floorplan** (with Matt):
    - the macro at the right of the tile (the pin order assumes it), the analog on the left next to the ua pins;
    - analog block placement, decap, guard rings;
-   - TX away from the RX input; deep n-well for the RX chain or not.
-4. **Layout of the remaining blocks with the same flow** (`layout/gen/<block>.py`, `layout/check.sh`, `layout/pex.sh`, a `tb_<block>`), then **integration in the 3x2.** Switch `mag/Makefile` to `tt_analog_3x2_3v3.def`, `make start`, place the hardened macro (`openlane/radio_digital/runs/cg_260x190`).
-5. Not blocking: overload recovery (key a −10 dBm tone), TX at 10/50 °C, the −90 dBm joined run, the max-slew warnings in the harden (marginal, mostly ss).
+   - TX away from the RX input; deep n-well for the RX chain or not;
+   - the chain coupling rule above: keep the chain's last stages and the detector away from the pads and stage 1.
+2. **Layout of the remaining blocks with the same flow** (`layout/gen/<block>.py`, `layout/check.sh`, `layout/pex.sh`, a `tb_<block>`), then **integration in the 3x2.** Switch `mag/Makefile` to `tt_analog_3x2_3v3.def`, `make start`, place the hardened macro (`openlane/radio_digital/runs/cg_260x190`).
+3. Not blocking: overload recovery (key a −10 dBm tone), TX at 10/50 °C, the −90 dBm joined run, the max-slew warnings in the harden (marginal, mostly ss).
 
 **Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
+
+## Re-verify: rdeg 2 MΩ, decaps, chain stability (2026-10-08 evening)
+Run from `build/vfy` (its own `.spiceinit` with `num_threads=4`, so it can share the CPU with another ngspice).
+- **Comparator** (`tb_comp`, and `TBS=comp sim/corners/rx_corners.sh`, which now has trim points 0.6 0.8 0.9 1.0 1.1 1.2 1.8 V):
+  - tt 27 °C: trim offset −18.6 mV (DAC 0) … −5.4 (0.6 V) … +0.8 (0.9 V) … +8.9 mV (1.8 V), monotonic. Offset vs CM, noise (28 µV) and speed (0.36 µs) unchanged.
+  - **The old "0.107–0.153 mV/LSB" was the average over DAC 0.6–1.2 V.** The transfer is steep near 0.6 V, so that average overstated the step where the servo actually sits (~0.95 V, code ~135). Same metric now: 0.086–0.135.
+  - **Local step, DAC 0.8–1.2 V, every corner at 10/27/50 °C: 0.062–0.076 mV/LSB.** The trim at 0.8 / 1.2 V is about −0.2 / +3.6 mV. That covers the +0.5…+2.5 mV comparator offset with room either side; the full code range reaches −18…+9 mV.
+  - sf at CM 1.55 V still has no threshold (known; det stays ≤ ~1.45 V in operation).
+- **e2e** (`model/e2e.py`, noise case, 12 trials, 0.3 mV comparator noise, `--trim-mv` = the local step; outputs in `build/e2e/rdeg2_*.txt`):
+
+| corner | NF / slope / trim | −92 dBm | −94 dBm |
+|---|---|---|---|
+| tt 27 °C | 11 / 12 mV/dB / 0.066 | 12/12 | 11/12 |
+| fs 50 °C | 12 / 12.4 / 0.068 | 12/12 | 8/12 (was 3–4/12) |
+| ff 50 °C | 11.4 / 9.7 / 0.067 | 12/12 | 10/12 (was 3–4/12) |
+
+  - `--out` is resolved relative to `model/`; pass an absolute path, or the PNG save fails after the results print.
+- **Decaps** (`sim/decap/decap_ac.sh`; C = Im(I)/ωV, ESR = Re(1/Y)):
+  - decap_vapwr **50.06 pF**, ESR 0.011 Ω; decap_vdpwr **29.9 pF**, ESR 0.069 Ω. Same at 1 / 100 / 434 MHz and at supply ±10 %. One 10×10 MIM unit is 206 fF, so the MOS part is ~29.4 pF thick-oxide (2.9 fF/µm²) and ~23.8 pF thin (7.9 fF/µm²).
+  - BSIM here is quasi-static, so it shows no channel resistance. Hand estimate: ~1–2 Ω for the parallel L = 5 µm channels, an RC corner of several GHz. Fine.
+- **`tb_radio_analog`** with the decaps: op_rx, op_off, −60 dBm det (1.206 V) and TX (484.8 MHz, +3.67 dBm, VAPWR 11.25 mA, VDPWR 0.23 mA) are all identical to before. The TX run had died on ngspice's memory check; the generator now has a `.save` list.
+- **Chain stability** (`sim/chain/stability.sh`, from tb_chain with real passives, tt, 1 % mismatch; `CNODE=o1p` moves the coupling to stage 2's input; ~20 s per case). The script now zeroes the testbench's −80 dBm tone and 10 MHz CM tone, and its early window is 5–25 ns (the kick has rung down by 20 ns).
+
+| L (supply and ground) | Ccpl out_p → | kick: late/early | AC gain 434 MHz | AC peak |
+|---|---|---|---|---|
+| 0 / 2 / 5 nH | none | ~2e-10 (decays) | 76.7 dB | 76.9 dB @ 381 MHz |
+| 2 nH | pad_p 0.01 / 0.1 fF | decays | 76.7 / 76.8 | 76.9 / 76.8 |
+| 2 nH | pad_p 0.2 fF | decays | 76.9 | 77.4 |
+| 2 nH | pad_p 0.3 fF | decays | 76.7 | 78.7 @ 576 MHz |
+| 2 nH | pad_p 0.5 fF | decays | 76.2 | 83.2 @ 603 MHz |
+| 2 / 5 nH | pad_p 1 fF | **1.0: oscillates (2.1 V pp)** | 73.6 | 83.3 @ ~630 MHz |
+| 2 nH | o1p 0.01 / 0.03 / 0.1 / 0.3 fF | decays | 76.6 / 76.6 / 76.3 / 75.1 | 76.9 / 76.7 / 76.3 / 78.7 |
+
+  - **ss 10 °C** (`CORNER=ss TEMP=10`; 81.2 dB at 434 MHz, the highest-gain corner), 2 nH, coupling into pad_p: 0 / 0.05 / 0.1 / 0.2 / 0.3 fF give peaks of 81.4 / 81.3 / 81.6 / 83.6 / 87.6 dB, all decaying; **0.5 fF oscillates** (late/early 0.79, 1.6 V pp; AC peak 98 dB). So the limit is half the tt one: **≤ 0.1 fF**.
+  - **Supply/ground bounce is not a problem.** The differential chain draws nearly constant current; VDPWR moves < 7 µV pp after the kick, even at 5 nH (which with 30 pF resonates near 410 MHz).
+  - **Coupling is the problem.** Keep out → input (pad or o1) asymmetric coupling ≤ 0.1 fF (ss 10 °C), i.e. don't run the last stages' outputs or the detector taps next to the input or stage 1. Symmetric coupling (both sides alike) mostly cancels, so route the chain as a differential pair with mirrored geometry.
 
 ## Clock gating + gate-level tests (2026-10-08)
 - **`rd_cg.v`:** `sky130_fd_sc_hd__dlclkp_1` (latch-based ICG; silicon evidence from TT08 #770). Under `ifdef SIM` it's a behavioural latch + AND, for RTL cocotb and the mixed-signal build.
