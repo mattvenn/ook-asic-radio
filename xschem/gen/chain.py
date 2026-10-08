@@ -25,7 +25,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mos, ports, write_symbol
+from xsch import Sch, mim, mos, poly_r, ports, write_symbol
 from frontend import antenna_pad
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
@@ -43,8 +43,8 @@ def amp_dp():
            'params: w l rl (pair, load), mt (tail multiplier of unit W=wt, L=0.5)', 0.4)
     ports(s, -400, -460, ['VDD', 'VSS', 'nb', 'inp', 'inn', 'outp', 'outn'])
     for side, x, gate, drain, sgn in (('p', 0, 'inp', 'outn', '+'), ('n', 300, 'inn', 'outp', '-')):
-        r = s.place('devices/res.sym', x + 20, -300, name=f'Rl_{side}', value="'rl'", m='1')
-        s.connect(r, P='VDD', M=drain)
+        r = poly_r(s, x + 20, -300, 'rl', 'high', '1p41', name=f'Rl_{side}')
+        s.connect(r, P='VDD', M=drain, B='VSS')
         m = mos(s, 'n', x, -150, W=f"'w*(1{sgn}mm/2)'", L="'l'", nf=4, name=f'M{side}')
         s.connect(m, D=drain, G=gate, S='tail', B='VSS')
     mt = mos(s, 'n', 150, 50, W="'wt'", L=0.5, nf=2, mult="'mt'", name='Mtail')
@@ -60,14 +60,16 @@ def amp_dpc():
            'params: w l rl (pair, load), mt (total tail multiplier, mt/2 per side), cs', 0.4)
     ports(s, -400, -460, ['VDD', 'VSS', 'nb', 'inp', 'inn', 'outp', 'outn'])
     for side, x, gate, drain, sgn in (('p', 0, 'inp', 'outn', '+'), ('n', 300, 'inn', 'outp', '-')):
-        r = s.place('devices/res.sym', x + 20, -300, name=f'Rl_{side}', value="'rl'", m='1')
-        s.connect(r, P='VDD', M=drain)
+        r = poly_r(s, x + 20, -300, 'rl', 'high', '0p69', name=f'Rl_{side}')
+        s.connect(r, P='VDD', M=drain, B='VSS')
         m = mos(s, 'n', x, -150, W=f"'w*(1{sgn}mm/2)'", L="'l'", nf=4, name=f'M{side}')
         s.connect(m, D=drain, G=gate, S=f's{side}', B='VSS')
         mt = mos(s, 'n', x, 50, W="'wt'", L=0.5, nf=2, mult="'mt/2'", name=f'Mtail_{side}')
         s.connect(mt, D=f's{side}', G='nb', S='VSS', B='VSS')
-    c = s.place('devices/capa.sym', 150, -60, rot=1, name='Cs', value="'cs'", m='1')
-    s.connect(c, p='sn', m='sp')
+    # Cs as two MIM halves, anti-parallel: each source sees one bottom plate
+    for nm, top, bot, y in (('Cs_a', 'sn', 'sp', -60), ('Cs_b', 'sp', 'sn', 60)):
+        c = mim(s, 150, y, 'cs/2', name=nm)
+        s.connect(c, c0=top, c1=bot)
     s.write(os.path.join(XDIR, 'amp_dpc.sch'))
     write_symbol(os.path.join(XDIR, 'amp_dpc.sym'), left=['inp', 'inn', 'nb'],
                  right=['outp', 'outn'], top=['VDD'], bottom=['VSS'], params=AMPC_PARAMS)
@@ -89,10 +91,11 @@ def lna_chain(n=NSTAGES):
         outp, outn = ('outp', 'outn') if last else (f'o{i}p', f'o{i}n')
         if first:
             for side, y, src in (('p', -400, prev[0]), ('n', -200, prev[1])):
-                c = s.place('devices/capa.sym', x - 250, y, rot=1, name=f'Cin_{side}', value="'cin'", m='1')
-                s.connect(c, p=f'g1{side}', m=src)
-                rb = s.place('devices/res.sym', x - 150, y + 60, name=f'Rb_{side}', value="'rb'", m='1')
-                s.connect(rb, P='vcm', M=f'g1{side}')
+                # bottom plate on the pad side (already ~5 pF there)
+                c = mim(s, x - 250, y, 'cin', name=f'Cin_{side}')
+                s.connect(c, c0=f'g1{side}', c1=src)
+                rb = poly_r(s, x - 150, y + 60, 'rb', 'high', '0p35', name=f'Rb_{side}')
+                s.connect(rb, P='vcm', M=f'g1{side}', B='VSS')
             a = s.place('amp_dp.sym', x, -300, name='xa1',
                         w="'w1'", l='0.15', rl="'rl1'", wt=AMP_PARAMS['wt'], mt="'mt1'")
             gp, gn = 'g1p', 'g1n'

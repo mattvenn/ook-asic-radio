@@ -41,8 +41,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
    - TX: process corners done (`sim/tx/tb_tx.py`); 10/50 °C still to do.
    - Use `option temp` after `reset` (see `docs/sim_learnings.md`).
 4. **Make the analog real:**
-   - bias generation (60 µA chain reference, 1.2 V vcm, 2 µA detector, 1 µA comparator; ideal sources today);
-   - power-down on `rx_en`/`tx_en`;
+   - ~~real passives in chain + detector~~, ~~bias generator with power-down on rx_en~~ (done 2026-10-08, below); integrate bias_gen at the top;
    - VAPWR decoupling + bond-wire droop (10 mA TX step);
    - hook up the R2R DAC (its range vs the trim's linear region ~0.6–1.8 V);
    - overload recovery.
@@ -316,19 +315,69 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
   - ×0.866 is the extracted-tt → silicon factor, so only the tt row maps to silicon that way. The sim spread (401–547 MHz) sits inside the RX band (330–560).
 - Still open for the TX: temperature; extracted-style wiring beyond the ring's 3.2 fF; VAPWR decoupling and bond-wire droop (11 mA step); layout.
 
-## RX corners (sim/corners/, in progress 2026-10-08)
-Ideal bias and ideal chain/detector passives (MOS variation only). Detector at 4 levels (−110 idle, −80/−70 for the slope at the noise floor, −40). ~35 min per corner for 3 temperatures.
-- A first run at −20/27/85 °C (tt, ss; kept in `build/corners/wide/`, `CORNERS_DIR=build/corners/wide python sim/corners/rx_corners.py`):
+## RX corners (sim/corners/, done 2026-10-08)
+`sim/corners/rx_corners.sh` (in the osic image from build/; ~8 min for 5 corners × 3 temperatures) then `python sim/corners/rx_corners.py` for the table. Ideal bias, ideal chain/detector passives: MOS variation only (the passives and bias are covered below).
 
-| corner | T °C | gain @434 | NF @434 | det slope (−80…−70) | comp offset over CM | e2e at this NF/slope |
-|---|---|---|---|---|---|---|
-| tt | −20 / 27 / 85 | 80.2 / 76.8 / 74.2 dB | 8.5 / 11.0 / 12.8 dB | 14.9 / 13.6 / 10.7 mV/dB | +0.5…+1.4 mV | ≤ −96 / −94 (10/12) / −92 dBm (10/12) |
-| ss | −20 / 27 / 85 | 83.1 / 81.2 / 79.4 dB | 8.9 / 11.1 / 12.8 dB | 13.9 / 13.9 / 13.3 mV/dB | +0.4…+3.7 mV | |
+| over all 5 corners, 10–50 °C | range |
+|---|---|
+| chain gain @434 MHz | 72.9 (ff 50 °C) … 81.8 dB (ss 10 °C) |
+| NF @434 MHz | 9.4 (ff 10 °C) … **12.0 dB** (fs 50 °C); ~+0.4 dB per 10 °C |
+| det idle | 1.505 … 1.530 V |
+| det slope at the noise floor (−80…−70 dBm) | **9.7** (ff 50 °C) … 14.4 mV/dB |
+| comparator offset over CM 0.6–1.45 V | +0.5 … +2.5 mV |
+| trim range (DAC 0.6 → 1.8 V) | −4.6…−8.5 to +9.7…+12.8 mV; 0.107–0.153 mV/LSB |
 
-  - So NF moves ~0.4 dB per 10 °C; over 10–50 °C that's roughly ±0.8 dB about 27 °C.
-  - The comparator's trim step is 0.125–0.154 mV/LSB (0.6→1.2 V DAC) and its range covers the offsets everywhere.
+- **e2e at the worst corners** (noise case, 12 trials, 0.3 mV comparator noise): fs 50 °C (NF 12.0, 12.4 mV/dB) and ff 50 °C (NF 11.4, 9.7 mV/dB) both decode **−92 dBm 12/12**, −94 dBm only 3–4/12 (tt 27 °C: 10/12). **Worst-case sensitivity ≈ −92…−93 dBm**, 1–2 dB off nominal.
+- **Comparator CM:** at sf, the offset grows above CM 1.45 V (+2.4 mV at 1.45, +9.4 at 1.5, no threshold within ±30 mV at 1.55). In operation the comparator CM is the LPF output, which is ≤ ~1.45 V (the chain's noise floor pulls det below its noise-free 1.52 V), so it's fine, but don't let det idle rise.
+- Earlier −20/85 °C run (tt, ss) is kept in `build/corners/wide/` (85 °C: NF 12.8 dB, −92 dBm).
 
-## ua[4] debug switch (xschem/gen/dbg.py, done 2026-10-08)
+## Real passives (xschem/gen/chain.py, logdet.py; 2026-10-08)
+- The chain and detector R/C are now PDK devices, via `poly_r()` / `mim()` in `tools/xsch.py`. These place a resistor or cap by value; the geometry is a netlist expression, fitted R(L) = a + b·L (`sim/pdk/passives.spice`).
+  - Loads: stage 1 high_po 1p41 (1 kΩ, 0.6 mA/side); stages 2–6 high_po 0p69 (4 kΩ); input rb high_po 0p35 (20 kΩ); cin MIM (bottom plate on the pad side).
+  - Cs: two MIM halves anti-parallel, so each source sees one bottom plate.
+  - Detector: rb xhigh 0p35 (200 kΩ); rs high_po 0p35 (10 kΩ); rdet high_po 0p69 (8 kΩ); cc MIM (bottom plate on the chain tap); cdet 4 × ~25 µm MIM (bottom plate on VDD).
+- **PDK passives (tt, 27 °C):**
+
+| | Ω/µm | ends | corners `hh` / `ll` | tempco |
+|---|---|---|---|---|
+| high_po 0p35 / 0p69 / 1p41 | 995 / 471 / 230 | 963 / 526 / 278 Ω | +14 % / −15 % | +0.05 %/°C |
+| xhigh_po 0p35 | 7379 | ~0 | +15 % / −15 % | ~0 |
+
+  - MIM: 2.06 fF/µm², `hh` +14 % / `ll` −13 %.
+  - The MOS corner libs (tt/ss/ff/…) keep R and C typical. The R/C corners are separate lib sections (`hh`, `ll`, `hl`, `lh`, and combined e.g. `ss_hh`).
+  - **The models have no parasitic C** (poly to substrate, MIM bottom plate): that only shows up after layout extraction.
+- **At tt the conversion changes nothing:** gain 76.7 dB, NF 11.0 dB, det within 6 mV of the ideal-passive netlist.
+
+## Bias generator (xschem/gen/bias.py, first pass done 2026-10-08)
+- **`bias_gen`:** an OTA forces vref = VDD/3 across rref (high_po 0p69, 10 kΩ, **the same poly as the chain loads**). I = 60 µA goes into a PMOS diode (60 units W 2 / L 1). Mirrors: ib_chain 60 µA, ib_det 2 µA, ib_comp 1 µA.
+  - vcm = 2·VDD/3 comes from the same xhigh divider (3 × 200 kΩ), MIM-decoupled.
+  - OTA: PMOS input pair, tail from a resistor-biased PMOS diode, so there's no zero-current state.
+  - `en` (= rx_en) low: everything off (< 1 nA).
+- **`tb_bias`** (loads = the real diode loads):
+
+| | result |
+|---|---|
+| ib_chain / det / comp (tt, 27 °C) | 59.4 / 1.98 / 0.99 µA |
+| over 10–50 °C | −1.1 % |
+| vs VDD | ∝ VDD (1.7 / 1.9 V: −6 % / +6 %); vcm = 2·VDD/3 |
+| MOS corners ss / ff | 60.3 / 58.5 µA |
+| R corners `hh` / `ll` | 52.2 / 69.5 µA (∝ 1/R, as intended) |
+| start-up (VDD ramp 10 µs) / re-enable | clean / < 0.5 µs to 90 % |
+| supply | ~130 µA incl. outputs |
+
+- **Why I ∝ 1/R:** the DC-coupled chain's operating points depend on I·RL. Real-passive chain at the R/C corners, fixed 60 µA vs this bias:
+
+| | `hh` | tt | `ll` |
+|---|---|---|---|
+| gain @434 MHz, fixed 60 µA | 80.5 dB | 76.7 dB | 71.3 dB |
+| gain @434 MHz, tracking bias | **78.1** | 76.7 | **73.7** |
+| NF @434 MHz, tracking bias | 11.1 | 11.0 | 11.0 |
+
+  - What's left is the R·C band shift (206–519 MHz at `hh`, 299–718 at `ll`).
+  - Detector with tracking bias: idle 1.520 / 1.521 / 1.524 V (tt / hh / ll), so the comparator CM doesn't move. Slope at the noise floor 13.4 / 14.1 / 10.3 mV/dB: `ll` is ~−93 dBm, like ff 50 °C.
+- Not yet: integrating bias_gen into the RX testbenches/top (it feeds `iref`, `ibias_det`, `Ibc` and `vcm`, which are ideal sources today); stability margin check of the OTA loop (the start-up and en transients settle cleanly; no AC loop-gain run yet).
+
+## ua[4] debug switch## ua[4] debug switch (xschem/gen/dbg.py, done 2026-10-08)
 - **`dbg_tg`:** thin transmission gate (N W 2, P W 4, L 0.15, local inverter) from `det` to the ua[4] pad. `dbg_en` comes from the digital: magic `1010` + `uio_in[2]` = 1 at reset (cocotb `test_debug_strap`). Default off.
   - Raw TX + debug together works, but `uio_in[2]` = 1 during reset then also keys the TX until reset is released.
 - **`tb_dbg`** (det as 8 kΩ ∥ 5 pF, pad_model, pin source; tt):
@@ -357,5 +406,5 @@ Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated i
 - Analog, all blocks now first-passed: devices ~15,700 µm² (×2.5 routing; ring and R2R ladder from measured layouts: 228 µm² for 19 stages, 3,864 µm² for the ladder) + MIM ~21,300 µm² (28 % of a 2x2; can't overlap the digital).
 - **2x2:** ~102 % with the digital as is (40,500 µm² placed); **~79 %** with the RTL size reduction (~23,000 µm²). Both before decap, guard rings and power routing.
 - **3x2** (~113,000 µm²): ~68 % / ~53 %.
-- **Decision (2026-10-07): fine for now; go to 3x2 if needed** rather than shrink early. Check that 3x2 is allowed for analog on ttsky26d.
+- **Decision (2026-10-07): fine for now; go to 3x2 if needed** rather than shrink early. 3x2 is confirmed allowed for analog (2026-10-08).
 - Easy cap savings if ever wanted: LPF 4 MΩ / 2.7 pF (the comparator has no kickback); avg Cs 0.1 p / Cavg 3.6 p; cdet 1 p; chain cin 1 p (NF check). Together 19k → ~8k µm² of MIM.

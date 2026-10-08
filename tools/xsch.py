@@ -39,6 +39,8 @@ LIB_PINS = {
     'sky130_fd_pr/res_high_po_0p35.sym': {'P': (0, -30), 'M': (0, 30), 'B': (-20, 0)},
     'sky130_fd_pr/res_xhigh_po_0p35.sym': {'P': (0, -30), 'M': (0, 30), 'B': (-20, 0)},
     'sky130_fd_pr/cap_mim_m3_1.sym': {'c0': (0, -30), 'c1': (0, 30)},
+    **{f'sky130_fd_pr/res_{k}_po_{w}.sym': {'P': (0, -30), 'M': (0, 30), 'B': (-20, 0)}
+       for k in ('high', 'xhigh') for w in ('0p69', '1p41', '2p85')},
     # pinless
     'sky130_fd_pr/corner.sym': {},
     'devices/code.sym': {},
@@ -220,6 +222,34 @@ def write_symbol(path, left=(), right=(), top=(), bottom=(), width=160, params=N
     out.append(f'T {{@name}} {w2-30} -{h2+20} 0 0 0.2 0.2 {{}}')
     with open(path, 'w') as fh:
         fh.write('\n'.join(out) + '\n')
+
+
+# poly resistors, R = a + b * L (tt, 27 C, fitted at L = 2 and 10 um
+# (sim/pdk/passives.spice). b in ohm/um, a = the two ends. Process corners: hh +14..15 %, ll -15 %; high_po +0.05 %/C, xhigh ~0.
+POLY = {('high', '0p35'): (995.0, 963.0), ('high', '0p69'): (470.9, 526.0), ('high', '1p41'): (230.3, 278.0),
+        ('xhigh', '0p35'): (7379.0, 0.0), ('xhigh', '0p69'): (3161.0, 0.0)}
+MIM_F_PER_UM2 = 2.06e-15        # cap_mim_m3_1 incl. its perimeter term, 10x10 um (hh +14 %, ll -13 %)
+
+
+def poly_r(sch, x, y, r, kind='high', w='0p35', rot=0, name=None):
+    """sky130 poly resistor of value r (a number or a spice param/expression
+    string, e.g. "rl"), L computed from the fitted R(L). Pins P, M, B (B = body,
+    connect to VSS)."""
+    b, a = POLY[(kind, w)]
+    expr = f"'max(({r}-{a:g})/{b:g},0.5)'"     # no spaces: xschem splits property values
+    return sch.place(f'sky130_fd_pr/res_{kind}_po_{w}.sym', x, y, rot=rot, name=name or sch._name('R'),
+                     L=expr, model=f'res_{kind}_po_{w}', mult='1', spiceprefix='X')
+
+
+def mim(sch, x, y, c, mf=1, rot=0, name=None):
+    """cap_mim_m3_1 of value c (number or param string) as mf square units
+    (keep units <= 30 um, as the LPF / averager: use mf for more than ~1.8 pF).
+    Pins c0 (top plate, m4) and c1 (bottom plate, m3): put c1 on the quieter /
+    lower-impedance node, since in layout the bottom plate carries the
+    substrate parasitic."""
+    side = f"'sqrt(({c})/{mf}/{MIM_F_PER_UM2:g})'"
+    return sch.place('sky130_fd_pr/cap_mim_m3_1.sym', x, y, rot=rot, name=name or sch._name('C'),
+                     model='cap_mim_m3_1', W=side, L=side, MF=str(mf), spiceprefix='X')
 
 
 def stdcell(sch, cell, x, y, vdd='VDD', vss='VSS', name=None):

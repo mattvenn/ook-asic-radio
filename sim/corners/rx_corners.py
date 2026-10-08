@@ -37,6 +37,8 @@ def results():
             kind, c, t = p[1], p[2], int(float(p[3]))
             if kind == 'chain':
                 r[(c, t)]['idd'] = float(p[5])
+            elif len(p) < 6:                     # failed measure (e.g. no threshold crossing)
+                r[(c, t)].setdefault('missing', []).append(f'{kind} {p[4]}')
             else:
                 r[(c, t)].setdefault(kind, {})[float(p[4])] = float(p[5])
     return r
@@ -79,7 +81,8 @@ def main():
         trs = f'{tr[0.6]:+.1f}/{tr[1.8]:+.1f}' if 0.6 in tr and 1.8 in tr else '-'
         step = f'{(tr[1.2] - tr[0.6]) / (0.6 / LSB):6.3f}' if 0.6 in tr and 1.2 in tr else '     -'
         idd = f'{x["idd"]:5.2f}' if 'idd' in x else '    -'
-        print(f'{c:>6} {t:4d} {idd} {g:>20} {nf} {idle} {slope} {d40} {cms:>15} {trs:>16} {step}')
+        miss = f'  (no result: {", ".join(x["missing"])})' if 'missing' in x else ''
+        print(f'{c:>6} {t:4d} {idd} {g:>20} {nf} {idle} {slope} {d40} {cms:>15} {trs:>16} {step}{miss}')
 
 
 if __name__ == '__main__':

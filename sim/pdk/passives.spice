@@ -1,0 +1,39 @@
+* Run in the osic image: cd build && ngspice -b ../sim/pdk/passives.spice   (swap 'tt' for hh / ll / ss / ff; L=2 vs L=10 for the end resistance)
+* PDK passives: resistance per um (L 10 um), tempco, and the bottom-plate split of MIM
+.lib /foss/pdks/sky130A/libs.tech/combined/sky130.lib.spice tt
+V1 a 0 dc 1 ac 1
+XR1 a b1 0 sky130_fd_pr__res_high_po_0p35 L=10 mult=1
+XR2 a b2 0 sky130_fd_pr__res_high_po_0p69 L=10 mult=1
+XR3 a b3 0 sky130_fd_pr__res_high_po_1p41 L=10 mult=1
+XR4 a b4 0 sky130_fd_pr__res_xhigh_po_0p35 L=10 mult=1
+XR5 a b5 0 sky130_fd_pr__res_xhigh_po_0p69 L=10 mult=1
+V2 b1 0 0
+V3 b2 0 0
+V4 b3 0 0
+V5 b4 0 0
+V6 b5 0 0
+* MIM 10x10 between top (c0=t) and bottom (c1=bt); measure C of each plate to ground
+Vt t 0 dc 0 ac 1
+Vb bt 0 dc 0
+XC1 t bt sky130_fd_pr__cap_mim_m3_1 W=10 L=10 MF=1
+.control
+foreach tt 10 27 50
+  reset
+  option temp = $tt
+  op
+  let r1 = 1/(-i(v2))/10
+  let r2 = 1/(-i(v3))/10
+  let r3 = 1/(-i(v4))/10
+  let r4 = 1/(-i(v5))/10
+  let r5 = 1/(-i(v6))/10
+  echo RESULT T $tt ohm_per_um hp035 $&r1 hp069 $&r2 hp141 $&r3 xhp035 $&r4 xhp069 $&r5
+  destroy all
+end
+reset
+ac lin 1 1e6 1e6
+let cpar_hp035 = imag(-i(v2))/(2*pi*1e6)
+let ctop = imag(-i(vt))/(2*pi*1e6)
+let cbot = imag(i(vb))/(2*pi*1e6)
+echo RESULT ac R_hp035_L10_to_end_C $&cpar_hp035 MIM10x10_top_total $&ctop MIM_bottom_coupled $&cbot
+.endc
+.end

@@ -19,7 +19,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mos, ports, write_symbol
+from xsch import Sch, mim, mos, poly_r, ports, write_symbol
 from frontend import antenna_pad
 import chain
 
@@ -36,14 +36,14 @@ def det_cell():
            'params: wd (W, L=0.15), rs (source degeneration), cc/rb (coupling)', 0.4)
     ports(s, -400, -460, ['VSS', 'vb', 'inp', 'inn', 'out'])
     for side, x in (('p', 0), ('n', 400)):
-        c = s.place('devices/capa.sym', x - 200, -200, rot=1, name=f'Cc_{side}', value="'cc'", m='1')
-        s.connect(c, p=f'g{side}', m=f'in{side}')
-        rb = s.place('devices/res.sym', x - 100, -300, name=f'Rb_{side}', value="'rb'", m='1')
-        s.connect(rb, P='vb', M=f'g{side}')
+        c = mim(s, x - 200, -200, 'cc', name=f'Cc_{side}')          # bottom plate on the chain tap
+        s.connect(c, c0=f'g{side}', c1=f'in{side}')
+        rb = poly_r(s, x - 100, -300, 'rb', 'xhigh', '0p35', name=f'Rb_{side}')
+        s.connect(rb, P='vb', M=f'g{side}', B='VSS')
         m = mos(s, 'n', x, -200, W="'wd'", L=0.15, nf=1, name=f'M{side}')
         s.connect(m, D='out', G=f'g{side}', S=f's{side}', B='VSS')
-        r = s.place('devices/res.sym', x + 20, -50, name=f'Rs_{side}', value="'rs'", m='1')
-        s.connect(r, P=f's{side}', M='VSS')
+        r = poly_r(s, x + 20, -50, 'rs', 'high', '0p35', name=f'Rs_{side}')
+        s.connect(r, P=f's{side}', M='VSS', B='VSS')
     s.write(os.path.join(XDIR, 'det_cell.sch'))
     write_symbol(os.path.join(XDIR, 'det_cell.sym'), left=['inp', 'inn', 'vb'],
                  right=['out'], bottom=['VSS'], params=CELL_PARAMS)
@@ -58,12 +58,12 @@ def log_det(n=NTAPS):
     # replica: diode-connected cell device with the same degeneration
     mb = mos(s, 'n', -400, 200, W="'wd'", L=0.15, nf=1, name='Mbias')
     s.connect(mb, D='ibias_det', G='ibias_det', S='sb', B='VSS')
-    rsb = s.place('devices/res.sym', -380, 350, name='Rs_b', value="'rs'", m='1')
-    s.connect(rsb, P='sb', M='VSS')
-    r = s.place('devices/res.sym', -200, -500, name='Rdet', value="'rdet'", m='1')
-    s.connect(r, P='VDD', M='det')
-    c = s.place('devices/capa.sym', -100, -500, name='Cdet', value="'cdet'", m='1')
-    s.connect(c, p='VDD', m='det')
+    rsb = poly_r(s, -380, 350, 'rs', 'high', '0p35', name='Rs_b')
+    s.connect(rsb, P='sb', M='VSS', B='VSS')
+    r = poly_r(s, -200, -500, 'rdet', 'high', '0p69', name='Rdet')
+    s.connect(r, P='VDD', M='det', B='VSS')
+    c = mim(s, -100, -500, 'cdet', mf=4, name='Cdet')               # 4 x ~25 um; bottom plate on VDD
+    s.connect(c, c0='det', c1='VDD')
     for i in range(1, n + 1):
         x = (i - 1) * 400
         cell = s.place('det_cell.sym', x, -200, name=f'xd{i}', wd="'wd'", rs="'rs'", cc="'cc'", rb="'rb'")
