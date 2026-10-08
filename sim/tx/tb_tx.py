@@ -10,6 +10,8 @@ levels.
 
     python sim/tx/tb_tx.py [corners...]          (default tt)
     python sim/tx/tb_tx.py --no-run tt           (analyse existing raws)
+    python sim/tx/tb_tx.py --pex tt              (tx_drv from its extracted layout,
+                                                  layout/pex/tx_drv.spice; files *_pex)
 """
 import os
 import re
@@ -21,6 +23,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
 from rawread import read_raw
 from tx_explore import fmt_ring, ring_metrics
+from pexswap import swap
 
 import numpy as np
 
@@ -39,10 +42,19 @@ def netlist():
     return src
 
 
+PEX = []    # blocks to take from their extracted layouts (--pex)
+
+
+def tag(corner):
+    return corner + ('_pex' if PEX else '')
+
+
 def run(corner, src):
     deck = re.sub(r'(sky130\.lib\.spice) tt', rf'\1 {corner}', src)
-    deck = re.sub(r'write tb_tx_(\w+)\.raw', rf'write tb_tx_{corner}_\1.raw', deck)
-    name = f'tb_tx_{corner}'
+    deck = re.sub(r'write tb_tx_(\w+)\.raw', rf'write tb_tx_{tag(corner)}_\1.raw', deck)
+    if PEX:
+        deck = swap(deck, PEX)
+    name = f'tb_tx_{tag(corner)}'
     with open(os.path.join(B, name + '.spice'), 'w') as fh:
         fh.write(deck)
     subprocess.run([OSIC, 'bash', '-c', f'cd build && ngspice -b {name}.spice > {name}.log 2>&1'], cwd=ROOT)
@@ -53,7 +65,7 @@ def run(corner, src):
 def analyse(corner):
     out = {}
     for vn in ('ab', 'se'):
-        path = os.path.join(B, f'tb_tx_{corner}_{vn}.raw')
+        path = os.path.join(B, f'tb_tx_{tag(corner)}_{vn}.raw')
         v = read_raw(path)[0]['vars']
         m = ring_metrics(v, TON, TOFF, drv=('out_p', 'out_n'))
         t = np.real(v['time'])
@@ -62,7 +74,7 @@ def analyse(corner):
         m['idle'] = (at('v(out_p)', 4e-9), at('v(out_n)', 4e-9))
         out[vn] = m
         label = 'antiphase   ' if vn == 'ab' else 'single-ended'
-        print(f'{corner} {label}: ' + fmt_ring(m) +
+        print(f'{tag(corner)} {label}: ' + fmt_ring(m) +
               f'; arms before/after key: p {m["idle"][0]:.2f}/{m["park"][0]:.2f} V, '
               f'n {m["idle"][1]:.2f}/{m["park"][1]:.2f} V', flush=True)
     return out
@@ -71,6 +83,8 @@ def analyse(corner):
 if __name__ == '__main__':
     args = sys.argv[1:]
     dorun = '--no-run' not in args
+    if '--pex' in args:
+        PEX.append('tx_drv')
     corners = [a for a in args if not a.startswith('--')] or ['tt']
     src = netlist() if dorun else None
     for c in corners:

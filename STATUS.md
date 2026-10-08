@@ -18,6 +18,11 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 - **Top level:** `radio_analog` (all analog blocks + bias + decap) and the `tt_um_mattvenn_radio` schematic; ua[0]/[1] TX, ua[2]/[3] RX, ua[4] debug (det via a debug-only TG).
 - **Area** (`sim/area/area_netlist.py`): the analog needs ~49k µm² of the ~57k left beside the macro in the 3x2 (493 × 226 µm): **85 %**, 93 % of the tile. The VAPWR decap (~18k µm²) is the biggest block.
 - **Operating range 10–50 °C only.**
+- **Layout flow (KLayout pcells → DRC/LVS → PEX → block test) works end to end on `tx_drv`.** See `docs/layout.md` for the steps, power/PDN rules, EM table and lessons.
+  - **tx_drv v2:** 40.9 × 27.6 µm; DRC (Magic + KLayout) and LVS clean. EM-sized from measured currents.
+  - **Block test** (`sim/tx/tb_tx_drv.py [--pex]`): −0.32 dB vs schematic.
+  - **Policy:** each block gets a small `tb_<block>` (schematic vs extracted). One end-to-end run on the full extracted design at the end.
+  - **Power pins:** met4 straps (≥ 1.2 µm, full height) on both the left and the right of the tile.
 
 **Changed since the last simulations (schematic only, not re-simulated yet):**
 - comparator `rdeg` 1.4 → 2 MΩ, to bring the trim step back to ~0.075–0.107 mV/LSB. The e2e model showed 0.15 mV/LSB (the ss/fs corners) dropping −94 dBm from 10/12 to 4/12;
@@ -30,7 +35,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
    - the macro at the right of the tile (the pin order assumes it), the analog on the left next to the ua pins;
    - analog block placement, decap, guard rings;
    - TX away from the RX input; deep n-well for the RX chain or not.
-4. **Layout + integration in the 3x2.** Switch `mag/Makefile` to `tt_analog_3x2_3v3.def`, `make start`, place the hardened macro (`openlane/radio_digital/runs/cg_260x190`).
+4. **Layout of the remaining blocks with the same flow** (`layout/gen/<block>.py`, `layout/check.sh`, `layout/pex.sh`, a `tb_<block>`), then **integration in the 3x2.** Switch `mag/Makefile` to `tt_analog_3x2_3v3.def`, `make start`, place the hardened macro (`openlane/radio_digital/runs/cg_260x190`).
 5. Not blocking: overload recovery (key a −10 dBm tone), TX at 10/50 °C, the −90 dBm joined run, the max-slew warnings in the harden (marginal, mostly ss).
 
 **Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
