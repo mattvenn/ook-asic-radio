@@ -5,6 +5,7 @@ Viewer links work once the GDS is pushed to `main`. This table is written by `to
 
 | block | size (incl. shape overhang) | preview | source |
 |---|---|---|---|
+| `amp_dp` | 36.4 × 20.7 µm (755 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dp.gds) | `layout/gen/` |
 | `amp_dpc` | 30.5 × 21.2 µm (648 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dpc.gds) | `layout/gen/` |
 | `avg_sc` | 74.5 × 43.6 µm (3,249 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/avg_sc.gds) | `layout/gen/` |
 | `bias_gen` | 80.2 × 49.1 µm (3,936 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/bias_gen.gds) | `layout/gen/` |
