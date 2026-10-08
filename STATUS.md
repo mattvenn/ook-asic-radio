@@ -246,6 +246,29 @@ Measured ring: tt08/ttsky25b `tt_um_mattvenn_analog_ring_osc`, ring 1 = 18 × `s
   - **Skewed core** (pull-down NMOS ×4–10, cross-coupled PMOS minimum): the core swings full rail (−0.5…3.5 V) at 433 **and 600 MHz, tt and ss**. ~0.4 mA from 3.3 V.
   - Still to do: the output buffers. With the original W 9/3 final stage into 0.3 pF, the output only reaches ~0.4–3.0 V at 433 MHz (worse at 600). That's a buffer taper towards the big driver, not a core problem.
 
+## TX chain, first pass (sim/tx/tx_explore.py, raw spice; plot `sim/plots/tx.png`)
+Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ring was calibrated with) → skewed level shifter → identical thick-oxide buffer tapers (×4 per stage) on latch nodes A and B (inherently antiphase) → final drivers N 48 / P 144 µm, L 0.5 → `pad_model` per arm → dipole (73 Ω + 100 pF series: open at DC).
+- **Level shifter core:** NMOS ×10 (W 4.2), PMOS kp = 4 (W 1.7), thick L 0.5. kp = 4 balances best: duty at A ~38–40 % (the core's pull-up is slower than its pull-down). The arms run ~35–50 % duty, costing < 1 dB, with H2 ≈ −18 dBc.
+- **Final size:** N 24 → −2.5 dBm, **N 48 → +3.7…+4.3 dBm**, N 96 → no better (the pad/mux path limits).
+- **Reference:** the old 1.8 V thin driver (P72/N24) antiphase into the same model gives +0.1 dBm, so the 3.3 V stage is **+4.2 dB** (PLAN estimated +5).
+- **Square-drive corners at 433 MHz:** ss +3.7, tt +4.3, ff +4.7 dBm; arm phase 178.8–179.4° (≤ 10° budget). At 600 MHz: tt +2.5 / ss +1.4 dBm, phase 175 / 170°. So there's speed margin.
+- **With the real keyed ring** (`tx_explore.py ring tt ss ff`):
+
+| corner | ring f (sim) | P into dipole | on / off | VAPWR | VDPWR |
+|---|---|---|---|---|---|
+| tt | 484 MHz (×0.866 → ~419 on silicon) | +3.3 dBm | 7 / 4 ns | 10.2 mA | 0.22 mA |
+| ss | 400 MHz | +4.0 dBm | <1 / 5 ns | 9.4 mA | 0.18 mA |
+| ff | 546 MHz | +3.7 dBm | 0.5 / 2 ns | 11.0 mA | 0.26 mA |
+
+  - The ring runs ~2 % below the calibrated 494 MHz with this load, so ~419 MHz is expected on silicon (433.92 target, well inside the RX band). 20 inverters would give ~466.
+  - **VDPWR steps only ~0.2 mA** when TX turns on (the old all-1.8 V design stepped ~10 mA through the ring's supply). The bench turn-on chirp, which came from 1.8 V droop, should be much smaller. The 10 mA step is now on VAPWR, which only feeds the shifter/drivers.
+  - Disabled: no static current. One arm idles at 3.3 V and the other at 0 (DC across the dipole, no current). Consider gating both low.
+- Next for the TX:
+  - xschem blocks (ring, level shifter, buffers/drivers) from a generator;
+  - corners of the whole chain with extracted-style wiring;
+  - VAPWR decoupling and on-chip droop with a bond-wire model;
+  - the disable state.
+
 ## Whole-RX transient (sim/rx/, first pass done)
 Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated in one piece).
 - **RF** (`sim/rx/rf.sh` on tb_logdet), −60 dBm tone. Antenna EMF 0.76 mV → pad 0.59 → stage 1 2.9 → 12.7 → 57.6 → 261 → stage 5 1080 (starting to clip) → stage 6 1630 mV (limited, square). Carrier keyed on/off: det steps 1.52 → 1.19 V in ~0.1 µs.
