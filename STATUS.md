@@ -43,7 +43,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
 4. **Make the analog real:**
    - ~~real passives in chain + detector~~, ~~bias generator with power-down on rx_en~~ (done 2026-10-08, below); integrate bias_gen at the top;
    - VAPWR decoupling + bond-wire droop (10 mA TX step);
-   - hook up the R2R DAC (its range vs the trim's linear region ~0.6–1.8 V);
+   - ~~hook up the R2R DAC~~ (done: `r2r` schematic matching the reused layout, driven from `trim_out`, below);
    - overload recovery.
 5. **RTL:** the full suite now passes (14/14, 2026-10-08). The digital size stays as is unless space is needed (then clock gating).
 6. **Layout + integration in a 3x2** (PLAN phase 4). Switch the template from 2x2 to 3x2.
@@ -376,6 +376,16 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
   - What's left is the R·C band shift (206–519 MHz at `hh`, 299–718 at `ll`).
   - Detector with tracking bias: idle 1.520 / 1.521 / 1.524 V (tt / hh / ll), so the comparator CM doesn't move. Slope at the noise floor 13.4 / 14.1 / 10.3 mV/dB: `ll` is ~−93 dBm, like ff 50 °C.
 - Not yet: integrating bias_gen into the RX testbenches/top (it feeds `iref`, `ibias_det`, `Ibc` and `vcm`, which are ideal sources today); stability margin check of the OTA loop (the start-up and en transients settle cleanly; no AC loop-gain run yet).
+
+## Trim DAC (xschem/gen/dac.py, 2026-10-08)
+- **`r2r`:** an 8-bit R-2R schematic matching the reused tt08 layout (`tt08-analog-r2r-dac-3v3/mag/r2r.mag`, its `r2r.lvs.spice`) device for device, so LVS lines up:
+  - unit R = `res_high_po_1p41` L 45 ≈ 10.6 kΩ; 2R = two units in series;
+  - a start module with the 2R termination, 7 bit tiles, and 2 dummies (27 units).
+  - The TT08 *schematic* used 0p35 devices, but its layout is 1p41.
+- **Driven straight from the digital's `trim_out`** (1.8 V std-cell outputs; no level shifters, unlike TT08's 3.3 V version), so the output is 0…1.79 V.
+- **`tb_dac`:** out = code/256·1.8 V exactly (0, 1, 85, 128, 135, 255); Rout 10.64 kΩ.
+  - VDD ripple: the trim pair compares the DAC against its own VDD/2, so what's left is (code/256 − ½) = 0.027 at the operating code (~135). Through the trim gain (~1/56) that's < 1 µV per mV of ripple at the comparator input: no filtering needed beyond a small MIM on `trim` against clock-edge spikes (add at the top level).
+  - The digital's output drivers (~hundreds of Ω) sit in series with the 21 kΩ 2R legs: ~1–2 LSB of DNL at the major transitions (0.25 mV of trim). Fine for the servo. When re-hardening, use balanced, strong buffers on `trim_out`.
 
 ## ua[4] debug switch## ua[4] debug switch (xschem/gen/dbg.py, done 2026-10-08)
 - **`dbg_tg`:** thin transmission gate (N W 2, P W 4, L 0.15, local inverter) from `det` to the ua[4] pad. `dbg_en` comes from the digital: magic `1010` + `uio_in[2]` = 1 at reset (cocotb `test_debug_strap`). Default off.
