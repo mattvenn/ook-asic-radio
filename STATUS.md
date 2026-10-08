@@ -241,6 +241,10 @@ Measured ring: tt08/ttsky25b `tt_um_mattvenn_analog_ring_osc`, ring 1 = 18 × `s
   - **22: 494 MHz → ~428 MHz on silicon (×0.866). Choose 22 inverters + nand (23 stages).**
   - 24: 457 → ~396.
   - Keep the ring's load the same as the ttsky25b driver's first inverter (W 9/3), so the next stage (level shift / pre-driver) should present that input.
+- **Level shifter: reuse the R2R DAC's `dac_drive`, skewed** (`sim/ring/ls_dac_drive.sh`, `ls_fmax.sh`, `ls_skew.sh`; tt08-analog-r2r-dac-3v3).
+  - As built (thick-oxide cross-coupled core, all W 0.42 / L 0.5): full swing to ~200 MHz, degrading at 300, **fails at 433 MHz** (core stuck below 1 V). The core fight (1.8 V-driven thick NMOS vs equal thick PMOS) is longer than a half-period. Scaling everything (×10) is worse.
+  - **Skewed core** (pull-down NMOS ×4–10, cross-coupled PMOS minimum): the core swings full rail (−0.5…3.5 V) at 433 **and 600 MHz, tt and ss**. ~0.4 mA from 3.3 V.
+  - Still to do: the output buffers. With the original W 9/3 final stage into 0.3 pF, the output only reaches ~0.4–3.0 V at 433 MHz (worse at 600). That's a buffer taper towards the big driver, not a core problem.
 
 ## Whole-RX transient (sim/rx/, first pass done)
 Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated in one piece).
