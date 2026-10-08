@@ -30,6 +30,12 @@ LIB_PINS = {
     'sky130_fd_pr/pfet_01v8.sym': {'D': (20, 30), 'G': (-20, 0), 'S': (20, -30), 'B': (20, 0)},
     'sky130_fd_pr/nfet_01v8_lvt.sym': {'D': (20, -30), 'G': (-20, 0), 'S': (20, 30), 'B': (20, 0)},
     'sky130_fd_pr/pfet_01v8_lvt.sym': {'D': (20, 30), 'G': (-20, 0), 'S': (20, -30), 'B': (20, 0)},
+    'sky130_fd_pr/pfet_01v8_hvt.sym': {'D': (20, 30), 'G': (-20, 0), 'S': (20, -30), 'B': (20, 0)},
+    'sky130_fd_pr/nfet_g5v0d10v5.sym': {'D': (20, -30), 'G': (-20, 0), 'S': (20, 30), 'B': (20, 0)},
+    'sky130_fd_pr/pfet_g5v0d10v5.sym': {'D': (20, 30), 'G': (-20, 0), 'S': (20, -30), 'B': (20, 0)},
+    # std cells: supplies are instance properties (VPWR=, VGND=, VPB=, VNB=), not pins
+    'sky130_stdcells/inv_2.sym': {'A': (-40, 0), 'Y': (40, 0)},
+    'sky130_stdcells/nand2_2.sym': {'A': (-60, -20), 'B': (-60, 20), 'Y': (60, 0)},
     'sky130_fd_pr/res_high_po_0p35.sym': {'P': (0, -30), 'M': (0, 30), 'B': (-20, 0)},
     'sky130_fd_pr/res_xhigh_po_0p35.sym': {'P': (0, -30), 'M': (0, 30), 'B': (-20, 0)},
     'sky130_fd_pr/cap_mim_m3_1.sym': {'c0': (0, -30), 'c1': (0, 30)},
@@ -165,9 +171,10 @@ MOS_DEFAULTS = {
 
 
 def mos(sch, kind, x, y, W, L, nf=1, mult=1, name=None, rot=0, flip=0, vt=''):
-    """Place a sky130 1.8 V nfet/pfet with the PDK's standard property set.
-    vt='lvt' selects the low-Vt flavour (pfet_01v8_lvt needs L >= 0.35)."""
-    model = f'{kind}fet_01v8' + (f'_{vt}' if vt else '')
+    """Place a sky130 nfet/pfet with the PDK's standard property set.
+    vt='lvt' / 'hvt' selects that 1.8 V flavour (pfet_01v8_lvt needs L >= 0.35);
+    vt='g5' gives the thick-oxide 3.3 V device (g5v0d10v5, L >= 0.5)."""
+    model = f'{kind}fet_g5v0d10v5' if vt == 'g5' else f'{kind}fet_01v8' + (f'_{vt}' if vt else '')
     sym = f'sky130_fd_pr/{model}.sym'
     props = dict(MOS_DEFAULTS)
     props.update({'L': str(L), 'W': str(W), 'nf': str(nf), 'mult': str(mult),
@@ -213,6 +220,12 @@ def write_symbol(path, left=(), right=(), top=(), bottom=(), width=160, params=N
     out.append(f'T {{@name}} {w2-30} -{h2+20} 0 0 0.2 0.2 {{}}')
     with open(path, 'w') as fh:
         fh.write('\n'.join(out) + '\n')
+
+
+def stdcell(sch, cell, x, y, vdd='VDD', vss='VSS', name=None):
+    """Place a sky130_fd_sc_hd cell (inv_2, nand2_2, ...) on supplies vdd/vss."""
+    return sch.place(f'sky130_stdcells/{cell}.sym', x, y, name=name or sch._name('x'),
+                     VGND=vss, VNB=vss, VPB=vdd, VPWR=vdd, prefix='sky130_fd_sc_hd__')
 
 
 def ports(sch, x0, y0, names, kind='iopin'):

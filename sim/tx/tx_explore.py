@@ -154,21 +154,16 @@ def run(corner, kn, wn_final, f=F0, kp=1.0):
           flush=True)
 
 
-def run_ring(corner, n=22, kn=10, kp=4, wn_final=48, ton=5e-9, toff=60e-9, tstop=80e-9):
-    """Step 3+4: real ring, keyed. Frequency, power, currents, on/off times."""
-    name = f'txr_{corner}_{n}'
-    with open(os.path.join(OUT, name + '.spice'), 'w') as fh:
-        fh.write(deck(corner, kn, wn_final, kp=kp, name=name, ring=n, ton=ton, toff=toff, tstop=tstop))
-    subprocess.run([os.path.join(ROOT, 'tools', 'osic'), 'bash', '-c',
-                    f'cd build/tx && ngspice -b {name}.spice > {name}.log 2>&1'], cwd=ROOT)
-    v = read_raw(os.path.join(OUT, name + '.raw'))[0]['vars']
+def ring_metrics(v, ton, toff, drv=('drv_p', 'drv_n')):
+    """Keyed-ring run (raw vars): frequency, power into the dipole, on/off
+    times, supply currents. drv = the two arm nodes (frequency from drv[0])."""
     t = np.real(v['time'])
     g = np.arange(t[0], t[-1], 1e-12)
-    w = {k: np.interp(g, t, np.real(v[f'v({k})'])) for k in ('drv_p', 'drv_n', 'ant_p', 'ant_n')}
+    w = {k: np.interp(g, t, np.real(v[f'v({k})'])) for k in (drv[0], drv[1], 'ant_p', 'ant_n')}
     ia = np.interp(g, t, -np.real(v['i(va)'])) * 1e3
     idd = np.interp(g, t, -np.real(v['i(vd)'])) * 1e3
     vd = w['ant_p'] - w['ant_n']
-    r = edges(g, w['drv_p'], 1.65, True)
+    r = edges(g, w[drv[0]], 1.65, True)
     on = r[(r > ton + 20e-9) & (r < toff)]
     fr = (len(on) - 1) / (on[-1] - on[0])
     # steady window: 20 ns after enable to toff
@@ -188,10 +183,26 @@ def run_ring(corner, n=22, kn=10, kp=4, wn_final=48, ton=5e-9, toff=60e-9, tstop
     t10 = env_t[after][0] - toff if after.any() else float('nan')
     i_on = lambda x: np.mean(x[m])
     i_off = lambda x: np.mean(x[(g > 1e-9) & (g < ton)])
-    print(f'{corner} ring {n}+1 stages: f = {fr / 1e6:6.1f} MHz (x0.866 -> {0.866 * fr / 1e6:5.1f} on silicon), '
-          f'P73 {pdbm:5.2f} dBm, on in {t90 * 1e9:4.1f} ns, off in {t10 * 1e9:4.1f} ns, '
-          f'VAPWR {i_off(ia):5.2f} -> {i_on(ia):5.2f} mA, VDPWR {i_off(idd):5.2f} -> {i_on(idd):5.2f} mA', flush=True)
-    return dict(g=g, vd=vd, ia=ia, idd=idd)
+    return dict(g=g, vd=vd, ia=ia, idd=idd, f=fr, pdbm=pdbm, t90=t90, t10=t10, ia_off=i_off(ia), ia_on=i_on(ia),
+                id_off=i_off(idd), id_on=i_on(idd))
+
+
+def fmt_ring(m):
+    return (f'f = {m["f"] / 1e6:6.1f} MHz (x0.866 -> {0.866 * m["f"] / 1e6:5.1f} on silicon), '
+            f'P73 {m["pdbm"]:5.2f} dBm, on in {m["t90"] * 1e9:4.1f} ns, off in {m["t10"] * 1e9:4.1f} ns, '
+            f'VAPWR {m["ia_off"]:5.2f} -> {m["ia_on"]:5.2f} mA, VDPWR {m["id_off"]:5.2f} -> {m["id_on"]:5.2f} mA')
+
+
+def run_ring(corner, n=22, kn=10, kp=4, wn_final=48, ton=5e-9, toff=60e-9, tstop=80e-9):
+    """Step 3+4: real ring, keyed. Frequency, power, currents, on/off times."""
+    name = f'txr_{corner}_{n}'
+    with open(os.path.join(OUT, name + '.spice'), 'w') as fh:
+        fh.write(deck(corner, kn, wn_final, kp=kp, name=name, ring=n, ton=ton, toff=toff, tstop=tstop))
+    subprocess.run([os.path.join(ROOT, 'tools', 'osic'), 'bash', '-c',
+                    f'cd build/tx && ngspice -b {name}.spice > {name}.log 2>&1'], cwd=ROOT)
+    m = ring_metrics(read_raw(os.path.join(OUT, name + '.raw'))[0]['vars'], ton, toff)
+    print(f'{corner} ring {n}+1 stages: ' + fmt_ring(m), flush=True)
+    return m
 
 
 if __name__ == '__main__':

@@ -138,6 +138,7 @@ sky130A, run headless in Docker.
 - **`destroy all` deletes vectors, including `meas` results.** Keep values
   you need later in control variables: `let x = vth` then `set xs = $&x`,
   then use `$xs` (even inside `alter @v[pulse] = [ $lo $hi ... ]`).
+- **`write x_$v.raw` reads a variable called `v.raw`** ("no such variable", no file). `{$v}` fixes it in plain decks, but braces break xschem property values, so unroll the cases in a generated code block instead.
 - `$&vec` puts a vector's value into a string; `{$t}` puts a loop variable
   into a node name: `v({$t}p)`.
 - **Switch AC sources in one run instead of separate decks:**

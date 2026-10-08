@@ -1,0 +1,40 @@
+v {xschem version=3.4.5 file_version=1.2
+}
+G {}
+K {type=subcircuit
+format="@name @pinlist @symname"
+template="name=x1"
+}
+V {}
+S {}
+E {}
+L 4 -80 -70 80 -70 {}
+L 4 -80 70 80 70 {}
+L 4 -80 -70 -80 70 {}
+L 4 80 -70 80 70 {}
+L 7 -100 -40 -80 -40 {}
+B 5 -102.5 -42.5 -97.5 -37.5 {name=key dir=inout sim_pinnumber=1}
+T {key} -75 -46 0 0 0.2 0.2 {}
+L 7 -100 0 -80 0 {}
+B 5 -102.5 -2.5 -97.5 2.5 {name=en_p dir=inout sim_pinnumber=2}
+T {en_p} -75 -6 0 0 0.2 0.2 {}
+L 7 -100 40 -80 40 {}
+B 5 -102.5 37.5 -97.5 42.5 {name=en_n dir=inout sim_pinnumber=3}
+T {en_n} -75 34 0 0 0.2 0.2 {}
+L 7 80 -40 100 -40 {}
+B 5 97.5 -42.5 102.5 -37.5 {name=out_p dir=inout sim_pinnumber=4}
+T {out_p} 75 -46 0 1 0.2 0.2 {}
+L 7 80 0 100 0 {}
+B 5 97.5 -2.5 102.5 2.5 {name=out_n dir=inout sim_pinnumber=5}
+T {out_n} 75 -6 0 1 0.2 0.2 {}
+L 7 -50 -90 -50 -70 {}
+B 5 -52.5 -92.5 -47.5 -87.5 {name=VDPWR dir=inout sim_pinnumber=6}
+T {VDPWR} -56 -65 0 0 0.2 0.2 {}
+L 7 -10 -90 -10 -70 {}
+B 5 -12.5 -92.5 -7.5 -87.5 {name=VAPWR dir=inout sim_pinnumber=7}
+T {VAPWR} -16 -65 0 0 0.2 0.2 {}
+L 7 -50 70 -50 90 {}
+B 5 -52.5 87.5 -47.5 92.5 {name=VSS dir=inout sim_pinnumber=8}
+T {VSS} -56 50 0 0 0.2 0.2 {}
+T {@symname} -40 -6 0 0 0.3 0.3 {}
+T {@name} 50 -90 0 0 0.2 0.2 {}

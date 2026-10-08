@@ -9,32 +9,33 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
 - **RX:** every analog block has a working first pass at tt, transistor level: pad → 6-stage NMOS diff-pair limiting chain → successive-detection log detector → 14 kHz RC LPF → switched-cap average (τ 0.47 ms) → continuous comparator with DAC trim.
   - The bit-exact digital detects a −94 dBm burst (score 99/127, threshold 97): **right at the edge.** −70 dBm is clean.
   - Plots: `sim/plots/rx_rf.png`, `rx_bb.png`.
-- **TX:** first pass in **raw spice** (`sim/tx/tx_explore.py`, plot `sim/plots/tx.png`): ring (nand + 22 inv_2) → skewed level shifter → thick buffers → antiphase drivers → pad → dipole. +3.3…+4.0 dBm across corners; ~419 MHz expected on silicon. Not yet xschem blocks.
+  - **The fully joined transistor-level run (antenna → comparator, RF noise, −70 dBm) matches the split model** (2026-10-08, below).
+- **TX: xschem blocks done** (`xschem/gen/tx.py`: `tx_ring`, `tx_ls`, `tx_drv`, `tx_top`, `tb_tx`; run `sim/tx/tb_tx.py [corners]`): ring (nand + 22 inv_2) → skewed level shifter → thick NAND-gated tapers → antiphase drivers → pad → dipole. **+3.7…+3.9 dBm at all five corners**; ~420 MHz expected on silicon. Off: both arms low. Single-ended fallback built in (en_n = 0).
 - **Area:** fits a **3x2** (available) with the digital as is. Clock gating is the first lever if space runs short.
 - **PLAN.md was brought up to date on 2026-10-08** (architecture, block table, open risks).
 - RTL done (not resized); layout not started.
 
-**The joined overnight run (2026-10-07/08):** the fully joined transistor-level RX at −70 dBm (antenna → comparator, with RF noise, 400 µs, real chip timing; `sim/rx/joined.sh`) was at 394/400 µs at ~13:00 on 2026-10-08. `build/watch_joined.sh` stops the container once `build/joined_-70.raw` is written, so −90 doesn't start.
-- **Plot it:** `~/work/asic-workshop/venv/bin/python sim/rx/plot_joined.py -70`. It prints joined vs split-model det/LPF levels and noise and writes `sim/plots/rx_joined.png`. The split model predicts a ~106 mV det swing at −70.
-- If `joined_-70.raw` is missing, check `cat build/watch_joined.txt` and the end of `build/joined_-70.log`.
-- **Optional −90 run, shorter:**
+**The joined overnight run (done 2026-10-08 12:08, 14.3 h):** the fully joined transistor-level RX at −70 dBm (antenna → comparator, with RF noise, 400 µs, real chip timing; `sim/rx/joined.sh`). Plot: `sim/rx/plot_joined.py -70` → `sim/plots/rx_joined.png`.
+
+| −70 dBm | det off | det on | det swing | LPF noise, signal off (1 µs det std) |
+|---|---|---|---|---|
+| joined (transistor level) | 1.4411 V | 1.3407 V | **100.4 mV** | **0.52 mV** rms (1.88 mV) |
+| split model (gen_det.py) | 1.4381 V | 1.3325 V | 105.6 mV | 0.59 mV rms (2.12 mV) |
+
+- Swing −5 % (~0.4 dB at 12.6 mV/dB); noise-only fluctuation, which is what sets −94 dBm, within ~10 %. The comparator follows the chips, and avg / trim behave as in the split runs. **RX first pass confirmed.**
+- With the signal on, the LPF noise is higher in the joined run (1.06 vs 0.52 mV). That's irrelevant at a 100 mV swing, and statistically thin (2 × 64 µs).
+- **Optional −90 run, shorter** (would check the near-sensitivity regime directly):
   ```
   tools/longrun joined90 tools/osic bash -c 'cd build && LEVELS=-90 TSTOP=250u ../sim/rx/joined.sh'
   ```
   ~6–10 h, keeps the PC awake.
 
 **Next steps, in order:**
-1. **Joined-run check:** plot `joined_-70.raw` (above). If the real detector and filter match the split model, the RX first pass is confirmed.
-2. **TX into xschem blocks** (like the RX generators in `xschem/gen/`):
-   - `tx_ring` (nand2_2 + 22 inv_2; schematic wiring cap 3.2 fF/stage is the calibrated stand-in for layout);
-   - `tx_ls` (skewed `dac_drive` core: NMOS ×10 W 4.2, PMOS kp 4 W 1.7, thick L 0.5; thin W 9/3 input inverter);
-   - `tx_drv` (thick taper ×4 to N 48 / P 144 per arm);
-   - `tb_tx`.
-   - Decide the disabled state: both arms low rather than one at 3.3 V.
-   - Sizes and results are in "TX chain, first pass" below.
+1. ~~Joined-run check~~ (done: matches). ~~TX into xschem blocks~~ (done, "TX xschem blocks" below).
+2. **Digital for the TX enables:** `tx_top` has `key` (ring) plus `en_p` / `en_n` (per-arm gates). The RTL drives `key` today; tie `en_p = key`, `en_n = key & !single_ended`, and add the single-ended option bit.
 3. **Corners and temperature, whole design** (the main open risk):
    - RX gain, NF, detector slope, comparator offset/trim range, and −94 dBm margin at ss/ff/sf/fs, −20…85 °C;
-   - TX frequency and power spread.
+   - TX: process corners done (`sim/tx/tb_tx.py`); temperature still to do.
    - Use `option temp` after `reset` (see `docs/sim_learnings.md`).
 4. **Make the analog real:**
    - bias generation (60 µA chain reference, 1.2 V vcm, 2 µA detector, 1 µA comparator; ideal sources today);
@@ -287,6 +288,29 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
   - corners of the whole chain with extracted-style wiring;
   - VAPWR decoupling and on-chip droop with a bond-wire model;
   - the disable state.
+
+## TX xschem blocks (xschem/gen/tx.py, done 2026-10-08)
+- **Blocks:** `tx_ring` (cw param, 3.2 fF), `tx_ls` (kn/kp/wpi/wni params), `tx_drv` (one arm), `tx_top` (ring → ls → two arms + two small enable level shifters), `tb_tx`.
+  - `tools/xsch.py` gained thick-oxide FETs (`vt='g5'`), hvt PMOS and `stdcell()` (sky130_fd_sc_hd; supplies are instance properties).
+  - The testbench needs the std-cell spice include as a tcleval code block (`STDCELLS`).
+- **Disabled state: both arms low.** The first (smallest) stage of each arm's taper is a thick NAND2 (`in`, `en`; series NMOS 2 × 0.42, PMOS 1.26), so out = in & en. Each arm's `en` comes from its own small unskewed `tx_ls` (kn 1 / kp 1, input inverter 1 / 0.42).
+  - With en_p = en_n = key, nothing is left across the dipole when off.
+  - en_n = 0 gives the single-ended (monopole) fallback that PLAN asked for, with no extra hardware.
+- **`sim/tx/tb_tx.py [corners]`:** netlists, rewrites the corner, runs both cases (`ab` antiphase, `se` single-ended; ~1 min per corner) and analyses with `tx_explore.ring_metrics`.
+
+| corner | ring f (sim) | P into dipole | single-ended | on / off | VAPWR | VDPWR |
+|---|---|---|---|---|---|---|
+| tt | 484.8 MHz (×0.866 → ~420 on silicon) | **+3.67 dBm** | −3.18 dBm | 3.3 / 3.9 ns | 11.2 mA | 0.23 mA |
+| ss | 401.0 | +3.89 | −3.45 | 5.0 / 7.3 | 10.2 | 0.18 |
+| ff | 547.0 | +3.69 | −3.43 | 2.3 / 2.2 | 12.1 | 0.26 |
+| sf | 461.9 | +3.80 | −3.69 | 1.5 / 2.8 | 11.0 | 0.21 |
+| fs | 501.3 | +3.75 | −3.27 | 5.0 / 5.8 | 11.4 | 0.24 |
+
+  - Matches the raw-spice first pass (tt 484 MHz, +3.3 dBm, 10.2 mA). The xschem devices carry ad/as/pd/ps diffusion parasitics, which the raw spice didn't.
+  - Arms before and after the key: ≤ 0.1 V (the dipole's series C bleeding off through the pads).
+  - Single-ended is ~7 dB below antiphase (half the drive voltage gives −6 dB).
+  - ×0.866 is the extracted-tt → silicon factor, so only the tt row maps to silicon that way. The sim spread (401–547 MHz) sits inside the RX band (330–560).
+- Still open for the TX: temperature; extracted-style wiring beyond the ring's 3.2 fF; VAPWR decoupling and bond-wire droop (11 mA step); layout.
 
 ## Whole-RX transient (sim/rx/, first pass done)
 Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated in one piece).
