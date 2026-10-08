@@ -6,6 +6,7 @@ Viewer links work once the GDS is pushed to `main`. This table is written by `to
 | block | size (incl. shape overhang) | preview | source |
 |---|---|---|---|
 | `avg_sc` | 74.5 × 43.6 µm (3,249 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/avg_sc.gds) | `layout/gen/` |
+| `bias_gen` | 80.2 × 49.1 µm (3,936 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/bias_gen.gds) | `layout/gen/` |
 | `comp_ct` | 100.5 × 49.9 µm (5,017 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/comp_ct.gds) | `layout/gen/` |
 | `dbg_tg` | 5.7 × 16.3 µm (93 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/dbg_tg.gds) | `layout/gen/` |
 | `lpf_rc` | 65.2 × 35.0 µm (2,284 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/lpf_rc.gds) | `layout/gen/` |

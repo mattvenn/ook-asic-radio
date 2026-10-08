@@ -233,3 +233,21 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
 - **Earlier note on the duty cycle:** Its skewed core (weak cross-coupled PMOS pull-up) is sensitive to the ~4.7 fF of wiring on A/B, comparable to its devices' own capacitance.
   - The schematic at kp 6 gives 36.3 %; the extracted run is pending.
   - What matters is the duty at the arms' outputs, so judge it with the level shifter + drivers together, not A alone.
+
+## bias_gen (2026-10-08)
+`layout/gen/bias_gen.py`, 80.2 × 49.1 µm. DRC (magic + KLayout), antenna, LVS clean. Block test `sim/bias/tb_bias_gen.py [--pex]` (the tb_bias deck): extracted ib_chain −0.08 %, ib_det / ib_comp / vcm within 0.01 % of the schematic at VDD 1.7 / 1.8 / 1.9 V and 10 / 27 / 50 °C; start-up and re-enable identical; en = 0 leakage 0.24 → 0.50 nA.
+- **Floorplan:** two bands.
+  - **Bottom:** small devices (rows.py), a transition zone (met3 tracks → met2 lanes, the vcm riser and vref drop on met4), the resistors (p-tap ring on VSS) under the first Cvref unit, the second Cvref unit.
+  - **Top:** the mirror array sitting on the middle VDD rail, under Cc + 2 × Cvcm.
+  - **Rails:** VSS at the bottom **and the top** (the MIM bottom plates abut them, joined by a met1 strap on the left edge), VDD in the middle (the small block's rail). Not the usual "VDD on top"; the top level must land a VDD strap on the middle rail (met3, x 0–27.7).
+  - Pins: en (left, met3), ib_chain / ib_det / ib_comp (right, met2), vcm (right, met3).
+- **Mirror array:** 3 rows × 20 slots ABBA (A = pr, B = ib_chain; one drain strip = 2 units), point-symmetric, so the two centroids coincide; ib_det (1 slot) and ib_comp (1 finger) at the end of row 2. met1/met2 only, so MIMs can sit over it:
+  - pr (diode) drain strips run straight into the met1 gate bar; rows 1 and 2 face each other and share a gate bar.
+  - Sources into met1 VDD bars that join the n-tap ring; output drains to met2 buses; met2 spines join them.
+  - Rows 1 / 2 pads must be 0.75 apart (poly heads poly.2 / npc.2), not 0.3.
+- **Dummies are devices to netgen.** The array-end dummy fingers (all terminals on VDD) aren't dropped by netgen. They are now in the schematic (`Mdum`, m = 5), as `comp_ct` did. Magic's antenna run reports one "feedback" entry per dummy (no violation).
+- **A poly resistor split into segments gets one pair of contact heads per segment.** The fitted R(L) = 526 Ω + 470.9 Ω/µm · L (high_po 0p69) is per device. Rref as two segments of one 10 kΩ device extracted **5 % high** (all currents −5 %). Now two 5 kΩ halves in the schematic. Doesn't matter for xhigh (ends ≈ 0) or a ratio of equal segments.
+- **0p69 segments side by side:** the rpm marker is 1.27 wide around a 0.91 psdm. Markers must merge (pitch ≤ 1.27) or sit 0.84 apart (pitch ≥ 2.11), and at the wide pitch magic flags a 0.18 µm rpm sliver (rpm.1). Used pitch 1.2 with one psdm rectangle over both segments (psdm.1).
+- **Same-net stubs:** rows.py doesn't merge two met2 stubs of one net that come within 0.14 (met2.2 in both DRCs). Mirroring M1/M2's strip roles moved them apart.
+- **Area / density:** met3 is 73 % (five MIM plates). The resistors could move under the top caps (~550 µm² less) if area gets tight.
+

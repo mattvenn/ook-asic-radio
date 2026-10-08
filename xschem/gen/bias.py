@@ -36,6 +36,7 @@ XDIR = os.path.normpath(os.path.join(HERE, '..'))
 BIAS_PARAMS = {'rref': '10k', 'rdiv': '200k', 'rtail': '250k', 'wpu': 2, 'cc': '1p'}
 OUTS = (('ib_chain', 60), ('ib_det', 2), ('ib_comp', 1))
 NREF = 60
+NDUM = 5           # mirror-array dummies (layout/gen/bias_gen.py)
 
 
 def bias_gen():
@@ -56,7 +57,7 @@ def bias_gen():
     m = mos(s, 'n', -470, -50, W=1, L=0.15, name='Mdsw')
     s.connect(m, D='dsw', G='en', S='VSS', B='VSS')
     for nm, nd, y in (('Cvcm', 'vcm', -450), ('Cvref', 'vref', -300)):
-        c = mim(s, -300, y, '2p', mf=1, name=nm)
+        c = mim(s, -300, y, 2e-12, mf=2, name=nm)     # 2 x 22 um units (<= 30 um), like Cc
         s.connect(c, c0=nd, c1='VSS')
     # OTA tail bias: PMOS diode Mpb fed through rtail (+ en switch) to VSS
     p = mos(s, 'p', 0, -500, W=4, L=1, name='Mpb')
@@ -81,8 +82,11 @@ def bias_gen():
     # Mn + rref: I = vref / rref into the PMOS diode Mpr
     m = mos(s, 'n', 900, -150, W=20, L=0.5, nf=2, name='Mn')
     s.connect(m, D='pr', G='ota', S='x', B='VSS')
-    r = poly_r(s, 920, 0, 'rref', 'high', '0p69', name='Rref')
-    s.connect(r, P='x', M='VSS', B='VSS')
+    # two halves in series, as laid out: each poly segment has its own contact heads (the
+    # 526 ohm 'ends' of the fitted R(L)), so one 10 k device drawn as two segments is 5 % high
+    for k, (pp, mm) in enumerate((('x', 'xr'), ('xr', 'VSS'))):
+        r = poly_r(s, 920 + 120 * k, 0, 'rref/2', 'high', '0p69', name=f'Rref{k + 1}')
+        s.connect(r, P=pp, M=mm, B='VSS')
     p = mos(s, 'p', 900, -450, W="'wpu'", L=1, mult=NREF, name='Mpr')
     s.connect(p, D='pr', G='pr', S='VDD', B='VDD')
     p = mos(s, 'p', 1100, -450, W=1, L=0.15, name='Mpu')                 # en = 0: mirror gate to VDD
@@ -90,6 +94,9 @@ def bias_gen():
     for i, (out, k) in enumerate(OUTS):
         p = mos(s, 'p', 1300 + i * 200, -450, W="'wpu'", L=1, mult=k, name=f'Mo_{out}')
         s.connect(p, D=out, G='pr', S='VDD', B='VDD')
+    # the layout's mirror array has dummy fingers at its row ends (all terminals on VDD)
+    p = mos(s, 'p', 1900, -450, W="'wpu'", L=1, mult=NDUM, name='Mdum')
+    s.connect(p, D='VDD', G='VDD', S='VDD', B='VDD')
     s.write(os.path.join(XDIR, 'bias_gen.sch'))
     write_symbol(os.path.join(XDIR, 'bias_gen.sym'), left=['en'], right=['vcm'] + [o for o, _ in OUTS],
                  top=['VDD'], bottom=['VSS'], params=BIAS_PARAMS)
