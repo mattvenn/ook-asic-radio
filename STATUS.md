@@ -23,6 +23,8 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - **Block test** (`sim/tx/tb_tx_drv.py [--pex]`): −0.32 dB vs schematic.
   - **Policy:** each block gets a small `tb_<block>` (schematic vs extracted). One end-to-end run on the full extracted design at the end.
   - **Power pins:** met4 straps (≥ 1.2 µm, full height) on both the left and the right of the tile.
+  - **TX blocks:** `tx_drv`, `tx_ls`, `tx_ls_en` laid out with the row builder `layout/gen/rows.py`; all clean. Previews: `layout/README.md` (TT GDS viewer links).
+  - **Open:** the main level shifter's A duty drops 37 → 28 % with layout parasitics (`sim/tx/tb_tx_ls.py`). Next on the TX: the ring (std cells), then `tx_top`.
 
 **Re-verified (2026-10-08 evening): rdeg 2 MΩ, decap blocks, chain stability.** Details in "Re-verify: rdeg 2 MΩ, decaps, chain stability" below.
 - Trim step at the operating point (DAC 0.8–1.2 V) is **0.062–0.076 mV/LSB at all corners, 10–50 °C**. e2e at −94 dBm: tt 11/12, fs 50 °C 8/12, ff 50 °C 10/12; −92 dBm 12/12.

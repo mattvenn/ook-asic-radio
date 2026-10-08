@@ -170,3 +170,24 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - with **`antennacheck debug`**: otherwise violations only go to the feedback list.
   - Verified with a deliberate violation (`layout/gen/ant_test.py`: a 0.5 × 0.42 µm g5 gate on 300 µm² of met1, ratio 1033 > 400).
 - **Net labels:** text on the metal's label purpose (e.g. 70/5) without a pin shape names the net in magic's extraction without making it a port.
+
+## Row builder (`layout/gen/rows.py`) and the TX level shifters (2026-10-08)
+- **`rows.build(block, P, N, nets, ...)`** is `tx_drv` v2's machinery made generic. A block generator just lists its devices (`Dev`: FET, strip roles, gate groups, drain net, rail) and nets (`Net`: stub/track widths, RMS current, io `L`/`R`/`riser`).
+  - **Segments:** devices are grouped by oxide (thin / g5) and rail into columns. Each column gets its own rings, nwell, hvi/hvntm (HV only) and rail section.
+  - **Segment gap:** 4.7 µm between columns, diffusion to diffusion (rings, wells, HV/LV nwell spacing 2.0 µm).
+- **Channel routing lesson:** a P stub (going down to its track) and an N stub (going up) at the same x short in met2 if the P net's track is below the N net's. `tx_drv` avoided this by luck; `tx_ls` hit it (LVS: A shorted to ctrl_n).
+  - Fix: plan every stub's x first, add a vertical constraint (P net above N net) for each overlapping pair, and assign tracks with the constrained left-edge algorithm. Nets still share tracks when allowed.
+  - `tx_drv` got 0.45 µm shorter from the better sharing.
+- **Parameter variants:** a generator writes `layout/ref/<variant>.spice` (the xschem netlist with the parameters substituted and evaluated). `check.sh` and `pex.sh` use it when present.
+  - Even the default variant needs one: netgen can't evaluate `W='0.42*kn'` and reports "property errors".
+- **Viewer links:** `python3 tools/gds_links.py` rewrites `layout/README.md` with a TT GDS viewer link per block (they work once pushed).
+
+| block | size | DRC / antenna / LVS | block test (tt), schematic → extracted |
+|---|---|---|---|
+| `tx_drv` | 40.9 × 26.7 µm | clean | −0.32 dB into the dipole |
+| `tx_ls` (kn 10, kp 4, wpi/wni 9/3) | 13.8 × 19.0 µm | clean | A edges ~100 → ~190 ps; in→A rise 392 → 660 ps; **A duty 37.3 → 28.4 %** |
+| `tx_ls_en` (all ~minimum) | 12.9 × 12.5 µm | clean | delay 1.1 → 3.4 ns (irrelevant: the enables switch at chip rate) |
+
+- **Open: the main shifter's duty cycle.** Its skewed core (weak cross-coupled PMOS pull-up) is sensitive to the ~4.7 fF of wiring on A/B, comparable to its devices' own capacitance.
+  - The schematic at kp 6 gives 36.3 %; the extracted run is pending.
+  - What matters is the duty at the arms' outputs, so judge it with the level shifter + drivers together, not A alone.
