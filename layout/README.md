@@ -9,7 +9,7 @@ Viewer links work once the GDS is pushed to `main`. This table is written by `to
 | `amp_dpc` | 30.5 × 21.2 µm (648 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dpc.gds) | `layout/gen/` |
 | `avg_sc` | 77.3 × 30.4 µm (2,351 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/avg_sc.gds) | `layout/gen/` |
 | `bias_gen` | 80.2 × 49.1 µm (3,936 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/bias_gen.gds) | `layout/gen/` |
-| `comp_ct` | 100.5 × 49.9 µm (5,017 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/comp_ct.gds) | `layout/gen/` |
+| `comp_ct` | 73.5 × 42.0 µm (3,082 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/comp_ct.gds) | `layout/gen/` |
 | `dbg_tg` | 5.7 × 16.3 µm (93 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/dbg_tg.gds) | `layout/gen/` |
 | `det_cell` | 20.8 × 16.1 µm (335 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/det_cell.gds) | `layout/gen/` |
 | `log_det` | 87.3 × 31.0 µm (2,708 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/log_det.gds) | `layout/gen/` |

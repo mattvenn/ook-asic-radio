@@ -233,16 +233,20 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - **Pins:** `phi1` and `phi2` on the top edge (met4). `in` and `out` on the right edge (met3), adjacent, for `comp_ct` (`inn`, `inp`, both on its left edge). Mirror or rotate the cell at the top level as the floorplan needs. Keep top-level clock wiring off the Cavg top plates (`out`).
   - Checks: DRC (magic and KLayout) 0, antenna 0, LVS match; m3 density 84 % (the MIM plates, now with no empty area around them).
   - **Block test not re-run for v2** (`sim/avg_sc/tb_avg_sc.py --pex`). v1 numbers: τ 0.458 → 0.434 ms (schematic → extracted), hold drift ±1.7–1.9 mV over 20 cycles. v2's Cavg and Cs are unchanged, so τ should be the same. The offset is the thing to check.
-- **`comp_ct`** (`layout/gen/comp_ct.py`, 100.5 × 49.9 µm, ~5.0k µm² against the ~3.0k estimate; area pass later):
-  - **Matching:** the input pair, trim pair and PMOS mirror are split into halves placed A B B A (1D common centroid, same orientation), with rail-tied dummies either side. The bias units (N 2/2) are folded per device.
-  - **Dummies in the schematic too:** `Mdn*`/`Mdp*` in `xschem/gen/comp.py`, every terminal on the rail. Netgen doesn't ignore layout dummies (17 against 14 devices otherwise).
-  - **Passives below the VSS rail:**
-    - Cl (22²) at the left, rising to `d2`;
-    - Rdeg (14 × 19.4 µm xhigh) and the Rr1+Rr2 divider (one 16-segment serpentine, `vref` at the middle link) in a p-tap ring, with Cref (10²) to the right;
-    - every connection rises on met4 to its channel track.
-    - The placement follows the tracks: `sa`/`sb`/`vref` only exist at the right (the trim pair), and `vref` can't extend left past `ibias`, which shares its track.
-  - **Checks:** DRC/antenna/LVS clean; density ≤ 24 % per layer.
-  - **Block test** (`sim/comp_ct/tb_comp_ct.py`, tt): offset +0.80 → +0.56 mV, trim 0.0650 → 0.0655 mV/LSB, ±1 mV response 1.11/0.07 → 0.71/0.16 µs (schematic → extracted).
+- **`comp_ct`** (`layout/gen/comp_ct.py`, v2 2026-10-08: **73.5 × 42.0 µm, 3.08k µm²**; v1 was 100.5 × 49.9, 5.0k):
+  - **Matching:** the input pair, trim pair and PMOS mirror are split into halves placed A B B A (1D common centroid, same orientation), with rail-tied dummies either side.
+  - **N row order:** core first (main pair, then the trim pair on the same d1/d2), then bias, stage 2, inverter. Mp3/Mip sit over Mn3/Min (`Dev.xmin`), so o2/out only exist at the right end of the channel.
+    - v1 had the trim pair at the far right: d1/d2 ran ~90 µm and paralleled out/o2. Extracted **d2–out 7.4 fF and d1–o2 6.2 fF**, both positive feedback. v2: 0 / 0 fF.
+  - **Bias devices folded into 4.55 µm fingers** (the row height) instead of 2 µm units: Mt1 4 × 4.55 (was 10 × 2), Mn3 2 × 4.55 (was 5 × 2); Mta stays 2 × 2 µm each.
+    - Different W bin from Mb's 2 µm: 4.55 µm fingers give ~12 % more current per µm, so the total W is 0.91 × the units'. Against 10 / 5 units: +0.2 % tt, +3.5 % ss, −3.0 % ff, −3.4 % sf, +3.9 % fs.
+    - **Schematic as W per finger × mult** (`W='0.455*mt1' mult=4`), the way magic extracts it. **W total with `nf` simulates differently under `.spiceinit`'s `set skywaterpdk`**: W 18.2 nf 4 gave 10.6 µA, not 9.8 (trim step 0.0590 instead of 0.0650). A finger sweep run without `.spiceinit` hid this.
+  - **Dummies in the schematic too:** `Mdn*`/`Mdp*` in `xschem/gen/comp.py`, every terminal on the rail. Netgen doesn't ignore layout dummies.
+  - **Passives: a band below the VSS rail, as wide as the rows (18.8 µm tall):**
+    - Rdeg (30 × 9.0 µm xhigh) and Rr1+Rr2 (32 × 8.5 µm; a multiple of 4 so the middle link, `vref`, is a bottom one) in one p-tap ring.
+    - Cl (now **2 × 22 × 11**, `MF=2`, same area) and Cref (10²) **over the ring**; their VSS met3 bottom plates shield the resistors. Order: Cl_a | risers | Cref | Cl_b.
+    - Resistor ends run on **met2 lanes under the caps** to one column of met4 risers (sa, sb, VDD, vref) at x ≈ 24–27, where the sa/sb/vref tracks already are. Cref's top plate joins the vref riser on met4. Cl's two top plates rise straight to `d2`.
+  - **Checks:** DRC (magic + KLayout) 0, antenna 0, LVS match; density ≤ 33 % per layer (m3, the MIM plates).
+  - **Block test** (`sim/comp_ct/tb_comp_ct.py [--pex]`, tt): offset +0.795 → +0.560 mV, trim 0.0649 → 0.0656 mV/LSB, ±1 mV response 1.12/0.07 → 0.76/0.15 µs (schematic → extracted). v1 extracted: +0.56 mV, 0.0655, 0.71/0.16. The faster extracted rise isn't the out→d2 coupling (now 0); not chased.
 - **Row builder additions (for `comp_ct`):**
   - **`rows.dummy(fet, rail)`:** all strips and the gate on the rail. The gate strap joins the ring at a row end, or a met1 jumper in the gap to a neighbouring dummy (so dummies go at row ends or in adjacent pairs).
   - **Strip groups:** a run of one net's strips with no other signal net between gets its own bar and stub. A pair half `tail | d | tail` has two tail groups; one tail bar across `d` had shorted tail, d1 and d2.

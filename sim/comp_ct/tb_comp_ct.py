@@ -17,7 +17,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 B = os.path.join(ROOT, 'build')
-OSIC = os.path.join(ROOT, 'tools', 'osic')
+OSIC = os.environ.get('OSIC', os.path.join(ROOT, 'tools', 'osic'))
 PRM = 'w1=20 l1=1 mt1=10 rdeg=2Meg mta=2 lref=136 wcl=22'
 LSB = 1.8 / 256
 
