@@ -1,0 +1,24 @@
+magic
+tech sky130A
+magscale 1 2
+timestamp 0
+<< metal1 >>
+rect 2000 5700 2300 10400
+rect 2500 10000 3300 10400
+rect 1000 5400 2300 5700
+rect 1000 1000 1300 5400
+rect 2000 600 2800 1000
+rect 3000 300 3300 1000
+use sky130_fd_pr__res_high_po_1p41_NAL9NH r2r_res_a
+timestamp 0
+transform 1 0 2141 0 1 5516
+box -141 -4916 141 4916
+use sky130_fd_pr__res_high_po_1p41_NAL9NH r2r_res_b
+timestamp 0
+transform 1 0 2641 0 1 5516
+box -141 -4916 141 4916
+use sky130_fd_pr__res_high_po_1p41_NAL9NH r2r_res_c
+timestamp 0
+transform 1 0 3141 0 1 5516
+box -141 -4916 141 4916
+<< end >>

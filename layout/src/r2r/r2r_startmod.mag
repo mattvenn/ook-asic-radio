@@ -1,0 +1,74 @@
+magic
+tech sky130A
+magscale 1 2
+timestamp 0
+<< psubdiff >>
+rect -1000 10700 -700 10724
+rect -624 10700 -600 11100
+rect -1000 976 -700 1000
+<< psubdiffcont >>
+rect -1000 1000 -700 10700
+<< locali >>
+rect -1000 10700 -700 10716
+rect -616 10700 -600 11100
+rect -1000 984 -700 1000
+<< viali >>
+rect -900 1200 -800 10500
+<< metal1 >>
+rect -1000 10800 -500 11000
+rect -1000 10500 -600 10700
+rect -1000 1800 -900 10500
+rect -800 10400 -600 10500
+rect -800 10000 -200 10400
+rect 0 10000 800 10400
+rect 1000 10000 1800 10400
+rect -800 1800 -700 10000
+rect -1010 1500 -1000 1800
+rect -700 1500 -690 1800
+rect -1000 1200 -900 1500
+rect -800 1200 -700 1500
+rect -1000 1000 -700 1200
+rect 1490 1500 1500 1800
+rect 1800 1500 1810 1800
+rect -1000 600 -200 1000
+rect 0 300 300 1000
+rect 500 600 1300 1000
+rect 1500 300 1800 1500
+<< via1 >>
+rect -1000 1500 -900 1800
+rect -900 1500 -800 1800
+rect -800 1500 -700 1800
+rect 1500 1500 1800 1800
+<< metal2 >>
+rect -1000 1800 -700 1810
+rect 1500 1800 1800 1810
+rect -700 1500 1500 1800
+rect -1000 1490 -700 1500
+rect 1500 1490 1800 1500
+use sky130_fd_pr__res_high_po_1p41_NAL9NH r2r_res_m1
+timestamp 0
+transform 1 0 -359 0 1 5516
+box -141 -4916 141 4916
+use sky130_fd_pr__res_high_po_1p41_NAL9NH r2r_res_0
+timestamp 0
+transform 1 0 141 0 1 5516
+box -141 -4916 141 4916
+use sky130_fd_pr__res_high_po_1p41_NAL9NH r2r_res_1
+timestamp 0
+transform 1 0 641 0 1 5516
+box -141 -4916 141 4916
+use sky130_fd_pr__res_high_po_1p41_NAL9NH r2r_res_2
+timestamp 0
+transform 1 0 1141 0 1 5516
+box -141 -4916 141 4916
+use sky130_fd_pr__res_high_po_1p41_NAL9NH r2r_res_3
+timestamp 0
+transform 1 0 1641 0 1 5516
+box -141 -4916 141 4916
+<< labels >>
+flabel metal1 0 300 200 500 0 FreeSans 256 0 0 0 b0
+port 0 nsew
+flabel metal1 1500 300 1700 500 0 FreeSans 256 0 0 0 VGND
+port 1 nsew
+flabel metal1 500 600 1300 1000 0 FreeSans 1600 0 0 0 a
+<< end >>
