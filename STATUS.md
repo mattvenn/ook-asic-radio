@@ -1,63 +1,92 @@
 # Where we are (handoff, end of 2026-10-08)
 
 Read **PLAN.md** for the decisions and their evidence. This file is the "pick up from here" note: the summary and next steps first, per-block detail below.
-Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
+Repo: github.com/mattvenn/ook-asic-radio (`main`; **the commits from 2026-10-08 afternoon are not pushed**).
 
 ## Start here
 
-**State (end of 2026-10-08):**
-- **RX:** every analog block has a working first pass at tt, transistor level: pad → 6-stage NMOS diff-pair limiting chain → successive-detection log detector → 14 kHz RC LPF → switched-cap average (τ 0.47 ms) → continuous comparator with DAC trim.
-  - The bit-exact digital detects a −94 dBm burst (score 99/127, threshold 97): **right at the edge.** −70 dBm is clean.
-  - Plots: `sim/plots/rx_rf.png`, `rx_bb.png`.
-  - **The fully joined transistor-level run (antenna → comparator, RF noise, −70 dBm) matches the split model** (2026-10-08, below).
-- **TX: xschem blocks done** (`xschem/gen/tx.py`: `tx_ring`, `tx_ls`, `tx_drv`, `tx_top`, `tb_tx`; run `sim/tx/tb_tx.py [corners]`): ring (nand + 22 inv_2) → skewed level shifter → thick NAND-gated tapers → antiphase drivers → pad → dipole. **+3.7…+3.9 dBm at all five corners**; ~420 MHz expected on silicon. Off: both arms low. Single-ended fallback built in (en_n = 0).
-- **Area:** fits a **3x2** (available) with the digital as is. Clock gating is the first lever if space runs short.
-- **PLAN.md was brought up to date on 2026-10-08** (architecture, block table, open risks).
-- RTL done (not resized); layout not started.
+**State (end of 2026-10-08): pre-layout work done; layout not started.**
+- **RX:** every block is transistor level with real PDK passives and a real bias generator.
+  - Chain: pad → 6-stage NMOS diff-pair limiting chain.
+  - Detector: successive-detection log detector → 14 kHz RC LPF (2.95 MΩ / 3.7 pF).
+  - Comparator side: switched-cap average (τ ~0.45 ms) → continuous comparator; trim from the reused R2R ladder, driven by the RTL servo.
+  - **Confirmed three ways:** the fully joined transistor-level run (antenna → comparator) matches the split model. Corners 10–50 °C give a worst case of **≈ −92…−93 dBm**. And the **mixed-signal run** (RTL servo → real `r2r` → real `comp_ct`) detects −70 and −94 dBm bursts.
+- **TX:** xschem blocks, +3.7…+3.9 dBm at all corners, both arms low when off, single-ended fallback (`tx_en_n`). VAPWR decap ~50 pF.
+- **Digital:** **clock-gated** (`rd_cg.v`, one `sky130_fd_sc_hd__dlclkp_1` per 127-bit chip register), hardened with LibreLane at **260 × 190 µm**.
+  - Signoff clean (DRC, LVS, antenna 0; timing met at all corners).
+  - **RTL suite 15/15 and gate-level suite 15/15** on the hardened netlist (`make GL=1`).
+- **Top level:** `radio_analog` (all analog blocks + bias + decap) and the `tt_um_mattvenn_radio` schematic; ua[0]/[1] TX, ua[2]/[3] RX, ua[4] debug (det via a debug-only TG).
+- **Area** (`sim/area/area_netlist.py`): the analog needs ~49k µm² of the ~57k left beside the macro in the 3x2 (493 × 226 µm): **85 %**, 93 % of the tile. The VAPWR decap (~18k µm²) is the biggest block.
+- **Operating range 10–50 °C only.**
 
-**The joined overnight run (done 2026-10-08 12:08, 14.3 h):** the fully joined transistor-level RX at −70 dBm (antenna → comparator, with RF noise, 400 µs, real chip timing; `sim/rx/joined.sh`). Plot: `sim/rx/plot_joined.py -70` → `sim/plots/rx_joined.png`.
+**Changed since the last simulations (schematic only, not re-simulated yet):**
+- comparator `rdeg` 1.4 → 2 MΩ, to bring the trim step back to ~0.075–0.107 mV/LSB. The e2e model showed 0.15 mV/LSB (the ss/fs corners) dropping −94 dBm from 10/12 to 4/12;
+- `decap_vapwr` / `decap_vdpwr` added to `radio_analog` (capacitance per unit is estimated from oxide thickness).
+
+**Next steps, in order:**
+1. **Re-verify the schematic changes** (sims): `tb_comp` (trim range and step with rdeg 2 MΩ), e2e with the new step, AC on the two decap blocks (are they ~50 / ~30 pF?), and re-run `tb_radio_analog`.
+2. **Chain stability check:** `sim/chain/stability.sh` (written, not run). Real supply/ground L + Cdec + 0–1 fF output→input coupling; kick + AC. It sets layout rules for the chain.
+3. **Floorplan** (with Matt):
+   - the macro at the right of the tile (the pin order assumes it), the analog on the left next to the ua pins;
+   - analog block placement, decap, guard rings;
+   - TX away from the RX input; deep n-well for the RX chain or not.
+4. **Layout + integration in the 3x2.** Switch `mag/Makefile` to `tt_analog_3x2_3v3.def`, `make start`, place the hardened macro (`openlane/radio_digital/runs/cg_260x190`).
+5. Not blocking: overload recovery (key a −10 dBm tone), TX at 10/50 °C, the −90 dBm joined run, the max-slew warnings in the harden (marginal, mostly ss).
+
+**Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
+
+## Clock gating + gate-level tests (2026-10-08)
+- **`rd_cg.v`:** `sky130_fd_sc_hd__dlclkp_1` (latch-based ICG; silicon evidence from TT08 #770). Under `ifdef SIM` it's a behavioural latch + AND, for RTL cocotb and the mixed-signal build.
+- **`rd_corr.v`:** sr0..sr3 are clocked by `gclk0..3 = clk & en0..3`, with the same enables as before (shift on a window end, the 127-clock rotation, the post-reset clear). That removes 508 enable muxes.
+- **Harden:**
+
+| run | die (µm) | std cells | hold buffers | util | result |
+|---|---|---|---|---|---|
+| pins_300x210 (no gating) | 300 × 210 | 40.6k µm² | 841 | 75 % | clean |
+| cg_300x210 | 300 × 210 | 32.5k | 638 | 60 % | clean |
+| **cg_260x190** | **260 × 190** | 31.7k | 637 | 77 % | **clean**: setup ≥ 26.7 ns, hold ≥ 0.11 ns (all corners), 0 DRC / LVS / antenna |
+
+  - CTS builds a tree after each gate (clock buffers 1.5k → 2.2k µm²). The 4 dlclkp cells are in the netlist.
+- **Gate-level simulation:** `cd verilog/test && PATH=$HOME/work/asic-workshop/venv/bin:/usr/bin:/bin GL=1 SIM_BUILD=sim_build_gl COCOTB_RESULTS_FILE=results_gl.xml make` (~35 min).
+  - It uses the hardened `nl.v` (default `runs/cg_260x190`; override `GL_NETLIST`) plus the cell models in `build/gl_models/`, copied from the image's PDK (command in the Makefile). Flags: `-DFUNCTIONAL -DUNIT_DELAY=#1`.
+  - **15/15 pass**: all 9 RX vectors (trim code checked at every sample, events and toggles), the TX codes, straps and phases.
+  - In GL mode the tests use pins only: event close = falling edge of `uio_out[4]`, score = the 7-seg digit, LED = DP. Two TX checks that read internal signals are skipped. `PINMON=1` runs the pin monitors on RTL; they agree with the internal ones.
+
+## Mixed-signal: the RTL servo on the real analog (sim/mixed/, 2026-10-08)
+- **Build:** `tools/osic bash sim/mixed/build_so.sh` verilates the RTL (with `SIM`) into `build/mixed/radio_digital.so` for an XSPICE `d_cosim` instance.
+  - This is ngspice's `vlnggen` redone in bash: the image's ngspice lowercases the script's shell lines, and Verilator 5.048 rejects `-mdir`.
+- **Deck:** `python sim/mixed/gen_mixed.py <level> [tstop]` writes `build/mixed/mixed_<level>.cir`.
+  - **The d_cosim port list is generated from the build's `inputs.h` / `outputs.h`**: header order, each bus MSB first, as `verilator_shim.cpp` maps them. Every bit gets its own node name (`trim_out_7 … trim_out_0`), so the list can't drift from the .so. (Outputs come in port-declaration order, e.g. `rx_en` first, not the order you'd guess.)
+  - Analog: det (`build/det_<level>.inc` from `sim/rx/gen_det.py`) → `lpf_rc` → `avg_sc` (sc_phi from the RTL) → `comp_ct` (trim = `r2r`(trim_out) + 1 pF) → comp_in. The comparator bias is ideal (1 µA); the subcircuits come from the `radio_analog` netlist.
+- **Run** in the osic image from `build/mixed`: `ngspice -b mixed_<level>.cir` (15.2 ms ≈ 14 min alone). **Analyse:** `python sim/mixed/plot_mixed.py <level>` → `sim/plots/mixed_<level>.png`.
+  - **Pin-order check:** rx_en high; the code starts at 128; every settled ladder change is exactly ±1 LSB, one per 13 µs tick. A reversed or shifted bus would give other step sizes.
+- **Results** (comparator with rdeg 1.4 MΩ, i.e. before the change):
+
+| det | pin order | servo | event pin (uio_out[4]) |
+|---|---|---|---|
+| −70 dBm | OK (1169 steps, all ±1) | 128 → ~114 in 0.25 ms (trims ~1.75 mV of real comparator offset); during the burst it wanders ±40 codes chasing 50 % ones over long chip runs (harmless: the 100 mV swing dwarfs the ±10 mV trim) | opens at the end of the 127-chip burst (14.68 ms) |
+| −94 dBm | OK (1171 steps, all ±1) | dithers 105–122 around ~113 (std 3.2 LSB ≈ 0.4 mV) on the detector noise | **opens (14.67 ms): the burst is detected in the real loop** |
+
+- One burst per run, so no LED toggle (that needs 2 of 3 bursts).
+
+**How to run things:**
+- cocotb: `cd verilog/test && PATH=$HOME/work/asic-workshop/venv/bin:/usr/bin:/bin make` (~12 min); gate level: add `GL=1 SIM_BUILD=sim_build_gl COCOTB_RESULTS_FILE=results_gl.xml` (~35 min). Run it as `bash -c 'cd verilog/test && …'`: `make -C` breaks the Makefile's `$(PWD)`, and a backgrounded `cd` may not stick. With the login PATH, oss-cad-suite's python (no numpy) gets picked up and the run dies at import. `COCOTB_TEST_FILTER` takes one test name (a `|` alternative matched nothing).
+- Generators: `python3 xschem/gen/<x>.py`. Netlist: `tools/osic bash -c 'xschem -n -s -q -o build xschem/<tb>.sch'` (grep the netlist for `IS MISSING`).
+- Simulate in `build/` via `tools/osic`. Analysis/plots: `~/work/asic-workshop/venv/bin/python` (system python has no numpy).
+- `tools/osic` copies the tracked root `.spiceinit` into `build/` each run.
+- **Don't run ngspice processes in parallel** (each uses 8 threads), and **don't edit a script while it's running**.
+- **All the xschem/ngspice traps and speed lessons are in `docs/sim_learnings.md`.** Read that before writing a new testbench.
+
+## Joined overnight run (done 2026-10-08 12:08, 14.3 h)
+The fully joined transistor-level RX at −70 dBm: antenna → comparator, RF noise, 400 µs, real chip timing (`sim/rx/joined.sh`). Plot: `sim/rx/plot_joined.py -70` → `sim/plots/rx_joined.png`. (Ideal passives and bias, as of then.)
 
 | −70 dBm | det off | det on | det swing | LPF noise, signal off (1 µs det std) |
 |---|---|---|---|---|
 | joined (transistor level) | 1.4411 V | 1.3407 V | **100.4 mV** | **0.52 mV** rms (1.88 mV) |
 | split model (gen_det.py) | 1.4381 V | 1.3325 V | 105.6 mV | 0.59 mV rms (2.12 mV) |
 
-- Swing −5 % (~0.4 dB at 12.6 mV/dB); noise-only fluctuation, which is what sets −94 dBm, within ~10 %. The comparator follows the chips, and avg / trim behave as in the split runs. **RX first pass confirmed.**
-- With the signal on, the LPF noise is higher in the joined run (1.06 vs 0.52 mV). That's irrelevant at a 100 mV swing, and statistically thin (2 × 64 µs).
-- **Optional −90 run, shorter** (would check the near-sensitivity regime directly):
-  ```
-  tools/longrun joined90 tools/osic bash -c 'cd build && LEVELS=-90 TSTOP=250u ../sim/rx/joined.sh'
-  ```
-  ~6–10 h, keeps the PC awake.
-
-**Next steps, in order:**
-1. ~~Joined-run check~~ (done: matches). ~~TX into xschem blocks~~ (done, "TX xschem blocks" below).
-1b. ~~ua[4] debug~~ (done 2026-10-08: det via a debug-only transmission gate, `dbg_en` strap).
-2. ~~Digital for the TX enables~~ (done 2026-10-08): `radio_digital` has a new output `tx_en_n` (= `tx_en` unless single-ended); `tx_en` drives both the ring `key` and `en_p`. The single-ended strap is `uio_in[3]`, latched at reset only with the `1010` magic. **Full cocotb suite 14/14 pass** (incl. the new `test_single_ended_strap`; run with the project venv first on PATH, see below). Not re-hardened.
-3. **Corners and temperature, whole design** (the main open risk):
-   - **Operating range is 10–50 °C only** (decided 2026-10-08): no design effort for extremes.
-   - RX gain, NF, detector slope, comparator offset/trim range, and −94 dBm margin at ss/ff/sf/fs, 10 / 27 / 50 °C. **Running** (`sim/corners/rx_corners.sh`, table: `sim/corners/rx_corners.py`); results in "RX corners" below.
-   - Caveat: the chain and detector R/C are still ideal (`devices/res`, `devices/capa`), and bias is ideal, so this is MOS variation only. Converting them to poly/MIM (and a bias whose gm tracks the load poly) belongs to step 4.
-   - TX: process corners done (`sim/tx/tb_tx.py`); 10/50 °C still to do.
-   - Use `option temp` after `reset` (see `docs/sim_learnings.md`).
-4. **Make the analog real:**
-   - ~~real passives in chain + detector~~, ~~bias generator with power-down on rx_en~~ (done 2026-10-08, below); integrate bias_gen at the top;
-   - ~~VAPWR decoupling + bond-wire droop~~ (done: ~50 pF on VAPWR, below);
-   - ~~hook up the R2R DAC~~ (done: `r2r` schematic matching the reused layout, driven from `trim_out`, below);
-   - overload recovery.
-   - ~~analog top schematic~~ (done 2026-10-08: `radio_analog`, `tt_um_mattvenn_radio`, `tb_radio_analog`, below).
-5. **RTL:** the full suite now passes (15/15, 2026-10-08); re-hardened with LibreLane (below). The digital size stays as is unless space is needed (then clock gating).
-6. **Layout + integration in a 3x2** (PLAN phase 4). Switch the template from 2x2 to 3x2.
-
-**Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
-
-**How to run things:**
-- cocotb: `cd verilog/test && PATH=$HOME/work/asic-workshop/venv/bin:/usr/bin:/bin make` (~12 min). With the login PATH, oss-cad-suite's python (no numpy) gets picked up and the run dies at import. `COCOTB_TEST_FILTER` takes one test name (a `|` alternative matched nothing).
-- Generators: `python3 xschem/gen/<x>.py`. Netlist: `tools/osic bash -c 'xschem -n -s -q -o build xschem/<tb>.sch'` (grep the netlist for `IS MISSING`).
-- Simulate in `build/` via `tools/osic`. Analysis/plots: `~/work/asic-workshop/venv/bin/python` (system python has no numpy).
-- `tools/osic` copies the tracked root `.spiceinit` into `build/` each run.
-- **Don't run ngspice processes in parallel** (each uses 8 threads), and **don't edit a script while it's running**.
-- **All the xschem/ngspice traps and speed lessons are in `docs/sim_learnings.md`.** Read that before writing a new testbench.
+- Swing −5 % (~0.4 dB at 12.6 mV/dB). The noise-only fluctuation, which is what sets −94 dBm, is within ~10 %. **RX first pass confirmed.**
+- Optional −90 run: `tools/longrun joined90 tools/osic bash -c 'cd build && LEVELS=-90 TSTOP=250u ../sim/rx/joined.sh'` (~6–10 h).
 
 ## Done
 - **Phase 0 bench** (bench/, results in PLAN.md): the ring osc as an OOK TX, path loss, drift, keying, phase noise, recorded packets, antenna test.
@@ -399,7 +428,7 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
   - Next levers: clock-gate the digital's chip registers (~8–10k with fewer hold buffers); VAPWR decap 50 → 30 pF (~5k, ripple 0.05 → ~0.15 V); bias mirrors with fewer, wider units (~1.5k).
 - `sim/logdet/transfer_cw.txt` is an old curve (~40 mV below the current detector in the mid range). `gen_det.py` / `plot_joined.py` use it with their calibrated −3.8 dB shift, so it's left as is.
 
-## Digital re-harden (LibreLane v3, openlane/radio_digital/config.json, 2026-10-08)
+## Digital re-harden (LibreLane v3, openlane/radio_digital/config.json, 2026-10-08; before clock gating, see "Clock gating" above for the final 260 × 190)
 - **Run:** `tools/longrun harden tools/osic bash -c 'cd openlane/radio_digital && librelane --pdk sky130A --run-tag <tag> --overwrite config.json'` (~5–10 min).
   - `config.json` replaces the OpenLane 1 `config.tcl` (kept for reference). The root Makefile's `harden` target is still the OpenLane 1 flow and doesn't work here.
 - **Synthesis:** 27,704 µm² of cells, 55 % flip-flops (717).
@@ -467,7 +496,7 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
   - VDD ripple: the trim pair compares the DAC against its own VDD/2, so what's left is (code/256 − ½) = 0.027 at the operating code (~135). Through the trim gain (~1/56) that's < 1 µV per mV of ripple at the comparator input: no filtering needed beyond a small MIM on `trim` against clock-edge spikes (add at the top level).
   - The digital's output drivers (~hundreds of Ω) sit in series with the 21 kΩ 2R legs: ~1–2 LSB of DNL at the major transitions (0.25 mV of trim). Fine for the servo. When re-hardening, use balanced, strong buffers on `trim_out`.
 
-## ua[4] debug switch## ua[4] debug switch (xschem/gen/dbg.py, done 2026-10-08)
+## ua[4] debug switch (xschem/gen/dbg.py, done 2026-10-08)
 - **`dbg_tg`:** thin transmission gate (N W 2, P W 4, L 0.15, local inverter) from `det` to the ua[4] pad. `dbg_en` comes from the digital: magic `1010` + `uio_in[2]` = 1 at reset (cocotb `test_debug_strap`). Default off.
   - Raw TX + debug together works, but `uio_in[2]` = 1 during reset then also keys the TX until reset is released.
 - **`tb_dbg`** (det as 8 kΩ ∥ 5 pF, pad_model, pin source; tt):
@@ -492,7 +521,7 @@ Two halves, both transistor level (a 13 ms burst at 434 MHz can't be simulated i
   - all three bursts / LED toggle (one burst only);
   - corners.
 
-## Area ballpark (sim/area_estimate.py, updated 2026-10-08 with TX, DAC, bias)
+## Area ballpark (sim/area_estimate.py; superseded by sim/area/area_netlist.py, see "Area and the cap shrink")
 - Analog, all blocks now first-passed: devices ~15,700 µm² (×2.5 routing; ring and R2R ladder from measured layouts: 228 µm² for 19 stages, 3,864 µm² for the ladder) + MIM ~21,300 µm² (28 % of a 2x2; can't overlap the digital).
 - **2x2:** ~102 % with the digital as is (40,500 µm² placed); **~79 %** with the RTL size reduction (~23,000 µm²). Both before decap, guard rings and power routing.
 - **3x2** (~113,000 µm²): ~68 % / ~53 %.

@@ -4,8 +4,9 @@ servo driving the real r2r ladder into the real comparator.
 
 Checks (pin order of the d_cosim .so, end to end):
   - rx_en = 1 (RX role);
-  - v(trim) sits on the ladder's code grid (code / 256 x 1.8 V) between steps;
-  - the code starts at 128 after reset and every servo step is exactly +-1 LSB.
+  - the code starts at 128 after reset;
+  - every settled change of v(trim) is exactly +-1 LSB (1.8/256 V), one per servo
+    tick (13 us): a reversed or shifted trim bus would give other step sizes.
 Prints the servo's convergence and dither statistics, the comparator's duty
 cycle and the event / LED pins; plots det, lpf / avg, trim (code), comp.
 
@@ -33,18 +34,29 @@ def main(level):
     t = np.real(v['time'])
     g = lambda k: np.real(v[k])
     det, lpf, avg, comp, trim = g('v(det)'), g('v(lpf)'), g('v(avg)'), g('v(comp)'), g('v(trim)')
-    # sample the trim mid-way between servo ticks (the ladder + 1 pF settle in ~50 ns)
-    ts = np.arange(5e-6, t[-1], SAMPLE) + SAMPLE / 2
-    vt = np.interp(ts, t, trim)
-    code = vt / LSB
-    err = np.abs(code - np.round(code)) * LSB * 1e3
-    steps = np.diff(np.round(code))
+    # every settled change of the ladder code (value 1 us after the change, once the
+    # ladder + 1 pF have settled): the servo steps on every tick, so these must all
+    # be +-1 LSB, about one per 13 us sample
+    code_all = np.round(trim / LSB)
+    steps, last = [], code_all[np.searchsorted(t, 5e-6)]
+    for i in np.nonzero(np.diff(code_all))[0]:
+        j = np.searchsorted(t, t[i] + 1e-6)
+        if t[i] < 4e-6 or j >= len(t):
+            continue
+        if code_all[j] != last:
+            steps.append(code_all[j] - last)
+            last = code_all[j]
+    steps = np.array(steps)
+    n_ticks = int((t[-1] - 2e-6) / SAMPLE)
+    ts = np.arange(5e-6, t[-1], SAMPLE) + SAMPLE / 2          # for the plot / statistics
+    code = np.interp(ts, t, trim) / LSB
     rx_en = np.interp(10e-6, t, g('v(rx_en_a)'))
-    print(f'{level} dBm, {t[-1] * 1e3:.2f} ms simulated, {len(ts)} servo samples')
+    print(f'{level} dBm, {t[-1] * 1e3:.2f} ms simulated, {n_ticks} servo ticks')
     print(f'  pin-order checks: rx_en = {rx_en:.2f} V (expect 1.8); first code {np.round(code[0]):.0f} '
-          f'(expect 128); max off-grid {err.max():.3f} mV (< 1 = on the code grid); '
-          f'steps in {{-1, 0, +1}}: {set(np.unique(steps).astype(int))}')
-    ok = abs(rx_en - 1.8) < 0.1 and round(code[0]) == 128 and err.max() < 1 and set(np.unique(steps)) <= {-1, 0, 1}
+          f'(expect 128); {len(steps)} settled ladder steps (expect ~{n_ticks}), sizes '
+          f'{sorted(set(steps.astype(int)))} (expect -1 / +1 only)')
+    ok = (abs(rx_en - 1.8) < 0.1 and round(code[0]) == 128 and set(steps.astype(int)) <= {-1, 1}
+          and abs(len(steps) - n_ticks) <= 3)
     print('  ->', 'PIN ORDER OK' if ok else 'PIN ORDER PROBLEM')
     c = np.round(code)
     settle = np.argmax(np.abs(np.diff(c[:200])) > 0) if len(c) > 1 else 0
