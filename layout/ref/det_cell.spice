@@ -1,0 +1,13 @@
+* det_cell: xschem/det_cell.sch with {'wd': 1, 'rs': 10000.0, 'cc': 1e-13, 'rb': 200000.0} (layout/gen/det_cell.py)
+** sch_path: /foss/designs/ook/xschem/det_cell.sch
+.subckt det_cell inp inn vb out VSS
+*.PININFO VSS:B vb:B inp:B inn:B out:B
+XCc_p gp inp sky130_fd_pr__cap_mim_m3_1 W=6.96733 L=6.96733
+XRb_p gp vb VSS sky130_fd_pr__res_xhigh_po_0p35 L=27.1039 mult=1
+XMp out gp sp VSS sky130_fd_pr__nfet_01v8 L=0.15 W=1 nf=1
+XRs_p VSS sp VSS sky130_fd_pr__res_high_po_0p35 L=9.08241 mult=1
+XCc_n gn inn sky130_fd_pr__cap_mim_m3_1 W=6.96733 L=6.96733
+XRb_n gn vb VSS sky130_fd_pr__res_xhigh_po_0p35 L=27.1039 mult=1
+XMn out gn sn VSS sky130_fd_pr__nfet_01v8 L=0.15 W=1 nf=1
+XRs_n VSS sn VSS sky130_fd_pr__res_high_po_0p35 L=9.08241 mult=1
+.ends
