@@ -65,7 +65,8 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`, pushed).
 - **Size problem:** 716 flip-flops, ~24,300 µm² of cells, **~40,500 µm² placed = ~54% of the 2x2 tile**. Too big next to the analog. The 4 × 127-bit chip registers are 63% of it.
   - Options: clock-gate the phase registers (−5,000 µm² cells, no behaviour change); 2 timing phases instead of 4 (−7,600 µm²; **re-run `model/e2e.py` first** to check sensitivity). Together → ~23,000 µm² placed (~31%).
   - Data mode would add ~4,500 µm² of cells.
-- **Decision (2026-10-08): 3x2 is available. Digital: clock-gate the chip registers (yes); 2 phases (no, it costs sensitivity).**
+- **Decision (2026-10-08): 3x2 is available, so the digital stays as is for now. If space is needed, clock-gate the chip registers first** (~−8,400 µm² placed, no behaviour change). 2 phases: no (costs sensitivity).
+  - Considered and parked: tnt's `rf_top` SRAM macro (32×32, 1W2R, 132.6 × 118.7 µm, silicon-proven: tnt's validation chip, FemtoRV and SPELL on ttsky25b). For our 508 bits it's about the same area as clock-gated flops (~17k µm² placed either way) plus nested-macro integration, and the licence isn't explicit (ask tnt). Revisit if data mode needs buffers: the spare half would be free storage.
   - The 63-chip Gold code is an open option. Same chip length costs ~1.5 dB; double chip length keeps sensitivity. Either way it's a 6-bit code and weaker wrong-code rejection, ~−12,800 µm² placed. Quantify with e2e before choosing.
   - **Clock gating silicon evidence:** `sky130_fd_sc_hd__dlclkp_1` (+ a `clkbuf_8` per gate) is in toivoh's TT08 #770 "Sequential Shadows" synth registers (`USE_LATCHES`, `BUFFER_CLOCK_GATE`), reported working on the TT08 chip ("works just like in the simulation").
     - His gates drive latches with small fan-out; ours would drive 127 flops each. So add a clock buffer/CTS after each gate, check hold, and run gate-level sim of the hardened netlist on the existing vectors.
