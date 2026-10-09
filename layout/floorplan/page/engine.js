@@ -49,6 +49,27 @@
     const ch = C.lna_chain;
     // zones of the real chain, for the rule checks: the input section (Cin, Rb, Mref), stage 1,
     // and stages 4-6 (from the o3 tap gap to the output end)
+    // U-fold (floorplanning only, needs a chain re-layout): same area, half the width. The input
+    // half (x < L/2: input section, stages 1-2) is the top row as drawn (inputs stay on the top
+    // edge); the output half turns round at the right and runs back along the bottom row.
+    function foldOf(cell, zones) {
+      const L = cell.w, H = cell.h, cut = L / 2;
+      const map = (x, y) => x <= cut ? [x, H + y] : [L - x, H - y];
+      const rect = (r) => {                                           // split at the fold, map both parts
+        const parts = [], x0 = r[0], x1 = r[0] + r[2];
+        for (const [a, b] of [[x0, Math.min(x1, cut)], [Math.max(x0, cut), x1]]) {
+          if (b - a <= 1e-9) continue;
+          const p = map(a + 1e-9 * (a >= cut ? 1 : 0), r[1]), q = map(b - 1e-9 * (b <= cut ? 1 : 0), r[1] + r[3]);
+          parts.push([Math.min(p[0], q[0]), Math.min(p[1], q[1]), Math.abs(q[0] - p[0]), Math.abs(q[1] - p[1])]);
+        }
+        return parts;
+      };
+      const pins = {};
+      for (const [n, p] of Object.entries(cell.pins)) { const [x, y] = map(p.x, p.y); pins[n] = Object.assign({}, p, { x: +x.toFixed(3), y: +y.toFixed(3) }); }
+      const z = {}; for (const [k, r] of Object.entries(zones)) z[k] = rect(r)[0];
+      z.late = rect(zones.late)[0];
+      return { w: +cut.toFixed(3), h: +(2 * H).toFixed(3), pins, m4: (cell.m4 || []).flatMap(rect), zones: z };
+    }
     const chainZones = { input: [0, 0, 69.5, ch.h], stage1: [69.5, 0, 37, ch.h], late: [171.5, 0, +(ch.w - 171.5).toFixed(2), ch.h] };
     const real = (inst, cell, extra) => Object.assign({ inst, cell, w: C[cell].w, h: C[cell].h, pins: C[cell].pins, m4: C[cell].m4 || [], group: 'rx' }, extra || {});
     // macro pins: even spread of pin_order.cfg slots (LibreLane), an estimate until the DEF is read
@@ -62,7 +83,7 @@
     N.forEach((n, i) => { mpins[n] = { layer: 'met2', x: +((i + 1) * 260 / 83).toFixed(2), y: 190, est: true }; });
     const list = [
       { inst: 'macro', cell: 'radio_digital', w: 260, h: 190, reshape: true, halo: 5, pins: mpins, m4: [[0, 0, 260, 190]], group: 'dig', label: 'radio_digital' },
-      real('xchain', 'lna_chain', { zones: chainZones }),
+      real('xchain', 'lna_chain', { zones: chainZones, fold: foldOf(ch, chainZones) }),
       real('xdet', 'log_det'), real('xlpf', 'lpf_rc'),
       real('xavg', 'avg_sc'),
       real('xcomp', 'comp_ct'),
@@ -152,7 +173,8 @@
     for (const [n, c] of Object.entries(cat)) {
       const p = (v.place || {})[n];
       if (!p) continue;
-      let w = c.w, h = c.h;
+      const F = c.fold && v.fold && v.fold[n] ? c.fold : null;          // folded chain: its own size, pins, met4 and zones
+      let w = F ? F.w : c.w, h = F ? F.h : c.h;
       const scaled = c.estimate || c.reshape;      // estimated blocks, and the macro (re-hardened at a new aspect ratio, same area)
       if (scaled && v.est && v.est[n]) { w = v.est[n].w; h = c.reshape ? (v.est[n].area || c.w * c.h) / w : v.est[n].h; }   // macro: est.area overrides the hardened area
       const pl = { x: p.x, y: p.y, orient: p.orient || 'R0' };
@@ -160,7 +182,7 @@
       const rect = [pl.x, pl.y, pw, ph];
       const pins = {};
       const sx = scaled ? w / c.w : 1, sy = scaled ? h / c.h : 1;
-      const src = n === 'macro' ? macroPins(c, v) : c.pins;
+      const src = n === 'macro' ? macroPins(c, v) : F ? F.pins : c.pins;
       // moved pins (floorplanning): v.pins[inst][pin] = {x, y} in the block's own frame at its
       // placed size; they need a block re-layout (or, for the macro, a new pin_order.cfg)
       const mv = (v.pins || {})[n] || {};
@@ -168,10 +190,10 @@
         const m = mv[pn];
         pins[pn] = Object.assign({}, pp, m ? { x: m.x, y: m.y, moved: true, at: mapPt(pl, w, h, m.x, m.y) } : { at: mapPt(pl, w, h, pp.x * sx, pp.y * sy) });
       }
-      const m4 = (c.m4 || []).map(r => scaled ? [0, 0, w, h] : r).map(r => mapRect(pl, w, h, r));
+      const m4 = ((F ? F.m4 : c.m4) || []).map(r => scaled ? [0, 0, w, h] : r).map(r => mapRect(pl, w, h, r));
       const zones = {};
-      for (const [zn, z] of Object.entries(c.zones || {})) zones[zn] = mapRect(pl, w, h, z);
-      inst[n] = { name: n, cat: c, pl, w, h, rect, pins, m4, zones,
+      for (const [zn, z] of Object.entries((F ? F.zones : c.zones) || {})) zones[zn] = mapRect(pl, w, h, z);
+      inst[n] = { name: n, cat: c, pl, w, h, rect, pins, m4, zones, folded: !!F,
         halo: c.halo ? [rect[0] - c.halo, rect[1] - c.halo, rect[2] + 2 * c.halo, rect[3] + 2 * c.halo] : null };
     }
     const decaps = [];
@@ -409,6 +431,7 @@
       const [k, m] = ORIENTS[i.pl.orient];
       const b = { inst: i.name, cell: i.cat.cell, x: +i.rect[0].toFixed(2), y: +i.rect[1].toFixed(2), orient: i.pl.orient,
         rot: k * 90, mirror: m, estimate: !!i.cat.estimate };
+      if (i.folded) { b.w = i.w; b.h = i.h; b.fold = 'U-fold, same area, half width: input half (input section, stages 1-2) on top with the inputs on the top edge, stages 3-6 turning back along the bottom row (needs a lna_chain re-layout)'; }
       if (i.cat.estimate || (i.cat.reshape && (Math.abs(i.w - i.cat.w) > 1e-6 || Math.abs(i.h - i.cat.h) > 1e-6))) { b.w = +i.w.toFixed(3); b.h = +i.h.toFixed(3); }
       if (i.cat.reshape && Math.abs(i.w - i.cat.w) < 1e-6 && Math.abs(i.h - i.cat.h) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um`;
       if (i.cat.reshape && Math.abs(i.w - i.cat.w) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um (${(i.w * i.h).toFixed(0)} um2; hardened ${i.cat.w} x ${i.cat.h} = ${i.cat.w * i.cat.h} um2)`;
@@ -433,6 +456,7 @@
       const n = b.inst;
       if (!cat[n]) continue;
       v.place[n] = { x: +b.x, y: +b.y, orient: ORIENTS[b.orient] ? b.orient : 'R0' };
+      if (b.fold && cat[n].fold) { v.fold = v.fold || {}; v.fold[n] = true; }
       if ((cat[n].estimate || cat[n].reshape) && b.w && b.h) { v.est[n] = { w: +b.w, h: +b.h }; if (cat[n].reshape && Math.abs(b.w * b.h - cat[n].w * cat[n].h) > 1) v.est[n].area = +b.w * +b.h; }
     }
     return v;

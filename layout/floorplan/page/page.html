@@ -378,7 +378,7 @@ function draw() {
     const g = [`<g data-inst="${ins.name}" style="cursor:move;color:${col}" opacity="${isParked ? .55 : 1}">`];
     if (ins.halo) g.push(rectEl(ins.halo, `fill="none" stroke="${col}" stroke-dasharray="${2 * scale} ${2 * scale}" stroke-width="${0.8 * scale}"`));
     g.push(rectEl(ins.rect, `fill="${col}" fill-opacity="${c.inst === 'macro' ? .1 : .14}" stroke="${sel ? 'var(--sel)' : col}" stroke-width="${(sel ? 2 : 1) * scale}"`));
-    if (c.estimate) g.push(rectEl(ins.rect, 'fill="url(#hatchE)"'));
+    if (c.estimate || ins.folded) g.push(rectEl(ins.rect, 'fill="url(#hatchE)"'));
     if (S.layers.m4 && ins.name !== 'macro') for (const m of ins.m4) g.push(rectEl(m, `fill="var(--fail)" fill-opacity=".18" stroke="var(--fail)" stroke-opacity=".5" stroke-width="${0.5 * scale}"`));
     if (S.layers.pins) for (const [pn, p] of Object.entries(ins.pins)) {
       if (ins.name === 'macro' && !/^(tx_en|tx_en_n|rx_en|dbg_en|comp_in|sc_phi|trim_out|clk)/.test(pn)) continue;
@@ -391,7 +391,7 @@ function draw() {
     if (S.layers.labels) {
       const fs = Math.max(2.4, Math.min(8, Math.min(w / (ins.name.length * 0.62 + 1), h / 2.6)));
       g.push(text(x + w / 2, y + h / 2 + fs * 0.1, ins.name === 'macro' ? 'radio_digital' : ins.name, fs, `text-anchor="middle" fill="var(--ink)" font-weight="600"`));
-      if (h > fs * 2.4) g.push(text(x + w / 2, y + h / 2 - fs * 0.95, `${c.label || c.cell} · ${ins.pl.orient}`, fs * 0.55, `text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"`));
+      if (h > fs * 2.4) g.push(text(x + w / 2, y + h / 2 - fs * 0.95, `${c.label || c.cell}${ins.folded ? ' (folded)' : ''} · ${ins.pl.orient}`, fs * 0.55, `text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"`));
       if (c.inst === 'macro') g.push(text(x + w / 2, y + h / 2 - 13, (Math.abs(ins.w - 260) > 1e-6 || Math.abs(ins.h - 190) > 1e-6 ? `${f1(ins.w)} × ${f1(ins.h)}, ${Math.abs(ins.w * ins.h - 49400) > 1 ? ((ins.w * ins.h / 49400 - 1) * 100 >= 0 ? '+' : '') + ((ins.w * ins.h / 49400 - 1) * 100).toFixed(1) + ' % area' : 'same area'}: needs a re-harden` : 'outline real (260 × 190)') + '; pin positions estimated from pin_order.cfg', 3.4, 'text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"'));
     }
     g.push('</g>');
@@ -579,6 +579,7 @@ function renderSel() {
     el.innerHTML = `<h2>${esc(n)} <span class="meta">${esc(c.cell)}${c.part ? ' part ' + c.part : ''}</span></h2>
       <div class="row"><label class="f">x<input type="number" step="0.5" id="sx" value="${f1(p.x)}"></label><label class="f">y<input type="number" step="0.5" id="sy" value="${f1(p.y)}"></label>
       ${c.estimate ? `<label class="f">w<input type="number" step="0.5" id="sw" value="${f1(est.w)}"></label><label class="f">h<input type="number" step="0.5" id="sh" value="${f1(est.h)}"></label>` : ''}</div>
+      ${c.fold ? `<label class="chip edit-only"><input type="checkbox" id="cFold" ${v.fold && v.fold[n] ? 'checked' : ''}> Fold in two (${f1(c.fold.w)} × ${f1(c.fold.h)}, same area): input half on top, stages 3-6 back along the bottom</label>` : ''}
       <div class="orients edit-only">${Object.keys(FP.ORIENTS).map(o => `<button class="btn" data-or="${o}" aria-pressed="${p.orient === o}">${o}</button>`).join('')}</div>
       ${c.reshape ? (() => { const A0 = c.w * c.h, A = est.area || A0; return `<label class="f">width (height follows, at the area below)<input type="range" id="mwR" min="${Math.ceil(A / 220)}" max="485" step="0.5" value="${f1(est.w)}"></label>
       <div class="row edit-only"><label class="f">w<input type="number" step="0.5" id="mw" value="${f1(est.w)}"></label><label class="f">h<input type="number" id="mh" value="${(A / est.w).toFixed(2)}" disabled></label>
@@ -586,10 +587,17 @@ function renderSel() {
       <div class="row edit-only"><button class="btn" id="mReset">Back to 260 × 190</button><button class="btn" id="mAreaReset">Back to the hardened area</button></div>
       <label class="f">r2r trim drive, trim_out[7:0], on the macro's<select id="mTrim">${Object.entries(FP.TRIM_SIDES).map(([k, l]) => `<option value="${k}" ${((v.macroPins && v.macroPins.trim) || 'W') === k ? 'selected' : ''}>${l} edge</option>`).join('')}</select></label>`; })() : ''}
       <dl class="kv"><dt>placed size</dt><dd>${ins ? `${f1(ins.rect[2])} × ${f1(ins.rect[3])} µm` : '-'}</dd><dt>area</dt><dd>${f1(c.estimate ? est.w * est.h : c.reshape ? (est.area || c.w * c.h) : c.w * c.h)} µm²</dd>${c.reshape && (Math.abs(est.w - c.w) > 1e-6 || (est.area && Math.abs(est.area - c.w * c.h) > 1) || (v.macroPins && v.macroPins.trim && v.macroPins.trim !== 'W')) ? '<dt>note</dt><dd>needs a re-harden (size, shape or pin order)</dd>' : ''}
-      <dt>status</dt><dd>${c.estimate ? 'estimate: not laid out yet (hatched)' : p.parked ? 'parked, not placed' : 'GDS outline'}</dd>
+      <dt>status</dt><dd>${c.estimate ? 'estimate: not laid out yet (hatched)' : ins && ins.folded ? 'folded: same area, half width; needs a chain re-layout (hatched)' : p.parked ? 'parked, not placed' : 'GDS outline'}</dd>
       ${ins && Object.values(ins.pins).some(q => q.moved) ? `<dt>pins moved</dt><dd>${esc(Object.entries(ins.pins).filter(([, q]) => q.moved).map(([k]) => k).join(', '))}</dd><dt></dt><dd>${n === 'macro' ? 'needs a new pin_order.cfg' : 'needs a block re-layout'} (orange rings)</dd>` : ''}</dl>
       ${ins && Object.values(ins.pins).some(q => q.moved) ? '<div class="row edit-only"><button class="btn" id="bPinReset">Put its pins back (GDS)</button></div>' : ''}
       ${p.parked ? '' : `<div class="row edit-only"><button class="btn" id="bPark">Park it (unplace)</button></div>`}`;
+    const cf = $('#cFold'); if (cf) cf.onchange = () => {
+      const o = viewVariant(v).place[n], R0 = FP.resolve(CAT, viewVariant(v)), r0 = R0.inst[n] && R0.inst[n].rect;
+      v.fold = Object.assign({}, v.fold); if (cf.checked) v.fold[n] = true; else delete v.fold[n];
+      if (v.pins && v.pins[n]) delete v.pins[n];                        // moved pins were for the other shape
+      v.place[n] = { x: o.x, y: o.y, orient: o.orient };                // keep the lower-left corner
+      touch();
+    };
     const setXY = () => { const x = +$('#sx').value, y = +$('#sy').value; if (isFinite(x) && isFinite(y)) { v.place[n] = Object.assign({}, p, { x, y }); delete v.place[n].parked; touch(); } };
     $('#sx').onchange = setXY; $('#sy').onchange = setXY;
     if (c.reshape) {
