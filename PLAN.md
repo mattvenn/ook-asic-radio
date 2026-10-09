@@ -192,6 +192,10 @@ See the tables above.
 - **Ring frequency trim + on-chip frequency counter:** coarse stage select + fine current DAC; the counter measures the ring against the 10 MHz clock, and the logic or the RP2350 trims to 433.92 MHz (±0.2%).
   - Needed for interoperating with commercial 433 receivers, e.g. replaying a recorded **fixed-code** remote via raw TX. Rolling-code fobs reject replays anyway.
   - The measured drift after trim (±0.1% with temperature, ~±50 kHz wander) should stay within a SAW receiver's window.
+- **Shared TX/RX antenna pins (half-duplex):** one dipole on `ua[0]`/`ua[1]` for both roles, freeing `ua[2]`/`ua[3]` (one antenna per board, fewer analog pins, no long RX input route). Needs:
+  - `tx_drv` tri-stated in RX (P gate to VAPWR, N gate to 0) instead of today's "both arms low", which would short the LNA input; keep the two arms' delay matched. The monopole fallback becomes "tri-state one arm".
+  - LNA input protection in TX: the pin swings 0–3.3 V, putting ~±1.6 V on stage 1's thin gates through `cin`. Preferred: a shunt switch from the stage-1 gates to `vcm` (≲ 20 Ω) during TX, so nothing goes in series with the RX path. Cost: ~9 mW per side from VAPWR into `cin`. Alternative: a thick-oxide series switch ahead of `cin` (cleaner isolation, but it costs NF). Power the chain down in TX.
+  - Re-simulate `tb_radio_analog` with a shared pad: the off driver's drain junctions add input capacitance (guess: a few tenths of a dB NF, against today's thin −94 dBm margin) and the `cin` load on TX power. The floorplan puts the TX driver and the LNA input at the same pad; keep the chain's late stages and detector away from it.
 - Superheterodyne RX with a ring LO (~+15 dB, rejects the 392 MHz interferer).
 - FSK via a trimmed ring.
 - An on-chip regulator for the ring.
