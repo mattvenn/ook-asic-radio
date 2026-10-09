@@ -1,4 +1,4 @@
-# dbg_tg layout: debug transmission gate a <-> b (det <-> ua[4] pad), on when en = 1
+# dbg_tg layout: debug transmission gate a <-> b (det <-> ua[2] pad), on when en = 1
 # (xschem/gen/dbg.py:dbg_tg), wn=2 wp=4:
 #   local inverter en -> enb (Mip P 1 / Min N 0.5); pass gate Mn (N wn, gate en) and
 #   Mp (P wp, gate enb) between a and b. Thin 1.8 V devices, L 0.15.

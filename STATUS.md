@@ -17,7 +17,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 - **Digital:** **clock-gated** (`rd_cg.v`, one `sky130_fd_sc_hd__dlclkp_1` per 127-bit chip register), hardened with LibreLane at **260 × 190 µm**.
   - Signoff clean (DRC, LVS, antenna 0; timing met at all corners).
   - **RTL suite 15/15 and gate-level suite 15/15** on the hardened netlist (`make GL=1`).
-- **Top level:** `radio_analog` (all analog blocks + bias + decap) and the `tt_um_mattvenn_radio` schematic; ua[0]/[1] TX, ua[2]/[3] RX, ua[4] debug (det via a debug-only TG).
+- **Top level:** `radio_analog` (all analog blocks + bias + decap) and the `tt_um_mattvenn_radio` schematic; ua[0]/[1] RX, ua[2] debug (det via a debug-only TG), ua[3]/[4] TX (reassigned 2026-10-09; was TX 0/1, RX 2/3, debug 4).
 - **Area** (`sim/area/area_netlist.py`): the analog needs ~49k µm² of the ~57k left beside the macro in the 3x2 (493 × 226 µm): **85 %**, 93 % of the tile. The VAPWR decap (~18k µm²) is the biggest block.
 - **Operating range 10–50 °C only.**
 - **Layout flow (KLayout pcells → DRC/LVS → PEX → block test) works end to end on `tx_drv`.** See `docs/layout.md` for the steps, power/PDN rules, EM table and lessons.
@@ -29,7 +29,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - **Level shifter:** its ctrl_n inverter was upsized (M8/M7 4 / 1.68): extracted A duty 28 → 36 %, arm outputs 39 / 44 % (schematic 44 / 48 %). This schematic change isn't in `tb_tx` results yet.
   - **Ring:** `tx_ring` laid out, **folded into two rows** so there's no long feedback wire (std cells, 17.9 × 7.0 µm, clean). Extracted 529.9 MHz tt → **~459 MHz on silicon** (×0.866), +5.8 % on 433.92. The ring is untrimmed and the RX band is 330–560 MHz, so this is fine. 24 inverters would give ~422.
   - **Plan (Matt, 2026-10-08):** a first take on every leaf block, then floorplan the whole tile; assemble `tx_top` as part of that floorplan.
-    - Outputs exit the bottom of the tile: ua[0] = 136.6, ua[1] = 117.3 µm in the 3x2 DEF, so the TX goes there.
+    - Outputs exit the bottom of the tile: ua[3] = 78.7, ua[4] = 59.3 µm in the 3x2 DEF, so the TX goes there (pins reassigned 2026-10-09).
     - The digital macro's `tx_en`/`tx_en_n` leave its west edge near the bottom.
   - **Leaf blocks done** (`layout/README.md` has viewer links):
     - TX: `tx_drv`, `tx_ls`, `tx_ls_en`, `tx_ring`.

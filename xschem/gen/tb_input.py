@@ -1,6 +1,6 @@
 """
 Generate xschem/tb_input.sch: antenna -> pad model (pad, ESD, TT analog mux)
--> chip core, for both sides of the RX dipole (ua[2], ua[3]).
+-> chip core, for both sides of the RX dipole (ua[0], ua[1]).
 
     python xschem/gen/tb_input.py
 """

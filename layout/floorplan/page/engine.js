@@ -84,10 +84,10 @@
 
   // [name, class, from, to]; endpoints are "inst.pin" or "pad:<tile pin>"
   const NETS = [
-    ['rx_p', 'rxin', 'pad:ua[2]', 'xchain.inp'], ['rx_n', 'rxin', 'pad:ua[3]', 'xchain.inn'],
+    ['rx_p', 'rxin', 'pad:ua[0]', 'xchain.inp'], ['rx_n', 'rxin', 'pad:ua[1]', 'xchain.inn'],
     ['o1', 'rx', 'xchain.o1p', 'xdet.t1p'], ['o2', 'rx', 'xchain.o2p', 'xdet.t2p'], ['o3', 'rx', 'xchain.o3p', 'xdet.t3p'],
     ['o4', 'late', 'xchain.o4p', 'xdet.t4p'], ['o5', 'late', 'xchain.o5p', 'xdet.t5p'], ['out', 'late', 'xchain.outp', 'xdet.t6p'],
-    ['det', 'rx', 'xdet.det', 'xlpf.in'], ['det dbg', 'rx', 'xdet.det', 'xdbg.a'], ['dbg', 'rx', 'xdbg.b', 'pad:ua[4]'],
+    ['det', 'rx', 'xdet.det', 'xlpf.in'], ['det dbg', 'rx', 'xdet.det', 'xdbg.a'], ['dbg', 'rx', 'xdbg.b', 'pad:ua[2]'],
     ['lpf', 'rx', 'xlpf.out', 'xavg.in'], ['lpf comp', 'rx', 'xlpf.out', 'xcomp.inp'], ['avg', 'rx', 'xavg.out', 'xcomp.inn'],
     ['comp_in', 'clk', 'xcomp.out', 'macro.comp_in'],
     ['sc_phi1', 'clk', 'macro.sc_phi1', 'xavg.phi1'], ['sc_phi2', 'clk', 'macro.sc_phi2', 'xavg.phi2'],
@@ -100,7 +100,7 @@
     ['ib_det', 'bias', 'xbias.ib_det', 'xdet.ibias_det'], ['ib_comp', 'bias', 'xbias.ib_comp', 'xcomp.ibias'],
     ['ring', 'tx', 'xtx.xring.out', 'xtx.xls.in'], ['a', 'tx', 'xtx.xls.A', 'xtx.xdrv_p.in'], ['b', 'tx', 'xtx.xls.B', 'xtx.xdrv_n.in'],
     ['enh_p', 'tx', 'xtx.xlse_p.A', 'xtx.xdrv_p.en'], ['enh_n', 'tx', 'xtx.xlse_n.A', 'xtx.xdrv_n.en'],
-    ['tx_p', 'tx', 'xtx.xdrv_p.out', 'pad:ua[0]'], ['tx_n', 'tx', 'xtx.xdrv_n.out', 'pad:ua[1]'],
+    ['tx_p', 'tx', 'xtx.xdrv_p.out', 'pad:ua[3]'], ['tx_n', 'tx', 'xtx.xdrv_n.out', 'pad:ua[4]'],
   ]);
   const NET_CLASSES = {
     rxin: 'RX input', rx: 'RX signal', late: 'RX late stages', clk: 'clock / switching', en: 'enable (static in RX)', bias: 'bias', tx: 'TX', trim: 'trim',
@@ -159,7 +159,8 @@
       const rect = [pl.x, pl.y, pw, ph];
       const pins = {};
       const sx = scaled ? w / c.w : 1, sy = scaled ? h / c.h : 1;
-      for (const [pn, pp] of Object.entries(c.pins)) pins[pn] = Object.assign({}, pp, { at: mapPt(pl, w, h, pp.x * sx, pp.y * sy) });
+      const src = n === 'macro' ? macroPins(c, v) : c.pins;
+      for (const [pn, pp] of Object.entries(src)) pins[pn] = Object.assign({}, pp, { at: mapPt(pl, w, h, pp.x * sx, pp.y * sy) });
       const m4 = (c.m4 || []).map(r => scaled ? [0, 0, w, h] : r).map(r => mapRect(pl, w, h, r));
       const zones = {};
       for (const [zn, z] of Object.entries(c.zones || {})) zones[zn] = mapRect(pl, w, h, z);
@@ -170,6 +171,23 @@
     for (const [n, d] of Object.entries(DECAPS)) ((v.decaps || {})[n] || []).forEach((r, i) =>
       decaps.push({ name: `${n}.${i + 1}`, base: n, idx: i, def: d, rect: [r.x, r.y, r.w, r.h] }));
     return { inst, decaps };
+  }
+
+  // The r2r trim drive (trim_out[7:0]) can move to another macro edge (a pin_order.cfg change
+  // and a re-harden): W as hardened; S at the west end of the south edge; N after the 42 TT pins;
+  // E at the same heights as on W. Coordinates in the 260 x 190 frame (scaled when reshaped).
+  const TRIM_SIDES = { W: 'west (as hardened)', S: 'south', N: 'north', E: 'east' };
+  function macroPins(c, v) {
+    const side = (v.macroPins && v.macroPins.trim) || 'W';
+    if (side === 'W') return c.pins;
+    const p = Object.assign({}, c.pins);
+    for (let i = 0; i < 8; i++) {
+      const k = `trim_out[${i}]`, o = c.pins[k];
+      const at = side === 'S' ? { x: +((i + 1) * 260 / 83).toFixed(2), y: 0 }
+        : side === 'N' ? { x: +((i + 43) * 260 / 83).toFixed(2), y: 190 } : { x: 260, y: o.y };
+      p[k] = Object.assign({}, o, at);
+    }
+    return p;
   }
 
   function pinAt(tile, R, ref) {
@@ -279,9 +297,9 @@
       const tp = netBy('tx_p'), tn = netBy('tx_n');
       if (tp && tn && !tp.missing && !tn.missing) {
         const m = Math.max(tp.len, tn.len), en = ['tx_en', 'tx_en_n', 'tx_en key'].map(netBy).filter(n => n && !n.missing);
-        add(5, 'TX at ua[0] / ua[1]', lvl(m, s.r5, s.r5 * 2), `${fmt(m)} µm`,
+        add(5, 'TX at ua[3] / ua[4]', lvl(m, s.r5, s.r5 * 2), `${fmt(m)} µm`,
           `driver → pad: tx_p ${fmt(tp.len)}, tx_n ${fmt(tn.len)} µm (met3, 2.5 µm wide; want ≤ ${s.r5}). Enables from the macro: ${en.map(n => fmt(n.len)).join(' / ')} µm.`);
-      } else add(5, 'TX at ua[0] / ua[1]', 'info', '-', 'Place the TX drivers.');
+      } else add(5, 'TX at ua[3] / ua[4]', 'info', '-', 'Place the TX drivers.');
     }
 
     // 6. bias near the chain
@@ -386,12 +404,14 @@
     for (const d of R.decaps) blocks.push({ inst: d.base, part: d.idx + 1, cell: d.def.cell, x: d.rect[0], y: d.rect[1], w: d.rect[2], h: d.rect[3], orient: 'R0', rot: 0, mirror: false, estimate: true });
     return {
       variant: v.name, note: v.note || '', tile: { w: data.tile.w, h: data.tile.h }, blocks,
+      macro_pins: { 'trim_out[7:0]': (v.macroPins && v.macroPins.trim) || 'W' },
       straps: (v.straps || []).map(s => ({ net: s.net, x: s.x, w: s.w })),
       transform: 'x, y = lower-left of the placed bbox. KLayout: t = DCplxTrans(1, rot, mirror, 0, 0); bb = cell.dbbox().transformed(t); place with DCplxTrans(1, rot, mirror, x - bb.left, y - bb.bottom).',
     };
   }
   function importJSON(cat, j) {
     const v = { name: j.variant || 'Imported', note: j.note || '', place: {}, decaps: {}, straps: (j.straps || []).map(s => ({ net: s.net, x: +s.x, w: +s.w })), est: {} };
+    const ts = j.macro_pins && j.macro_pins['trim_out[7:0]']; if (TRIM_SIDES[ts]) v.macroPins = { trim: ts };
     for (const b of j.blocks || []) {
       if (DECAPS[b.inst]) { (v.decaps[b.inst] = v.decaps[b.inst] || []).push({ x: +b.x, y: +b.y, w: +b.w, h: +b.h }); continue; }
       const n = b.inst;
@@ -402,6 +422,6 @@
     return v;
   }
 
-  root.FP = { ORIENTS, placedSize, mapPt, mapRect, compose, buildCatalog, DECAPS, NETS, NET_CLASSES, DEFAULT_SETTINGS,
+  root.FP = { TRIM_SIDES, ORIENTS, placedSize, mapPt, mapRect, compose, buildCatalog, DECAPS, NETS, NET_CLASSES, DEFAULT_SETTINGS,
     resolve, routeNets, evaluate, exportJSON, importJSON, rectGap, overlap, channelRect };
 })(typeof window !== 'undefined' ? window : globalThis);

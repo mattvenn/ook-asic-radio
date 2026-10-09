@@ -5,7 +5,7 @@ K {}
 V {}
 S {}
 E {}
-T {tb_dbg: det (8k || 5p source) -> dbg_tg -> pad_model -> ua[4] pin <- Vext (50 ohm)} -1000 -760 0 0 0.5 0.5 {}
+T {tb_dbg: det (8k || 5p source) -> dbg_tg -> pad_model -> ua[2] pin <- Vext (50 ohm)} -1000 -760 0 0 0.5 0.5 {}
 T {ven = 0 (normal) / 1.8 (debug); results: RESULT lines in the log} -1000 -710 0 0 0.3 0.3 {}
 C {sky130_fd_pr/corner.sym} -1000 -620 0 0 {name=CORNER
 only_toplevel=true

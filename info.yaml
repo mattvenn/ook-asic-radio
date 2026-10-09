@@ -55,11 +55,11 @@ pinout:
   uio[7]: "debug: TX active"
 
   # Analog pins - make sure to also set "analog_pins" above, else the pins won't be connected
-  ua[0]: "TX dipole +"
-  ua[1]: "TX dipole -"
-  ua[2]: "RX dipole +"
-  ua[3]: "RX dipole -"
-  ua[4]: "debug: detector output"
+  ua[0]: "RX dipole +"
+  ua[1]: "RX dipole -"
+  ua[2]: "debug: detector output"
+  ua[3]: "TX dipole +"
+  ua[4]: "TX dipole -"
   ua[5]: ""
 
 # Do not change!

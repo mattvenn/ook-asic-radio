@@ -13,7 +13,7 @@ x 15 ... clk at x 128; ena unused), clustered at the west end so the wires
 fan in from the top-left without crossing. clk is the east-most of them,
 nearest its TT pin.
 West: the analog interface, bottom -> top roughly as the analog blocks sit:
-TX enables lowest (TX next to ua[0]/ua[1]), then the RX bias / debug
+TX enables lowest (TX next to ua[0]/ua[1] under the old pin map; since 2026-10-09 TX is on ua[3]/ua[4] and RX on ua[0]/ua[1]), then the RX bias / debug
 enables, then the comparator and averager (comp_in, sc_phi1/2), then the
 trim DAC bits contiguous in the ladder's b0 -> b7 order. Empty slots above
 keep them in the lower part of the edge, away from the top-edge channel
