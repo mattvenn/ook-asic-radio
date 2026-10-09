@@ -692,7 +692,26 @@ def build(place_gds, pins_json, fp_json):
     return R
 
 
+def clip_to_die(ly, top):
+    """Clip the top cell's own shapes to its prBoundary (TT precheck: nothing outside the die).
+    Pads at the bottom-edge pins hang below y = 0 otherwise."""
+    die = db.Region(top.shapes(ly.layer(235, 4)))
+    for li in ly.layer_indexes():
+        sh = top.shapes(li)
+        r = db.Region(sh)
+        if r.is_empty() or (r - die).is_empty():
+            continue
+        keep = [s.dtext for s in sh.each() if s.is_text()]
+        sh.clear()
+        sh.insert(r & die)
+        for t in keep:
+            sh.insert(t)
+
+
 def main():
+    if sys.argv[1:2] == ['--clip']:          # clip an already routed tile, no re-route
+        ly = db.Layout(); ly.read(sys.argv[2]); clip_to_die(ly, ly.top_cell()); ly.write(sys.argv[2])
+        return
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import top_nets
     out = os.path.join(REPO, 'build/top')
@@ -711,6 +730,7 @@ def main():
         if q:
             L, *b = q.split(',')
             print('WHO', q, who(R, L, *map(float, b)))
+    clip_to_die(R.ly, R.top)
     R.ly.write(os.path.join(out, 'tt_um_mattvenn_radio.gds'))
     json.dump(R.report, open(os.path.join(out, 'route_report.json'), 'w'), indent=1)
     bad = [n for n, r in R.report.items() if not r['ok']]
