@@ -13,10 +13,10 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | 1. Chain input far from the macro | warn | 60 µm |
 | 2. Late stages away from the input | pass | 60 µm |
 | 3. Clock edges off the RX | pass | 70 µm |
-| 4. Short analog path | warn | 374 µm |
+| 4. Short analog path | warn | 373 µm |
 | 5. TX at ua[3] / ua[4] | pass | 36 µm |
 | 6. Bias next to the chain | pass | 5 µm |
-| 7. Decap VAPWR | fail | 47 % |
+| 7. Decap VAPWR | fail | 61 % |
 | 7. Decap VDPWR | pass | 103 % |
 | 8. TX away from the RX input | warn | 14 µm |
 | 9. Overlaps and spacing | pass | none |
@@ -425,7 +425,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 ## xctrim (ctrim_1p)
 
 - Size: 23.50 × 23.50 (estimate: not laid out yet)
-- Placement: x 440.97, y 4.00, MX (rot 0, mirror true)
+- Placement: x 441.00, y 4.50, MX (rot 0, mirror true)
 - Pins moved: 2
 
 **S edge** (faces north in the tile; left → right, x):
@@ -697,9 +697,9 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 - VGND strap: x 13.90, w 1.20 (met4, full height)
 - VDPWR strap: x 9.30, w 1.20 (met4, full height)
-- VAPWR strap: x 483.70, w 1.20 (met4, full height)
-- VGND strap: x 488.60, w 1.20 (met4, full height)
-- VDPWR strap: x 490.20, w 1.20 (met4, full height)
+- VAPWR strap: x 488.02, w 1.20 (met4, full height)
+- VGND strap: x 489.72, w 1.20 (met4, full height)
+- VDPWR strap: x 491.42, w 1.20 (met4, full height)
 - xdeca 1: x 362.00, y 34.00, 56.00 × 17.00
 - xdeca 2: x 40.00, y 89.00, 30.00 × 9.00
 - xdeca 3: x 17.00, y 67.00, 20.00 × 31.00
@@ -707,6 +707,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 - xdeca 5: x 0.00, y 2.00, 14.00 × 222.00
 - xdeca 6: x 467.00, y 2.00, 26.00 × 39.00
 - xdeca 7: x 475.00, y 101.00, 18.00 × 123.00
+- xdeca 8: x 422.13, y 45.33, 65.29 × 52.12 (MIM only, on top of r2r)
 - xdecd 1: x 238.00, y 41.00, 14.00 × 37.00
 - xdecd 2: x 170.00, y 81.00, 172.00 × 17.00
 - xdecd 3: x 346.00, y 41.00, 13.00 × 10.00

@@ -347,7 +347,8 @@ function draw() {
   for (const d of S.layers.decap ? r.R.decaps : []) {
     const sel = S.sel && S.sel.kind === 'decap' && S.sel.id === d.name;
     out.push(`<g data-decap="${d.name}" style="cursor:move">` + rectEl(d.rect, `fill="url(#hatch)" stroke="${sel ? 'var(--sel)' : 'var(--decap)'}" stroke-width="${(sel ? 1.6 : 0.8) * scale}"`) +
-      (d.rect[2] > 20 && d.rect[3] > 6 ? text(d.rect[0] + 2, d.rect[1] + d.rect[3] - 4.5, `${d.def.label} ${d.idx + 1}`, 3.2, 'fill="var(--muted)" font-family="var(--mono)"') +
+      (d.mim ? rectEl(d.rect, `fill="none" stroke="var(--decap)" stroke-dasharray="${2 * scale} ${1.5 * scale}" stroke-width="${0.8 * scale}"`) : '') +
+      (d.rect[2] > 20 && d.rect[3] > 6 ? text(d.rect[0] + 2, d.rect[1] + d.rect[3] - 4.5, `${d.def.label} ${d.idx + 1}${d.mim ? ' (MIM over block)' : ''}`, 3.2, 'fill="var(--muted)" font-family="var(--mono)"') +
         text(d.rect[0] + 2, d.rect[1] + d.rect[3] - 8.5, `${f1(d.rect[2])} × ${f1(d.rect[3])}`, 2.8, 'fill="var(--muted)" font-family="var(--mono)"') : '') +
       (sel ? rectEl([d.rect[0] + d.rect[2] - 2, d.rect[1] - 0.5, 2.5, 2.5], 'data-resize="1" fill="var(--sel)" style="cursor:nwse-resize"') : '') + '</g>');
   }
@@ -584,10 +585,12 @@ function renderSel() {
     el.innerHTML = `<h2>${esc(def.label)} ${i} <span class="meta">${def.cell} · estimate</span></h2>
       <div class="row"><label class="f">x<input type="number" step="0.5" id="dx" value="${f1(d.x)}"></label><label class="f">y<input type="number" step="0.5" id="dy" value="${f1(d.y)}"></label>
       <label class="f">w<input type="number" step="0.5" id="dw" value="${f1(d.w)}"></label><label class="f">h<input type="number" step="0.5" id="dh" value="${f1(d.h)}"></label></div>
-      <dl class="kv"><dt>this rectangle</dt><dd>${f1(d.w * d.h)} µm²</dd><dt>all ${def.net} decap</dt><dd>${f1(list.reduce((t, q) => t + q.w * q.h, 0))} µm²</dd></dl>
+      <label class="chip edit-only"><input type="checkbox" id="dMim" ${d.mim ? 'checked' : ''}> MIM only, on top of a met1-only block (r2r)</label>
+      <dl class="kv"><dt>this rectangle</dt><dd>${f1(d.w * d.h)} µm²${d.mim ? ' MIM' : ''}</dd><dt>all ${def.net} decap</dt><dd>${f1(list.reduce((t, q) => t + q.w * q.h, 0))} µm²</dd></dl>
       <div class="row edit-only"><button class="btn" id="bDecDel">Remove this rectangle</button></div>`;
     for (const k of ['x', 'y', 'w', 'h']) $('#d' + k).onchange = () => { d[k] = Math.max(k === 'w' || k === 'h' ? 1 : -1e9, +$('#d' + k).value); touch(); };
     $('#bDecDel').onclick = () => { list.splice(+i - 1, 1); S.sel = null; touch(); };
+    const dm = $('#dMim'); if (dm) dm.onchange = () => { if (dm.checked) d.mim = true; else delete d.mim; touch(); };
   } else if (S.sel.kind === 'strap') {
     const st = (v.straps || [])[S.sel.id]; if (!st) { S.sel = null; return renderSel(); }
     el.innerHTML = `<h2>Strap ${esc(st.net)} <span class="meta">met4, full height</span></h2>

@@ -66,7 +66,7 @@ for (const n of order) {
 out.push('## Straps and decap');
 out.push('');
 for (const s of v.straps || []) out.push(`- ${s.net} strap: x ${f(s.x)}, w ${f(s.w)} (met4, full height)`);
-for (const [b, rs] of Object.entries(v.decaps || {})) rs.forEach((q, i) => out.push(`- ${b} ${i + 1}: x ${f(q.x)}, y ${f(q.y)}, ${f(q.w)} × ${f(q.h)}`));
+for (const [b, rs] of Object.entries(v.decaps || {})) rs.forEach((q, i) => out.push(`- ${b} ${i + 1}: x ${f(q.x)}, y ${f(q.y)}, ${f(q.w)} × ${f(q.h)}${q.mim ? ' (MIM only, on top of r2r)' : ''}`));
 out.push('');
 fs.writeFileSync(path.join(dir, 'pins.md'), out.join('\n'));
 console.log('wrote floorplan.json and pins.md');

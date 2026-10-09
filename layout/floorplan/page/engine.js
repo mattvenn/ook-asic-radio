@@ -66,7 +66,7 @@
       real('xdet', 'log_det'), real('xlpf', 'lpf_rc'),
       real('xavg', 'avg_sc'),
       real('xcomp', 'comp_ct'),
-      real('xdac', 'r2r', { group: 'trim' }),
+      real('xdac', 'r2r', { group: 'trim', overDecap: true }),   // met1-only: a MIM decap may sit on top
       { inst: 'xctrim', cell: 'ctrim_1p', w: 23.5, h: 23.5, estimate: true, group: 'trim', label: 'Ctrim 1 pF',
         pins: { p: { layer: 'met3', x: 0.5, y: 11.75 }, n: { layer: 'met4', x: 23, y: 11.75 } }, m4: [[0, 0, 23.5, 23.5]] },
       real('xbias', 'bias_gen', { group: 'bias' }), real('xdbg', 'dbg_tg'),
@@ -77,6 +77,7 @@
     for (const b of list) cat[b.inst] = b;
     return cat;
   }
+  const MIM_FF = 2.06;                 // fF / um2, cap_mim_m3_1 (xschem/gen/chain.py)
   const DECAPS = {
     xdeca: { cell: 'decap_vapwr', net: 'VAPWR', pf: 50, target: 18000, label: 'decap VAPWR' },
     xdecd: { cell: 'decap_vdpwr', net: 'VDPWR', pf: 30, target: 4100, label: 'decap VDPWR' },
@@ -175,7 +176,7 @@
     }
     const decaps = [];
     for (const [n, d] of Object.entries(DECAPS)) ((v.decaps || {})[n] || []).forEach((r, i) =>
-      decaps.push({ name: `${n}.${i + 1}`, base: n, idx: i, def: d, rect: [r.x, r.y, r.w, r.h] }));
+      decaps.push({ name: `${n}.${i + 1}`, base: n, idx: i, def: d, mim: !!r.mim, rect: [r.x, r.y, r.w, r.h] }));
     return { inst, decaps };
   }
 
@@ -320,10 +321,12 @@
 
     // 7. decaps
     for (const [n, d] of Object.entries(DECAPS)) {
-      const a = R.decaps.filter(x => x.base === n).reduce((t, x) => t + area(x.rect), 0);
-      const tgt = s[n === 'xdeca' ? 'deca' : 'decd'], pf = d.pf * a / tgt;
-      add(7, `Decap ${d.net}`, lvl(a / tgt, 1, 0.7, true), `${fmt(100 * a / tgt)} %`,
-        `${fmt(a)} of ${fmt(tgt)} µm² placed (≈ ${fmt(pf, 1)} of ${d.pf} pF at the same density), ${R.decaps.filter(x => x.base === n).length} rectangle(s).`);
+      // decap tiles at the estimate's density (d.pf per target area); MIM-only rectangles over a block at 2.06 fF/um2
+      const ds = R.decaps.filter(x => x.base === n), tgt = s[n === 'xdeca' ? 'deca' : 'decd'];
+      const a = ds.filter(x => !x.mim).reduce((t, x) => t + area(x.rect), 0), am = ds.filter(x => x.mim).reduce((t, x) => t + area(x.rect), 0);
+      const pf = d.pf * a / tgt + MIM_FF * am / 1000;
+      add(7, `Decap ${d.net}`, lvl(pf / d.pf, 1, 0.7, true), `${fmt(100 * pf / d.pf)} %`,
+        `≈ ${fmt(pf, 1)} of ${d.pf} pF: ${fmt(a)} µm² of decap tiles (of ${fmt(tgt)})` + (am ? ` + ${fmt(am)} µm² MIM over blocks` : '') + `, ${ds.length} rectangle(s).`);
     }
 
     // 8. TX vs RX (soft)
@@ -338,7 +341,9 @@
 
     // 9. spacing, bounds, macro halo, routing channel
     {
-      const boxes = Object.values(I).map(i => ({ n: i.name, r: i.rect, halo: i.halo })).concat(R.decaps.map(d => ({ n: d.name, r: d.rect })));
+      const boxes = Object.values(I).map(i => ({ n: i.name, r: i.rect, halo: i.halo, over: i.cat.overDecap })).concat(R.decaps.map(d => ({ n: d.name, r: d.rect, mim: d.mim })));
+      const inside = (q, r) => q[0] >= r[0] - 1e-6 && q[1] >= r[1] - 1e-6 && q[0] + q[2] <= r[0] + r[2] + 1e-6 && q[1] + q[3] <= r[1] + r[3] + 1e-6;
+      const stacked = (a, b) => (a.over && b.mim && inside(b.r, a.r)) || (b.over && a.mim && inside(a.r, b.r));   // MIM decap on top of a met1-only block
       const over = [], tight = [], outside = [], inChan = [];
       for (let i = 0; i < boxes.length; i++) {
         const a = boxes[i], r = a.r;
@@ -347,6 +352,7 @@
         for (let j = i + 1; j < boxes.length; j++) {
           const b = boxes[j];
           const ra = a.halo || r, rb = b.halo || b.r;
+          if (stacked(a, b)) continue;
           if (overlap(ra, rb) > 0.01) over.push(`${a.n} / ${b.n}`);
           else if (!a.halo && !b.halo && rectGap(r, b.r) < s.keepout - 1e-3) tight.push(`${a.n} / ${b.n} ${fmt(rectGap(r, b.r), 1)}`);
         }
@@ -368,7 +374,7 @@
 
     // straps: full-height met4 lanes must clear every met4 / MIM shape and the macro
     {
-      const ys = s.strapY, obs = Object.values(I).flatMap(i => i.m4.map(r => ({ n: i.name, r })));
+      const ys = s.strapY, obs = Object.values(I).flatMap(i => i.m4.map(r => ({ n: i.name, r }))).concat(R.decaps.filter(d => d.mim).map(d => ({ n: d.name, r: d.rect })));
       const issues = [], nets = new Set();
       (v.straps || []).forEach((st, i) => {
         nets.add(st.net);
@@ -389,7 +395,7 @@
     const macroBox = M ? M.halo : [0, 0, 0, 0];
     const tileA = tile.w * tile.h;
     const sig = Object.values(I).filter(i => i.name !== 'macro').reduce((t, i) => t + i.w * i.h, 0);
-    const dec = R.decaps.reduce((t, d) => t + area(d.rect), 0);
+    const dec = R.decaps.filter(d => !d.mim).reduce((t, d) => t + area(d.rect), 0);   // MIM over blocks uses no extra area
     const decTarget = s.deca + s.decd;
     const areaInfo = { tile: tileA, macro: area(macroBox), free: tileA - area(macroBox), signal: sig, decap: dec, decapTarget: decTarget,
       spacing: 0.1 * (sig + dec), need: 1.1 * (sig + decTarget) };
@@ -407,7 +413,7 @@
       if (i.cat.reshape && Math.abs(i.w - i.cat.w) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um (same area as ${i.cat.w} x ${i.cat.h})`;
       blocks.push(b);
     }
-    for (const d of R.decaps) blocks.push({ inst: d.base, part: d.idx + 1, cell: d.def.cell, x: d.rect[0], y: d.rect[1], w: d.rect[2], h: d.rect[3], orient: 'R0', rot: 0, mirror: false, estimate: true });
+    for (const d of R.decaps) blocks.push(Object.assign({ inst: d.base, part: d.idx + 1, cell: d.def.cell, x: d.rect[0], y: d.rect[1], w: d.rect[2], h: d.rect[3], orient: 'R0', rot: 0, mirror: false, estimate: true }, d.mim ? { mim: true, note: 'MIM only (cap_mim_m3_1), on top of a met1-only block' } : {}));
     return {
       variant: v.name, note: v.note || '', tile: { w: data.tile.w, h: data.tile.h }, blocks,
       macro_pins: { 'trim_out[7:0]': (v.macroPins && v.macroPins.trim) || 'W' },
@@ -422,7 +428,7 @@
     const ts = j.macro_pins && j.macro_pins['trim_out[7:0]']; if (TRIM_SIDES[ts]) v.macroPins = { trim: ts };
     if (j.pins_moved) { v.pins = {}; for (const [i, ps] of Object.entries(j.pins_moved)) { if (!cat[i]) continue; v.pins[i] = {}; for (const [p, xy] of Object.entries(ps)) v.pins[i][p] = { x: +xy[0], y: +xy[1] }; } }
     for (const b of j.blocks || []) {
-      if (DECAPS[b.inst]) { (v.decaps[b.inst] = v.decaps[b.inst] || []).push({ x: +b.x, y: +b.y, w: +b.w, h: +b.h }); continue; }
+      if (DECAPS[b.inst]) { (v.decaps[b.inst] = v.decaps[b.inst] || []).push(Object.assign({ x: +b.x, y: +b.y, w: +b.w, h: +b.h }, b.mim ? { mim: true } : {})); continue; }
       const n = b.inst;
       if (!cat[n]) continue;
       v.place[n] = { x: +b.x, y: +b.y, orient: ORIENTS[b.orient] ? b.orient : 'R0' };
