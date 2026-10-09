@@ -30,7 +30,7 @@ CASE = sys.argv[1] if len(sys.argv) > 1 else 'A'
 P = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
 DBU = 0.001
 GDS = os.path.join(ROOT, 'build', 'power', f'ext_{CASE}', 'radio_analog_lay.gds')
-OUT = os.path.join(ROOT, 'build', 'power', f'mesh_{CASE}')
+OUT = os.path.join(ROOT, 'build', 'power', f'mesh_{CASE}' + ('' if P == 0.5 else f'_p{P:g}'))
 # sheet R (ohm/sq) and per-cut R (ohm) / cut size (um): magic sky130A.tech, tech LEF
 LAY = [('li', (67, 20), 12.8), ('m1', (68, 20), 0.125), ('m2', (69, 20), 0.125),
        ('m3', (70, 20), 0.047), ('m4', (71, 20), 0.047), ('m5', (72, 20), 0.0285)]

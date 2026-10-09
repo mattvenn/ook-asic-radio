@@ -6,7 +6,7 @@ sim/power/common.py probes; each put on the mesh's li cell there, else met1, els
 met1 cell within 1.5 um), mean and worst terminal voltage = the block's R to the port. Metal islands
 not connected to the port are dropped first (listed). Add pdn.R_GATE for the R to the gate's input.
 
-    python3 sim/power/r_mesh.py [A|B]
+    python3 sim/power/r_mesh.py [A|B] [pitch_um]
 Writes build/power/r_mesh_<case>.json and prints the table.
 """
 import collections
@@ -23,8 +23,8 @@ import common  # noqa: E402
 from rawread import read_raw  # noqa: E402
 
 
-def load_mesh(case, net):
-    d = os.path.join(common.B, f'mesh_{case}')
+def load_mesh(case, net, pitch=0.5):
+    d = os.path.join(common.B, f'mesh_{case}' + ('' if pitch == 0.5 else f'_p{pitch:g}'))
     meta = json.load(open(os.path.join(d, f'{net}.json')))
     lines = open(os.path.join(d, f'{net}.spice')).read().splitlines()
     return meta, lines
@@ -52,17 +52,18 @@ def connected(lines, port):
     return keep, {n for n in par if f(n) == root}, len(comp) - 1
 
 
-def place(meta, xy, alive):
-    """Mesh node for a point: li cell, else met1, else nearest li / met1 cell within 1.5 um."""
+def place(meta, xy, alive, layers=(0, 1), radius=1.5):
+    """Mesh node for a point: the lowest of `layers` with a cell there, else the nearest cell of
+    those layers within `radius` um (default: li / met1 within 1.5 um)."""
     p, x0, y0 = meta['p'], meta['x0'], meta['y0']
     ix, iy = int((xy[0] - x0) / p), int((xy[1] - y0) / p)
-    for k in (0, 1):
+    for k in layers:
         n = f'm{k}_{ix}_{iy}'
         if n in alive:
             return n
     best = None
-    r = int(1.5 / p) + 1
-    for k in (0, 1):
+    r = int(radius / p) + 1
+    for k in layers:
         for dx in range(-r, r + 1):
             for dy in range(-r, r + 1):
                 n = f'm{k}_{ix + dx}_{iy + dy}'
@@ -73,12 +74,12 @@ def place(meta, xy, alive):
     return best[1] if best else None
 
 
-def main(case):
+def main(case, pitch=0.5):
     pr = common.probes(case)
     xy = common.node_xy(case)
     res, miss = {}, collections.Counter()
     for net in common.SUP:
-        meta, lines = load_mesh(case, net)
+        meta, lines = load_mesh(case, net, pitch)
         lines, alive, nisl = connected(lines, net)
         blks = [b for b in sorted(pr) if net in pr[b]]
         pts = {}
@@ -92,7 +93,7 @@ def main(case):
                     miss[(b, net)] += 1
             if nodes:
                 pts[b] = nodes
-        name = f'r_mesh_{case}_{net}'
+        name = f'r_mesh_{case}_{net}' + ('' if pitch == 0.5 else f'_p{pitch:g}')
         deck = [f'* {name}: R from each block to the {net} port (mesh)'] + lines + [f'Vport {net} 0 0']
         for b, nodes in pts.items():
             deck.append(f'.param ib_{b}=0')
@@ -112,7 +113,7 @@ def main(case):
             v = read_raw(os.path.join(common.B, f'{name}_{b}.raw'))[0]['vars']
             vs = np.array([float(v[f'v({n})'][0]) for n in nodes])
             res.setdefault(b, {})[net] = {'mean': float(vs.mean()), 'max': float(vs.max()), 'n': len(vs)}
-    json.dump(res, open(os.path.join(common.B, f'r_mesh_{case}.json'), 'w'), indent=1)
+    json.dump(res, open(os.path.join(common.B, f'r_mesh_{case}' + ('' if pitch == 0.5 else f'_p{pitch:g}') + '.json'), 'w'), indent=1)
     if miss:
         print('terminals not placed on the mesh:', dict(miss))
     print(f'case {case}: R (ohm) from each block\'s device terminals to the port (mesh), mean / worst')
@@ -123,4 +124,4 @@ def main(case):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1] if len(sys.argv) > 1 else 'A')
+    main(sys.argv[1] if len(sys.argv) > 1 else 'A', float(sys.argv[2]) if len(sys.argv) > 2 else 0.5)

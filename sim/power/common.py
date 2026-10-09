@@ -154,10 +154,10 @@ def rail_probes(case, pr=None):
     return out
 
 
-def sch_wrapper(case):
+def sch_wrapper(case, lines=None):
     """.subckt radio_analog with the schematic's port order around the extracted radio_analog_lay
-    (as layout/pex_tile.sh), plus the extracted netlist itself."""
-    lines = raw_lines(case)
+    (as layout/pex_tile.sh), plus the extracted netlist itself (or `lines`, a modified copy)."""
+    lines = lines or raw_lines(case)
     ports = None
     for ln in lines:
         if ln.lower().startswith('.subckt radio_analog_lay'):
