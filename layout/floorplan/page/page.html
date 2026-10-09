@@ -155,7 +155,7 @@ const S = {
   sel: null,             // {kind: 'inst'|'decap'|'strap', id}
   settings: Object.assign({}, FP.DEFAULT_SETTINGS),
   view: null,
-  layers: { flylines: true, pins: true, m4: false, labels: true, grid: true },
+  layers: { flylines: true, pins: true, m4: false, labels: true, grid: true, decap: true },
   hoverNet: null,
   canWrite: true, db: null, user: null, uid: null, names: {},
   dirty: new Set(), saving: new Set(), dragging: false,
@@ -323,7 +323,7 @@ function draw() {
       text(st.x + st.w / 2, H - S.settings.strapY - 3, st.net, 2.6, `text-anchor="middle" fill="var(--ink)" font-family="var(--mono)" transform="rotate(-90 ${st.x + st.w / 2} ${Y(H - S.settings.strapY - 3)})"`) + '</g>');
   });
   // decaps
-  for (const d of r.R.decaps) {
+  for (const d of S.layers.decap ? r.R.decaps : []) {
     const sel = S.sel && S.sel.kind === 'decap' && S.sel.id === d.name;
     out.push(`<g data-decap="${d.name}" style="cursor:move">` + rectEl(d.rect, `fill="url(#hatch)" stroke="${sel ? 'var(--sel)' : 'var(--decap)'}" stroke-width="${(sel ? 1.6 : 0.8) * scale}"`) +
       (d.rect[2] > 20 && d.rect[3] > 6 ? text(d.rect[0] + 2, d.rect[1] + d.rect[3] - 4.5, `${d.def.label} ${d.idx + 1}`, 3.2, 'fill="var(--muted)" font-family="var(--mono)"') +
@@ -522,7 +522,7 @@ function renderSettings() {
   const br = $('#bReset'); if (br) br.onclick = () => { Object.assign(s, FP.DEFAULT_SETTINGS); S.dirty.add('$settings'); flush('$settings'); render(); };
 }
 function renderLayers() {
-  $('#layers').innerHTML = Object.entries({ flylines: 'flylines', pins: 'pins', labels: 'labels', m4: 'met4 / MIM', grid: 'grid' })
+  $('#layers').innerHTML = Object.entries({ flylines: 'flylines', pins: 'pins', labels: 'labels', decap: 'decap', m4: 'met4 / MIM', grid: 'grid' })
     .map(([k, l]) => `<label class="chip"><input type="checkbox" id="ly_${k}" data-layer="${k}" ${S.layers[k] ? 'checked' : ''}>${l}</label>`).join('') +
     `<button class="chip" id="bFit">fit</button>`;
   document.querySelectorAll('[data-layer]').forEach(c => c.onchange = () => { S.layers[c.dataset.layer] = c.checked; try { localStorage.setItem('fp.layers', JSON.stringify(S.layers)); } catch (e) {} draw(); });
