@@ -58,11 +58,20 @@ def nets():
     out.append(N('vcm', 'xbias.vcm', 'xchain.vcm', margin=8, label='vcm'))
 
     # ---------------- TX ----------------
-    out.append(N('ring', 'xtx.xring.out', 'xtx.xls.in', margin=8, label='xtx/ring'))
-    out.append(N('tx_a', 'xtx.xls.A', 'xtx.xdrv_p.in', margin=6, label='xtx/a'))
-    out.append(N('tx_b', 'xtx.xls.B', 'xtx.xdrv_n.in', margin=6, label='xtx/b'))
-    out.append(N('enh_p', 'xtx.xlse_p.A', 'xtx.xdrv_p.en', margin=8, label='xtx/enh_p'))
-    out.append(N('enh_n', 'xtx.xlse_n.A', 'xtx.xdrv_n.en', margin=6, label='xtx/enh_n'))
+    # (TX-internal wires and the TX supply wiring go into the tx_top cell: LVS against tx_top.sch)
+    # TX: VAPWR from the west strap, its own ground run (joins the RX ground only at the straps)
+    tx_vss = ['xtx.xring.VSS', 'xtx.xls.VSS', 'xtx.xlse_p.VSS', 'xtx.xlse_n.VSS', 'xtx.xdrv_p.VSS',
+              'xtx.xdrv_n.VSS']
+    out.append(N('VAPWR_TX', 'VAPWR@w', 'xtx.xdrv_n.VAPWR', 'xtx.xdrv_p.VAPWR', 'xtx.xls.VAPWR',
+                 'xtx.xlse_n.VAPWR', 'xtx.xlse_p.VAPWR', w=2.5, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top'))
+    out.append(N('VGND_TX', 'VGND@w', *tx_vss, w=2.0, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top'))
+    out.append(N('VDPWR_TX', 'VDPWR@w', 'xtx.xring.VDD', 'xtx.xls.VDD', 'xtx.xlse_p.VDD',
+                 'xtx.xlse_n.VDD', w=0.8, layers=['m2', 'm3', 'm4'], margin=8, wide=True, cell='tx_top'))
+    out.append(N('ring', 'xtx.xring.out', 'xtx.xls.in', margin=8, label='ring', cell='tx_top'))
+    out.append(N('tx_a', 'xtx.xls.A', 'xtx.xdrv_p.in', margin=6, label='a', cell='tx_top'))
+    out.append(N('tx_b', 'xtx.xls.B', 'xtx.xdrv_n.in', margin=6, label='b', cell='tx_top'))
+    out.append(N('enh_p', 'xtx.xlse_p.A', 'xtx.xdrv_p.en', margin=8, label='enh_p', cell='tx_top'))
+    out.append(N('enh_n', 'xtx.xlse_n.A', 'xtx.xdrv_n.en', margin=6, label='enh_n', cell='tx_top'))
     # TX outputs: >= 5 um, met3/met4 (may cross the chain: TX is off while RX is on)
     # The chain's top stage row (y 55-77) is solid met4 / MIM except 2.6 um gaps between the
     # stages, and one ~5.4 um column at its west end (x 15.1-20.8). tx_n takes the column, then
@@ -75,20 +84,12 @@ def nets():
     out.append(N('tx_p', 'tx_p_neck', 'ua[3]', w=5.0, layers=['m3', 'm4'], margin=10))
 
     # ---------------- power ----------------
-    # TX: VAPWR from the west strap, its own ground run (joins the RX ground only at the straps)
-    tx_vss = ['xtx.xring.VSS', 'xtx.xls.VSS', 'xtx.xlse_p.VSS', 'xtx.xlse_n.VSS', 'xtx.xdrv_p.VSS',
-              'xtx.xdrv_n.VSS']
-    out.append(N('VAPWR_TX', 'VAPWR@w', 'xtx.xdrv_n.VAPWR', 'xtx.xdrv_p.VAPWR', 'xtx.xls.VAPWR',
-                 'xtx.xlse_n.VAPWR', 'xtx.xlse_p.VAPWR', w=2.5, layers=['m3', 'm4'], margin=8, wide=True))
-    out.append(N('VGND_TX', 'VGND@w', *tx_vss, w=2.0, layers=['m3', 'm4'], margin=8, wide=True))
-    out.append(N('VDPWR_TX', 'VDPWR@w', 'xtx.xring.VDD', 'xtx.xls.VDD', 'xtx.xlse_p.VDD',
-                 'xtx.xlse_n.VDD', w=0.8, layers=['m2', 'm3', 'm4'], margin=8, wide=True))
     # RX: both the west and the mid straps (this also joins them inside the tile)
     out.append(N('VDPWR_RX', STRAPS['VDPWR'], 'xchain.VDD', 'xdet.VDD', 'xavg.VDD', 'xcomp.VDD',
                  'xbias.VDD', 'xdbg.VDD', w=1.0, layers=['m2', 'm3', 'm4'], layer_cost={'m2': 2, 'm3': 1, 'm4': 1},
-                 margin=30, anchor_own=True, zones=[blk(0, 192.6, 300, 226)], wide=True))
+                 margin=30, anchors=STRAPS['VDPWR'], zones=[blk(0, 192.6, 300, 226)], wide=True))
     out.append(N('VGND_RX', STRAPS['VGND'], 'xchain.VSS', 'xdet.VSS', 'xlpf.VSS', 'xavg.VSS',
-                 'xcomp.VSS', 'xdac.VGND', 'xctrim.VGND', 'xbias.VSS', 'xdbg.VSS', w=1.0, anchor_own=True,
+                 'xcomp.VSS', 'xdac.VGND', 'xctrim.VGND', 'xbias.VSS', 'xdbg.VSS', w=1.0, anchors=STRAPS['VGND'],
                  layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1}, margin=30,
                  zones=[blk(0, 192.6, 300, 226)], wide=True))
 
@@ -148,6 +149,7 @@ def tt_bus():
     order = sorted(tt, key=lambda n: xpin[n])                 # west -> east
     W, E = order[:24], order[24:]
     YPIN = 225.26                                             # tile pin centre
+    XSTRAP = 15.6                   # first met4 drop x clear of the west VGND strap (13.9-15.1)
     XMAC = lambda n: round(mac[n][0] + 0.3, 3)                # into the macro pin
     nets = []
     # east group: tracks
@@ -187,8 +189,12 @@ def tt_bus():
     xc = round(xc + 1.0, 3)
     for n, yt in zip(Ws, yts):
         x0, yp = xpin[n], mac[n][1]
-        f = [('wire', 'm4', x0, YPIN, x0, yt), ('via', 'm3', 'm4', x0, yt), ('via', 'm2', 'm3', x0, yt),
-             ('pad', 'm3', x0, yt, 0.5),
+        f = []
+        if x0 < XSTRAP:                 # the west VGND strap (met4, to y 220.76) is right below
+            f += [('wire', 'm4', x0, YPIN, x0, 221.4), ('wire', 'm4', x0, 221.4, XSTRAP, 221.4)]
+            x0 = XSTRAP
+        f += [('wire', 'm4', x0, YPIN if not f else 221.4, x0, yt), ('via', 'm3', 'm4', x0, yt),
+              ('via', 'm2', 'm3', x0, yt), ('pad', 'm3', x0, yt, 0.5),
              ('wire', 'm2', x0, yt, xc, yt), ('wire', 'm2', xc, yt, xc, yp), ('via', 'm2', 'm3', xc, yp),
              ('wire', 'm3', xc, yp, XMAC(n), yp)]
         nets.append(dict(name=n, fixed=f, w=0.3))

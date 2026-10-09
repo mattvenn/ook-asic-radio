@@ -79,6 +79,7 @@ class Router:
         self.S = Shapes()
         self.li = {L: ly.layer(*GDSL[L]) for L in LAYERS}
         self.report = {}
+        self.out = top                   # the cell routed shapes go into (per net: net['cell'])
 
     # ---------- obstacle database ----------
     def add_cell_inst(self, cell, trans, pins, tag_prefix, solid=None):
@@ -112,6 +113,7 @@ class Router:
         # capm is a met4 obstacle (no other net's met4 over a MIM), except under its own top
         # plate's net; MIM bottom plates keep other met3 1.2 um away (capm.2b_a): a halo of
         # (1.2 - 0.3) um, tagged like the plate so the plate's own net may still reach it
+        self.capm = (getattr(self, 'capm', db.Region()) + capm).merged()
         rest = capm.dup()
         for tag, reg in own['m4'].items():
             rest -= capm.interacting(reg)        # under its own top plate (real met4 covers it)
@@ -135,9 +137,9 @@ class Router:
                 for pl, b in shp:
                     if pl == 'm3':
                         near = ring & db.Region(ibox(*b)).sized(int(round(0.8 / DBU)))
-                        self.S.add('m3', tag, near)
+                        self.S.add('m3', tag + '~near', near)      # passable, not a terminal
                         ring -= near
-        self.S.add('m3', '?', ring)
+        self.S.add('m3', '?h', ring)                   # a keep-out, not metal
 
     def add_box(self, L, tag, b):
         self.S.add(L, tag, db.Region(ibox(*b)))
@@ -168,6 +170,7 @@ class Router:
         hw = w / 2
         layers = net.get('layers', ['m2', 'm3', 'm4'])
         own = set(net['own']) | {name}
+        own |= {t + '~near' for t in own}
         terms = net['terms']                              # list of lists of tags (each one terminal)
         # terminal boxes, for the window
         tb = []
@@ -206,6 +209,11 @@ class Router:
             if L in ('m3', 'm4') and (w > 3.0 or net.get('wide')):
                 sp = 0.4                                     # m3.3cd / m4.5ab (> 3 um metal)
             blocked[k] = self.raster(f.sized(int(round((hw + sp) / DBU))), win)
+            if L in ('m3', 'm4') and sp < 0.4:
+                # metal wider than 3 um wants 0.4 (m3.3cd / m4.5ab)
+                wide = f.merged().sized(-1500).sized(1500)
+                if not wide.is_empty():
+                    blocked[k] |= self.raster(wide.sized(int(round((hw + 0.4) / DBU))), win)
             hp = max([w] + [p[0] for (a, b), p in pad.items() if a == L] + [p[1] for (a, b), p in pad.items() if b == L]) / 2
             padblk[k] = self.raster(f.sized(int(round((hp + sp) / DBU))), win)
             for ti, t in enumerate(terms):
@@ -263,10 +271,15 @@ class Router:
                 blocked[k] = True
                 padblk[k] = True
         free = ~blocked
+        # no via2 within 0.1 of a MIM (capm.8): no met2 <-> met3 (or met1 <-> met2) via there
+        cap = getattr(self, 'capm', db.Region()) & db.Region(wbox)
+        capmask = self.raster(cap.sized(int(round((0.1 + 0.2) / DBU))), win) if not cap.is_empty() else None
         if os.environ.get('RDEBUG') == name:
             np.savez(os.path.join(REPO, 'build/top/rdebug.npz'), free=free, own=owncell,
                      terms=np.array(termcells), win=np.array(win))
         viaok = ~padblk | (ownpad & free)          # (a pad on an own shape must fit inside it)
+        if capmask is not None:
+            viaok[1] &= ~capmask
         viacost = net.get('viacost', 6.0)
 
         def cells(mask):
@@ -282,9 +295,21 @@ class Router:
                 return self.fail(name, f'terminal {terms[ti]} has no free cell', t0)
         wps = [(net.get('via_layer', None), wp) for wp in net.get('via', [])]
         tree = set(tsets[0])
-        if net.get('anchor_own', False):
-            tree |= cells(anchor)
         remaining = list(range(1, len(tsets)))
+        if net.get('anchors'):
+            # start from shared anchors (straps, bars) only; every terminal then connects to
+            # the nearest point of the growing tree
+            am = np.zeros((nl, ny, nx), bool)
+            for k, L in enumerate(LAYERS):
+                ar = db.Region()
+                for tag in net['anchors']:
+                    if tag in self.S.r[L]:
+                        ar += self.S.r[L][tag] & db.Region(wbox)
+                am[k] = self.raster(ar, win)
+            tree = cells(am)
+            remaining = [ti for ti, t in enumerate(terms) if not set(t) <= set(net['anchors'])]
+            if not tree:
+                return self.fail(name, 'no free anchor cell', t0)
         paths = []
         # waypoints: route terminal 0 -> wp1 -> wp2 ... -> terminal 1 (2-terminal nets)
         seq_targets = []
@@ -303,14 +328,15 @@ class Router:
             tree = {p[-1]}
         while remaining:
             # nearest remaining terminal (by bbox centre distance to the tree)
-            best = None
-            for ti in remaining:
-                p = self.astar(tree, tsets[ti], free, viaok, cost, pref, wrong, viacost, (ny, nx))
-                if p is None:
-                    return self.fail(name, f'no path to terminal {terms[ti]}', t0)
-                best = (ti, p)
-                break
-            ti, p = best
+            # nearest remaining terminal first (bbox distance to the tree's bbox: cheap)
+            tk = np.array([c for c in tree])
+            def dist(ti):
+                a = np.array(list(tsets[ti]))
+                return abs(a[:, 1].mean() - tk[:, 1]).min() + abs(a[:, 2].mean() - tk[:, 2]).min()
+            ti = min(remaining, key=dist)
+            p = self.astar(tree, tsets[ti], free, viaok, cost, pref, wrong, viacost, (ny, nx))
+            if p is None:
+                return self.fail(name, f'no path to terminal {terms[ti]}', t0)
             paths.append(p)
             tree |= set(p) | tsets[ti]
             remaining.remove(ti)
@@ -336,7 +362,21 @@ class Router:
             else:
                 _, lo, hi, x, y = it
                 self.via(lo, hi, x, y, w, net['name'])
-        self.report[net['name']] = {'ok': True, 'len': round(length, 1), 'fixed': True}
+        # check: no fixed shape within the spacing of foreign metal (they aren't maze-routed)
+        bad = []
+        own = {net['name']} | set(net.get('own', []))
+        for L in LAYERS:
+            if net['name'] not in self.S.r[L]:
+                continue
+            mine = self.S.r[L][net['name']]
+            keep = {t for t in self.S.r[L] if t.startswith('macro.') or t in (net['name'].split('[')[0],)}
+            _, f = self.S.split(L, own | {net['name']} | {'macro.' + net['name'], net['name']}, mine.bbox().enlarged(2000, 2000))
+            hit = mine.sized(int(round(SPACE[L] / DBU)) - 1) & f
+            if not hit.is_empty():
+                bad.append(f'{L} {hit.bbox().to_s()}')
+        if bad:
+            print(f'  FIXED CLASH {net["name"]}: ' + '; '.join(bad))
+        self.report[net['name']] = {'ok': not bad, 'len': round(length, 1), 'fixed': True, 'clash': bad}
 
     def fail(self, name, why, t0):
         if os.environ.get('RDEBUG') == name and getattr(self, 'explored', None) is not None:
@@ -484,7 +524,7 @@ class Router:
             p = paths[0][len(paths[0]) // 2]
             L = LAYERS[p[0]]
             x, y = (gx + p[2] + 0.5) * G, (gy + p[1] + 0.5) * G
-            self.top.shapes(self.ly.layer(*LBLL[L])).insert(db.DText(net['label'], db.DTrans(x, y)))
+            self.out.shapes(self.ly.layer(*LBLL[L])).insert(db.DText(net['label'], db.DTrans(x, y)))
         self.report[name] = {'ok': True, 'len': round(length, 1), 'vias': nvia, 't': round(time.time() - t0, 1)}
         print(f'  {name}: {length:.0f} um, {nvia} vias, {time.time() - t0:.1f} s')
         return True
@@ -514,10 +554,19 @@ class Router:
         if reg.is_empty():
             return
         win = reg.bbox().enlarged(2000, 2000)
-        _, f = self.S.split(L, set(own) | {tag}, win)
+        keepouts = {t for t in self.S.r[L] if t == '?h' or t.endswith('~near')}
+        _, f = self.S.split(L, set(own) | {tag} | keepouts, win)
         reg = reg - f.sized(int(round(SPACE[L] / DBU)))
+        # drop thin protrusions the clip may leave: open the merged own metal + fill, keep only
+        # fill that survives (a notch fill makes the merged shape wider, so it stays)
+        mw = int(round((0.3 if L in ('m3', 'm4') else 0.14) / 2 / DBU))
+        o, _ = self.S.split(L, set(own) | {tag}, win)
+        merged = (o + reg).merged()
+        reg = reg & merged.sized(-mw).sized(mw)
+        if reg.is_empty():
+            return
         for poly in reg.each():
-            self.top.shapes(self.li[L]).insert(poly)
+            self.out.shapes(self.li[L]).insert(poly)
         self.S.add(L, tag, reg)
 
     def min_area(self, tag):
@@ -533,7 +582,7 @@ class Router:
 
     def rect(self, L, b, tag):
         b = [snap(v) for v in b]
-        self.top.shapes(self.li[L]).insert(db.DBox(*b))
+        self.out.shapes(self.li[L]).insert(db.DBox(*b))
         self.S.add(L, tag, db.Region(ibox(*b)))
 
     def via(self, lo, hi, x, y, w, tag):
@@ -565,7 +614,7 @@ class Router:
                         continue                                  # the same cut
                     continue                                      # too close: the pads overlap
                 placed.insert(ibox(cx, cy, cx + cs, cy + cs))
-                self.top.shapes(li).insert(db.DBox(cx, cy, snap(cx + cs), snap(cy + cs)))
+                self.out.shapes(li).insert(db.DBox(cx, cy, snap(cx + cs), snap(cy + cs)))
 
 
 def build(place_gds, pins_json, fp_json):
@@ -640,6 +689,7 @@ def main():
     for net in top_nets.nets():
         if only and net['name'] not in only:
             continue
+        R.out = R.ly.cell(net['cell']) if net.get('cell') else R.top
         if 'fixed' in net:
             R.fixed(net)
         else:
