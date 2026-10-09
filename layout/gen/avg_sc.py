@@ -15,8 +15,8 @@
 #     over the inverters, where only clock tracks run.
 # Floorplan: Cavg pair at the left (full height); the switch column at the right with
 # Cs hanging under its VSS rail; out's met4 strip along the bottom of the Cavg plates.
-# Pins: phi1, phi2 on the top edge (met4); in, out on the right edge (met3), next to
-# each other for comp_ct (inn, inp). Mirror the cell at the top level as needed.
+# Pins: phi1, phi2 on the top edge (met4); out on the right edge (met3, toward comp_ct inn);
+# in on the bottom edge at the right corner (met2, toward lpf_rc out; floorplan layout 5).
 # Also writes layout/ref/avg_sc.spice (parameters substituted for netgen).
 # Run: tools/osic klayout -b -r layout/gen/avg_sc.py
 import os
@@ -88,7 +88,10 @@ def make():
     # in, out: tracks on to the right edge (pins); cs to its riser
     for n in ('in', 'out'):
         r = hband(n, xs[n][1], XR)
-        b.pin('m3', box(XR - 0.5, r.bottom, XR, r.top), n)
+        if n == 'out':
+            b.pin('m3', box(XR - 0.5, r.bottom, XR, r.top), n)
+    rin = box(XR - 0.5, T['in']['y0'], XR, T['in']['y1'])
+    b.via('via2', rin, enc=(0.085, 0.065))
     hband('cs', xs['cs'][1], x_cs + 1.0)
 
     # phi pins: met4 from the tracks' left ends up to the top edge, left of phi1b's span
@@ -122,6 +125,13 @@ def make():
     b.label('m4', strip, 'out')
     # VSS to the Cavg bottom plates: the rail's met3 on left into the plates, and across the gap
     b.rect('m3', box(caps[0].left - e, bot, 0.0, ybot))
+    # in: down the east edge on met2 to the S edge (floorplan matt layout 5: toward lpf_rc's
+    # out, below). met3 can't (out's track runs to the edge; Cs's capm keeps met3 west of
+    # x_cs + 2.4), met4 can't (out's riser); met2 is free there but for the VSS rail's.
+    yb_blk = b.cell.dbbox().bottom
+    b.clear(('m2', 'via1', 'via2'), box(XR - 0.8, bot, XR, ybot))
+    b.rect('m2', box(XR - 0.5, yb_blk, XR, rin.top))
+    b.pin('m2', box(XR - 0.5, yb_blk, XR, yb_blk + 0.5), 'in')
     print(f'avg_sc: Cs {wcs}x{wcs} um, Cavg {PARAMS["nca"]} x {CAVG:g}x{CAVG:g} um')
     return b
 
