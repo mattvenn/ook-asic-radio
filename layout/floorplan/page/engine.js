@@ -46,25 +46,10 @@
   // ---- the netlist of the tile (docs/floorplan_spec.md, "What goes in the tile" + "Nets")
   function buildCatalog(data) {
     const C = data.cells, cat = {};
-    const ch = C.lna_chain, CUT = 171.5;          // fold after stage 3: o3 tap gap
-    const pick = (cell, keep) => Object.fromEntries(Object.entries(cell.pins).filter(([n]) => keep(n)));
-    const chainA = {
-      w: CUT, h: ch.h, label: 'lna_chain  in, st 1-3',
-      pins: Object.assign(pick(ch, n => /^(inp|inn|vcm|ibias|o1[pn]|o2[pn]|VSS)$/.test(n)),
-        { o3p: { layer: 'met2', x: CUT - 0.3, y: ch.pins.o3p.y }, o3n: { layer: 'met2', x: CUT - 0.3, y: ch.pins.o3n.y } }),
-      m4: ch.m4.filter(r => r[0] < CUT),
-      zones: { input: [0, 0, 69.5, ch.h], stage1: [69.5, 0, 37, ch.h] },
-    };
-    const sh = (p) => Object.assign({}, p, { x: +(p.x - CUT).toFixed(2) });
-    const chainB = {
-      w: +(ch.w - CUT).toFixed(2), h: ch.h, label: 'lna_chain  st 4-6',
-      pins: {
-        inp: { layer: 'met2', x: 0.3, y: ch.pins.o3p.y }, inn: { layer: 'met2', x: 0.3, y: ch.pins.o3n.y },
-        o4p: sh(ch.pins.o4p), o4n: sh(ch.pins.o4n), o5p: sh(ch.pins.o5p), o5n: sh(ch.pins.o5n),
-        outp: sh(ch.pins.outp), outn: sh(ch.pins.outn), VDD: sh(ch.pins.VDD),
-      },
-      m4: ch.m4.filter(r => r[0] >= CUT).map(r => [+(r[0] - CUT).toFixed(2), r[1], r[2], r[3]]),
-    };
+    const ch = C.lna_chain;
+    // zones of the real chain, for the rule checks: the input section (Cin, Rb, Mref), stage 1,
+    // and stages 4-6 (from the o3 tap gap to the output end)
+    const chainZones = { input: [0, 0, 69.5, ch.h], stage1: [69.5, 0, 37, ch.h], late: [171.5, 0, +(ch.w - 171.5).toFixed(2), ch.h] };
     const real = (inst, cell, extra) => Object.assign({ inst, cell, w: C[cell].w, h: C[cell].h, pins: C[cell].pins, m4: C[cell].m4 || [], group: 'rx' }, extra || {});
     // macro pins: even spread of pin_order.cfg slots (LibreLane), an estimate until the DEF is read
     const W = ['$', '$', 'tx_en', 'tx_en_n', '$', '$', '$', 'rx_en', 'dbg_en', '$', '$', '$', 'comp_in', 'sc_phi1', 'sc_phi2', '$', '$']
@@ -77,14 +62,9 @@
     N.forEach((n, i) => { mpins[n] = { layer: 'met2', x: +((i + 1) * 260 / 83).toFixed(2), y: 190, est: true }; });
     const list = [
       { inst: 'macro', cell: 'radio_digital', w: 260, h: 190, halo: 5, pins: mpins, m4: [[0, 0, 260, 190]], group: 'dig', label: 'radio_digital' },
-      Object.assign({ inst: 'xchain.a', cell: 'lna_chain', part: 'a', group: 'rx', fold: true }, chainA),
-      Object.assign({ inst: 'xchain.b', cell: 'lna_chain', part: 'b', group: 'rx', fold: true }, chainB),
+      real('xchain', 'lna_chain', { zones: chainZones }),
       real('xdet', 'log_det'), real('xlpf', 'lpf_rc'),
-      // avg_sc: its phi1/phi2 met4 strips reach the top edge and in/out exit the right edge
-      // (docs/layout.md); the labels sit inside the cell, so connect at the edges
-      real('xavg', 'avg_sc', { pins: Object.assign({}, C.avg_sc.pins, {
-        phi1: { layer: 'met4', x: 65.0, y: C.avg_sc.h }, phi2: { layer: 'met4', x: 65.7, y: C.avg_sc.h },
-        in: { layer: 'met3', x: C.avg_sc.w, y: C.avg_sc.pins.in.y }, out: { layer: 'met3', x: C.avg_sc.w, y: C.avg_sc.pins.out.y } }) }),
+      real('xavg', 'avg_sc'),
       real('xcomp', 'comp_ct'),
       real('xdac', 'r2r', { group: 'trim' }),
       { inst: 'xctrim', cell: 'ctrim_1p', w: 23.5, h: 23.5, estimate: true, group: 'trim', label: 'Ctrim 1 pF',
@@ -104,10 +84,9 @@
 
   // [name, class, from, to]; endpoints are "inst.pin" or "pad:<tile pin>"
   const NETS = [
-    ['rx_p', 'rxin', 'pad:ua[2]', 'xchain.a.inp'], ['rx_n', 'rxin', 'pad:ua[3]', 'xchain.a.inn'],
-    ['o1', 'rx', 'xchain.a.o1p', 'xdet.t1p'], ['o2', 'rx', 'xchain.a.o2p', 'xdet.t2p'], ['o3', 'rx', 'xchain.a.o3p', 'xdet.t3p'],
-    ['fold o3', 'rx', 'xchain.a.o3p', 'xchain.b.inp'],
-    ['o4', 'late', 'xchain.b.o4p', 'xdet.t4p'], ['o5', 'late', 'xchain.b.o5p', 'xdet.t5p'], ['out', 'late', 'xchain.b.outp', 'xdet.t6p'],
+    ['rx_p', 'rxin', 'pad:ua[2]', 'xchain.inp'], ['rx_n', 'rxin', 'pad:ua[3]', 'xchain.inn'],
+    ['o1', 'rx', 'xchain.o1p', 'xdet.t1p'], ['o2', 'rx', 'xchain.o2p', 'xdet.t2p'], ['o3', 'rx', 'xchain.o3p', 'xdet.t3p'],
+    ['o4', 'late', 'xchain.o4p', 'xdet.t4p'], ['o5', 'late', 'xchain.o5p', 'xdet.t5p'], ['out', 'late', 'xchain.outp', 'xdet.t6p'],
     ['det', 'rx', 'xdet.det', 'xlpf.in'], ['det dbg', 'rx', 'xdet.det', 'xdbg.a'], ['dbg', 'rx', 'xdbg.b', 'pad:ua[4]'],
     ['lpf', 'rx', 'xlpf.out', 'xavg.in'], ['lpf comp', 'rx', 'xlpf.out', 'xcomp.inp'], ['avg', 'rx', 'xavg.out', 'xcomp.inn'],
     ['comp_in', 'clk', 'xcomp.out', 'macro.comp_in'],
@@ -117,7 +96,7 @@
     ['clk', 'clk', 'pad:clk', 'macro.clk'],
   ].concat([0, 1, 2, 3, 4, 5, 6, 7].map(i => [`trim[${i}]`, 'trim', `macro.trim_out[${i}]`, `xdac.b${i}`])).concat([
     ['dac', 'trim', 'xdac.out', 'xctrim.p'], ['trim', 'trim', 'xctrim.n', 'xcomp.trim'],
-    ['ib_chain', 'bias', 'xbias.ib_chain', 'xchain.a.ibias'], ['vcm', 'bias', 'xbias.vcm', 'xchain.a.vcm'],
+    ['ib_chain', 'bias', 'xbias.ib_chain', 'xchain.ibias'], ['vcm', 'bias', 'xbias.vcm', 'xchain.vcm'],
     ['ib_det', 'bias', 'xbias.ib_det', 'xdet.ibias_det'], ['ib_comp', 'bias', 'xbias.ib_comp', 'xcomp.ibias'],
     ['ring', 'tx', 'xtx.xring.out', 'xtx.xls.in'], ['a', 'tx', 'xtx.xls.A', 'xtx.xdrv_p.in'], ['b', 'tx', 'xtx.xls.B', 'xtx.xdrv_n.in'],
     ['enh_p', 'tx', 'xtx.xlse_p.A', 'xtx.xdrv_p.en'], ['enh_n', 'tx', 'xtx.xlse_n.A', 'xtx.xdrv_n.en'],
@@ -246,7 +225,7 @@
     const missing = Object.keys(cat).filter(n => !I[n]);
 
     // inputs: chain input section + pad wires; late: stages 4-6, log_det's t4-t6 row and their tap wires
-    const A = I['xchain.a'], Bc = I['xchain.b'], D = I.xdet, M = I.macro;
+    const A = I.xchain, D = I.xdet, M = I.macro;
     const inputZone = A ? [A.zones.input].concat(segsOf([netBy('rx_p'), netBy('rx_n')])) : [];
     const stage1 = A ? [A.zones.stage1] : [];
 
@@ -257,28 +236,28 @@
       const dC = minGapShapes(inputZone, dig);
       const d = Math.min(dM, dC);
       const crossers = nets.filter(n => !n.missing && (n.cls === 'clk' || n.cls === 'trim') &&
-        n.segs.some(sg => [A.rect, Bc && Bc.rect].filter(Boolean).some(r => segCrosses(sg, r, 0.6))));
+        n.segs.some(sg => [A.rect].some(r => segCrosses(sg, r, 0.6))));
       add(1, 'Chain input far from the macro', crossers.length ? 'fail' : lvl(d, s.r1, s.r1 / 2, true),
         `${fmt(dM)} µm`, `input ↔ macro halo ${fmt(dM)} µm, ↔ TT channel / clk ${fmt(dC)} µm (want ≥ ${s.r1}).` +
         (crossers.length ? ` Digital wires over the chain: ${crossers.map(n => n.name).join(', ')}.` : ' No macro wire over the chain.'));
     } else add(1, 'Chain input far from the macro', 'info', '-', 'Place the chain and the macro.');
 
     // 2. late stages / detector t4-t6 away from the input
-    if (A && Bc && D) {
+    if (A && D) {
       const tLate = ['t4p', 't5p', 't6p', 't4n', 't5n', 't6n'].map(p => D.pins[p].at).map(q => [q[0] - 1, q[1] - 1, 2, 2]);
-      const late = [Bc.rect].concat(tLate, segsOf([netBy('o4'), netBy('o5'), netBy('out')]));
+      const late = [A.zones.late].concat(tLate, segsOf([netBy('o4'), netBy('o5'), netBy('out')]));
       const d = minGapShapes(late, inputZone.concat(stage1));
-      const dOut = minGapShapes([[Bc.pins.outp.at[0] - 1, Bc.pins.outp.at[1] - 1, 2, 2]], inputZone);
+      const dOut = minGapShapes([[A.pins.outp.at[0] - 1, A.pins.outp.at[1] - 1, 2, 2]], inputZone);
       const cross = segsOf([netBy('o4'), netBy('o5'), netBy('out')]).some(sg => inputZone.concat(stage1).some(z => rectGap(sg, z) === 0));
       add(2, 'Late stages away from the input', cross ? 'fail' : lvl(d, s.r2, s.r2 / 2, true), `${fmt(d)} µm`,
         `closest late-stage shape (stages 4-6, t4-t6, their tap wires) to the input section, pad wires or stage 1: ${fmt(d)} µm; ` +
         `stage 6 output ↔ input ${fmt(dOut)} µm (want ≥ ${s.r2}).`);
-    } else add(2, 'Late stages away from the input', 'info', '-', 'Place both chain parts and log_det.');
+    } else add(2, 'Late stages away from the input', 'info', '-', 'Place the chain and log_det.');
 
     // 3. clock edges off the RX
     {
       const ck = ['sc_phi1', 'sc_phi2', 'comp_in', 'clk'].map(netBy).filter(n => n && !n.missing);
-      const rxr = [A, Bc, D].filter(Boolean).map(i => i.rect);
+      const rxr = [A, D].filter(Boolean).map(i => i.rect);
       const crossing = ck.filter(n => n.segs.some(sg => rxr.some(r => segCrosses(sg, r, 0.6))));
       const d = minGapShapes(segsOf(ck), rxr);
       add(3, 'Clock edges off the RX', crossing.length ? 'fail' : lvl(d, s.r3, s.r3 / 2, true), crossing.length ? 'crosses' : `${fmt(d)} µm`,
@@ -397,9 +376,8 @@
     const R = resolve(cat, v), blocks = [];
     for (const i of Object.values(R.inst)) {
       const [k, m] = ORIENTS[i.pl.orient];
-      const b = { inst: i.cat.part ? 'xchain' : i.name, cell: i.cat.cell, x: +i.rect[0].toFixed(2), y: +i.rect[1].toFixed(2), orient: i.pl.orient,
+      const b = { inst: i.name, cell: i.cat.cell, x: +i.rect[0].toFixed(2), y: +i.rect[1].toFixed(2), orient: i.pl.orient,
         rot: k * 90, mirror: m, estimate: !!i.cat.estimate };
-      if (i.cat.part) { b.part = i.cat.part; b.fold = 'proposed: chain folded after stage 3 (needs a lna_chain re-layout)'; }
       if (i.cat.estimate) { b.w = i.w; b.h = i.h; }
       blocks.push(b);
     }
@@ -414,7 +392,7 @@
     const v = { name: j.variant || 'Imported', note: j.note || '', place: {}, decaps: {}, straps: (j.straps || []).map(s => ({ net: s.net, x: +s.x, w: +s.w })), est: {} };
     for (const b of j.blocks || []) {
       if (DECAPS[b.inst]) { (v.decaps[b.inst] = v.decaps[b.inst] || []).push({ x: +b.x, y: +b.y, w: +b.w, h: +b.h }); continue; }
-      const n = b.inst === 'xchain' ? `xchain.${b.part || 'a'}` : b.inst;
+      const n = b.inst;
       if (!cat[n]) continue;
       v.place[n] = { x: +b.x, y: +b.y, orient: ORIENTS[b.orient] ? b.orient : 'R0' };
       if (cat[n].estimate && b.w && b.h) v.est[n] = { w: +b.w, h: +b.h };

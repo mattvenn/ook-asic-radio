@@ -1,7 +1,9 @@
 // Seed placer for the floorplan variants: anneals the movable blocks of each variant spec
 // around its fixed anchors, fills the leftover space with decap and picks clear strap lanes.
 //   node layout/floorplan/page/place.js        -> writes layout/floorplan/variants.json
-// The variants are starting points for the page; Matt refines them there.
+// The variants are starting points for the page; Matt refines them there. The specs below
+// predate the real (straight) lna_chain in the page: give each spec an xchain anchor before
+// re-running, or the chain stays unplaced.
 const fs = require('fs');
 const path = require('path');
 require('./engine.js');
@@ -57,10 +59,9 @@ function solve(spec, iters) {
     const i = ref.lastIndexOf('.'), n = ref.slice(0, i), q = G[n][st[n].orient].pins[ref.slice(i + 1)];
     return [st[n].x + q[0], st[n].y + q[1]];
   };
-  const nets = FP.NETS.filter(([nm, , a, b]) => {
-    const own = (r) => r.startsWith('pad:') ? null : r.slice(0, r.lastIndexOf('.'));
-    return mov.includes(own(a)) || mov.includes(own(b));
-  });
+  const own = (r) => r.startsWith('pad:') ? null : r.slice(0, r.lastIndexOf('.'));
+  const placed = (r) => r.startsWith('pad:') || own(r) in st;
+  const nets = FP.NETS.filter(([nm, , a, b]) => (mov.includes(own(a)) || mov.includes(own(b))) && placed(a) && placed(b));
   const inside = (r, area) => { const w = Math.max(0, Math.min(r[0] + r[2], area[0] + area[2]) - Math.max(r[0], area[0])), h = Math.max(0, Math.min(r[1] + r[3], area[1] + area[3]) - Math.max(r[1], area[1])); return w * h; };
   function cost() {
     let c = 0;
@@ -154,7 +155,7 @@ function fillDecap(spec, v) {
     mark(best.map(q => q * G), K);
   }
   // VDPWR decap (RX supply) from the rectangles nearest the RX, the rest VAPWR
-  const rxc = R.inst['xdet'].rect, cx = rxc[0] + rxc[2] / 2, cy = rxc[1] + rxc[3] / 2;
+  const rxc = (R.inst.xdet || R.inst.macro).rect, cx = rxc[0] + rxc[2] / 2, cy = rxc[1] + rxc[3] / 2;
   rects.sort((a, b) => Math.hypot(a[0] + a[2] / 2 - cx, a[1] + a[3] / 2 - cy) - Math.hypot(b[0] + b[2] / 2 - cx, b[1] + b[3] / 2 - cy));
   const decaps = { xdeca: [], xdecd: [] }; let dA = 0;
   for (const r of rects) {
@@ -184,7 +185,6 @@ const SPECS = [
     id: 'A', name: 'A: RX left, TX middle, macro right', runs: 10, iters: 250000,
     fixed: {
       macro: { x: 228.12, y: 23.76, orient: 'R0' },
-      'xchain.a': { x: 51.6, y: 3, orient: 'MXR90' }, 'xchain.b': { x: 89.36, y: 176, orient: 'R0' },
       xdet: { x: 89.36, y: 142.4, orient: 'MX' }, xbias: { x: 0, y: 3, orient: 'R270' },
       'xtx.xdrv_n': { x: 102.7, y: 3, orient: 'MYR90' }, 'xtx.xdrv_p': { x: 131.9, y: 3, orient: 'R270' },
     },
@@ -198,7 +198,6 @@ const SPECS = [
     id: 'B', name: 'B: A with the macro at the top edge', runs: 10, iters: 250000,
     fixed: {
       macro: { x: 228.12, y: 35.76, orient: 'R0' },
-      'xchain.a': { x: 51.6, y: 3, orient: 'MXR90' }, 'xchain.b': { x: 89.36, y: 176, orient: 'R0' },
       xdet: { x: 89.36, y: 142.4, orient: 'MX' }, xbias: { x: 0, y: 3, orient: 'R270' },
       'xtx.xdrv_n': { x: 102.7, y: 3, orient: 'MYR90' }, 'xtx.xdrv_p': { x: 131.9, y: 3, orient: 'R270' },
     },
@@ -212,7 +211,6 @@ const SPECS = [
     id: 'C', name: 'C: chain far left, signal path along the top', runs: 8, iters: 150000,
     fixed: {
       macro: { x: 228.12, y: 23.76, orient: 'R0' },
-      'xchain.a': { x: 2, y: 3, orient: 'MXR90' }, 'xchain.b': { x: 39.76, y: 176, orient: 'R0' },
       xdet: { x: 39.76, y: 142.4, orient: 'MX' },
       'xtx.xdrv_n': { x: 102.7, y: 3, orient: 'MYR90' }, 'xtx.xdrv_p': { x: 131.9, y: 3, orient: 'R270' },
     },
