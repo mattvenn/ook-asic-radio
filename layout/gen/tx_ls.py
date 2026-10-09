@@ -1,5 +1,5 @@
 # tx_ls layouts: 1.8 -> 3.3 V level shifter (xschem/gen/tx.py:tx_ls), two variants:
-#   tx_ls     kn=10 kp=4 wpi=9 wni=3   (ring -> arms; the input inverter is the ring's load)
+#   tx_ls     kn=14 kp=8 wpi=9 wni=3   (ring -> arms; the input inverter is the ring's load)
 #   tx_ls_en  kn=1  kp=1 wpi=1 wni=0.42 (the two arm enables)
 # in -> thin inverter (wpi/wni) -> ctrl -> thin inverter (hvt P 4, N 1.68) -> ctrl_n;
 # thick core: NMOS pull-downs (0.42 kn; ctrl -> A, ctrl_n -> B), cross-coupled PMOS (0.42 kp).
@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lay import Block, Fet, REPO          # noqa: E402
 from rows import Dev, Net, build, inverter_roles   # noqa: E402
 
-VARIANTS = {'tx_ls': dict(kn=10, kp=4, wpi=9, wni=3), 'tx_ls_en': dict(kn=1, kp=1, wpi=1, wni=0.42)}
+VARIANTS = {'tx_ls': dict(kn=14, kp=8, wpi=9, wni=3), 'tx_ls_en': dict(kn=1, kp=1, wpi=1, wni=0.42)}
 NETS = {'in': Net(io='L'), 'ctrl': Net(), 'ctrl_n': Net(), 'A': Net(io='R'), 'B': Net(io='R')}
 
 

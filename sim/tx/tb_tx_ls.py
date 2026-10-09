@@ -18,7 +18,7 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 B = os.path.join(ROOT, 'build')
 OSIC = os.path.join(ROOT, 'tools', 'osic')
 T = 1 / 433.92e6
-PRM = {'tx_ls': 'kn=10 kp=4 wpi=9 wni=3', 'tx_ls_en': 'kn=1 kp=1 wpi=1 wni=0.42'}
+PRM = {'tx_ls': 'kn=14 kp=8 wpi=9 wni=3', 'tx_ls_en': 'kn=1 kp=1 wpi=1 wni=0.42'}
 
 
 def subckts(cells=('tx_ls', 'tx_drv')):

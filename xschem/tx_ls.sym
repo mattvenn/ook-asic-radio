@@ -3,7 +3,7 @@ v {xschem version=3.4.5 file_version=1.2
 G {}
 K {type=subcircuit
 format="@name @pinlist @symname kn=@kn kp=@kp wpi=@wpi wni=@wni"
-template="name=x1 kn=10 kp=4 wpi=9 wni=3"
+template="name=x1 kn=14 kp=8 wpi=9 wni=3"
 }
 V {}
 S {}

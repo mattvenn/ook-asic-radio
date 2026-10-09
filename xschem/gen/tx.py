@@ -9,7 +9,8 @@ sim/tx/tx_explore.py; sizes and results in STATUS "TX chain, first pass").
             core: thin input inverter (wpi/wni; W 9/3 is the load the ring
             was calibrated with) -> hvt/thin ctrl_n inverter -> thick
             cross-coupled core, pull-down NMOS kn x 0.42 um, PMOS kp x 0.42,
-            L 0.5. A follows in, B is its complement. kn 10 / kp 4 runs at
+            L 0.5. A follows in, B is its complement. kn 14 / kp 8 (was 10 / 4: the p arm's
+            duty collapsed under the extracted a / b load; sim/top/tb_tile_tx.py) runs at
             433 and 600 MHz; kn 1 / kp 1 (the DAC's own sizing) is fine for
             the static enables.
   tx_drv  : one antenna arm on VAPWR: thick NAND2 (in, en) then an inverter
@@ -37,7 +38,7 @@ from xsch import Sch, mos, ports, stdcell, write_symbol
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
 NINV = 22
-LS_PARAMS = {'kn': 10, 'kp': 4, 'wpi': 9, 'wni': 3}
+LS_PARAMS = {'kn': 14, 'kp': 8, 'wpi': 9, 'wni': 3}
 DRV_N = [0.42, 1.68, 6.72, 26.88, 48]        # inverter taper after the NAND (x4, final N 48)
 
 

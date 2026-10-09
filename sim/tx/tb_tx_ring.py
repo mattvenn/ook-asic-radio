@@ -39,7 +39,7 @@ def deck(corner, pex, cw, name):
 .lib {pdk}/sky130A/libs.tech/combined/sky130.lib.spice {corner}
 .include {pdk}/sky130A/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice
 {ring}
-{subckt('tx_ls', 'kn=10 kp=4 wpi=9 wni=3')}
+{subckt('tx_ls', 'kn=14 kp=8 wpi=9 wni=3')}
 VD VDD 0 1.8
 VA VAPWR 0 3.3
 Ven en 0 pwl(0 0 1n 0 1.05n 1.8)
