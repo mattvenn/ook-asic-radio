@@ -8,6 +8,8 @@ Each variant is <mode>[:key=value,...]:
     c:drop=<regex>       extracted netlist with every C that touches a net matching <regex> removed
     c:keep=<regex>       ... with only the C on nets matching <regex> kept (C touching only the
                          supplies / VGND dropped too unless the other end matches)
+    sch:kn=15,kp=8       schematic with tx_ls (xls) resized (default kn=10 kp=4)
+    <any>:corner=ss,temp=10   process corner (.lib ... tt rewritten) and temperature
     sch:addc=a:9f;b:13f  schematic with extra C to VSS on tx_top's nets (what-if for the wiring)
     c:dev=<regex>,wx=2   extracted netlist with the W of each device whose line matches <regex> scaled
                          (what-if for a sizing change the layout doesn't have yet)
@@ -34,7 +36,7 @@ alterparam vemf = 0
 alterparam ven_rx = 0
 alterparam ven_tx = 1.8
 reset
-tran 2p 80n 0
+{temp}tran 2p 80n 0
 write {raw}
 .endc
 """
@@ -85,10 +87,18 @@ def deck(src, variant):
     mode, opts = parse(variant)
     raw = f'tb_tile_tx_{tag(variant)}.raw'
     d = tb_tile.deck_for(src, mode)
-    d = re.sub(r'^\.control\b.*?^\.endc\b[^\n]*\n', lambda m: TX_CONTROL.format(raw=raw), d,
+    d = re.sub(r'^\.control\b.*?^\.endc\b[^\n]*\n', lambda m: TX_CONTROL.format(
+        raw=raw, temp=f'option temp = {opts["temp"]}\n' if 'temp' in opts else ''), d,
                count=1, flags=re.S | re.M)
     if 'cw' in opts:
         d, n = re.subn(r'^(xring .* tx_ring) cw=\S+', rf'\1 cw={opts["cw"]}', d, flags=re.M)
+        assert n == 1, n
+    for k in ('kn', 'kp'):
+        if k in opts:
+            d, n = re.subn(rf'^(xls .* tx_ls .*\b{k})=\S+', rf'\g<1>={opts[k]}', d, flags=re.M)
+            assert n == 1, (k, n)
+    if 'corner' in opts:
+        d, n = re.subn(r'^(\.lib \S+sky130\.lib\.spice) tt$', rf'\1 {opts["corner"]}', d, flags=re.M)
         assert n == 1, n
     if 'addc' in opts:
         cs = ''.join(f'Cadd_{k} {k} VSS {v}\n' for k, v in (kv.split(':') for kv in opts['addc'].split(';')))
