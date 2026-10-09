@@ -17,7 +17,8 @@ from rows import Dev, Net, build, inverter_roles, dummy   # noqa: E402
 from passives import PolyRes, mim, CAPM_ENC_M3, BOT_PLATE_SPACE   # noqa: E402
 
 PARAMS = dict(w1=20, l1=1, mt1=10, rdeg=2e6, mta=2, lref=136, wcl=22)   # radio_analog's xcomp
-NETS = {'inp': Net(io='L'), 'inn': Net(io='L'), 'trim': Net(io='L'), 'ibias': Net(io='L'), 'out': Net(io='R'),
+NETS = {'inp': Net(), 'inn': Net(), 'trim': Net(io='R', pin=False), 'ibias': Net(io='R', pin=False),
+        'out': Net(io='R', pin=False),
         'tail': Net(), 'd1': Net(), 'd2': Net(), 'sa': Net(), 'sb': Net(), 'vref': Net(), 'o2': Net()}
 
 
@@ -75,7 +76,56 @@ def make(passives=True, xp=None):
     b.mn3, b.min_ = mn3, min_
     if passives:
         add_passives(b, P_)
+        add_pins(b)
     return b
+
+
+# Pins (floorplan matt layout 5, layout/floorplan/pins.md; the block is placed MYR90, so its
+# own N edge faces west, E south, S east). Own-frame targets (lower-left = 0, 0):
+PIN_X = {'inp': 37.85, 'inn': 42.45}          # N edge: inn = lpf (lpf_rc out, below), inp = avg (avg_sc out, above)
+PIN_Y = {'ibias': 22.47, 'trim': 19.47}       # E edge, toward bias_gen (corridor) / Ctrim n
+OUT_X = 72.45                                 # S edge at the east end, toward the macro
+
+
+def add_pins(b):
+    """inp / inn: a met4 riser from the track's east end up past the tracks above it, met3
+    east under the VDD rail (empty there), up through a gap in the rail's met3 to the N edge.
+    inn's horizontal runs below inp's (inp's pin is west of inn's, so they don't cross).
+    out / trim / ibias: their tracks run east (io 'R'); each drops down its own met4 column
+    at the east end (no met4 there): ibias on the outside, stopping at its pin; trim inside
+    it, turning east to the edge below ibias's end; out innermost, on down to the S edge.
+    Nothing crosses on one layer."""
+    g = b.rows
+    t, xs = g['tracks'], g['xs']
+    bb = b.cell.dbbox()
+    ox, oy, R, top = bb.left, bb.bottom, bb.right, bb.top
+    yrail = g['ytop']                                     # VDD rail bottom
+    ych = max(tt['y1'] for tt in t.values())              # top of the channel
+    for n, yh in (('inn', ych + 1.5), ('inp', ych + 2.5)):
+        tr, xe = t[n], xs[n][1] + 0.1                      # track's east end
+        col = box(xe - 0.5, tr['y0'], xe, yh + 0.5)
+        b.via('via3', box(col.left, tr['y0'], col.right, tr['y1']))
+        b.rect('m4', col)
+        X = snap(ox + PIN_X[n])
+        b.rect('m3', box(col.left, yh, X + 0.25, yh + 0.5))
+        b.via('via3', box(col.left, yh, col.right, yh + 0.5))
+        b.clear(('m3', 'via2'), box(X - 0.55, yrail, X + 0.55, top))
+        b.rect('m3', box(X - 0.25, yh, X + 0.25, top))
+        b.pin('m3', box(X - 0.25, top - 0.5, X + 0.25, top), n)
+    cols = {'ibias': (R - 0.5, R), 'trim': (R - 1.3, R - 0.8), 'out': (R - 2.1, R - 1.6)}
+    for n, (x0, x1) in cols.items():
+        tr = t[n]
+        b.rect('m3', box(g['xmax'] - 0.5, tr['y0'], R, tr['y1']))          # track on to the edge
+        land(b, n, x0, x1)                                                    # (out's stub is east of its column)
+        b.via('via3', box(x0, tr['y0'], x1, tr['y1']))
+        if n == 'out':
+            b.rect('m4', box(x0, oy, x1, tr['y1']))
+            b.pin('m4', box(x0, oy, x1, oy + 0.5), n)
+        else:
+            yp = snap(oy + PIN_Y[n])
+            b.rect('m4', box(x0, yp - 0.25, x1, tr['y1']))
+            b.rect('m4', box(x0, yp - 0.25, R, yp + 0.25))
+            b.pin('m4', box(R - 0.5, yp - 0.25, R, yp + 0.25), n)
 
 
 def land(b, net, x0, x1):
