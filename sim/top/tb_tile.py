@@ -45,7 +45,20 @@ def deck_for(src, mode):
     pat = re.compile(r'^\.subckt\s+radio_analog\s.*?^\.ends\b[^\n]*\n', re.S | re.M | re.I)
     deck, n = pat.subn('', deck)
     assert n == 1, n
-    inc = f'.include ../layout/pex/radio_analog_{mode}.spice\n'
+    # internal nodes the deck measures: one level down in the extracted tile (the wrapper's X1),
+    # named by the route labels (layout/gen/top_nets.py)
+    deck = re.sub(r'xana\.(vcm|det|lpf|trim)\b', r'xana.x1.\1', deck)
+    # The tile's digital-pin stubs (nc_* in the wrapper: the macro isn't extracted) carry only
+    # wiring C in the c / rc netlists: no DC path, so the op fails (singular matrix), ngspice falls
+    # back to a transient op and returns unsettled nodes (lpf 0.89 V, off current +0.7 uA).
+    # Tie each one to VGND through 1 G in a copy of the netlist.
+    net = open(pex).read()
+    wrap = re.search(r'^\.subckt\s+radio_analog\s.*?^\.ends\b', net, re.S | re.M)
+    ncs = sorted(set(re.findall(r'\b(nc_\w+)', wrap.group(0))))
+    ties = ''.join(f'Rtie_{n} {n} VGND 1G\n' for n in ncs)
+    end = wrap.end() - len('.ends')
+    open(os.path.join(B, f'radio_analog_{mode}_tied.spice'), 'w').write(net[:end] + ties + net[end:])
+    inc = f'.include radio_analog_{mode}_tied.spice\n'
     return re.sub(r'^\.end\s*$', inc + '.end', deck, flags=re.M)
 
 
