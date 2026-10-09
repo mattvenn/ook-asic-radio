@@ -17,7 +17,7 @@ written; grep for the block or topic you need.
     | 190 × 220 | 86 % | fails: GRT overflow 550, DRT stuck at 7 violations |
   - **Pins:** all 57 on its own E edge (faces west, placed MY), met3, at y = 0.34 + 1.36 i (`PIN_ORDER.md`). A 1 µm pitch isn't on the met3 track grid, so the TT group is at 1.36 µm (162–218).
   - **Final run:** 0 DRT / Magic DRC / LVS / antenna; setup ws 27.05 ns, hold ws 0.107 ns, no violations at any corner; utilisation 82 %; every pin within 0.01 µm of the floorplan. Max-slew warnings 245 across corners (marginal, mostly ss; 179 at 260 × 190).
-  - **cocotb:** RTL 15/15; GL 15/15 on the first 200 × 220 run (`e_200x220`, layout-4 pins).
+  - **cocotb:** RTL 15/15; GL 15/15 on the final netlist (`macros/radio_digital/radio_digital.nl.v`, run `l5b_200x220`), and on the two earlier 200 × 220 runs.
 - **Floorplan layout 5** (routing review of layout 4, every net drawn as a flyline): comp_ct and r2r flipped to MYR90, macro pins level with what they connect to, avg_sc clocks over the top. The floorplan engine's net list had comp inp/inn swapped and Ctrim in series; fixed to `xschem/gen/top.py`.
 - **Block re-layouts** (pins only; `docs/layout.md` "Pin moves for the floorplan"), all DRC / antenna / LVS clean, `tb_<block> --pex` at tt:
   - lpf_rc: f-3dB 14.65 kHz (was 14.76), 434 MHz −106.9 dB (was −106.2).

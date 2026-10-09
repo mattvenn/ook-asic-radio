@@ -9,7 +9,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 **State (end of 2026-10-09): every block laid out to the chosen floorplan ("matt layout 5"), the digital macro re-hardened to match (200 × 220 µm, all pins on the edge facing the analog). Next: top-level assembly, routing and extracted-tile verification: `docs/handoff_toplevel.md`.**
 - **Floorplan:** `layout/floorplan/pins.md` / `floorplan.json` (layout 5: comp_ct and r2r flipped to MYR90, macro pins level with what they connect to; `docs/floorplan_spec.md` "Chosen floorplan"). Pin moves per block: `docs/layout.md` "Pin moves for the floorplan".
-- **Macro:** `macros/radio_digital/` (GDS, LEF, DEF, netlists), from `openlane/radio_digital` (`PIN_ORDER.md`).
+- **Macro:** `macros/radio_digital/` (GDS, LEF, DEF, netlists), from `openlane/radio_digital` (`PIN_ORDER.md`). Signoff clean; RTL and GL cocotb 15/15 on the final netlist.
 - **RX:** every block is transistor level with real PDK passives and a real bias generator.
   - Chain: pad → 6-stage NMOS diff-pair limiting chain.
   - Detector: successive-detection log detector → 14 kHz RC LPF (2.95 MΩ / 3.7 pF).
