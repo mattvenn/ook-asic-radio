@@ -4,7 +4,8 @@
 # serpentine) in a p-tap guard ring on VSS; the two MIM caps on one met3 bottom plate (VSS)
 # over the resistor (the plate also shields it). The plate joins the rail's met3.
 # The top plates (out) are contacted by one met4 strip that drops to met3/met2 on the right.
-# in on the left edge (met2), out on the right edge (met3).
+# in on the south edge (met2, down through a gap in the rail's met2), out at the top of the
+# right edge (met3): on different edges, so in / out can't couple round the filter.
 # Currents are nA: minimum widths everywhere, 2 cuts per layer change for robustness.
 # Run: tools/osic klayout -b -r layout/gen/lpf_rc.py
 import os
@@ -54,8 +55,12 @@ def make():
     # ring bottom (met1) onto the rail: VSS
     b.rect('m1', box(inner.left - grw, y0 - 0.01, inner.right + grw, inner_y0))
 
-    # VSS rail (met1+2+3), full width
-    b.stack(box(0, 0, W, RAIL_H), 'm1', 'm3')
+    # VSS rail (met1+2+3), full width; its met2 stops short of the left end, where in drops
+    # through the rail on met2 to the south edge
+    IN_X = 1.5                                     # in's pin centre on the south edge
+    b.rect('m1', box(0, 0, W, RAIL_H))
+    b.rect('m3', box(0, 0, W, RAIL_H))
+    b.stack(box(IN_X + 0.25 + 0.3, 0, W, RAIL_H), 'm1', 'm3')
 
     # in / out: via1 on the end heads, met2 to the edges, both on one row inside the ring
     hin, hout = r.ends
@@ -67,15 +72,16 @@ def make():
     vout = box(hout.left, yr0, hout.right, yr1)
     b.via('via1', vin, enc=(0.055, 0.085))
     b.via('via1', vout, enc=(0.055, 0.085))
-    b.rect('m2', box(0, yr0, hin.right, yr1))
+    b.rect('m2', box(IN_X - 0.25, yr0, hin.right, yr1))
+    b.rect('m2', box(IN_X - 0.25, 0, IN_X + 0.25, yr1))    # down through the rail's met2 gap
     # out: met2 to the drop column, up through via2 to the met3 pad, via3 to the strip
     pad = box(drop_x, yr0, W, strip.top)
     b.rect('m2', box(hout.left, yr0, W, yr1))
     b.via('via2', box(drop_x, yr0, W, yr1), enc=(0.085, 0.065))
     b.rect('m3', pad)
     b.via('via3', box(drop_x, strip.bottom, W - 0.2, strip.top))
-    b.pin('m2', box(0, yr0, 0.5, yr1), 'in')
-    b.pin('m3', box(W - 0.5, yr0, W, yr0 + 2.0), 'out')
+    b.pin('m2', box(IN_X - 0.25, 0, IN_X + 0.25, 0.5), 'in')            # south edge
+    b.pin('m3', box(W - 0.5, strip.top - 2.0, W, strip.top), 'out')     # east edge, top corner
     b.pin('m1', box(0, 0, 1.0, RAIL_H), 'VSS')
     for k, ln in enumerate(r.links, 1):
         b.label('m1', ln, f'r{k}')
