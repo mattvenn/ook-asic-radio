@@ -36,12 +36,12 @@ const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.
 function cost(v) {
   const R = FP.resolve(cat, v), I = R.inst, M = I.macro;
   let c = 0;
-  const chan = FP.channelRect(data.tile, R, S);
+  const chanSh = FP.channelShapes(data.tile, R, S);
   const names = Object.keys(I);
   for (const n of MOVE) {
     const r = I[n].rect;
     c += 5000 * (r[2] * r[3] - ovl(r, [0, 0, W, H]));
-    c += 5000 * ovl(r, M.halo) + (chan ? 5000 * ovl(r, chan) : 0);
+    c += 5000 * ovl(r, M.halo) + chanSh.reduce((t, q) => t + 5000 * ovl(r, q), 0);
     if (ZONE[n]) c += 5000 * (r[2] * r[3] - ovl(r, ZONE[n]));
     for (const m of names) if (m !== n && m !== 'macro' && !(MOVE.indexOf(m) !== -1 && MOVE.indexOf(m) < MOVE.indexOf(n))) c += 5000 * ovl(r, grow(I[m].rect, K));
   }
@@ -91,7 +91,7 @@ function fillDecap(v) {
   const mark = (r, pad) => { const x0 = Math.max(0, Math.floor(r[0] - pad)), x1 = Math.min(nx, Math.ceil(r[0] + r[2] + pad)), y0 = Math.max(0, Math.floor(r[1] - pad)), y1 = Math.min(ny, Math.ceil(r[1] + r[3] + pad));
     for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) occ[y * nx + x] = 1; };
   for (const i of Object.values(R.inst)) mark(i.halo || i.rect, i.halo ? 0 : K);
-  const chan = FP.channelRect(data.tile, R, S); if (chan) mark(chan, 0);
+  for (const q of FP.channelShapes(data.tile, R, S)) mark(q, 0);
   mark([0, 0, W, 1.5], 0); mark([0, H - 1.5, W, 1.5], 0);
   // keep the RX pad wires and the chain input free: no decap below the chain's input end
   const ch = R.inst.xchain; mark([ch.rect[0] - 10, 0, 90, ch.rect[1]], 0);

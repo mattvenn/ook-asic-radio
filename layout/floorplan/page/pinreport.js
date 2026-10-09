@@ -39,8 +39,8 @@ for (const n of order) {
   const c = ins.cat, [k, m] = FP.ORIENTS[ins.pl.orient];
   out.push(`## ${n} (${c.cell})`);
   out.push('');
-  const reshaped = c.reshape && Math.abs(ins.w - c.w) > 1e-6;
-  out.push(`- Size: ${f(ins.w)} × ${f(ins.h)}${reshaped ? ` (reshaped from ${c.w} × ${c.h}, same area: re-harden at this size)` : c.estimate ? ' (estimate: not laid out yet)' : ' (GDS)'}`);
+  const reshaped = c.reshape && (Math.abs(ins.w - c.w) > 1e-6 || Math.abs(ins.h - c.h) > 1e-6);
+  out.push(`- Size: ${f(ins.w)} × ${f(ins.h)}${reshaped ? ` (reshaped from ${c.w} × ${c.h}, ${Math.abs(ins.w * ins.h - c.w * c.h) > 1 ? f(ins.w * ins.h) + ' µm² vs ' + c.w * c.h : 'same area'}: re-harden at this size)` : c.estimate ? ' (estimate: not laid out yet)' : ' (GDS)'}`);
   out.push(`- Placement: x ${f(ins.rect[0])}, y ${f(ins.rect[1])}, ${ins.pl.orient} (rot ${k * 90}, mirror ${m})`);
   const moved = Object.entries(ins.pins).filter(([, p]) => p.moved);
   out.push(`- Pins moved: ${moved.length ? moved.length : 'none'}`);

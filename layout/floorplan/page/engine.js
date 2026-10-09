@@ -49,6 +49,27 @@
     const ch = C.lna_chain;
     // zones of the real chain, for the rule checks: the input section (Cin, Rb, Mref), stage 1,
     // and stages 4-6 (from the o3 tap gap to the output end)
+    // U-fold (floorplanning only, needs a chain re-layout): same area, half the width. The input
+    // half (x < L/2: input section, stages 1-2) is the top row as drawn (inputs stay on the top
+    // edge); the output half turns round at the right and runs back along the bottom row.
+    function foldOf(cell, zones) {
+      const L = cell.w, H = cell.h, cut = L / 2;
+      const map = (x, y) => x <= cut ? [x, H + y] : [L - x, H - y];
+      const rect = (r) => {                                           // split at the fold, map both parts
+        const parts = [], x0 = r[0], x1 = r[0] + r[2];
+        for (const [a, b] of [[x0, Math.min(x1, cut)], [Math.max(x0, cut), x1]]) {
+          if (b - a <= 1e-9) continue;
+          const p = map(a + 1e-9 * (a >= cut ? 1 : 0), r[1]), q = map(b - 1e-9 * (b <= cut ? 1 : 0), r[1] + r[3]);
+          parts.push([Math.min(p[0], q[0]), Math.min(p[1], q[1]), Math.abs(q[0] - p[0]), Math.abs(q[1] - p[1])]);
+        }
+        return parts;
+      };
+      const pins = {};
+      for (const [n, p] of Object.entries(cell.pins)) { const [x, y] = map(p.x, p.y); pins[n] = Object.assign({}, p, { x: +x.toFixed(3), y: +y.toFixed(3) }); }
+      const z = {}; for (const [k, r] of Object.entries(zones)) z[k] = rect(r)[0];
+      z.late = rect(zones.late)[0];
+      return { w: +cut.toFixed(3), h: +(2 * H).toFixed(3), pins, m4: (cell.m4 || []).flatMap(rect), zones: z };
+    }
     const chainZones = { input: [0, 0, 69.5, ch.h], stage1: [69.5, 0, 37, ch.h], late: [171.5, 0, +(ch.w - 171.5).toFixed(2), ch.h] };
     const real = (inst, cell, extra) => Object.assign({ inst, cell, w: C[cell].w, h: C[cell].h, pins: C[cell].pins, m4: C[cell].m4 || [], group: 'rx' }, extra || {});
     // macro pins: even spread of pin_order.cfg slots (LibreLane), an estimate until the DEF is read
@@ -62,7 +83,7 @@
     N.forEach((n, i) => { mpins[n] = { layer: 'met2', x: +((i + 1) * 260 / 83).toFixed(2), y: 190, est: true }; });
     const list = [
       { inst: 'macro', cell: 'radio_digital', w: 260, h: 190, reshape: true, halo: 5, pins: mpins, m4: [[0, 0, 260, 190]], group: 'dig', label: 'radio_digital' },
-      real('xchain', 'lna_chain', { zones: chainZones }),
+      real('xchain', 'lna_chain', { zones: chainZones, fold: foldOf(ch, chainZones) }),
       real('xdet', 'log_det'), real('xlpf', 'lpf_rc'),
       real('xavg', 'avg_sc'),
       real('xcomp', 'comp_ct'),
@@ -152,15 +173,16 @@
     for (const [n, c] of Object.entries(cat)) {
       const p = (v.place || {})[n];
       if (!p) continue;
-      let w = c.w, h = c.h;
+      const F = c.fold && v.fold && v.fold[n] ? c.fold : null;          // folded chain: its own size, pins, met4 and zones
+      let w = F ? F.w : c.w, h = F ? F.h : c.h;
       const scaled = c.estimate || c.reshape;      // estimated blocks, and the macro (re-hardened at a new aspect ratio, same area)
-      if (scaled && v.est && v.est[n]) { w = v.est[n].w; h = c.reshape ? c.w * c.h / w : v.est[n].h; }
+      if (scaled && v.est && v.est[n]) { w = v.est[n].w; h = c.reshape ? (v.est[n].area || c.w * c.h) / w : v.est[n].h; }   // macro: est.area overrides the hardened area
       const pl = { x: p.x, y: p.y, orient: p.orient || 'R0' };
       const [pw, ph] = placedSize(pl.orient, w, h);
       const rect = [pl.x, pl.y, pw, ph];
       const pins = {};
       const sx = scaled ? w / c.w : 1, sy = scaled ? h / c.h : 1;
-      const src = n === 'macro' ? macroPins(c, v) : c.pins;
+      const src = n === 'macro' ? macroPins(c, v) : F ? F.pins : c.pins;
       // moved pins (floorplanning): v.pins[inst][pin] = {x, y} in the block's own frame at its
       // placed size; they need a block re-layout (or, for the macro, a new pin_order.cfg)
       const mv = (v.pins || {})[n] || {};
@@ -168,10 +190,10 @@
         const m = mv[pn];
         pins[pn] = Object.assign({}, pp, m ? { x: m.x, y: m.y, moved: true, at: mapPt(pl, w, h, m.x, m.y) } : { at: mapPt(pl, w, h, pp.x * sx, pp.y * sy) });
       }
-      const m4 = (c.m4 || []).map(r => scaled ? [0, 0, w, h] : r).map(r => mapRect(pl, w, h, r));
+      const m4 = ((F ? F.m4 : c.m4) || []).map(r => scaled ? [0, 0, w, h] : r).map(r => mapRect(pl, w, h, r));
       const zones = {};
-      for (const [zn, z] of Object.entries(c.zones || {})) zones[zn] = mapRect(pl, w, h, z);
-      inst[n] = { name: n, cat: c, pl, w, h, rect, pins, m4, zones,
+      for (const [zn, z] of Object.entries((F ? F.zones : c.zones) || {})) zones[zn] = mapRect(pl, w, h, z);
+      inst[n] = { name: n, cat: c, pl, w, h, rect, pins, m4, zones, folded: !!F,
         halo: c.halo ? [rect[0] - c.halo, rect[1] - c.halo, rect[2] + 2 * c.halo, rect[3] + 2 * c.halo] : null };
     }
     const decaps = [];
@@ -210,11 +232,35 @@
     return p ? p.at : null;
   }
 
-  function channelRect(tile, R, s) {
+  // The TT digital pins (top edge) to the macro's pins: at each x, the channel along the top is as
+  // tall as the number of wires running horizontally there x the track pitch (s.channel = all 42).
+  // So it ramps up from x 15 to the last TT pin, is full height until the first macro pin, and
+  // ramps down again over the macro as the wires land.
+  function channelShapes(tile, R, s) {
     const m = R.inst.macro;
-    if (!s.channel || !m) return null;
-    const x1 = Math.max(m.rect[0] + 3, m.pins.clk.at[0] + 3);    // to the last north pin (clk)
-    return [15, tile.h - s.channel, Math.max(0, x1 - 15), s.channel];
+    if (!s.channel || !m) return [];
+    const spans = [];
+    for (const [n, tp] of Object.entries(tile.pins)) {
+      if (tp.y0 < 1 || !m.pins[n]) continue;                            // top-edge TT pins the macro has
+      const tx = (tp.x0 + tp.x1) / 2, mx = m.pins[n].at[0];
+      spans.push([Math.min(tx, mx), Math.max(tx, mx)]);
+    }
+    if (!spans.length) return [];
+    const pitch = s.channel / spans.length, xs = [...new Set(spans.flat())].sort((a, b) => a - b), out = [];
+    for (let i = 0; i < xs.length - 1; i++) {
+      const a = xs[i], b = xs[i + 1], mid = (a + b) / 2, k = spans.filter(([p, q]) => p <= mid && q >= mid).length;
+      if (!k) continue;
+      const h = k * pitch, last = out[out.length - 1];
+      if (last && Math.abs(last[3] - h) < 1e-9 && Math.abs(last[0] + last[2] - a) < 1e-9) last[2] = b - last[0];
+      else out.push([a, tile.h - h, b - a, h]);
+    }
+    return out;
+  }
+  function channelRect(tile, R, s) {                                   // bounding box of the channel
+    const sh = channelShapes(tile, R, s);
+    if (!sh.length) return null;
+    const x0 = Math.min(...sh.map(r => r[0])), x1 = Math.max(...sh.map(r => r[0] + r[2])), y0 = Math.min(...sh.map(r => r[1]));
+    return [x0, y0, x1 - x0, tile.h - y0];
   }
 
   function routeNets(tile, R) {
@@ -247,7 +293,7 @@
     const netBy = n => nets.find(x => x.name === n);
     const segsOf = list => list.filter(n => n && !n.missing).flatMap(n => n.segs.map(segRect));
     const lvl = (x, pass, warn, higher) => higher ? (x >= pass ? 'pass' : x >= warn ? 'warn' : 'fail') : (x <= pass ? 'pass' : x <= warn ? 'warn' : 'fail');
-    const chan = channelRect(tile, R, s);
+    const chanSh = channelShapes(tile, R, s), chan = chanSh.length ? channelRect(tile, R, s) : null;
     const missing = Object.keys(cat).filter(n => !I[n]);
 
     // inputs: chain input section + pad wires; late: stages 4-6, log_det's t4-t6 row and their tap wires
@@ -258,7 +304,7 @@
     // 1. chain input far from the digital macro and the TT digital wires
     if (A && M) {
       const dM = minGapShapes(inputZone, [M.halo]);
-      const dig = segsOf([netBy('clk')]).concat(chan ? [chan] : []);
+      const dig = segsOf([netBy('clk')]).concat(chanSh);
       const dC = minGapShapes(inputZone, dig);
       const d = Math.min(dM, dC);
       const crossers = nets.filter(n => !n.missing && (n.cls === 'clk' || n.cls === 'trim') &&
@@ -348,7 +394,7 @@
       for (let i = 0; i < boxes.length; i++) {
         const a = boxes[i], r = a.r;
         if (r[0] < -1e-6 || r[1] < -1e-6 || r[0] + r[2] > tile.w + 1e-6 || r[1] + r[3] > tile.h + 1e-6) outside.push(a.n);
-        if (chan && a.n !== 'macro' && overlap(r, chan) > 0) inChan.push(a.n);
+        if (a.n !== 'macro' && chanSh.some(c => overlap(r, c) > 0)) inChan.push(a.n);
         for (let j = i + 1; j < boxes.length; j++) {
           const b = boxes[j];
           const ra = a.halo || r, rb = b.halo || b.r;
@@ -364,11 +410,14 @@
         (tight.length ? `Closer than ${s.keepout} µm: ${tight.join(', ')}.` : `All gaps ≥ ${s.keepout} µm.`));
       if (chan) {
         const above = M ? tile.h - (M.rect[1] + M.rect[3]) : 0;
-        const st = inChan.length ? 'fail' : above + 1e-6 < s.channel ? 'fail' : 'pass';
+        const need = M ? Math.max(0, ...chanSh.filter(c => c[0] < M.rect[0] + M.rect[2] && c[0] + c[2] > M.rect[0]).map(c => c[3])) : 0;
+        const full = Math.max(...chanSh.map(c => c[3]));
+        const st = inChan.length ? 'fail' : above + 1e-6 < need ? 'fail' : 'pass';
         add(9, 'TT pin channel clear', st, `${fmt(above, 1)} µm`,
-          `42 TT pins (x 15-131) to the macro's north pins need a ~${s.channel} µm channel along the top; ${fmt(above, 1)} µm above the macro body.` +
+          `The 42 TT pins (x 15-131) run along the top to the macro's pins: the channel is as tall as the wires crossing each x (${fmt(full, 1)} µm where all ${Math.round(full / (s.channel / 42))} run side by side, at ${fmt(s.channel / 42, 2)} µm per track). ` +
+          `Over the macro it needs ${fmt(need, 1)} µm; there is ${fmt(above, 1)} µm above the macro body.` +
           (inChan.length ? ` Blocks in the channel: ${inChan.join(', ')}.` : '') +
-          (above + 1e-6 < s.channel ? ' The north pins can only be reached from above: move the macro down, or re-harden with these pins on the west edge.' : ''));
+          (above + 1e-6 < need ? ' Move the macro down, or put its TT pins nearer the TT pins.' : ''));
       }
     }
 
@@ -399,7 +448,7 @@
     const decTarget = s.deca + s.decd;
     const areaInfo = { tile: tileA, macro: area(macroBox), free: tileA - area(macroBox), signal: sig, decap: dec, decapTarget: decTarget,
       spacing: 0.1 * (sig + dec), need: 1.1 * (sig + decTarget) };
-    return { checks: res, nets, R, area: areaInfo, settings: s, channel: chan };
+    return { checks: res, nets, R, area: areaInfo, settings: s, channel: chan, channelShapes: chanSh };
   }
 
   // floorplan.json (docs/floorplan_spec.md, "Export/import")
@@ -409,8 +458,10 @@
       const [k, m] = ORIENTS[i.pl.orient];
       const b = { inst: i.name, cell: i.cat.cell, x: +i.rect[0].toFixed(2), y: +i.rect[1].toFixed(2), orient: i.pl.orient,
         rot: k * 90, mirror: m, estimate: !!i.cat.estimate };
-      if (i.cat.estimate || (i.cat.reshape && Math.abs(i.w - i.cat.w) > 1e-6)) { b.w = +i.w.toFixed(3); b.h = +i.h.toFixed(3); }
-      if (i.cat.reshape && Math.abs(i.w - i.cat.w) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um (same area as ${i.cat.w} x ${i.cat.h})`;
+      if (i.folded) { b.w = i.w; b.h = i.h; b.fold = 'U-fold, same area, half width: input half (input section, stages 1-2) on top with the inputs on the top edge, stages 3-6 turning back along the bottom row (needs a lna_chain re-layout)'; }
+      if (i.cat.estimate || (i.cat.reshape && (Math.abs(i.w - i.cat.w) > 1e-6 || Math.abs(i.h - i.cat.h) > 1e-6))) { b.w = +i.w.toFixed(3); b.h = +i.h.toFixed(3); }
+      if (i.cat.reshape && Math.abs(i.w - i.cat.w) < 1e-6 && Math.abs(i.h - i.cat.h) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um`;
+      if (i.cat.reshape && Math.abs(i.w - i.cat.w) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um (${(i.w * i.h).toFixed(0)} um2; hardened ${i.cat.w} x ${i.cat.h} = ${i.cat.w * i.cat.h} um2)`;
       blocks.push(b);
     }
     for (const d of R.decaps) blocks.push(Object.assign({ inst: d.base, part: d.idx + 1, cell: d.def.cell, x: d.rect[0], y: d.rect[1], w: d.rect[2], h: d.rect[3], orient: 'R0', rot: 0, mirror: false, estimate: true }, d.mim ? { mim: true, note: 'MIM only (cap_mim_m3_1), on top of a met1-only block' } : {}));
@@ -432,11 +483,12 @@
       const n = b.inst;
       if (!cat[n]) continue;
       v.place[n] = { x: +b.x, y: +b.y, orient: ORIENTS[b.orient] ? b.orient : 'R0' };
-      if ((cat[n].estimate || cat[n].reshape) && b.w && b.h) v.est[n] = { w: +b.w, h: +b.h };
+      if (b.fold && cat[n].fold) { v.fold = v.fold || {}; v.fold[n] = true; }
+      if ((cat[n].estimate || cat[n].reshape) && b.w && b.h) { v.est[n] = { w: +b.w, h: +b.h }; if (cat[n].reshape && Math.abs(b.w * b.h - cat[n].w * cat[n].h) > 1) v.est[n].area = +b.w * +b.h; }
     }
     return v;
   }
 
   root.FP = { TRIM_SIDES, ORIENTS, placedSize, mapPt, mapRect, compose, buildCatalog, DECAPS, NETS, NET_CLASSES, DEFAULT_SETTINGS,
-    resolve, routeNets, evaluate, exportJSON, importJSON, rectGap, overlap, channelRect };
+    resolve, routeNets, evaluate, exportJSON, importJSON, rectGap, overlap, channelRect, channelShapes };
 })(typeof window !== 'undefined' ? window : globalThis);
