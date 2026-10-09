@@ -1,6 +1,6 @@
 {
- "variant": "Matt layout 3 (Claude)",
- "note": "Copy of Matt layout 3, refined by Claude 2026-10-09: macro, chain, bias_gen, lpf_rc and TX area kept. log_det MX at x 255.35 so t4 is 60 um past stage 1 and the stage-1 tap only crosses stages 2-3; comp_ct in the band, r2r beside it under the macro's halo; avg_sc and Ctrim at the chain's output end; dbg_tg by the ua[2] pad (the external pad wire stays short, the det wire runs along the band). TX logic nudged to >= 2.5 um spacing; decap refilled from the free space; pins of the macro and the analog blocks on the edges facing their connections (orange rings). Left: rule 1 warn 60 um (macro over the chain input), rule 4 warn (lpf -> avg/comp ~130 um, slow node), VAPWR decap: tiles in the free space plus a MIM-only decap on top of r2r (met1-only).",
+ "variant": "matt layout 4 (handoff)",
+ "note": "Copy of matt layout 4 (handoff) with the pins of the macro, bias_gen, comp_ct, avg_sc, lpf_rc, r2r, Ctrim, dbg_tg, log_det det / ibias_det and the chain's vcm / ibias moved to the block edge facing what they connect to (orange rings). Floorplanning only: the blocks need a re-layout and the macro a new pin_order.cfg to match.",
  "tile": {
   "w": 493.12,
   "h": 225.76
@@ -9,31 +9,34 @@
   {
    "inst": "macro",
    "cell": "radio_digital",
-   "x": 19.5,
-   "y": 103.5,
+   "x": 282.5,
+   "y": 2.88,
    "orient": "MY",
    "rot": 180,
    "mirror": true,
    "estimate": false,
-   "w": 450.5,
-   "h": 109.656,
-   "note": "re-harden at 450.5 x 109.656 um (same area as 260 x 190)"
+   "w": 200,
+   "h": 220,
+   "note": "re-harden at 200 x 220 um (44000 um2; hardened 260 x 190 = 49400 um2)"
   },
   {
    "inst": "xchain",
    "cell": "lna_chain",
-   "x": 90.5,
-   "y": 3,
+   "x": 21,
+   "y": 6.5,
    "orient": "MX",
    "rot": 0,
    "mirror": true,
-   "estimate": false
+   "estimate": false,
+   "w": 134.06,
+   "h": 70.52,
+   "fold": "U-fold, same area, half width: input half (input section, stages 1-2) on top with the inputs on the top edge, stages 3-6 turning back along the bottom row (needs a lna_chain re-layout)"
   },
   {
    "inst": "xdet",
    "cell": "log_det",
-   "x": 255.35,
-   "y": 41,
+   "x": 67.5,
+   "y": 80,
    "orient": "MX",
    "rot": 0,
    "mirror": true,
@@ -42,8 +45,8 @@
   {
    "inst": "xlpf",
    "cell": "lpf_rc",
-   "x": 170,
-   "y": 42.5,
+   "x": 67,
+   "y": 113.6,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -52,8 +55,8 @@
   {
    "inst": "xavg",
    "cell": "avg_sc",
-   "x": 361.12,
-   "y": 0.5,
+   "x": 53,
+   "y": 151.2,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -62,28 +65,28 @@
   {
    "inst": "xcomp",
    "cell": "comp_ct",
-   "x": 345.18,
-   "y": 54.3,
-   "orient": "R0",
-   "rot": 0,
+   "x": 137.5,
+   "y": 116.6,
+   "orient": "R90",
+   "rot": 90,
    "mirror": false,
    "estimate": false
   },
   {
    "inst": "xdac",
    "cell": "r2r",
-   "x": 421.13,
-   "y": 44.33,
-   "orient": "MX",
-   "rot": 0,
-   "mirror": true,
+   "x": 185,
+   "y": 91,
+   "orient": "R90",
+   "rot": 90,
+   "mirror": false,
    "estimate": false
   },
   {
    "inst": "xctrim",
    "cell": "ctrim_1p",
-   "x": 441,
-   "y": 4.5,
+   "x": 159,
+   "y": 90.3,
    "orient": "MX",
    "rot": 0,
    "mirror": true,
@@ -94,18 +97,18 @@
   {
    "inst": "xbias",
    "cell": "bias_gen",
-   "x": 86.5,
-   "y": 41,
-   "orient": "R0",
-   "rot": 0,
+   "x": 160.5,
+   "y": 7.5,
+   "orient": "R90",
+   "rot": 90,
    "mirror": false,
    "estimate": false
   },
   {
    "inst": "xdbg",
    "cell": "dbg_tg",
-   "x": 80,
-   "y": 3,
+   "x": 57.5,
+   "y": 124,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -114,8 +117,8 @@
   {
    "inst": "xtx.xring",
    "cell": "tx_ring",
-   "x": 58,
-   "y": 68,
+   "x": 17.5,
+   "y": 140.5,
    "orient": "MXR90",
    "rot": 90,
    "mirror": true,
@@ -124,8 +127,8 @@
   {
    "inst": "xtx.xls",
    "cell": "tx_ls",
-   "x": 51.5,
-   "y": 51,
+   "x": 36,
+   "y": 124,
    "orient": "MYR90",
    "rot": 270,
    "mirror": true,
@@ -134,8 +137,8 @@
   {
    "inst": "xtx.xlse_p",
    "cell": "tx_ls_en",
-   "x": 40,
-   "y": 68,
+   "x": 27.5,
+   "y": 141,
    "orient": "MYR90",
    "rot": 270,
    "mirror": true,
@@ -144,8 +147,8 @@
   {
    "inst": "xtx.xlse_n",
    "cell": "tx_ls_en",
-   "x": 25.5,
-   "y": 51,
+   "x": 13,
+   "y": 124,
    "orient": "R270",
    "rot": 270,
    "mirror": false,
@@ -154,8 +157,8 @@
   {
    "inst": "xtx.xdrv_p",
    "cell": "tx_drv",
-   "x": 50,
-   "y": 7.5,
+   "x": 37.5,
+   "y": 80.5,
    "orient": "R270",
    "rot": 270,
    "mirror": false,
@@ -164,8 +167,8 @@
   {
    "inst": "xtx.xdrv_n",
    "cell": "tx_drv",
-   "x": 18,
-   "y": 7.5,
+   "x": 5.5,
+   "y": 80.5,
    "orient": "MYR90",
    "rot": 270,
    "mirror": true,
@@ -175,10 +178,10 @@
    "inst": "xdeca",
    "part": 1,
    "cell": "decap_vapwr",
-   "x": 362,
-   "y": 34,
-   "w": 56,
-   "h": 17,
+   "x": 242,
+   "y": 2,
+   "w": 33,
+   "h": 211,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -188,10 +191,10 @@
    "inst": "xdeca",
    "part": 2,
    "cell": "decap_vapwr",
-   "x": 40,
-   "y": 89,
-   "w": 30,
-   "h": 9,
+   "x": 0,
+   "y": 193,
+   "w": 239,
+   "h": 20,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -201,10 +204,10 @@
    "inst": "xdeca",
    "part": 3,
    "cell": "decap_vapwr",
-   "x": 17,
-   "y": 67,
-   "w": 20,
-   "h": 31,
+   "x": 0,
+   "y": 162,
+   "w": 50,
+   "h": 28,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -214,10 +217,10 @@
    "inst": "xdeca",
    "part": 4,
    "cell": "decap_vapwr",
-   "x": 421,
-   "y": 34,
-   "w": 43,
-   "h": 7,
+   "x": 182,
+   "y": 166,
+   "w": 57,
+   "h": 24,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -227,49 +230,10 @@
    "inst": "xdeca",
    "part": 5,
    "cell": "decap_vapwr",
-   "x": 0,
-   "y": 2,
-   "w": 14,
-   "h": 222,
-   "orient": "R0",
-   "rot": 0,
-   "mirror": false,
-   "estimate": true
-  },
-  {
-   "inst": "xdeca",
-   "part": 6,
-   "cell": "decap_vapwr",
-   "x": 467,
-   "y": 2,
-   "w": 26,
-   "h": 39,
-   "orient": "R0",
-   "rot": 0,
-   "mirror": false,
-   "estimate": true
-  },
-  {
-   "inst": "xdeca",
-   "part": 7,
-   "cell": "decap_vapwr",
-   "x": 475,
-   "y": 101,
-   "w": 18,
-   "h": 123,
-   "orient": "R0",
-   "rot": 0,
-   "mirror": false,
-   "estimate": true
-  },
-  {
-   "inst": "xdeca",
-   "part": 8,
-   "cell": "decap_vapwr",
-   "x": 422.13,
-   "y": 45.33,
-   "w": 65.29,
-   "h": 52.12,
+   "x": 185,
+   "y": 91,
+   "w": 54.12,
+   "h": 71.75,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -281,10 +245,10 @@
    "inst": "xdecd",
    "part": 1,
    "cell": "decap_vdpwr",
-   "x": 238,
-   "y": 41,
-   "w": 14,
-   "h": 37,
+   "x": 0,
+   "y": 7,
+   "w": 18,
+   "h": 71,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -294,10 +258,10 @@
    "inst": "xdecd",
    "part": 2,
    "cell": "decap_vdpwr",
-   "x": 170,
-   "y": 81,
-   "w": 172,
-   "h": 17,
+   "x": 0,
+   "y": 124,
+   "w": 10,
+   "h": 35,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -307,10 +271,10 @@
    "inst": "xdecd",
    "part": 3,
    "cell": "decap_vdpwr",
-   "x": 346,
-   "y": 41,
-   "w": 13,
-   "h": 10,
+   "x": 213,
+   "y": 2,
+   "w": 26,
+   "h": 86,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -320,23 +284,10 @@
    "inst": "xdecd",
    "part": 4,
    "cell": "decap_vdpwr",
-   "x": 80,
-   "y": 22,
-   "w": 8,
-   "h": 16,
-   "orient": "R0",
-   "rot": 0,
-   "mirror": false,
-   "estimate": true
-  },
-  {
-   "inst": "xdecd",
-   "part": 5,
-   "cell": "decap_vdpwr",
-   "x": 73,
-   "y": 51,
-   "w": 11,
-   "h": 47,
+   "x": 0,
+   "y": 216,
+   "w": 51,
+   "h": 6,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -349,328 +300,328 @@
  "pins_moved": {
   "xdet": {
    "det": [
-    0.25,
-    30.01
+    1,
+    0.25
    ],
    "ibias_det": [
-    0.25,
-    17.71
+    87.08,
+    24.29
    ]
   },
   "xlpf": {
    "in": [
-    64.95,
-    1
+    1.5,
+    0.25
    ],
    "out": [
     64.95,
-    2
+    34.02
    ]
   },
   "xdbg": {
    "a": [
-    5.45,
-    15.3
+    3.7,
+    0.25
    ],
    "b": [
-    5.45,
-    1
+    4.7,
+    0.25
    ],
    "en": [
-    1,
-    16.05
+    5.45,
+    6.35
    ]
   },
   "xavg": {
    "in": [
-    0.25,
-    29.4
+    76.35,
+    0.25
    ],
    "out": [
-    1,
-    30.15
+    77.1,
+    20.15
    ],
    "phi1": [
-    67.49,
-    30.15
+    77.1,
+    19.15
    ],
    "phi2": [
-    69.14,
-    30.15
+    77.1,
+    1
    ]
   },
   "xcomp": {
    "inp": [
-    0.25,
-    1
-   ],
-   "inn": [
-    16.94,
-    0.25
-   ],
-   "out": [
-    72.45,
+    31.02,
     41.72
    ],
-   "trim": [
-    72.45,
+   "inn": [
+    35.6,
+    41.72
+   ],
+   "out": [
+    1,
     0.25
+   ],
+   "trim": [
+    0.25,
+    19.47
    ],
    "ibias": [
     0.25,
-    30.12
+    17.97
    ]
   },
   "macro": {
    "comp_in": [
-    52.37,
-    0.25
+    199.75,
+    73.72
    ],
    "sc_phi1": [
-    41.39,
-    0.25
+    199.75,
+    148.1
    ],
    "sc_phi2": [
-    39.74,
-    0.25
+    199.75,
+    147.1
    ],
    "rx_en": [
-    381.45,
-    0.25
+    199.75,
+    6.6
    ],
    "dbg_en": [
-    389,
-    0.25
+    199.75,
+    86.47
    ],
    "tx_en": [
-    415.25,
-    0.25
+    199.75,
+    103.26
    ],
    "tx_en_n": [
-    436.07,
-    0.25
+    199.75,
+    92.47
    ],
    "clk": [
-    339.86,
-    109.41
+    199.75,
+    178
    ],
    "trim_out[0]": [
-    43.25,
-    0.25
+    199.75,
+    52.74
    ],
    "trim_out[1]": [
-    28.25,
-    0.25
+    199.75,
+    67.74
    ],
    "trim_out[2]": [
-    20.75,
-    0.25
+    199.75,
+    75.24
    ],
    "trim_out[3]": [
-    13.25,
-    0.25
+    199.75,
+    82.74
    ],
    "trim_out[4]": [
-    5.75,
-    0.25
+    199.75,
+    90.24
    ],
    "trim_out[5]": [
-    3,
-    0.25
+    199.75,
+    97.74
    ],
    "trim_out[6]": [
-    2,
-    0.25
+    199.75,
+    105.24
    ],
    "trim_out[7]": [
-    1,
-    0.25
+    199.75,
+    126.47
    ],
    "uio_oe[7]": [
-    449.5,
-    109.41
+    199.75,
+    179
    ],
    "uio_oe[6]": [
-    448.5,
-    109.41
+    199.75,
+    180
    ],
    "uio_oe[5]": [
-    447.5,
-    109.41
+    199.75,
+    181
    ],
    "uio_oe[4]": [
-    444.74,
-    109.41
+    199.75,
+    182
    ],
    "uio_oe[3]": [
-    441.98,
-    109.41
+    199.75,
+    183
    ],
    "uio_oe[2]": [
-    439.22,
-    109.41
+    199.75,
+    184
    ],
    "uio_oe[1]": [
-    436.46,
-    109.41
+    199.75,
+    185
    ],
    "uio_oe[0]": [
-    433.7,
-    109.41
+    199.75,
+    186
    ],
    "uio_out[7]": [
-    430.94,
-    109.41
+    199.75,
+    187
    ],
    "uio_out[6]": [
-    428.18,
-    109.41
+    199.75,
+    188
    ],
    "uio_out[5]": [
-    425.42,
-    109.41
+    199.75,
+    189
    ],
    "uio_out[4]": [
-    422.66,
-    109.41
+    199.75,
+    190
    ],
    "uio_out[3]": [
-    419.9,
-    109.41
+    199.75,
+    191
    ],
    "uio_out[2]": [
-    417.14,
-    109.41
+    199.75,
+    192
    ],
    "uio_out[1]": [
-    414.38,
-    109.41
+    199.75,
+    193
    ],
    "uio_out[0]": [
-    411.62,
-    109.41
+    199.75,
+    194
    ],
    "uo_out[7]": [
-    408.86,
-    109.41
+    199.75,
+    195
    ],
    "uo_out[6]": [
-    406.1,
-    109.41
+    199.75,
+    196
    ],
    "uo_out[5]": [
-    403.34,
-    109.41
+    199.75,
+    197
    ],
    "uo_out[4]": [
-    400.58,
-    109.41
+    199.75,
+    198
    ],
    "uo_out[3]": [
-    397.82,
-    109.41
+    199.75,
+    199
    ],
    "uo_out[2]": [
-    395.06,
-    109.41
+    199.75,
+    200
    ],
    "uo_out[1]": [
-    392.3,
-    109.41
+    199.75,
+    201
    ],
    "uo_out[0]": [
-    389.54,
-    109.41
+    199.75,
+    202
    ],
    "uio_in[7]": [
-    386.78,
-    109.41
+    199.75,
+    203
    ],
    "uio_in[6]": [
-    384.02,
-    109.41
+    199.75,
+    204
    ],
    "uio_in[5]": [
-    381.26,
-    109.41
+    199.75,
+    205
    ],
    "uio_in[4]": [
-    378.5,
-    109.41
+    199.75,
+    206
    ],
    "uio_in[3]": [
-    375.74,
-    109.41
+    199.75,
+    207
    ],
    "uio_in[2]": [
-    372.98,
-    109.41
+    199.75,
+    208
    ],
    "uio_in[1]": [
-    370.22,
-    109.41
+    199.75,
+    209
    ],
    "uio_in[0]": [
-    367.46,
-    109.41
+    199.75,
+    210
    ],
    "ui_in[7]": [
-    364.7,
-    109.41
+    199.75,
+    211
    ],
    "ui_in[6]": [
-    361.94,
-    109.41
+    199.75,
+    212
    ],
    "ui_in[5]": [
-    359.18,
-    109.41
+    199.75,
+    213
    ],
    "ui_in[4]": [
-    356.42,
-    109.41
+    199.75,
+    214
    ],
    "ui_in[3]": [
-    353.66,
-    109.41
+    199.75,
+    215
    ],
    "ui_in[2]": [
-    350.9,
-    109.41
+    199.75,
+    216
    ],
    "ui_in[1]": [
-    348.14,
-    109.41
+    199.75,
+    217
    ],
    "ui_in[0]": [
-    345.38,
-    109.41
+    199.75,
+    218
    ],
    "rst_n": [
-    342.62,
-    109.41
+    199.75,
+    219
    ]
   },
   "xbias": {
    "en": [
     2.05,
-    48.82
+    0.25
    ],
    "ib_chain": [
-    5,
-    0.25
+    28.18,
+    48.82
    ],
    "vcm": [
-    6,
-    0.25
+    31.32,
+    48.82
    ],
    "ib_det": [
-    79.97,
-    13.3
+    79.22,
+    48.82
    ],
    "ib_comp": [
     79.97,
-    43.42
+    48.07
    ]
   },
   "xdac": {
@@ -695,26 +646,26 @@
     0.25
    ],
    "b5": [
-    47.87,
+    50.62,
     0.25
    ],
    "b6": [
-    48.87,
+    58.12,
     0.25
    ],
    "b7": [
-    49.87,
+    65.62,
     0.25
    ],
    "out": [
-    20.87,
+    11.05,
     53.87
    ]
   },
   "xctrim": {
    "p": [
-    2,
-    0.25
+    23.25,
+    11.75
    ],
    "n": [
     1,
@@ -723,12 +674,12 @@
   },
   "xchain": {
    "ibias": [
-    1,
-    0.25
+    133.81,
+    41.34
    ],
    "vcm": [
-    2,
-    0.25
+    133.81,
+    38.2
    ]
   }
  },
@@ -757,6 +708,21 @@
   {
    "net": "VDPWR",
    "x": 491.42,
+   "w": 1.2
+  },
+  {
+   "net": "VAPWR",
+   "x": 276.5,
+   "w": 1.2
+  },
+  {
+   "net": "VGND",
+   "x": 278.2,
+   "w": 1.2
+  },
+  {
+   "net": "VDPWR",
+   "x": 279.9,
    "w": 1.2
   }
  ],

@@ -1,6 +1,6 @@
 # Floorplan: block positions and pin positions
 
-Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layout/floorplan/page/pinreport.js`; the placements are also in `floorplan.json` next to this file.
+Generated from the floorplan page's variant **matt layout 4 (handoff)** by `layout/floorplan/page/pinreport.js`; the placements are also in `floorplan.json` next to this file.
 
 - Coordinates in µm. **Placement**: lower-left of the placed (transformed) bbox in the tile, and the GDS orientation (KLayout `DCplxTrans(1, rot, mirror, …)`, mirror about x first).
 - **Pins**: in each block's *own* frame (its bbox lower-left = 0, 0, before the orientation), grouped by the block's own edge. "moved" = a new position for the re-layout / re-harden; the others are where the GDS has them now. The tile direction each edge faces after placement is given in brackets.
@@ -10,156 +10,152 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | rule | status | value |
 |---|---|---|
-| 1. Chain input far from the macro | warn | 60 µm |
-| 2. Late stages away from the input | pass | 60 µm |
-| 3. Clock edges off the RX | pass | 70 µm |
-| 4. Short analog path | warn | 377 µm |
-| 5. TX at ua[3] / ua[4] | pass | 36 µm |
-| 6. Bias next to the chain | pass | 3 µm |
-| 7. Decap VAPWR | fail | 61 % |
-| 7. Decap VDPWR | pass | 103 % |
-| 8. TX away from the RX input | warn | 14 µm |
+| 1. Chain input far from the macro | pass | 141 µm |
+| 2. Late stages away from the input | fail | 0 µm |
+| 3. Clock edges off the RX | pass | 25 µm |
+| 4. Short analog path | pass | 48 µm |
+| 5. TX at ua[3] / ua[4] | fail | 121 µm |
+| 6. Bias next to the chain | pass | 6 µm |
+| 7. Decap VAPWR | warn | 97 % |
+| 7. Decap VDPWR | pass | 102 % |
+| 8. TX away from the RX input | warn | 39 µm |
 | 9. Overlaps and spacing | pass | none |
-| 9. TT pin channel clear | pass | 12.6 µm |
-| P. Power straps | pass | 5 clear |
+| 9. TT pin channel clear | fail | 2.9 µm |
+| P. Power straps | pass | 8 clear |
 
 ## macro (radio_digital)
 
-- Size: 450.50 × 109.66 (reshaped from 260 × 190, same area: re-harden at this size)
-- Placement: x 19.50, y 103.50, MY (rot 180, mirror true)
+- Size: 200.00 × 220.00 (reshaped from 260 × 190, 44000.00 µm² vs 49400: re-harden at this size)
+- Placement: x 282.50, y 2.88, MY (rot 180, mirror true)
 - Pins moved: 57
 
-**N edge** (faces north in the tile; left → right, x):
+**E edge** (faces west in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
-| clk | 339.86 | 109.41 | moved |
-| rst_n | 342.62 | 109.41 | moved |
-| ui_in[0] | 345.38 | 109.41 | moved |
-| ui_in[1] | 348.14 | 109.41 | moved |
-| ui_in[2] | 350.90 | 109.41 | moved |
-| ui_in[3] | 353.66 | 109.41 | moved |
-| ui_in[4] | 356.42 | 109.41 | moved |
-| ui_in[5] | 359.18 | 109.41 | moved |
-| ui_in[6] | 361.94 | 109.41 | moved |
-| ui_in[7] | 364.70 | 109.41 | moved |
-| uio_in[0] | 367.46 | 109.41 | moved |
-| uio_in[1] | 370.22 | 109.41 | moved |
-| uio_in[2] | 372.98 | 109.41 | moved |
-| uio_in[3] | 375.74 | 109.41 | moved |
-| uio_in[4] | 378.50 | 109.41 | moved |
-| uio_in[5] | 381.26 | 109.41 | moved |
-| uio_in[6] | 384.02 | 109.41 | moved |
-| uio_in[7] | 386.78 | 109.41 | moved |
-| uo_out[0] | 389.54 | 109.41 | moved |
-| uo_out[1] | 392.30 | 109.41 | moved |
-| uo_out[2] | 395.06 | 109.41 | moved |
-| uo_out[3] | 397.82 | 109.41 | moved |
-| uo_out[4] | 400.58 | 109.41 | moved |
-| uo_out[5] | 403.34 | 109.41 | moved |
-| uo_out[6] | 406.10 | 109.41 | moved |
-| uo_out[7] | 408.86 | 109.41 | moved |
-| uio_out[0] | 411.62 | 109.41 | moved |
-| uio_out[1] | 414.38 | 109.41 | moved |
-| uio_out[2] | 417.14 | 109.41 | moved |
-| uio_out[3] | 419.90 | 109.41 | moved |
-| uio_out[4] | 422.66 | 109.41 | moved |
-| uio_out[5] | 425.42 | 109.41 | moved |
-| uio_out[6] | 428.18 | 109.41 | moved |
-| uio_out[7] | 430.94 | 109.41 | moved |
-| uio_oe[0] | 433.70 | 109.41 | moved |
-| uio_oe[1] | 436.46 | 109.41 | moved |
-| uio_oe[2] | 439.22 | 109.41 | moved |
-| uio_oe[3] | 441.98 | 109.41 | moved |
-| uio_oe[4] | 444.74 | 109.41 | moved |
-| uio_oe[5] | 447.50 | 109.41 | moved |
-| uio_oe[6] | 448.50 | 109.41 | moved |
-| uio_oe[7] | 449.50 | 109.41 | moved |
-
-**S edge** (faces south in the tile; left → right, x):
-
-| pin | x | y | |
-|---|---|---|---|
-| trim_out[7] | 1.00 | 0.25 | moved |
-| trim_out[6] | 2.00 | 0.25 | moved |
-| trim_out[5] | 3.00 | 0.25 | moved |
-| trim_out[4] | 5.75 | 0.25 | moved |
-| trim_out[3] | 13.25 | 0.25 | moved |
-| trim_out[2] | 20.75 | 0.25 | moved |
-| trim_out[1] | 28.25 | 0.25 | moved |
-| sc_phi2 | 39.74 | 0.25 | moved |
-| sc_phi1 | 41.39 | 0.25 | moved |
-| trim_out[0] | 43.25 | 0.25 | moved |
-| comp_in | 52.37 | 0.25 | moved |
-| rx_en | 381.45 | 0.25 | moved |
-| dbg_en | 389.00 | 0.25 | moved |
-| tx_en | 415.25 | 0.25 | moved |
-| tx_en_n | 436.07 | 0.25 | moved |
+| rx_en | 199.75 | 6.60 | moved |
+| trim_out[0] | 199.75 | 52.74 | moved |
+| trim_out[1] | 199.75 | 67.74 | moved |
+| comp_in | 199.75 | 73.72 | moved |
+| trim_out[2] | 199.75 | 75.24 | moved |
+| trim_out[3] | 199.75 | 82.74 | moved |
+| dbg_en | 199.75 | 86.47 | moved |
+| trim_out[4] | 199.75 | 90.24 | moved |
+| tx_en_n | 199.75 | 92.47 | moved |
+| trim_out[5] | 199.75 | 97.74 | moved |
+| tx_en | 199.75 | 103.26 | moved |
+| trim_out[6] | 199.75 | 105.24 | moved |
+| trim_out[7] | 199.75 | 126.47 | moved |
+| sc_phi2 | 199.75 | 147.10 | moved |
+| sc_phi1 | 199.75 | 148.10 | moved |
+| clk | 199.75 | 178.00 | moved |
+| uio_oe[7] | 199.75 | 179.00 | moved |
+| uio_oe[6] | 199.75 | 180.00 | moved |
+| uio_oe[5] | 199.75 | 181.00 | moved |
+| uio_oe[4] | 199.75 | 182.00 | moved |
+| uio_oe[3] | 199.75 | 183.00 | moved |
+| uio_oe[2] | 199.75 | 184.00 | moved |
+| uio_oe[1] | 199.75 | 185.00 | moved |
+| uio_oe[0] | 199.75 | 186.00 | moved |
+| uio_out[7] | 199.75 | 187.00 | moved |
+| uio_out[6] | 199.75 | 188.00 | moved |
+| uio_out[5] | 199.75 | 189.00 | moved |
+| uio_out[4] | 199.75 | 190.00 | moved |
+| uio_out[3] | 199.75 | 191.00 | moved |
+| uio_out[2] | 199.75 | 192.00 | moved |
+| uio_out[1] | 199.75 | 193.00 | moved |
+| uio_out[0] | 199.75 | 194.00 | moved |
+| uo_out[7] | 199.75 | 195.00 | moved |
+| uo_out[6] | 199.75 | 196.00 | moved |
+| uo_out[5] | 199.75 | 197.00 | moved |
+| uo_out[4] | 199.75 | 198.00 | moved |
+| uo_out[3] | 199.75 | 199.00 | moved |
+| uo_out[2] | 199.75 | 200.00 | moved |
+| uo_out[1] | 199.75 | 201.00 | moved |
+| uo_out[0] | 199.75 | 202.00 | moved |
+| uio_in[7] | 199.75 | 203.00 | moved |
+| uio_in[6] | 199.75 | 204.00 | moved |
+| uio_in[5] | 199.75 | 205.00 | moved |
+| uio_in[4] | 199.75 | 206.00 | moved |
+| uio_in[3] | 199.75 | 207.00 | moved |
+| uio_in[2] | 199.75 | 208.00 | moved |
+| uio_in[1] | 199.75 | 209.00 | moved |
+| uio_in[0] | 199.75 | 210.00 | moved |
+| ui_in[7] | 199.75 | 211.00 | moved |
+| ui_in[6] | 199.75 | 212.00 | moved |
+| ui_in[5] | 199.75 | 213.00 | moved |
+| ui_in[4] | 199.75 | 214.00 | moved |
+| ui_in[3] | 199.75 | 215.00 | moved |
+| ui_in[2] | 199.75 | 216.00 | moved |
+| ui_in[1] | 199.75 | 217.00 | moved |
+| ui_in[0] | 199.75 | 218.00 | moved |
+| rst_n | 199.75 | 219.00 | moved |
 
 ## xchain (lna_chain)
 
-- Size: 268.12 × 35.26 (GDS)
-- Placement: x 90.50, y 3.00, MX (rot 0, mirror true)
+- Size: 134.06 × 70.52 (GDS)
+- Placement: x 21.00, y 6.50, MX (rot 0, mirror true)
 - Pins moved: 2
 
 **N edge** (faces south in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| inp | 3.60 | 35.01 |  |
-| inn | 36.76 | 35.01 |  |
-| o1n | 106.42 | 18.31 |  |
-| o2n | 138.96 | 18.31 |  |
-| o3n | 171.50 | 18.31 |  |
-| o4n | 204.04 | 18.31 |  |
-| o5n | 236.58 | 18.31 |  |
+| inp | 3.60 | 70.27 |  |
+| inn | 36.76 | 70.27 |  |
+| o1n | 106.42 | 53.57 |  |
+| o1p | 106.42 | 52.87 |  |
 
 **S edge** (faces north in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| ibias | 1.00 | 0.25 | moved |
-| vcm | 2.00 | 0.25 | moved |
-| o1p | 106.42 | 17.61 |  |
-| o2p | 138.96 | 17.61 |  |
-| o3p | 171.50 | 17.61 |  |
-| o4p | 204.04 | 17.61 |  |
-| o5p | 236.58 | 17.61 |  |
+| o5n | 31.54 | 16.95 |  |
+| o5p | 31.54 | 17.65 |  |
+| o4n | 64.08 | 16.95 |  |
+| o4p | 64.08 | 17.65 |  |
+| o3n | 96.62 | 16.95 |  |
+| o3p | 96.62 | 17.65 |  |
 
 **W edge** (faces west in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
-| VSS | 0.50 | 0.75 |  |
-| g1n | 7.04 | 25.75 |  |
-| g1p | 6.04 | 25.75 |  |
+| VDD | 0.50 | 14.80 |  |
+| outn | 0.30 | 16.25 |  |
+| outp | 0.30 | 17.65 |  |
+| VSS | 0.50 | 36.01 |  |
+| g1n | 7.04 | 61.01 |  |
+| g1p | 6.04 | 61.01 |  |
 
 **E edge** (faces east in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
-| outp | 267.82 | 17.61 |  |
-| outn | 267.82 | 19.01 |  |
-| VDD | 267.62 | 20.46 |  |
+| o2n | 129.16 | 16.95 |  |
+| o2p | 129.16 | 17.65 |  |
+| vcm | 133.81 | 38.20 | moved |
+| ibias | 133.81 | 41.34 | moved |
 
 ## xbias (bias_gen)
 
 - Size: 80.22 × 49.07 (GDS)
-- Placement: x 86.50, y 41.00, R0 (rot 0, mirror false)
+- Placement: x 160.50, y 7.50, R90 (rot 90, mirror false)
 - Pins moved: 5
 
-**N edge** (faces north in the tile; left → right, x):
+**N edge** (faces west in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| en | 2.05 | 48.82 | moved |
+| ib_chain | 28.18 | 48.82 | moved |
+| vcm | 31.32 | 48.82 | moved |
+| ib_det | 79.22 | 48.82 | moved |
 
-**S edge** (faces south in the tile; left → right, x):
+**S edge** (faces east in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| ib_chain | 5.00 | 0.25 | moved |
-| vcm | 6.00 | 0.25 | moved |
+| en | 2.05 | 0.25 | moved |
 | tail | 14.10 | 12.85 |  |
 | VSS | 15.18 | 0.75 |  |
 | d1 | 15.64 | 9.65 |  |
@@ -179,7 +175,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | rt2 | 46.16 | 17.15 |  |
 | xr | 49.92 | 17.67 |  |
 
-**W edge** (faces west in the tile; bottom → top, y):
+**W edge** (faces south in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -188,17 +184,16 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | pr | 2.05 | 15.25 |  |
 | VDD | 15.18 | 23.05 |  |
 
-**E edge** (faces east in the tile; bottom → top, y):
+**E edge** (faces north in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
-| ib_det | 79.97 | 13.30 | moved |
-| ib_comp | 79.97 | 43.42 | moved |
+| ib_comp | 79.97 | 48.07 | moved |
 
 ## xdet (log_det)
 
 - Size: 87.33 × 31.01 (GDS)
-- Placement: x 255.35, y 41.00, MX (rot 0, mirror true)
+- Placement: x 67.50, y 80.00, MX (rot 0, mirror true)
 - Pins moved: 2
 
 **N edge** (faces south in the tile; left → right, x):
@@ -215,6 +210,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
+| det | 1.00 | 0.25 | moved |
 | t4n | 12.77 | 7.99 |  |
 | t5p | 22.53 | 7.99 |  |
 | t5n | 33.59 | 7.99 |  |
@@ -227,20 +223,19 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 |---|---|---|---|
 | t4p | 1.70 | 7.99 |  |
 | VSS | 0.50 | 15.51 |  |
-| ibias_det | 0.25 | 17.71 | moved |
 | t1p | 1.70 | 23.02 |  |
-| det | 0.25 | 30.01 | moved |
 
 **E edge** (faces east in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
 | VDD | 86.73 | 15.51 |  |
+| ibias_det | 87.08 | 24.29 | moved |
 
 ## xlpf (lpf_rc)
 
 - Size: 65.20 × 35.02 (GDS)
-- Placement: x 170.00, y 42.50, R0 (rot 0, mirror false)
+- Placement: x 67.00, y 113.60, R0 (rot 0, mirror false)
 - Pins moved: 2
 
 **N edge** (faces north in the tile; left → right, x):
@@ -260,6 +255,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
+| in | 1.50 | 0.25 | moved |
 | r2 | 25.20 | 5.58 |  |
 | r4 | 27.20 | 5.58 |  |
 | r6 | 29.20 | 5.58 |  |
@@ -278,69 +274,69 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
-| in | 64.95 | 1.00 | moved |
-| out | 64.95 | 2.00 | moved |
+| out | 64.95 | 34.02 | moved |
 
 ## xavg (avg_sc)
 
 - Size: 77.35 × 30.40 (GDS)
-- Placement: x 361.12, y 0.50, R0 (rot 0, mirror false)
+- Placement: x 53.00, y 151.20, R0 (rot 0, mirror false)
 - Pins moved: 4
 
 **N edge** (faces north in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| out | 1.00 | 30.15 | moved |
-| phi1 | 67.49 | 30.15 | moved |
 | phi1b | 67.71 | 24.75 |  |
 | VDD | 68.52 | 29.65 |  |
 | phi2b | 68.91 | 25.55 |  |
-| phi2 | 69.14 | 30.15 | moved |
 
-**W edge** (faces west in the tile; bottom → top, y):
+**S edge** (faces south in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| in | 0.25 | 29.40 | moved |
+| in | 76.35 | 0.25 | moved |
 
 **E edge** (faces east in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
+| phi2 | 77.10 | 1.00 | moved |
 | VSS | 68.52 | 15.55 |  |
+| phi1 | 77.10 | 19.15 | moved |
+| out | 77.10 | 20.15 | moved |
 | cs | 70.06 | 21.55 |  |
 
 ## xcomp (comp_ct)
 
 - Size: 73.45 × 41.97 (GDS)
-- Placement: x 345.18, y 54.30, R0 (rot 0, mirror false)
+- Placement: x 137.50, y 116.60, R90 (rot 90, mirror false)
 - Pins moved: 5
 
-**N edge** (faces north in the tile; left → right, x):
+**N edge** (faces west in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
 | d1 | 18.65 | 33.31 |  |
 | tail | 27.30 | 29.32 |  |
 | vref | 28.60 | 31.71 |  |
+| inp | 31.02 | 41.72 | moved |
+| inn | 35.60 | 41.72 | moved |
 | d2 | 36.90 | 30.92 |  |
 | VDD | 37.00 | 41.22 |  |
 | sa | 40.30 | 32.52 |  |
 | sb | 44.45 | 28.52 |  |
-| out | 72.45 | 41.72 | moved |
 
-**S edge** (faces south in the tile; left → right, x):
+**S edge** (faces east in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
+| out | 1.00 | 0.25 | moved |
 | rdeg4 | 6.08 | 5.61 |  |
 | rdeg6 | 8.09 | 5.61 |  |
 | rdeg8 | 10.09 | 5.61 |  |
 | rdeg10 | 12.09 | 5.61 |  |
 | rdeg12 | 14.09 | 5.61 |  |
 | rdeg14 | 16.09 | 5.61 |  |
-| inn | 16.94 | 0.25 | moved |
 | rdeg15 | 17.09 | 16.69 |  |
 | rdeg16 | 18.09 | 5.61 |  |
 | rdeg17 | 19.09 | 16.69 |  |
@@ -357,13 +353,11 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | rdeg28 | 30.09 | 5.61 |  |
 | rdeg29 | 31.09 | 16.69 |  |
 | VSS | 37.00 | 19.72 |  |
-| trim | 72.45 | 0.25 | moved |
 
-**W edge** (faces west in the tile; bottom → top, y):
+**W edge** (faces south in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
-| inp | 0.25 | 1.00 | moved |
 | rdeg2 | 4.08 | 5.61 |  |
 | rdeg1 | 3.08 | 16.69 |  |
 | rdeg11 | 13.09 | 16.69 |  |
@@ -372,9 +366,10 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | rdeg5 | 7.08 | 16.69 |  |
 | rdeg7 | 9.09 | 16.69 |  |
 | rdeg9 | 11.09 | 16.69 |  |
-| ibias | 0.25 | 30.12 | moved |
+| ibias | 0.25 | 17.97 | moved |
+| trim | 0.25 | 19.47 | moved |
 
-**E edge** (faces east in the tile; bottom → top, y):
+**E edge** (faces north in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -383,16 +378,16 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 ## xdac (r2r)
 
 - Size: 71.75 × 54.12 (GDS)
-- Placement: x 421.13, y 44.33, MX (rot 0, mirror true)
+- Placement: x 185.00, y 91.00, R90 (rot 90, mirror false)
 - Pins moved: 9
 
-**N edge** (faces south in the tile; left → right, x):
+**N edge** (faces west in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| out | 20.87 | 53.87 | moved |
+| out | 11.05 | 53.87 | moved |
 
-**S edge** (faces north in the tile; left → right, x):
+**S edge** (faces east in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -407,15 +402,15 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | e | 39.62 | 2.50 |  |
 | b4 | 43.12 | 0.25 | moved |
 | f | 47.12 | 2.50 |  |
-| b5 | 47.87 | 0.25 | moved |
-| b6 | 48.87 | 0.25 | moved |
-| b7 | 49.87 | 0.25 | moved |
+| b5 | 50.62 | 0.25 | moved |
 | g | 54.62 | 2.50 |  |
+| b6 | 58.12 | 0.25 | moved |
+| b7 | 65.62 | 0.25 | moved |
 
 ## xctrim (ctrim_1p)
 
 - Size: 23.50 × 23.50 (estimate: not laid out yet)
-- Placement: x 441.00, y 4.50, MX (rot 0, mirror true)
+- Placement: x 159.00, y 90.30, MX (rot 0, mirror true)
 - Pins moved: 2
 
 **S edge** (faces north in the tile; left → right, x):
@@ -423,19 +418,23 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | pin | x | y | |
 |---|---|---|---|
 | n | 1.00 | 0.25 | moved |
-| p | 2.00 | 0.25 | moved |
+
+**E edge** (faces east in the tile; bottom → top, y):
+
+| pin | x | y | |
+|---|---|---|---|
+| p | 23.25 | 11.75 | moved |
 
 ## xdbg (dbg_tg)
 
 - Size: 5.70 × 16.30 (GDS)
-- Placement: x 80.00, y 3.00, R0 (rot 0, mirror false)
+- Placement: x 57.50, y 124.00, R0 (rot 0, mirror false)
 - Pins moved: 3
 
 **N edge** (faces north in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| en | 1.00 | 16.05 | moved |
 | VDD | 2.83 | 15.30 |  |
 
 **S edge** (faces south in the tile; left → right, x):
@@ -443,6 +442,8 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | pin | x | y | |
 |---|---|---|---|
 | VSS | 2.83 | 1.00 |  |
+| a | 3.70 | 0.25 | moved |
+| b | 4.70 | 0.25 | moved |
 
 **W edge** (faces west in the tile; bottom → top, y):
 
@@ -454,13 +455,12 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
-| b | 5.45 | 1.00 | moved |
-| a | 5.45 | 15.30 | moved |
+| en | 5.45 | 6.35 | moved |
 
 ## xtx.xring (tx_ring)
 
 - Size: 18.32 × 6.96 (GDS)
-- Placement: x 58.00, y 68.00, MXR90 (rot 90, mirror true)
+- Placement: x 17.50, y 140.50, MXR90 (rot 90, mirror true)
 - Pins moved: none
 
 **N edge** (faces east in the tile; left → right, x):
@@ -512,7 +512,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 ## xtx.xls (tx_ls)
 
 - Size: 14.25 × 19.00 (GDS)
-- Placement: x 51.50, y 51.00, MYR90 (rot 270, mirror true)
+- Placement: x 36.00, y 124.00, MYR90 (rot 270, mirror true)
 - Pins moved: none
 
 **N edge** (faces west in the tile; left → right, x):
@@ -546,7 +546,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 ## xtx.xlse_p (tx_ls_en)
 
 - Size: 13.35 × 15.48 (GDS)
-- Placement: x 40.00, y 68.00, MYR90 (rot 270, mirror true)
+- Placement: x 27.50, y 141.00, MYR90 (rot 270, mirror true)
 - Pins moved: none
 
 **N edge** (faces west in the tile; left → right, x):
@@ -580,7 +580,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 ## xtx.xlse_n (tx_ls_en)
 
 - Size: 13.35 × 15.48 (GDS)
-- Placement: x 25.50, y 51.00, R270 (rot 270, mirror false)
+- Placement: x 13.00, y 124.00, R270 (rot 270, mirror false)
 - Pins moved: none
 
 **N edge** (faces east in the tile; left → right, x):
@@ -614,7 +614,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 ## xtx.xdrv_p (tx_drv)
 
 - Size: 40.90 × 26.68 (GDS)
-- Placement: x 50.00, y 7.50, R270 (rot 270, mirror false)
+- Placement: x 37.50, y 80.50, R270 (rot 270, mirror false)
 - Pins moved: none
 
 **N edge** (faces east in the tile; left → right, x):
@@ -650,7 +650,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 ## xtx.xdrv_n (tx_drv)
 
 - Size: 40.90 × 26.68 (GDS)
-- Placement: x 18.00, y 7.50, MYR90 (rot 270, mirror true)
+- Placement: x 5.50, y 80.50, MYR90 (rot 270, mirror true)
 - Pins moved: none
 
 **N edge** (faces west in the tile; left → right, x):
@@ -690,16 +690,15 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 - VAPWR strap: x 488.02, w 1.20 (met4, full height)
 - VGND strap: x 489.72, w 1.20 (met4, full height)
 - VDPWR strap: x 491.42, w 1.20 (met4, full height)
-- xdeca 1: x 362.00, y 34.00, 56.00 × 17.00
-- xdeca 2: x 40.00, y 89.00, 30.00 × 9.00
-- xdeca 3: x 17.00, y 67.00, 20.00 × 31.00
-- xdeca 4: x 421.00, y 34.00, 43.00 × 7.00
-- xdeca 5: x 0.00, y 2.00, 14.00 × 222.00
-- xdeca 6: x 467.00, y 2.00, 26.00 × 39.00
-- xdeca 7: x 475.00, y 101.00, 18.00 × 123.00
-- xdeca 8: x 422.13, y 45.33, 65.29 × 52.12 (MIM only, on top of r2r)
-- xdecd 1: x 238.00, y 41.00, 14.00 × 37.00
-- xdecd 2: x 170.00, y 81.00, 172.00 × 17.00
-- xdecd 3: x 346.00, y 41.00, 13.00 × 10.00
-- xdecd 4: x 80.00, y 22.00, 8.00 × 16.00
-- xdecd 5: x 73.00, y 51.00, 11.00 × 47.00
+- VAPWR strap: x 276.50, w 1.20 (met4, full height)
+- VGND strap: x 278.20, w 1.20 (met4, full height)
+- VDPWR strap: x 279.90, w 1.20 (met4, full height)
+- xdecd 1: x 0.00, y 7.00, 18.00 × 71.00
+- xdecd 2: x 0.00, y 124.00, 10.00 × 35.00
+- xdecd 3: x 213.00, y 2.00, 26.00 × 86.00
+- xdecd 4: x 0.00, y 216.00, 51.00 × 6.00
+- xdeca 1: x 242.00, y 2.00, 33.00 × 211.00
+- xdeca 2: x 0.00, y 193.00, 239.00 × 20.00
+- xdeca 3: x 0.00, y 162.00, 50.00 × 28.00
+- xdeca 4: x 182.00, y 166.00, 57.00 × 24.00
+- xdeca 5: x 185.00, y 91.00, 54.12 × 71.75 (MIM only, on top of r2r)
