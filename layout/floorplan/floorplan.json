@@ -1,6 +1,6 @@
 {
- "variant": "matt layout 4 (handoff)",
- "note": "Copy of matt layout 4 (handoff) with the pins of the macro, bias_gen, comp_ct, avg_sc, lpf_rc, r2r, Ctrim, dbg_tg, log_det det / ibias_det and the chain's vcm / ibias moved to the block edge facing what they connect to (orange rings). Floorplanning only: the blocks need a re-layout and the macro a new pin_order.cfg to match.",
+ "variant": "matt layout 4 (handoff, chain folded)",
+ "note": "Copy of matt layout 4 (handoff) with the pins of the macro, bias_gen, comp_ct, avg_sc, lpf_rc, r2r, Ctrim, dbg_tg, log_det det / ibias_det and the chain's vcm / ibias moved to the block edge facing what they connect to (orange rings). Floorplanning only: the blocks need a re-layout and the macro a new pin_order.cfg to match. lna_chain re-laid out as a U fold (145.36 x 70.47 um, R180 at 13.14, 6.5): input section and stages 1-2 along the bottom over ua[0]/ua[1], stages 3-6 back along the top across a 14 um guard-ring moat; xdecd part 1 trimmed to 10.64 um wide.",
  "tile": {
   "w": 493.12,
   "h": 225.76
@@ -22,15 +22,12 @@
   {
    "inst": "xchain",
    "cell": "lna_chain",
-   "x": 21,
+   "x": 13.14,
    "y": 6.5,
-   "orient": "MX",
-   "rot": 0,
-   "mirror": true,
-   "estimate": false,
-   "w": 134.06,
-   "h": 70.52,
-   "fold": "U-fold, same area, half width: input half (input section, stages 1-2) on top with the inputs on the top edge, stages 3-6 turning back along the bottom row (needs a lna_chain re-layout)"
+   "orient": "R180",
+   "rot": 180,
+   "mirror": false,
+   "estimate": false
   },
   {
    "inst": "xdet",
@@ -247,7 +244,7 @@
    "cell": "decap_vdpwr",
    "x": 0,
    "y": 7,
-   "w": 18,
+   "w": 10.64,
    "h": 71,
    "orient": "R0",
    "rot": 0,
@@ -670,16 +667,6 @@
    "n": [
     1,
     0.25
-   ]
-  },
-  "xchain": {
-   "ibias": [
-    133.81,
-    41.34
-   ],
-   "vcm": [
-    133.81,
-    38.2
    ]
   }
  },

@@ -3,6 +3,34 @@
 Moved out of STATUS.md (2026-10-08) to keep the start-up read short. Sections are in the order they were
 written; grep for the block or topic you need.
 
+## lna_chain folded for the tile (2026-10-09)
+The straight 268 × 35 µm chain didn't fit the chosen floorplan.
+
+- **Options weighed.** Isolation target: ≤ 0.05 fF out → input zone, where the input zone is the pads, Cin, g1, Rb, stage 1 and o1 (o1 is as sensitive as the pad). The budget grows ~4.5× per stage back from the output. Substrate coupling isn't extracted, so guard rings and distance cover it (Pretl's course §22.6).
+  1. A U with the input over the pads and a guard-ring moat.
+  2. Input in a corner with the stages as a 3-row zigzag.
+  3. The page's U as is.
+- **Matt picked 1, with rings and distance and no deep n-well.** Layout in `docs/layout.md` "lna_chain": 145.36 × 70.47 µm, R180 at (13.14, 6.5).
+- **Three fold variants, by where each row's in / out wiring runs.** v1: both on the outer edges (turn ~50 µm). v2: both along the moat (turn ~21 µm, but the back-row taps need ~17 µm met4 drops). **v3 (kept): front along the moat, back on the outer edge (turn ~35 µm).**
+- **Per-stage gain at 434 MHz** (tt, 2 nH, extracted chain; `build/real_full*/taps.spice`):
+
+| | st1 | st2 | st3 | st4 | st5 | st6 | total |
+|---|---|---|---|---|---|---|---|
+| straight (re-extracted) | 14.51 | 12.84 | 12.97 | 12.96 | 12.99 | 12.84 | 79.11 |
+| v1 | 14.37 | 12.12 | 12.98 | 12.97 | 13.00 | 12.84 | 78.28 |
+| v2 | 14.43 | 12.61 | 12.72 | 12.70 | 12.73 | 12.59 | 77.79 |
+| **v3** | 14.42 | 12.44 | 12.99 | 12.98 | 13.00 | 12.85 | **78.67** |
+
+- **Stability, v3** (`sim/chain/stability.sh`, 2 nH, no Ccpl):
+  - tt: 76.21 dB at 434 MHz, peak 77.46, growth 2e-9. The straight chain gives 76.65 / 77.83.
+  - ss 10 °C: 80.31 / 81.48, growth 3e-9. The straight chain gives 80.78 / 81.89.
+  - That's −0.44 / −0.47 dB, inside the "within ~0.5 dB" criterion, with no added peaking.
+- **Coupling** (extracted, every variant): 0 aF from out / o5 / o4 into inp / inn / g1 / o1 / stage 1, even with v2's wiring 14 µm across the moat. o3 → o1 is 12–18 aF.
+- **Re-extraction note:** today's `pex.sh` gives the straight chain 11.3k R / 731 C. The committed 2026-10-08 netlist had 8.7k R / 224 C and 78.5 / 82.8 dB, from an older extraction. The comparisons above all use today's flow.
+- **Floorplan:** `blocks.json`, `floorplan.json`, `pins.md` regenerated (variant "matt layout 4 (handoff, chain folded)"). The engine's chain zones now follow the folded GDS, and the page's fold option is gone.
+  - Rule 2 reads 14 µm (the moat; the extraction shows 0 coupling).
+  - The chain is 11.3 µm wider than the page's fold, so the VDPWR decap strip west of it shrank and **VDPWR decap is 89 %** (open).
+
 ## Chain stability with the extracted stages and the laid-out chain (2026-10-08 night)
 Re-run of `sim/chain/stability.sh` (see "Re-verify … chain stability" below for the method) after the layouts of `amp_dp`, `amp_dpc` and `lna_chain`. All runs: 2 nH supply/ground, 30 pF decap, coupling `Ccpl` from out_p to pad_p, 1 µA / 1 ns kick. Decks in `build/real*` (tb_chain netlisted with xschem, then edited):
 - `real`: schematic as before (mm = 0.01); `real_mm0`: schematic, mm = 0 (the extractions have no mismatch; the two agree to 0.05 dB);

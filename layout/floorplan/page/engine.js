@@ -46,31 +46,10 @@
   // ---- the netlist of the tile (docs/floorplan_spec.md, "What goes in the tile" + "Nets")
   function buildCatalog(data) {
     const C = data.cells, cat = {};
-    const ch = C.lna_chain;
-    // zones of the real chain, for the rule checks: the input section (Cin, Rb, Mref), stage 1,
-    // and stages 4-6 (from the o3 tap gap to the output end)
-    // U-fold (floorplanning only, needs a chain re-layout): same area, half the width. The input
-    // half (x < L/2: input section, stages 1-2) is the top row as drawn (inputs stay on the top
-    // edge); the output half turns round at the right and runs back along the bottom row.
-    function foldOf(cell, zones) {
-      const L = cell.w, H = cell.h, cut = L / 2;
-      const map = (x, y) => x <= cut ? [x, H + y] : [L - x, H - y];
-      const rect = (r) => {                                           // split at the fold, map both parts
-        const parts = [], x0 = r[0], x1 = r[0] + r[2];
-        for (const [a, b] of [[x0, Math.min(x1, cut)], [Math.max(x0, cut), x1]]) {
-          if (b - a <= 1e-9) continue;
-          const p = map(a + 1e-9 * (a >= cut ? 1 : 0), r[1]), q = map(b - 1e-9 * (b <= cut ? 1 : 0), r[1] + r[3]);
-          parts.push([Math.min(p[0], q[0]), Math.min(p[1], q[1]), Math.abs(q[0] - p[0]), Math.abs(q[1] - p[1])]);
-        }
-        return parts;
-      };
-      const pins = {};
-      for (const [n, p] of Object.entries(cell.pins)) { const [x, y] = map(p.x, p.y); pins[n] = Object.assign({}, p, { x: +x.toFixed(3), y: +y.toFixed(3) }); }
-      const z = {}; for (const [k, r] of Object.entries(zones)) z[k] = rect(r)[0];
-      z.late = rect(zones.late)[0];
-      return { w: +cut.toFixed(3), h: +(2 * H).toFixed(3), pins, m4: (cell.m4 || []).flatMap(rect), zones: z };
-    }
-    const chainZones = { input: [0, 0, 69.5, ch.h], stage1: [69.5, 0, 37, ch.h], late: [171.5, 0, +(ch.w - 171.5).toFixed(2), ch.h] };
+    // zones of the real (folded) chain, in its own frame (layout/gen/lna_chain.py): the input
+    // section (Cin, Rb, Mref) and stage 1 in the front row (top), stages 4-6 in the back row
+    // (bottom, across the 14 um moat). Placed R180, the front row sits over the RX pads.
+    const chainZones = { input: [0, 35.21, 69.02, 35.26], stage1: [69.02, 35.21, 36.4, 20.73], late: [9.8, 0, 95.62, 21.21] };
     const real = (inst, cell, extra) => Object.assign({ inst, cell, w: C[cell].w, h: C[cell].h, pins: C[cell].pins, m4: C[cell].m4 || [], group: 'rx' }, extra || {});
     // macro pins: even spread of pin_order.cfg slots (LibreLane), an estimate until the DEF is read
     const W = ['$', '$', 'tx_en', 'tx_en_n', '$', '$', '$', 'rx_en', 'dbg_en', '$', '$', '$', 'comp_in', 'sc_phi1', 'sc_phi2', '$', '$']
@@ -83,7 +62,7 @@
     N.forEach((n, i) => { mpins[n] = { layer: 'met2', x: +((i + 1) * 260 / 83).toFixed(2), y: 190, est: true }; });
     const list = [
       { inst: 'macro', cell: 'radio_digital', w: 260, h: 190, reshape: true, halo: 5, pins: mpins, m4: [[0, 0, 260, 190]], group: 'dig', label: 'radio_digital' },
-      real('xchain', 'lna_chain', { zones: chainZones, fold: foldOf(ch, chainZones) }),
+      real('xchain', 'lna_chain', { zones: chainZones }),
       real('xdet', 'log_det'), real('xlpf', 'lpf_rc'),
       real('xavg', 'avg_sc'),
       real('xcomp', 'comp_ct'),

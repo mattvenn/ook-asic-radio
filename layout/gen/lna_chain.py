@@ -2,17 +2,35 @@
 # rl2=4k mt2=6 cs=0.6p cin=2p rb=20k: input coupling (Cin_p/n 2 pF MIM, ~31 um square,
 # bottom plate on the pad side; Rb_p/n 20k high_po_0p35 from vcm to the gates), the
 # reference diode Mref (W 6 nf 2 / L 0.5, ibias = every stage's nb), then amp_dp and
-# 5 x amp_dpc in a straight line (the finished cell layouts, read in as subcells).
+# 5 x amp_dpc (the finished cell layouts, read in as subcells).
 #
-# Floorplan, left to right: the input section (Cin_p, Cin_n side by side; Mref and the Rb
-# pair in a p-tap ring under them; the top plates drop on met3 just right of Cin_n to
-# amp_dp's inp / inn), then the stages with 2 um routing gaps. A straight line puts the
-# chain's output as far as possible from its input (the stability limit is output ->
-# input coupling). In each gap: out -> in on met3/met2 (amp_dp's outputs line up with
-# amp_dpc's inputs; between amp_dpc stages outp runs straight and outn steps down to
-# inn), nb on met2, the VSS rail and the overlapping band of the VDD rails bridged.
-# Pins: inp / inn (the pad-side plates, met3, top edge), vcm and ibias (met2, left edge),
-# outp / outn (met2, right edge), taps o1..o5 (met2, in the gaps), VDD, VSS.
+# Folded in two (a U), for the tile floorplan (docs/floorplan_spec.md "Chosen floorplan").
+# Own frame (placed R180 in the tile, so the front row is at the bottom over the RX pads):
+#   front row (top): the input section (Cin_p, Cin_n side by side; Mref and the Rb pair in
+#     a p-tap ring under them; the top plates drop on met3 just right of Cin_n to amp_dp's
+#     inp / inn), amp_dp (st1), amp_dpc (st2), flowing east. The two stages are mirrored
+#     top-bottom (MX), so their in / out wiring and VDD rail run along the moat: the o1 tap
+#     and the start of the turn are short. Built in its own frame (front()), then placed at
+#     Y_F and flattened one level.
+#   turn (east edge): o2 from st2's outputs (moat side) down to st3's inputs (~35 um, met2);
+#     nb beside it; the o1 tap comes along the moat and down the same channel. Then a VSS
+#     column (met1) and a VDD column (met3): the only places the two rows' rails meet (the
+#     tile's VDPWR / VGND straps are over this end).
+#   moat (MOAT um): a p-tap ring tied to VSS at the VSS column only, with an n-well stripe
+#     (n-tap ring to VDD) inside it. The rows' own rails don't touch it.
+#   back row (bottom): st3..st6, amp_dpc rotated 180 (inputs east, VSS rail on the moat side),
+#     flowing west, with the in / out wiring and the taps along the bottom edge (toward
+#     log_det). st5 / st6 end up across the moat from the Cin plates (passives), st3 / st4
+#     across from st2 / st1.
+#   (Both rows' wiring on the moat side, v2, made the turn ~21 um but needed ~17 um met4 drops
+#   for the back-row taps: worse overall. Both on the outer edges, v1, made the turn ~50 um.)
+# Isolation rule (sim/chain/stability.sh): <= 0.1 fF asymmetric output -> input coupling at
+# ss 10 C (aim <= 0.05 fF), where the input is the pads, Cin, g1, Rb, stage 1 and o1. The
+# budget grows ~4.5x per stage back from the output (stages ~13 dB apart).
+# Pins: inp / inn (the pad-side plates, met3, top edge, over ua[0] / ua[1] once placed with
+# its tile-east edge at TILE_RIGHT), vcm and ibias (met2, west edge, toward bias_gen), taps
+# o1..o5 (met2: o1 / o2 at the bottom of the turn channel, o3..o5 in the back-row gaps),
+# outp / outn (met2, west end of the back row), VSS (met1) and VDD (met3) on the east columns.
 # Rb_p / Rb_n are single segments (one segment = exactly the schematic's end resistance),
 # side by side so their RPM regions merge (a lone 0.35 um segment fails magic rpm.1).
 # Run: tools/osic klayout -b -r layout/gen/lna_chain.py
@@ -33,6 +51,9 @@ NST = 6
 GAP = 2.0
 RAIL_H = 1.5
 GRW = 0.4
+MOAT = 14.0
+TILE_RIGHT = 158.5                     # the block's tile-east edge (its own x = 0) in the tile
+UA = {'inp': 136.62, 'inn': 117.30}    # ua[0] / ua[1] pad centres, tile x
 
 
 def pins_of(cell, ly):
@@ -52,27 +73,17 @@ def pins_of(cell, ly):
     return out
 
 
-def make():
-    b = Block('lna_chain')
-    ly = b.ly
-    opts = pya.LoadLayoutOptions()
-    opts.cell_conflict_resolution = pya.LoadLayoutOptions.RenameCell
-    cells = {}
-    for name in ('amp_dp', 'amp_dpc'):
-        ly.read(os.path.join(REPO, 'layout', name + '.gds'), opts)
-        cells[name] = ly.cell(name)
-        assert cells[name] is not None, name
-    pin = {n: pins_of(c, ly) for n, c in cells.items()}
-    W1, Wc = cells['amp_dp'].dbbox().width(), cells['amp_dpc'].dbbox().width()
+def front(b, cells, pin):
+    """The front row (input section, st1, st2) in its own frame. The stages are mirrored
+    top-bottom (MX), so their in / out wiring and VDD rail are along the bottom (the moat)."""
+    W1, H1 = cells['amp_dp'].dbbox().width(), cells['amp_dp'].dbbox().height()
+    Hc = cells['amp_dpc'].dbbox().height()
+    T = {}
 
-    def pb(cell, net, side=None, dx=0.0):
-        """pin box of cell's net (side 'L' / 'R': the one at that edge), moved by dx."""
-        cands = pin[cell][net]
-        if side:
-            cands = sorted(cands, key=lambda t: t[1].left)
-            cands = [cands[0] if side == 'L' else cands[-1]]
-        lay, bb = cands[0]
-        return lay, bb.moved(pya.DVector(dx, 0))
+    def pb(cell, net, side=None):
+        """pin box of the placed cell's net (side 'L' / 'R': the one at that edge)."""
+        cands = sorted((bb.transformed(T[cell]) for _, bb in pin[cell][net]), key=lambda q: q.left)
+        return cands[0] if side in (None, 'L') else cands[-1]
 
     # ---- input section
     e = CAPM_ENC_M3
@@ -81,20 +92,20 @@ def make():
     cp = box(xc0 + e, RAIL_H + BOT_PLATE_SPACE + e, xc0 + e + CINW, RAIL_H + BOT_PLATE_SPACE + e + CINW)
     cn = cp.moved(pya.DVector(plate + 1.6, 0))
     pl_n_right = cn.right + e
-    x_a = pl_n_right + BOT_PLATE_SPACE                  # g1p drop column
-    x_b = x_a + 0.5 + 0.3                               # g1n drop column
+    x_a = pl_n_right + BOT_PLATE_SPACE                  # drop column to amp_dp's lower input
+    x_b = x_a + 0.5 + 0.3                               # drop column to its upper input
     x_dp = x_b + 0.5 + 1.2                              # amp_dp origin
-    xs = [x_dp]
-    for i in range(1, NST):
-        xs.append(xs[-1] + (W1 if i == 1 else Wc) + GAP)
-    W = xs[-1] + Wc
-    for i, x in enumerate(xs):
-        b.place(cells['amp_dp' if i == 0 else 'amp_dpc'], x, 0)
-    # VSS rail along the whole input section + the gaps (stage cells carry their own)
-    b.stack(box(0, 0, x_dp - 0.3, RAIL_H), 'm1', 'm3')
-    for lay in ('m1', 'm2', 'm3'):                      # metal only at the joint: abutting via
-        b.rect(lay, box(x_dp - 0.5, 0, x_dp + 0.5, RAIL_H))   # arrays would break via spacing
-    b.pin('m1', box(0, 0, 1.0, RAIL_H), 'VSS')
+    xs = [x_dp, x_dp + W1 + GAP]
+    T['amp_dp'] = pya.DCplxTrans(1, 0, True, x_dp, H1)
+    T['amp_dpc'] = pya.DCplxTrans(1, 0, True, xs[1], Hc)
+    b.place(cells['amp_dp'], x_dp, H1, mirror=True)
+    b.place(cells['amp_dpc'], xs[1], Hc, mirror=True)
+    # VSS rail along the input section; it stops short of amp_dp's VDD rail (now at the
+    # bottom) and a met1 link takes it up to amp_dp's VSS rail (now at the top)
+    b.stack(box(0, 0, x_dp - 0.6, RAIL_H), 'm1', 'm3')
+    vs1 = pb('amp_dp', 'VSS')
+    b.rect('m1', box(x_dp - 1.0, 0, x_dp - 0.6, vs1.top))
+    b.rect('m1', box(x_dp - 1.0, vs1.bottom, x_dp + 0.5, vs1.top))
 
     # Mref + Rb pair in a p-tap ring under the caps
     y_in = RAIL_H + GRW
@@ -115,7 +126,7 @@ def make():
     gy1 = max(max(q.top for q in mref.pads), gy0 + 0.32)
     b.rect('m1', box(mref.pads[0].left, gy0, mref.pads[-1].right, gy1))
     # ibias at amp_dp's nb height
-    _, nb_dp = pb('amp_dp', 'nb', 'L', x_dp)
+    nb_dp = pb('amp_dp', 'nb', 'L')
     yi0, yi1 = nb_dp.bottom, nb_dp.top
     dx = sd.center().x
     dv = box(dx - 0.15, mref.diff.top - 1.0, dx + 0.15, mref.diff.top - 0.2)
@@ -136,89 +147,220 @@ def make():
     assert yv1 + 0.3 <= yi0, (yv1, yi0)
     b.rect('m2', box(0, yv0, vv.right, yv1))
     b.pin('m2', box(0, yv0, 0.5, yv1), 'vcm')
-    # g1p from Rb_p: up 1 um above the heads, then right to column x_a; g1n from Rb_n at head level to x_b
+    # the drop columns: x_a (nearer the caps) to amp_dp's lower input pin, x_b to the upper
+    # one, so the lower pin's met3 run passes under the end of the other column
+    in_dp, inn_dp = pb('amp_dp', 'inp', 'L'), pb('amp_dp', 'inn', 'L')
+    col = {'p': x_a, 'n': x_b} if in_dp.bottom < inn_dp.bottom else {'p': x_b, 'n': x_a}
+    # g1p from Rb_p: up 1 um above the heads, then right to its column; g1n from Rb_n at head level
     hp = box(tp.left, tp.top - 0.45, tp.right, tp.top - 0.05)
     hn = box(tn.left, tn.top - 0.45, tn.right, tn.top - 0.05)
     for h in (hp, hn):
         b.via('via1', h, enc=(0.055, 0.085))
     yg_p = (hp.top + 0.6, hp.top + 1.0)
     b.rect('m2', box(hp.left, hp.bottom, hp.right, yg_p[1]))
-    b.rect('m2', box(hp.left, yg_p[0], x_a + 0.5, yg_p[1]))
-    b.rect('m2', box(hn.left, hn.bottom, x_b + 0.5, hn.top))
+    b.rect('m2', box(hp.left, yg_p[0], col['p'] + 0.5, yg_p[1]))
+    b.rect('m2', box(hn.left, hn.bottom, col['n'] + 0.5, hn.top))
     b.label('m2', hp, 'g1p')
     b.label('m2', hn, 'g1n')
     # the caps, top plates by met4 strips to the drop columns
-    _, in_dp = pb('amp_dp', 'inp', 'L', x_dp)
-    _, inn_dp = pb('amp_dp', 'inn', 'L', x_dp)
     st_p = (cp.top - 1.3, cp.top - 0.15)                 # Cin_p's strip high
     st_n = (cp.top - 2.9, cp.top - 1.75)                 # Cin_n's strip lower
-    for c, (s0_, s1_), xcol, (ylo, yhi), via_y in ((cp, st_p, x_a, (in_dp.bottom, in_dp.top), yg_p),
-                                                   (cn, st_n, x_b, (inn_dp.bottom, inn_dp.top), (hn.bottom, hn.top))):
+    for c, (s0_, s1_), xcol, pinb, via_y in ((cp, st_p, col['p'], in_dp, yg_p),
+                                             (cn, st_n, col['n'], inn_dp, (hn.bottom, hn.top))):
+        ylo, yhi = pinb.bottom, pinb.top
         strip = box(c.left, s0_, xcol + 0.5, s1_)
         bot = mim(b, c, strip)
         b.rect('m4', strip)
-        col = box(xcol, min(ylo, via_y[0]), xcol + 0.5, s1_)
-        b.rect('m3', col)
+        b.rect('m3', box(xcol, min(ylo, via_y[0]), xcol + 0.5, s1_))
         b.via('via3', box(xcol, s0_, xcol + 0.5, s1_))
         b.via('via2', box(xcol, via_y[0], xcol + 0.5, via_y[1]), enc=(0.065, 0.065))
         b.rect('m3', box(xcol, ylo, x_dp + 0.5, yhi))      # into amp_dp's pin (met3)
-        # pad-side plate: a met3 tab up to the top edge (the pin)
-        tab = box(bot.left + 2.0, bot.top - 0.5, bot.left + 4.0, bot.top + 1.0)
+        # pad-side plate: a met3 tab up to the top edge (the pin), over its ua pad once placed
+        name = 'inp' if c is cp else 'inn'
+        xt = TILE_RIGHT - UA[name]
+        assert bot.left + 1.5 <= xt <= bot.right - 1.5, (name, xt, bot)
+        tab = box(xt - 1.0, bot.top - 0.5, xt + 1.0, bot.top + 1.0)
         b.rect('m3', tab)
-        b.pin('m3', box(tab.left, tab.top - 0.5, tab.right, tab.top), 'inp' if c is cp else 'inn')
+        b.pin('m3', box(tab.left, tab.top - 0.5, tab.right, tab.top), name)
 
-    # ---- the gaps
-    taps = []
-    for i in range(1, NST):
-        xl = xs[i - 1] + (W1 if i == 1 else Wc)          # right edge of stage i
-        xr_ = xs[i]                                       # left edge of stage i+1
-        src = 'amp_dp' if i == 1 else 'amp_dpc'
-        dx_s = xs[i - 1]
-        # rails
-        b.rect('m1', box(xl - 0.5, 0, xr_ + 0.5, RAIL_H))
-        b.rect('m2', box(xl - 0.5, 0, xr_ + 0.5, RAIL_H))
-        b.rect('m3', box(xl - 0.5, 0, xr_ + 0.5, RAIL_H))
-        _, vl = pb(src, 'VDD', None, dx_s)
-        _, vr = pb('amp_dpc', 'VDD', None, xr_)
-        vy0, vy1 = max(vl.bottom, vr.bottom), min(vl.top, vr.top)
+    # ---- st1 -> st2 (amp_dp: met3 out; amp_dpc: met2 in)
+    xl, xr_ = xs[0] + W1, xs[1]
+    for net in ('VDD', 'VSS'):                          # bridge the rails where the cells' bands overlap
+        ql, qr = pb('amp_dp', net), pb('amp_dpc', net)
+        y0, y1 = max(ql.bottom, qr.bottom), min(ql.top, qr.top)
         for lay in ('m1', 'm2', 'm3'):
-            b.rect(lay, box(xl - 0.5, vy0, xr_ + 0.5, vy1))
-        # nb
-        _, nl = pb(src, 'nb', 'R', dx_s)
-        _, nr = pb('amp_dpc', 'nb', 'L', xr_)
-        xm = (xl + xr_) / 2
-        b.rect('m2', box(nl.left, nl.bottom, xm + 0.2, nl.top))
-        b.rect('m2', box(xm - 0.2, min(nl.bottom, nr.bottom), xm + 0.2, max(nl.top, nr.top)))
-        b.rect('m2', box(xm - 0.2, nr.bottom, nr.right, nr.top))
-        # outputs -> inputs
+            b.rect(lay, box(xl - 0.5, y0, xr_ + 0.5, y1))
+    nl, nr = pb('amp_dp', 'nb', 'R'), pb('amp_dpc', 'nb', 'L')
+    xm = (xl + xr_) / 2
+    b.rect('m2', box(nl.left, nl.bottom, xm + 0.2, nl.top))
+    b.rect('m2', box(xm - 0.2, min(nl.bottom, nr.bottom), xm + 0.2, max(nl.top, nr.top)))
+    b.rect('m2', box(xm - 0.2, nr.bottom, nr.right, nr.top))
+    # outputs: met3 to a via2 column each (p nearer st1), met2 to st2's input; after MX
+    # outp sits above outn, so p's met2 runs above n's column and n's met2 starts right of p's
+    o1 = {}
+    for o, inn_, xv in (('outp', 'inp', xl + 0.6), ('outn', 'inn', xl + 1.4)):
+        ob, ib = pb('amp_dp', o, 'R'), pb('amp_dpc', inn_, 'L')
+        w = 0.3 if o == 'outp' else 0.2
+        b.rect('m3', box(ob.left, ob.bottom, xv + w, ob.top))
+        vb = box(xv - w, ob.bottom, xv + w, ob.top)
+        b.rect('m2', vb)
+        b.via('via2', vb, enc=(0.085 if w < 0.3 else 0.065, 0.065))
+        b.rect('m2', box(xv - w, min(ob.bottom, ib.bottom), xv + w, max(ob.top, ib.top)))
+        b.rect('m2', box(xv - w, ib.bottom, ib.right, ib.top))
+        # the o1 tap: via3 up from amp_dp's met3 output track (it runs to the cell's right
+        # edge, and amp_dp has no met4), a short met4 drop into the moat
+        xd = xl - (1.35 if o == 'outp' else 0.55)
+        d = box(xd - 0.25, ob.bottom, xd + 0.25, ob.top)
+        b.rect('m3', d)
+        b.via('via3', d)
+        o1[o[-1]] = d
+    return dict(x_dp=x_dp, xs=xs, W=xs[1] + cells['amp_dpc'].dbbox().width(), o1=o1, T2=T['amp_dpc'])
+
+
+def make():
+    b = Block('lna_chain')
+    ly = b.ly
+    opts = pya.LoadLayoutOptions()
+    opts.cell_conflict_resolution = pya.LoadLayoutOptions.RenameCell
+    cells = {}
+    for name in ('amp_dp', 'amp_dpc'):
+        ly.read(os.path.join(REPO, 'layout', name + '.gds'), opts)
+        cells[name] = ly.cell(name)
+        assert cells[name] is not None, name
+    pin = {n: pins_of(c, ly) for n, c in cells.items()}
+    Wc, Hc = cells['amp_dpc'].dbbox().width(), cells['amp_dpc'].dbbox().height()
+
+    def pt(cell, net, trans, side=None):
+        """pin box of cell's net through an instance transform (side: the left- / right-most)."""
+        cands = sorted((bb.transformed(trans) for _, bb in pin[cell][net]), key=lambda q: q.left)
+        return cands[0] if side in (None, 'L') else cands[-1]
+
+    # ---- front row, built in its own frame and flattened in at Y_F
+    Y_F = snap(Hc + MOAT)
+    fb = Block('lna_front', ly)
+    f = front(fb, cells, pin)
+    inst = b.cell.insert(pya.DCellInstArray(fb.cell.cell_index(), pya.DTrans(pya.DVector(0, Y_F))))
+    inst.flatten(1)
+    ly.delete_cell(fb.cell.cell_index())
+    Xe = f['W']                                          # east edge of st2 and st3
+    T2 = pya.DCplxTrans(pya.DVector(0, Y_F)) * f['T2']   # st2
+
+    # ---- back row: st3 (east) .. st6 (west), amp_dpc rotated 180: inputs east, VSS rail on
+    # the moat side, in / out wiring and the taps along the bottom edge (toward log_det)
+    Tb = []
+    for k in range(4):
+        xr = Xe - k * (Wc + GAP)
+        b.place(cells['amp_dpc'], xr, Hc, rot=180)
+        Tb.append(pya.DCplxTrans(1, 180, False, xr, Hc))
+    x_west = Xe - 4 * Wc - 3 * GAP
+    vss_b = (Hc - RAIL_H, Hc)
+    vdd_b = (0, RAIL_H)
+    for k in range(3):                                   # gap between stage 3+k (east) and 4+k (west)
+        xl = Xe - k * (Wc + GAP) - Wc - GAP              # west cell's right edge
+        xr = xl + GAP                                    # east cell's left edge
+        xm = (xl + xr) / 2
+        for lay in ('m1', 'm2', 'm3'):
+            b.rect(lay, box(xl - 0.5, vss_b[0], xr + 0.5, vss_b[1]))
+            b.rect(lay, box(xl - 0.5, vdd_b[0], xr + 0.5, vdd_b[1]))
+        nl = pt('amp_dpc', 'nb', Tb[k + 1], 'R')
+        nr = pt('amp_dpc', 'nb', Tb[k], 'L')
+        b.rect('m2', box(nl.left, min(nl.bottom, nr.bottom), nr.right, max(nl.top, nr.top)))
+        s = 3 + k
         for o, inn_ in (('outp', 'inp'), ('outn', 'inn')):
-            lo, ob = pb(src, o, 'R', dx_s)
-            _, ib = pb('amp_dpc', inn_, 'L', xr_)
-            net = f'o{i}{o[-1]}'
-            if lo == 70:                                  # amp_dp: met3 out, met2 in, rows overlap
-                y0, y1 = max(ob.bottom, ib.bottom), min(ob.top, ib.top)
-                assert y1 - y0 >= 0.3, (net, ob, ib)
-                b.rect('m3', box(ob.left, ob.bottom, xm + 0.3, ob.top))
-                b.rect('m2', box(xm - 0.3, ib.bottom, ib.right, ib.top))
-                vb = box(xm - 0.3, y0, xm + 0.3, y1)
-                b.rect('m2', vb)
-                b.via('via2', vb, enc=(0.065, 0.04))
-                pbx = box(xm - 0.3, ib.bottom, xm + 0.3, ib.top)
-            else:                                         # amp_dpc: met2 both; outn steps down to inn
-                b.rect('m2', box(ob.left, ob.bottom, xm + 0.2, ob.top))
-                b.rect('m2', box(xm - 0.2, min(ob.bottom, ib.bottom), xm + 0.2, max(ob.top, ib.top)))
-                b.rect('m2', box(xm - 0.2, ib.bottom, ib.right, ib.top))
-                pbx = box(xm - 0.2, ib.bottom, xm + 0.2, ib.top)
-            b.pin('m2', pbx, net)
-            taps.append(net)
-    # last stage outputs: the pins
+            ob = pt('amp_dpc', o, Tb[k], 'L')            # east cell's output, at its left edge
+            ib = pt('amp_dpc', inn_, Tb[k + 1], 'R')     # west cell's input, at its right edge
+            b.rect('m2', box(xm - 0.2, ob.bottom, ob.right, ob.top))
+            b.rect('m2', box(xm - 0.2, min(ob.bottom, ib.bottom), xm + 0.2, max(ob.top, ib.top)))
+            b.rect('m2', box(ib.left, ib.bottom, xm + 0.2, ib.top))
+            b.pin('m2', box(xm - 0.2, ib.bottom, xm + 0.2, ib.top), f'o{s}{o[-1]}')
+    # last stage outputs: short stubs west, the pins
     for o in ('outp', 'outn'):
-        _, ob = pb('amp_dpc', o, 'R', xs[-1])
-        b.pin('m2', ob, o)
-    _, vt = pb('amp_dpc', 'VDD', None, xs[-1])
-    b.pin('m1', box(W - 1.0, vt.bottom, W, vt.top), 'VDD')
-    print(f'lna_chain: {W:.1f} x {max(cp.top + e + 1.0, 21.21):.1f} um; Cin {CINW} um, Rb {LRB:.2f} um; '
-          f'stages at x = {", ".join(f"{x:.1f}" for x in xs)}')
+        ob = pt('amp_dpc', o, Tb[3], 'L')
+        stub = box(ob.left - 1.0, ob.bottom, ob.right, ob.top)
+        b.rect('m2', stub)
+        b.pin('m2', box(stub.left, stub.bottom, stub.left + 0.5, stub.top), o)
+
+    # ---- the turn channel, east of Xe (met2 verticals; rails cross it on met1 / met3).
+    # st2's outn is below its outp (front row mirrored) and st3's inn below its inp: n takes
+    # the inner column, and p's bottom run crosses it on met3, from a via just outside st3.
+    c_o2 = {'n': (Xe + 0.9, Xe + 1.3), 'p': (Xe + 1.9, Xe + 2.3)}
+    c_nb = (Xe + 2.8, Xe + 3.2)
+    c_o1 = {'p': (Xe + 3.6, Xe + 4.0), 'n': (Xe + 4.3, Xe + 4.7)}
+    c_vss, c_vdd = (Xe + 5.1, Xe + 6.1), (Xe + 6.4, Xe + 7.4)
+    W = c_vdd[1]
+
+    def cross_m3(pinb, cx):
+        """met2 stub out of a st3 pin, via2 just outside the cell, met3 east to column cx, via2."""
+        vin = box(Xe + 0.0, pinb.bottom, Xe + 0.5, pinb.top)
+        b.rect('m2', box(pinb.left, pinb.bottom, vin.right, pinb.top))
+        b.rect('m3', box(vin.left, pinb.bottom, cx[1], pinb.top))
+        for v in (vin, box(cx[0], pinb.bottom, cx[1], pinb.top)):
+            b.rect('m2', v)
+            b.via('via2', v, enc=(0.085, 0.065))
+
+    for o, inn_ in (('outp', 'inp'), ('outn', 'inn')):
+        q = o[-1]
+        ob, ib = pt('amp_dpc', o, T2, 'R'), pt('amp_dpc', inn_, Tb[0], 'R')
+        cx = c_o2[q]
+        b.rect('m2', box(ob.left, ob.bottom, cx[1], ob.top))
+        b.rect('m2', box(cx[0], ib.bottom, cx[1], ob.top))
+        if q == 'n':
+            b.rect('m2', box(ib.left, ib.bottom, cx[1], ib.top))
+        else:
+            cross_m3(ib, cx)
+        b.pin('m2', box(cx[0], ib.bottom, cx[1], ib.top), 'o2' + q)
+    # nb: st2's right nb (top of the front row) -> st3's right nb (top of the back row), outside o2
+    nt, nbk = pt('amp_dpc', 'nb', T2, 'R'), pt('amp_dpc', 'nb', Tb[0], 'R')
+    b.rect('m2', box(nt.left, nt.bottom, c_nb[1], nt.top))
+    b.rect('m2', box(c_nb[0], nbk.bottom, c_nb[1], nt.top))
+    cross_m3(nbk, c_nb)
+    # o1: short met4 drops from the front gap into the moat, met3 east along it, a met2 column
+    # down to the back row's tap level
+    y_o1 = {'p': Y_F - 3.0, 'n': Y_F - 4.5}
+    for q, d in f['o1'].items():
+        d = d.moved(pya.DVector(0, Y_F))
+        y0 = y_o1[q]
+        b.rect('m4', box(d.left, y0 - 0.3, d.right, d.top))
+        pad = box(d.left, y0 - 0.3, d.right, y0 + 0.3)
+        b.rect('m3', pad)
+        b.via('via3', pad)
+        cx = c_o1[q]
+        b.rect('m3', box(d.left, y0 - 0.3, cx[1], y0 + 0.3))
+        vb = box(cx[0], y0 - 0.3, cx[1], y0 + 0.3)
+        b.rect('m2', vb)
+        b.via('via2', vb, enc=(0.065, 0.04))
+        yb = pt('amp_dpc', 'inp' if q == 'p' else 'inn', Tb[0], 'R').bottom
+        b.rect('m2', box(cx[0], yb, cx[1], y0 + 0.3))
+        b.pin('m2', box(cx[0], yb, cx[1], yb + 0.4), 'o1' + q)
+
+    # ---- moat: p-tap ring (VSS, at the VSS column only) with an n-well / n-tap stripe (VDD)
+    mo = box(0.125 + GRW, Hc + 0.4 + GRW, c_vss[1] - GRW, Y_F - 0.4 - GRW)   # ring inner (its psdm reaches x = 0)
+    ring(b, mo, 'p', GRW)
+    ni = box(mo.left + 1.1, mo.center().y - 1.4, Xe - 1.5, mo.center().y + 1.4)
+    ring(b, ni, 'n', GRW)
+    b.rect('nwell', box(ni.left - GRW - 0.4, ni.bottom - GRW - 0.4, ni.right + GRW + 0.4, ni.top + GRW + 0.4))
+    yv = (ni.center().y - 0.5, ni.center().y + 0.5)
+    tie = box(ni.right - 0.2, yv[0], ni.right + GRW + 0.2, yv[1])
+    b.rect('m1', tie)
+    b.rect('m2', tie)
+    b.via('via1', tie)
+    b.via('via2', tie, enc=(0.085, 0.065))
+    b.rect('m3', box(tie.left, yv[0], c_vdd[1], yv[1]))
+
+    # ---- supplies: each row's rails run to the east columns and meet only there
+    fr_vss, fr_vdd = pt('amp_dpc', 'VSS', T2), pt('amp_dpc', 'VDD', T2)
+    b.rect('m1', box(Xe - 0.5, fr_vss.bottom, c_vss[1], fr_vss.top))
+    b.rect('m1', box(Xe - 0.5, vss_b[0], c_vss[1], vss_b[1]))
+    b.rect('m1', box(c_vss[0], vss_b[0], c_vss[1], fr_vss.top))
+    b.rect('m3', box(Xe - 0.5, fr_vdd.bottom, c_vdd[1], fr_vdd.top))
+    b.rect('m3', box(Xe - 0.5, vdd_b[0], c_vdd[1], vdd_b[1]))
+    b.rect('m3', box(c_vdd[0], vdd_b[0], c_vdd[1], fr_vdd.top))
+    b.pin('m1', box(c_vss[0], vss_b[0], c_vss[1], vss_b[1]), 'VSS')
+    b.pin('m3', box(c_vdd[0], fr_vdd.bottom, c_vdd[1], fr_vdd.top), 'VDD')
+
+    H = b.cell.dbbox().height()
+    print(f'lna_chain: {W:.2f} x {H:.2f} um (moat {MOAT}); front x_dp {f["x_dp"]:.2f}, st2 east edge {Xe:.2f}, '
+          f'back row west end {x_west:.2f}; in the tile (R180): x {TILE_RIGHT - W:.2f}..{TILE_RIGHT}')
     return b
 
 

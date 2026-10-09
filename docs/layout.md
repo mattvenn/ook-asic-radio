@@ -306,3 +306,32 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
 - **Block test** (`sim/logdet/tb_log_det.py`, tt): idle det 1.5197 → 1.4888 V; 100 mV on t6: −1.56 → −1.46 mV. This is the same as the 1 × 6 layout (1.4890 V, −1.46 mV).
 - **Open:** the high-po fits have a per-device end term (0.35: 963 Ω, 0.69: 526 Ω). With Rs in 2 segments and Rdet in 3, the layout's Rs/Rdet are ~10 % high, which is the idle shift.
   - Harmless (the averaging reference absorbs it). For an exact match, draw them in the schematic as series segments.
+
+## lna_chain (U fold, 2026-10-09)
+- **`layout/gen/lna_chain.py`:** the chain folded in two for the tile floorplan. **145.36 × 70.47 µm**, placed **R180 at (13.14, 6.5)** (`layout/floorplan/pins.md`).
+  - **Front row** (tile bottom): the input section as before, then amp_dp (st1) and amp_dpc (st2). The stages are mirrored top-bottom, so their in / out wiring runs along the moat.
+    - Cin_p / Cin_n's pad-side tabs sit right over ua[0] / ua[1] (`TILE_RIGHT`, `UA`).
+    - The drop columns from the Cin top plates go to amp_dp's lower / upper input by pin height.
+    - The input section's VSS rail stops short of amp_dp's VDD rail; a met1 link takes it up to amp_dp's VSS.
+  - **Moat** (14 µm): a p-tap ring tied to VSS only at the VSS column, with an n-well / n-tap stripe on VDD inside it. The rows' own rails don't touch it.
+  - **Back row** (tile top): st3–st6 rotated 180, flowing back. Their in / out wiring and the taps are on the log_det edge. st5 / st6 sit across the moat from the Cin plates; st3 / st4 from st2 / st1.
+  - **Turn** (tile-west end): o2 runs ~35 µm on met2 from st2's outputs to st3's inputs. nb runs beside it, and the o1 tap comes along the moat. Then the VSS (met1) and VDD (met3) columns: the only places the two rows' rails meet, under the tile's VDPWR / VGND straps.
+- **Checks:** DRC (magic + KLayout) 0, antenna 0, LVS match.
+- **Isolation (extraction):** 0 aF from out / o5 / o4 (wires and stage internals) into inp / inn / g1 / o1 / stage 1; o3 → o1 12 aF (its budget is ~5 fF). The budget is ≤ 0.1 fF from the output (ss 10 °C); see docs/history.md.
+- **Gain and stability** (`sim/chain/stability.sh`, 2 nH, no Ccpl, the whole chain extracted). The straight chain is re-extracted with today's `pex.sh` as the reference:
+
+| | straight: 434 MHz / peak | folded: 434 MHz / peak | kick growth |
+|---|---|---|---|
+| tt | 76.65 / 77.83 dB | **76.21 / 77.46 dB** | 2e-9 |
+| ss 10 °C | 80.78 / 81.89 dB | **80.31 / 81.48 dB** | 3e-9 |
+
+  - The −0.44 / −0.47 dB is the turn: o2 carries +6 fF (st2: 12.84 → 12.44 dB). The o1 tap adds +14 fF on st1's 1 kΩ (−0.09 dB). Stages 3–6 are unchanged.
+- **Fold variants tried** (per-stage gain at 434 MHz, tt; total vs straight):
+  - **v1:** both rows' wiring on the outer edges. Turn ~50 µm, −0.83 dB.
+  - **v2:** both rows' wiring along the moat. Turn ~21 µm, but each back-row tap needs a ~17 µm met4 drop to the log_det edge (+5.5 fF each, with p–n coupling between the drops), so −1.32 dB.
+  - **v3 (kept):** front row along the moat, back row on the outer edge. −0.44 dB.
+- **Top level:** the tap wires to log_det load the stages the same way.
+  - Tap x positions in the tile: o1 / o2 at ~17, o3 52, o4 85, o5 117, out 149.
+  - log_det wants t1/t4 at ~69–80, t2/t5 ~90–101, t3/t6 ~111–122.
+  - o2 → t2 (~75 µm) and o3 → t3 (~60 µm) would each cost st2 / st3 a few tenths of a dB. Worth a look when the tile is assembled (log_det orientation, or tap order).
+- **ua[2]** (debug, x 98) comes up under Cin_n: route it outside the chain, not across it. A floating debug wire over st5 and Cin_n would bridge output to input.

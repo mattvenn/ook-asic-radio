@@ -1,6 +1,6 @@
 # Floorplan: block positions and pin positions
 
-Generated from the floorplan page's variant **matt layout 4 (handoff)** by `layout/floorplan/page/pinreport.js`; the placements are also in `floorplan.json` next to this file.
+Generated from the floorplan page's variant **matt layout 4 (handoff, chain folded)** by `layout/floorplan/page/pinreport.js`; the placements are also in `floorplan.json` next to this file.
 
 - Coordinates in µm. **Placement**: lower-left of the placed (transformed) bbox in the tile, and the GDS orientation (KLayout `DCplxTrans(1, rot, mirror, …)`, mirror about x first).
 - **Pins**: in each block's *own* frame (its bbox lower-left = 0, 0, before the orientation), grouped by the block's own edge. "moved" = a new position for the re-layout / re-harden; the others are where the GDS has them now. The tile direction each edge faces after placement is given in brackets.
@@ -10,16 +10,16 @@ Generated from the floorplan page's variant **matt layout 4 (handoff)** by `layo
 
 | rule | status | value |
 |---|---|---|
-| 1. Chain input far from the macro | pass | 141 µm |
-| 2. Late stages away from the input | fail | 0 µm |
+| 1. Chain input far from the macro | pass | 119 µm |
+| 2. Late stages away from the input | fail | 14 µm |
 | 3. Clock edges off the RX | pass | 25 µm |
 | 4. Short analog path | pass | 48 µm |
 | 5. TX at ua[3] / ua[4] | fail | 121 µm |
-| 6. Bias next to the chain | pass | 6 µm |
+| 6. Bias next to the chain | pass | 11 µm |
 | 7. Decap VAPWR | warn | 97 % |
-| 7. Decap VDPWR | pass | 102 % |
+| 7. Decap VDPWR | warn | 89 % |
 | 8. TX away from the RX input | warn | 39 µm |
-| 9. Overlaps and spacing | pass | none |
+| 9. Overlaps and spacing | warn | 1 tight |
 | 9. TT pin channel clear | fail | 2.9 µm |
 | P. Power straps | pass | 8 clear |
 
@@ -93,49 +93,49 @@ Generated from the floorplan page's variant **matt layout 4 (handoff)** by `layo
 
 ## xchain (lna_chain)
 
-- Size: 134.06 × 70.52 (GDS)
-- Placement: x 21.00, y 6.50, MX (rot 0, mirror true)
-- Pins moved: 2
+- Size: 145.36 × 70.47 (GDS)
+- Placement: x 13.14, y 6.50, R180 (rot 180, mirror false)
+- Pins moved: none
 
 **N edge** (faces south in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| inp | 3.60 | 70.27 |  |
-| inn | 36.76 | 70.27 |  |
-| o1n | 106.42 | 53.57 |  |
-| o1p | 106.42 | 52.87 |  |
+| inp | 21.88 | 70.22 |  |
+| inn | 41.20 | 70.22 |  |
 
 **S edge** (faces north in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| o5n | 31.54 | 16.95 |  |
-| o5p | 31.54 | 17.65 |  |
-| o4n | 64.08 | 16.95 |  |
-| o4p | 64.08 | 17.65 |  |
-| o3n | 96.62 | 16.95 |  |
-| o3p | 96.62 | 17.65 |  |
+| outn | 9.05 | 2.20 |  |
+| outp | 9.05 | 3.60 |  |
+| o5n | 41.34 | 2.90 |  |
+| o5p | 41.34 | 3.60 |  |
+| o4n | 73.88 | 2.90 |  |
+| o4p | 73.88 | 3.60 |  |
+| o3n | 106.42 | 2.90 |  |
+| o3p | 106.42 | 3.60 |  |
+| o2n | 139.06 | 2.90 |  |
+| o2p | 140.06 | 3.60 |  |
+| o1p | 141.76 | 3.60 |  |
+| o1n | 142.46 | 2.90 |  |
 
-**W edge** (faces west in the tile; bottom → top, y):
-
-| pin | x | y | |
-|---|---|---|---|
-| VDD | 0.50 | 14.80 |  |
-| outn | 0.30 | 16.25 |  |
-| outp | 0.30 | 17.65 |  |
-| VSS | 0.50 | 36.01 |  |
-| g1n | 7.04 | 61.01 |  |
-| g1p | 6.04 | 61.01 |  |
-
-**E edge** (faces east in the tile; bottom → top, y):
+**W edge** (faces east in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
-| o2n | 129.16 | 16.95 |  |
-| o2p | 129.16 | 17.65 |  |
-| vcm | 133.81 | 38.20 | moved |
-| ibias | 133.81 | 41.34 | moved |
+| vcm | 0.25 | 38.15 |  |
+| ibias | 0.25 | 49.86 |  |
+| g1n | 7.04 | 60.97 |  |
+| g1p | 6.04 | 60.97 |  |
+
+**E edge** (faces west in the tile; bottom → top, y):
+
+| pin | x | y | |
+|---|---|---|---|
+| VSS | 143.56 | 20.46 |  |
+| VDD | 144.86 | 35.96 |  |
 
 ## xbias (bias_gen)
 
@@ -693,12 +693,12 @@ Generated from the floorplan page's variant **matt layout 4 (handoff)** by `layo
 - VAPWR strap: x 276.50, w 1.20 (met4, full height)
 - VGND strap: x 278.20, w 1.20 (met4, full height)
 - VDPWR strap: x 279.90, w 1.20 (met4, full height)
-- xdecd 1: x 0.00, y 7.00, 18.00 × 71.00
-- xdecd 2: x 0.00, y 124.00, 10.00 × 35.00
-- xdecd 3: x 213.00, y 2.00, 26.00 × 86.00
-- xdecd 4: x 0.00, y 216.00, 51.00 × 6.00
 - xdeca 1: x 242.00, y 2.00, 33.00 × 211.00
 - xdeca 2: x 0.00, y 193.00, 239.00 × 20.00
 - xdeca 3: x 0.00, y 162.00, 50.00 × 28.00
 - xdeca 4: x 182.00, y 166.00, 57.00 × 24.00
 - xdeca 5: x 185.00, y 91.00, 54.12 × 71.75 (MIM only, on top of r2r)
+- xdecd 1: x 0.00, y 7.00, 10.64 × 71.00
+- xdecd 2: x 0.00, y 124.00, 10.00 × 35.00
+- xdecd 3: x 213.00, y 2.00, 26.00 × 86.00
+- xdecd 4: x 0.00, y 216.00, 51.00 × 6.00

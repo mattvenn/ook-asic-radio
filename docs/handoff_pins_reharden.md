@@ -6,7 +6,7 @@ Prompt for a new session (2026-10-09, second version: "matt layout 4 (handoff)")
 
 We've chosen the top-level floorplan of the 3x2 analog tile. Your job is to make the blocks match it: re-harden the digital macro at its new size and pin order, and move pins in the analog block layouts. Don't change block placements; ask if something can't be done as specified.
 
-**Read first:** the "Notes from the size trials" section at the end of this file (pin-slot mechanics, Mac run commands, what's already in `config.json`), `STATUS.md` (how to run things), `docs/layout.md` (the layout flow and power rules), `docs/floorplan_spec.md` (the last section, "Chosen floorplan"). The source of truth for positions is **`layout/floorplan/pins.md`** and **`layout/floorplan/floorplan.json`** (variant "matt layout 4 (handoff)" on the floorplan page).
+**Read first:** the "Notes from the size trials" section at the end of this file (pin-slot mechanics, Mac run commands, what's already in `config.json`), `STATUS.md` (how to run things), `docs/layout.md` (the layout flow and power rules), `docs/floorplan_spec.md` (the last section, "Chosen floorplan"). The source of truth for positions is **`layout/floorplan/pins.md`** and **`layout/floorplan/floorplan.json`** (variant "matt layout 4 (handoff, chain folded)": "matt layout 4 (handoff)" with the real folded chain).
 
 **Conventions in `pins.md`:** µm. Each block's pins are given in the block's *own* frame (its bbox lower-left = 0, 0, before its placement orientation), grouped by its own edge, with the tile direction that edge faces once placed. Pins marked "moved" are the new positions; the rest stay where the GDS has them. Positions along an edge are targets (±a few µm is fine); **the edge and the order along it matter more than the exact x / y**. Keep each moved pin on the same layer as now unless the block's flow needs otherwise.
 
@@ -40,15 +40,15 @@ For each block: edit `layout/gen/<block>.py` (or the block's layout source), reg
 ## 2b. Power straps (top level, for reference)
 Three sets of full-height met4 straps (1.2 µm, `floorplan.json` "straps"): the west end (VDPWR x 9.3, VGND x 13.9), **a new set in the gap between the analog blocks and the macro** (VAPWR x 276.5, VGND x 278.2, VDPWR x 279.9), and the east end (VAPWR 488.02, VGND 489.72, VDPWR 491.42). Nothing in the blocks changes for them, but the macro's west-facing pins (its own east edge) must reach the analog blocks on layers below met4.
 
-## 3. Not in this job: `lna_chain`
-The chain is folded in this floorplan (134 × 70.5 µm outline at (21, 6.5), MX), but the fold isn't final: the current one puts stages 4–6 right next to the input (floorplan rule 2), and Matt is working on a better fold. **Don't re-lay out `lna_chain`.** Its `ibias` / `vcm` (east edge, toward bias_gen in `pins.md`) will be set with the new fold. If the new fold changes the chain's outline, the blocks above and east of it may shift a few µm; the pin edges above should still hold.
+## 3. `lna_chain`: done, no work here
+The chain is re-laid out as a U fold (2026-10-09): **145.36 × 70.47 µm, placed R180 at (13.14, 6.5)**. The input section and stages 1–2 run along the bottom with Cin_p / Cin_n tabs right over ua[0] / ua[1]. Stages 3–6 come back along the top, across a 14 µm guard-ring moat. `vcm` / `ibias` are on its tile-east edge toward bias_gen, and the taps are on its tile-north edge toward log_det (`pins.md`). Don't change it; `layout/gen/lna_chain.py` and `docs/layout.md` "lna_chain" have the details. At the top level, keep the ua[2] debug wire off the chain: route it west along the bottom gap and up outside it, so it can't bridge stage 5 to Cin_n.
 
 ## 4. Don't
 - Don't move or resize blocks, or change circuits or schematics, to make a pin fit: report it instead.
 - Don't regenerate the floorplan files by hand. If a pin has to land somewhere else, write down where; we'll update the floorplan page (`layout/floorplan/page/`) and re-run `pinreport.js`.
 
 ## Floorplan checks on this layout
-Pass: 1 (chain input ↔ macro 141 µm), 3 (clock edges 25 µm), 4 (analog path 48 µm), 6 (bias 6 µm), 7 VDPWR, 9 (no overlaps), straps (8, all lanes clear). Known and accepted: 2 (the fold, above), 5 (TX wire length, see TX note), 7 VAPWR at 97 %, 8 (soft), and the page's "TT pin channel clear" (a false fail: the TT wires end on the macro's own pins).
+With the folded chain: pass 1 (chain input ↔ macro 119 µm), 3 (clock edges 25 µm), 4 (analog path 48 µm), 6 (bias 11 µm), 9 (no overlaps), straps (8, all lanes clear). Known and accepted: 2 (14 µm: the moat; the extracted late → input coupling is 0, see §3), 5 (TX wire length, see TX note), 7 VAPWR at 97 %, 8 (soft, 39 µm), and the page's "TT pin channel clear" (a false fail: the TT wires end on the macro's own pins). **Open (Matt):** 7 VDPWR is down to 89 % (≈ 27 of 30 pF), because the decap strip west of the chain lost 7.4 µm to the wider chain.
 
 ## Notes from the size trials (2026-10-09, previous session)
 

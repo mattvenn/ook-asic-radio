@@ -103,8 +103,11 @@ class Block:
         extracted netlist and the LVS report instead of magic's a_123_456#."""
         self.cell.shapes(self.li(LBL[lay])).insert(pya.DText(name, pya.DTrans(b.center().x, b.center().y)))
 
-    def place(self, cell, x, y):
-        return self.cell.insert(pya.DCellInstArray(cell.cell_index(), pya.DTrans(pya.DVector(snap(x), snap(y)))))
+    def place(self, cell, x, y, rot=0, mirror=False):
+        """Instance of cell, rotated by rot degrees (mirror about x first), then moved by (x, y)."""
+        if rot == 0 and not mirror:
+            return self.cell.insert(pya.DCellInstArray(cell.cell_index(), pya.DTrans(pya.DVector(snap(x), snap(y)))))
+        return self.cell.insert(pya.DCellInstArray(cell.cell_index(), pya.DCplxTrans(1, rot, mirror, snap(x), snap(y))))
 
     def write(self, path):
         os.makedirs(os.path.dirname(path), exist_ok=True)
