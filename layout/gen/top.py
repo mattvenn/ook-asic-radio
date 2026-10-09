@@ -2,7 +2,7 @@
 # Template pins from mag/tt_analog_3x2_3v3.def, blocks placed as layout/floorplan/floorplan.json,
 # the TX blocks grouped in a tx_top subcell (LVS against xschem/tx_top.sch), power straps.
 #   tools/osic-mac klayout -b -r layout/gen/top.py
-# Writes build/top/tt_um_mattvenn_radio.gds and build/top/pins.json (every block pin in tile um).
+# Writes build/top/tt_um_mattvenn_radio_place.gds (layout/gen/route.py routes it) and build/top/pins.json (every block pin in tile um).
 import json
 import os
 import re
@@ -112,15 +112,44 @@ def main():
         pins[b['inst']] = {n: [(lay, [round(v, 3) for v in (lambda r: (r.left, r.bottom, r.right, r.top))(bx.transformed(tr))])
                                for lay, bx in shp] for n, shp in cell_pins(c).items()}
 
-    # met4 power straps (the tile's power pins)
+    # met4 power straps (the tile's power pins). The mid and east sets are joined under and over
+    # the macro (it sits 2.88 um above the tile's bottom edge and below its top): met3 bars for
+    # VAPWR (y 0.4-1.3) and VDPWR (1.7-2.6) along the bottom, VGND (223.4-224.4) along the top;
+    # each strap reaches down / up to its own bar. The macro's met4 stripes join the same bars and
+    # become power pins too (the PDN's met5 lands on them directly).
+    BAR = {'VAPWR': (0.4, 1.3), 'VDPWR': (1.7, 2.6), 'VGND': (223.4, 224.4)}
+    joined = [s for s in FP['straps'] if s['x'] > 200]
     for s in FP['straps']:
-        bx = pya.DBox(snap(s['x']), STRAP_Y0, snap(s['x'] + s['w']), STRAP_Y1)
+        y0, y1 = STRAP_Y0, STRAP_Y1
+        if s in joined:
+            b0, b1 = BAR[s['net']]
+            y0, y1 = (b0, y1) if s['net'] != 'VGND' else (y0, b1)
+        bx = pya.DBox(snap(s['x']), y0, snap(s['x'] + s['w']), y1)
         t.rect('m4', bx)
         t.pin('m4', bx, s['net'])
+    cols = {n: [] for n in BAR}                              # met4 columns on each bar
+    for s in joined:
+        cols[s['net']].append((snap(s['x']), snap(s['x'] + s['w'])))
+    for pn, net in (('VPWR', 'VDPWR'), ('VGND', 'VGND')):
+        for lay, b in pins['macro'][pn]:
+            if lay != 'm4':
+                continue
+            x0, y0, x1, y1 = b
+            b0, b1 = BAR[net]
+            bx = pya.DBox(x0, b0 if net == 'VDPWR' else y0, x1, STRAP_Y1 if net == 'VDPWR' else b1)
+            t.rect('m4', bx)
+            t.pin('m4', bx, net)
+            cols[net].append((x0, x1))
+    for net, (b0, b1) in BAR.items():
+        bar = pya.DBox(min(x for x, _ in cols[net]), b0, max(x for _, x in cols[net]), b1)
+        t.rect('m3', bar)
+        t.label('m3', bar, net)
+        for x0, x1 in cols[net]:
+            t.via('via3', pya.DBox(x0, b0, x1, b1))
 
     os.makedirs(OUT, exist_ok=True)
     json.dump({'insts': insts, 'pins': pins}, open(os.path.join(OUT, 'pins.json'), 'w'), indent=0)
-    t.write(os.path.join(OUT, TOP + '.gds'))
+    t.write(os.path.join(OUT, TOP + '_place.gds'))
 
 
 main()
