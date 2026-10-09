@@ -24,7 +24,7 @@ Because of that, the transmitter needs no crystal or PLL. It is a free-running r
 ### Finding a signal weaker than the noise
 Near the sensitivity limit, "carrier on" moves the detector output by only ~1 mV, and the noise is about as large. A single on/off decision there is barely better than a coin flip. So we don't send single bits:
 
-- Each 7-bit code (DIP switches) selects a **Gold code**: a fixed, noise-like pattern of 127 on/off slots called *chips*. One chip is 104 µs, so one burst is 13.2 ms.
+- Each 7-bit code (DIP switches) selects a **[Gold code](https://en.wikipedia.org/wiki/Gold_code)**: a fixed, noise-like pattern of 127 on/off slots called *chips*. One chip is 104 µs, so one burst is 13.2 ms.
 - The receiver makes one 1-bit decision per chip and compares the last 127 decisions with its own code's pattern. The **score** is how many match. Chance gives ~64 out of 127; **≥ 97 counts as a detection** (6σ above chance).
 - At −94 dBm the comparator is right only ~75 % of the time, but that is still enough to score ~106.
 - The TX sends the burst 3 times. The RX toggles the LED only if 2 of the 3 bursts arrive with the right spacing, then ignores the code for ~1 s. Other codes, remote controls and noise don't toggle it.
