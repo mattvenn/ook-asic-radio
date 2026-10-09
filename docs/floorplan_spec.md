@@ -125,6 +125,16 @@ Matt has picked a variant and `layout/floorplan/floorplan.json` is committed, al
   - **Still estimates:** Ctrim and both decaps (not laid out, hatched), and the macro's pin positions (even spread of pin_order.cfg until the DEF is read).
 
 ## Chosen floorplan (2026-10-09, revised)
+**Current: "matt layout 5 (routing review)"** (`layout/floorplan/mk_layout5.js` builds `variant_layout5.json` from layout 4; `page/pinreport.js` writes `floorplan.json` / `pins.md`). Same block positions as layout 4, with a routing review drawn from every net's flyline:
+- **comp_ct MYR90** (was R90): its output end sits at the bottom of the block, so `out` reaches its tile-south-east corner without a ~100 µm internal run. `inp` (avg) / `inn` (lpf) face west, `ibias` sits over the corridor between log_det and Ctrim, `trim` over Ctrim.
+- **r2r MYR90** (was R90): its S edge still faces the macro; `out` lands level with Ctrim's trim pin (a straight met2 run west over r2r). Its N edge is a met1 VGND rail, so `out` couldn't move there (r2r stays met1-only).
+- **avg_sc:** clocks on its north edge (they leave over the top of comp_ct, away from its inputs; they already were in the v2 layout), `in` on its south edge.
+- **Macro pins:** `trim_out[i]` level with r2r `b_i`, `comp_in` in the gap under r2r, `sc_phi` then the enables just under the TT group (the enables run west in the TT channel). See `openlane/radio_digital/PIN_ORDER.md`.
+- **Every block is laid out to it** (pins from the GDS via `tools/floorplan_blocks.py`; only the macro has "moved" pins). Ctrim laid out (`layout/gen/ctrim_1p.py`, 22.4 µm).
+- **Engine net fixes:** comp `inp = avg`, `inn = lpf` (were swapped) and Ctrim as a shunt cap on `trim` (was in series), as `xschem/gen/top.py`.
+- Next: top-level assembly and routing, `docs/handoff_toplevel.md`.
+
+**Layout 4** (superseded by layout 5, kept for the record):
 - **`layout/floorplan/floorplan.json`** and **`layout/floorplan/pins.md`**: "matt layout 4 (handoff, chain folded)", i.e. "matt layout 4 (handoff)" from the page (Matt's layout 4, nudged, pins refitted with `page/pinfit.js`, decap refilled with `page/refine.js --decap-only`, written by `page/pinreport.js`). `pins.md` lists every block's placement and its pins by edge in the block's own frame, with the moved ones marked: that is the input for the block re-layouts and the macro re-harden (`docs/handoff_pins_reharden.md`).
 - **Macro:** 200 × 220 µm (44,000 µm²; a trial harden at this size routes), placed MY at (282.5, 2.88): full tile height at the east end, its own east edge facing west toward the analog. All signal pins on that edge: rx_en at the bottom, the analog interface (trim_out[7:0], comp_in, dbg_en, tx_en, tx_en_n) at y 52–127, sc_phi2/1 at ~147, the 42 TT pins at the top (178–219). The TT wires run east along the top of the tile from the TT pins (x 15–131) to the macro.
 - **Analog pins moved** (re-layout): bias_gen, comp_ct, avg_sc, lpf_rc, r2r, Ctrim, dbg_tg, log_det `det` / `ibias_det`. The TX blocks keep their GDS pins.

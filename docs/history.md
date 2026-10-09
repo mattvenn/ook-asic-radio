@@ -3,6 +3,32 @@
 Moved out of STATUS.md (2026-10-08) to keep the start-up read short. Sections are in the order they were
 written; grep for the block or topic you need.
 
+## Blocks and macro to the chosen floorplan (layout 5, 2026-10-09)
+- **Digital macro re-hardened at 200 × 220 µm** (from 260 × 190; `openlane/radio_digital`, final run `l5b_200x220`, views in `macros/radio_digital/`).
+  - **Size trials** (y 220 sweep and the flat shapes; same config otherwise):
+
+    | die (µm) | util | result |
+    |---|---|---|
+    | 450.5 × 109.66, default margins | 85 % | fails at antenna repair (DPL-0036: no room for diodes next to hold buffers); the default 4-row top/bottom margins cost ~22 µm of a 110 µm die |
+    | 450.5 × 109.66, 2-row margins | 76 % | fails detailed routing: GRT overflow 1,879 (horizontal met1 / met3), DRT stuck at ~10k shorts. Too flat for the horizontal wiring (no met5: TT PDN) |
+    | 220 × 220 | 74 % | clean: setup ws 26.7 ns, hold ws 0.108 ns |
+    | 210 × 220 | 78 % | clean |
+    | **200 × 220** | 82 % | **clean** (chosen) |
+    | 190 × 220 | 86 % | fails: GRT overflow 550, DRT stuck at 7 violations |
+  - **Pins:** all 57 on its own E edge (faces west, placed MY), met3, at y = 0.34 + 1.36 i (`PIN_ORDER.md`). A 1 µm pitch isn't on the met3 track grid, so the TT group is at 1.36 µm (162–218).
+  - **Final run:** 0 DRT / Magic DRC / LVS / antenna; setup ws 27.05 ns, hold ws 0.107 ns, no violations at any corner; utilisation 82 %; every pin within 0.01 µm of the floorplan. Max-slew warnings 245 across corners (marginal, mostly ss; 179 at 260 × 190).
+  - **cocotb:** RTL 15/15; GL 15/15 on the first 200 × 220 run (`e_200x220`, layout-4 pins).
+- **Floorplan layout 5** (routing review of layout 4, every net drawn as a flyline): comp_ct and r2r flipped to MYR90, macro pins level with what they connect to, avg_sc clocks over the top. The floorplan engine's net list had comp inp/inn swapped and Ctrim in series; fixed to `xschem/gen/top.py`.
+- **Block re-layouts** (pins only; `docs/layout.md` "Pin moves for the floorplan"), all DRC / antenna / LVS clean, `tb_<block> --pex` at tt:
+  - lpf_rc: f-3dB 14.65 kHz (was 14.76), 434 MHz −106.9 dB (was −106.2).
+  - dbg_tg: Ron 0.57 / 4.14 / 1.15 k, off isolation −73.5 dB at 434 MHz. The committed PEX (−78.9 dB) was stale: the old GDS re-extracted today gives −73.6.
+  - log_det: unchanged (idle 1.4888 V, 100 mV at t6 −1.46 mV).
+  - bias_gen: unchanged (59.31 / 1.984 / 0.994 µA, vcm 1.201 V at 1.8 V 27 °C).
+  - comp_ct (MYR90): unchanged (offset +0.560 mV, 0.0656 mV/LSB, 0.75 / 0.15 µs).
+  - avg_sc: unchanged (τ 0.423 ms, drift +0.070 mV over 20 cycles).
+  - ctrim_1p: new, 1 pF MIM, 22.4 µm square.
+  - r2r: unchanged (flipped instead: its N edge is a met1 VGND rail, so out couldn't move there).
+
 ## lna_chain folded for the tile (2026-10-09)
 The straight 268 × 35 µm chain didn't fit the chosen floorplan.
 

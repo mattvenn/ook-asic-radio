@@ -335,3 +335,26 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - log_det wants t1/t4 at ~69–80, t2/t5 ~90–101, t3/t6 ~111–122.
   - o2 → t2 (~75 µm) and o3 → t3 (~60 µm) would each cost st2 / st3 a few tenths of a dB. Worth a look when the tile is assembled (log_det orientation, or tap order).
 - **ua[2]** (debug, x 98) comes up under Cin_n: route it outside the chain, not across it. A floating debug wire over st5 and Cin_n would bridge output to input.
+
+## Pin moves for the floorplan (layout 5, 2026-10-09)
+Every block re-laid out to `layout/floorplan/pins.md` (circuits unchanged; each DRC / antenna / LVS clean and its `tb_<block> --pex` unchanged or better). Where the pins went, and how:
+
+| block | pins | how |
+|---|---|---|
+| lpf_rc | in S (met2), out E top corner (met3) | in drops through a gap in the VSS rail's met2 |
+| dbg_tg | a, b S; en E | b's met2 bar on down through the rail; a down the W edge on met3 (x 1.0 vs 3.7: en's track runs east and blocks a drop further in) |
+| log_det | det S (met2), ibias_det E (met2) | det hops the bottom row's vb bus on met3, then met2 down the edge (met3 there breaks capm.11 next to t4's Cc) |
+| bias_gen | ib_chain, ib_det N (met2); vcm N (**met4**); ib_comp E top corner; en S (met2) | met2 through gaps in the top VSS rail's met2; vcm straight up from the Cvcm top-plate strip; ib_comp hops ib_det's column on met1 |
+| comp_ct (MYR90) | inp, inn N (met3); ibias, trim E (**met4**); out S east corner (**met4**) | met4 risers from the input tracks, met3 under the VDD rail; out / trim / ibias tracks run east to three met4 columns (outermost stops first, so nothing crosses) |
+| avg_sc | in S (met2) | down the E edge on met2 (met3: out's track and Cs's capm; met4: out's riser); phi1/2 were already on N |
+| ctrim_1p (new) | trim S + E (met4), VGND W + N (met3) | one 22.035 µm MIM; L of met4 strips to the top plate (12 % met4, not a sheet) |
+| r2r | none | placed MYR90 instead: out can't reach the N edge on met1 (a VGND rail) |
+
+Lessons:
+- **Draw the whole floorplan with every net before moving pins.** Two of these blocks (comp_ct, r2r) were better flipped than re-routed, and the engine's net list had comp inp/inn swapped and Ctrim in series: check nets against `xschem/gen/top.py`.
+- **`Block.clear(layers, box)`** (`lay.py`) cuts a gap in a rail for a pin to drop through: whole cuts within 0.1 µm of the box are removed (no slivers), and the metal's **pin shapes** too. **Magic reads a pin shape (datatype 16) as metal**: a rail's pin box left over a cleared gap gave met3 spacing errors KLayout didn't see.
+- **Clear before you draw** in the gap: `clear()` cuts everything already drawn there, including your own new wire.
+- **`rows.py` `Net(io='L'/'R', pin=False)`:** the track still runs to its edge (and reserves the span in the channel), but gets a label, not a pin, so the generator can route on to a pin elsewhere. A track only exists from its stubs to the edge: a via further in needs `land()` (comp_ct) or its own met3.
+- **capm.11:** unrelated met3 within 1.34 µm of a capm is a magic error. Near MIM caps, drop pins on met2 (under the plate) or met4, not met3.
+- **`tools/floorplan_blocks.py`** now prefers a label sitting on a pin shape: generators label internal wires with the pin's name (for readable extraction), and the first-found label used to win.
+- Committed extracted netlists can be stale: re-extract the old GDS with today's `pex.sh` before calling a difference a regression (dbg_tg: the committed PEX gave −78.9 dB isolation, the old GDS today −73.6, the new one −73.5).

@@ -1,5 +1,7 @@
 # Handoff: move block pins and re-harden the digital macro for the chosen floorplan
 
+**Done (2026-10-09).** Carried out with a routing review on top (floorplan "matt layout 5": comp_ct and r2r flipped to MYR90, macro pins re-ordered); results in `docs/history.md` "Blocks and macro to the chosen floorplan". Next: `docs/handoff_toplevel.md`.
+
 Prompt for a new session (2026-10-09, second version: "matt layout 4 (handoff)"). Paste it as is.
 
 ---

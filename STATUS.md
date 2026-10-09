@@ -1,4 +1,4 @@
-# Where we are (handoff, end of 2026-10-08)
+# Where we are (handoff, end of 2026-10-09)
 
 Read **PLAN.md** for the decisions and their evidence. This file is the "pick up from here" note: summary, next steps, how to run things. Per-block
 detail and the history behind each result: **docs/history.md** (read the section you need, not the whole file).
@@ -7,14 +7,16 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
-**State (end of 2026-10-08): pre-layout work done and re-verified; layout started (TX driver, see `docs/layout.md`).**
+**State (end of 2026-10-09): every block laid out to the chosen floorplan ("matt layout 5"), the digital macro re-hardened to match (200 × 220 µm, all pins on the edge facing the analog). Next: top-level assembly, routing and extracted-tile verification: `docs/handoff_toplevel.md`.**
+- **Floorplan:** `layout/floorplan/pins.md` / `floorplan.json` (layout 5: comp_ct and r2r flipped to MYR90, macro pins level with what they connect to; `docs/floorplan_spec.md` "Chosen floorplan"). Pin moves per block: `docs/layout.md` "Pin moves for the floorplan".
+- **Macro:** `macros/radio_digital/` (GDS, LEF, DEF, netlists), from `openlane/radio_digital` (`PIN_ORDER.md`).
 - **RX:** every block is transistor level with real PDK passives and a real bias generator.
   - Chain: pad → 6-stage NMOS diff-pair limiting chain.
   - Detector: successive-detection log detector → 14 kHz RC LPF (2.95 MΩ / 3.7 pF).
   - Comparator side: switched-cap average (τ ~0.45 ms) → continuous comparator; trim from the reused R2R ladder, driven by the RTL servo.
   - **Confirmed three ways:** the fully joined transistor-level run (antenna → comparator) matches the split model. Corners 10–50 °C give a worst case of **≈ −92…−93 dBm**. And the **mixed-signal run** (RTL servo → real `r2r` → real `comp_ct`) detects −70 and −94 dBm bursts.
 - **TX:** xschem blocks, +3.7…+3.9 dBm at all corners, both arms low when off, single-ended fallback (`tx_en_n`). VAPWR decap ~50 pF.
-- **Digital:** **clock-gated** (`rd_cg.v`, one `sky130_fd_sc_hd__dlclkp_1` per 127-bit chip register), hardened with LibreLane at **260 × 190 µm**.
+- **Digital:** **clock-gated** (`rd_cg.v`, one `sky130_fd_sc_hd__dlclkp_1` per 127-bit chip register), hardened with LibreLane at **200 × 220 µm** (2026-10-09; was 260 × 190).
   - Signoff clean (DRC, LVS, antenna 0; timing met at all corners).
   - **RTL suite 15/15 and gate-level suite 15/15** on the hardened netlist (`make GL=1`).
 - **Top level:** `radio_analog` (all analog blocks + bias + decap) and the `tt_um_mattvenn_radio` schematic; ua[0]/[1] RX, ua[2] debug (det via a debug-only TG), ua[3]/[4] TX (reassigned 2026-10-09; was TX 0/1, RX 2/3, debug 4).
@@ -49,18 +51,13 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 - **Chain layout rule:** keep chain output → input coupling (pad or stage-2 input) **≤ 0.1 fF** asymmetric. At the highest-gain corner (ss 10 °C, 81 dB), 0.2 fF gives +2.8 dB of peaking near 600 MHz and **0.5 fF oscillates** (1 fF at tt). Supply/ground L up to 5 nH with the 30 pF decap is fine.
 
 **Next steps, in order:**
-1. **Floorplan** (with Matt), on an interactive page: **spec in `docs/floorplan_spec.md`** (data in `layout/floorplan/`):
-   - the macro at the right of the tile (the pin order assumes it), the analog on the left next to the ua pins;
-   - analog block placement, decap, guard rings;
-   - TX away from the RX input; deep n-well for the RX chain or not;
-   - the chain coupling rule above: keep the chain's last stages and the detector away from the pads and stage 1.
-2. **Layout of the remaining blocks with the same flow** (`layout/gen/<block>.py`, `layout/check.sh`, `layout/pex.sh`, a `tb_<block>`), then **integration in the 3x2.** Switch `mag/Makefile` to `tt_analog_3x2_3v3.def`, `make start`, place the hardened macro (`openlane/radio_digital/runs/cg_260x190`).
-3. Not blocking: **ring inverter count**: the folded `tx_ring` runs ~459 MHz on silicon (+5.8 %). 24 inverters would give ~422 MHz (−2.7 %), closer to 433.92. That means `NINV` in `xschem/gen/tx.py` and `layout/gen/tx_ring.py`, then re-running `tb_tx_ring --pex` and `tb_tx`. Undecided (Matt). Also overload recovery (key a −10 dBm tone), TX at 10/50 °C, the −90 dBm joined run, the max-slew warnings in the harden (marginal, mostly ss).
+1. **Top-level assembly, first routing, extracted-tile verification:** `docs/handoff_toplevel.md` (the prompt for that session): 3x2 template (`mag/`), place the blocks and the macro per `floorplan.json`, lay out the decaps and straps, route with the net-by-net intent there, then DRC / LVS, the end-to-end tests on a connectivity-only extraction, then on full parasitics.
+2. Open (Matt): **VDPWR decap at 89 %** of target (the strip west of the chain lost width to the folded chain); **ring inverter count**: the folded `tx_ring` runs ~459 MHz on silicon (+5.8 %), 24 inverters would give ~422 MHz (`NINV` in `xschem/gen/tx.py` and `layout/gen/tx_ring.py`, then `tb_tx_ring --pex` and `tb_tx`). Not blocking: overload recovery (key a −10 dBm tone), TX at 10/50 °C, the −90 dBm joined run, the macro's max-slew warnings (marginal, mostly ss).
 
 **Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
 
 ## How to run things
-- cocotb: `cd verilog/test && PATH=$HOME/work/asic-workshop/venv/bin:/usr/bin:/bin make` (~12 min); gate level: add `GL=1 SIM_BUILD=sim_build_gl COCOTB_RESULTS_FILE=results_gl.xml` (~35 min). Run it as `bash -c 'cd verilog/test && …'`: `make -C` breaks the Makefile's `$(PWD)`, and a backgrounded `cd` may not stick. With the login PATH, oss-cad-suite's python (no numpy) gets picked up and the run dies at import. `COCOTB_TEST_FILTER` takes one test name (a `|` alternative matched nothing).
+- cocotb: `cd verilog/test && PATH=$HOME/work/asic-workshop/venv/bin:/usr/bin:/bin make` (~12 min); gate level: add `GL=1 SIM_BUILD=sim_build_gl COCOTB_RESULTS_FILE=results_gl.xml` (~35 min; the default netlist is `macros/radio_digital/radio_digital.nl.v`). On the Mac: `tools/osic-mac bash -c 'cd verilog/test && make COCOTB_CONFIG=cocotb-config ...'` (RTL ~8 min, GL ~17 min). Run it as `bash -c 'cd verilog/test && …'`: `make -C` breaks the Makefile's `$(PWD)`, and a backgrounded `cd` may not stick. With the login PATH, oss-cad-suite's python (no numpy) gets picked up and the run dies at import. `COCOTB_TEST_FILTER` takes one test name (a `|` alternative matched nothing).
 - Generators: `python3 xschem/gen/<x>.py`. Netlist: `tools/osic bash -c 'xschem -n -s -q -o build xschem/<tb>.sch'` (grep the netlist for `IS MISSING`).
 - Simulate in `build/` via `tools/osic`. Analysis/plots: `~/work/asic-workshop/venv/bin/python` (system python has no numpy).
 - `tools/osic` copies the tracked root `.spiceinit` into `build/` each run.
