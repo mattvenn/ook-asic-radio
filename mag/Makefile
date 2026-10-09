@@ -1,7 +1,7 @@
 PROJECT_NAME ?= tt_um_mattvenn_radio
 MAGIC_RC := $(PDK_ROOT)/sky130A/libs.tech/magic/sky130A.magicrc
-# 2x2 tile with the VAPWR (3.3 V) stripe, kept so a 3.3 V TX driver stays possible
-TEMPLATE_FILE := tt_analog_2x2_3v3.def
+# 3x2 tile with the VAPWR (3.3 V) stripe, kept so a 3.3 V TX driver stays possible
+TEMPLATE_FILE := tt_analog_3x2_3v3.def
 DEF_URL := https://raw.githubusercontent.com/TinyTapeout/tt-support-tools/main/tech/sky130A/def/analog
 
 .PHONY: lvs magic start
@@ -9,7 +9,7 @@ DEF_URL := https://raw.githubusercontent.com/TinyTapeout/tt-support-tools/main/t
 magic:
 	magic -rcfile $(MAGIC_RC) $(PROJECT_NAME).mag
 
-tt_analog_2x2.def tt_analog_2x2_3v3.def:
+tt_analog_2x2.def tt_analog_2x2_3v3.def tt_analog_3x2_3v3.def:
 	wget $(DEF_URL)/$@
 
 start: $(TEMPLATE_FILE)

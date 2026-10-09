@@ -21,6 +21,10 @@ v.place.xcomp.orient = 'MYR90';
 // tile y ~100.6, level with Ctrim's E-edge trim pin (one straight met2 run west over r2r,
 // under the MIM decap; r2r stays met1-only and its N edge is a met1 VGND rail)
 v.place.xdac.orient = 'MYR90';
+// west VAPWR strap (2026-10-09, top-level session): the TX at the west end draws ~11 mA from
+// VAPWR, 215-270 um from the mid strap; x 0-5.5 is clear of blocks (the west decaps keep their
+// MIM out of this column)
+if (!v.straps.some(st => st.net === 'VAPWR' && st.x < 50)) v.straps.push({ net: 'VAPWR', x: 2.5, w: 1.2 });
 if (v.est) delete v.est.xctrim;                       // laid out: 22.435 x 22.435 (layout/gen/ctrim_1p.py)
 // macro: east edge (own frame), met3 slots at 0.34 + 1.36 i (pin_order.cfg)
 const s = i => +(0.34 + 1.36 * i).toFixed(2);
