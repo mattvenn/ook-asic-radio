@@ -33,6 +33,7 @@ NCOL = 3                                                               # cells p
 RPM = (86, 20)
 GRW = dcm.GRW
 VDDW = 1.2                                                             # VDD strip (met3) width
+IBIAS_Y = 24.29                                                        # ibias_det pin centre, east edge
 
 
 def make():
@@ -163,9 +164,26 @@ def make():
     b.via('via2', box(strip.left, yv[0], strip.right, yv[1]), enc=(0.085, 0.065))
     b.pin('m3', strip, 'VDD')
 
-    # pins (det / ibias_det on the top row's buses at the left edge, VSS on the shared rail)
-    b.pin('m2', box(0, bus['out', 't'][0], 0.5, bus['out', 't'][1]), 'det')
-    b.pin('m2', box(0, bus['vb', 't'][0], 0.5, bus['vb', 't'][1]), 'ibias_det')
+    # pins (floorplan, layout/floorplan/pins.md). det: the south edge at the left corner. The
+    # bottom row's vb bus (met2) runs under its out bus, so det hops over it on met3 (via2 at
+    # the out bus's left end, down 1.3 um, via2 back) and drops on met2 down the left edge to
+    # y = 0 (met2 is empty there; met3 can't: capm.11 keeps it 1.34 from t4's Cc).
+    # ibias_det: the east edge, from the vb riser's top bus up on met2 over the end column
+    # (empty in met1/met2 above the buses; Cdet is met3/capm/met4) and right under the VDD strip.
+    ob = bus['out', 'b']
+    dx = (0, 0.4)
+    yh = snap(bus['vb', 'b'][0] - 0.3 - 0.5)                    # hop landing, met2 clear of vb
+    b.via('via2', box(dx[0], ob[0], dx[1], ob[1]), enc=(0.085, 0.085))
+    b.rect('m3', box(dx[0], yh, dx[1], ob[1]))
+    b.via('via2', box(dx[0], yh, dx[1], yh + 0.5), enc=(0.085, 0.085))
+    b.rect('m2', box(dx[0], 0, dx[1], yh + 0.5))
+    b.pin('m2', box(dx[0], 0, dx[1], 0.5), 'det')
+    yi_b = IBIAS_Y - 0.25
+    vt = bus['vb', 't']
+    W_R = strip.right
+    b.rect('m2', box(xv, vt[0], xv + 0.5, yi_b + 0.5))
+    b.rect('m2', box(xv, yi_b, W_R, yi_b + 0.5))
+    b.pin('m2', box(W_R - 0.5, yi_b, W_R, yi_b + 0.5), 'ibias_det')
     b.pin('m3', box(0, yt, 1.0, H), 'VSS')
     bbox = b.cell.dbbox()
     print(f'log_det: 2 x {NCOL} cells ({W} x {H}), end column {x0:.2f}..{strip.right:.2f}, '
