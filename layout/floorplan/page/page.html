@@ -47,6 +47,14 @@ main { display: block }
 svg#cv { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; cursor: grab }
 svg#cv.panning { cursor: grabbing }
 .overlay { position: absolute; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 3px; overflow: hidden }
+.seg button { border: 0; background: var(--die); padding: 4px 12px; cursor: pointer }
+.seg button + button { border-left: 1px solid var(--line) }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg) }
+.diagram .keys, .diagram .overlay, .diagram .coords { display: none }
+svg#cv.dg { cursor: default }
+.dg [data-dinst] { cursor: pointer }
+.dg [data-dinst]:hover rect.blk { stroke-width: 2.4 }
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); cursor: pointer }
 .chip input { margin: 0 }
 .coords { position: absolute; right: 12px; bottom: 12px; font: 12px var(--mono); color: var(--muted); background: var(--panel); border: 1px solid var(--line); padding: 2px 8px; border-radius: 3px }
@@ -104,6 +112,7 @@ details > summary { cursor: pointer; font-size: 12px; color: var(--muted) }
     <div class="brand"><h1>OOK Radio Floorplan</h1><span class="sub">tt_analog_3x2_3v3 · 493.12 × 225.76 µm</span></div>
     <div class="tabs" id="tabs" role="tablist" aria-label="Variants"></div>
     <div class="tools">
+      <div class="seg" role="group" aria-label="View"><button id="mLayout" data-mode="layout">Layout</button><button id="mDiagram" data-mode="diagram">Block diagram</button></div>
       <button class="btn" id="bFull" title="Fill the screen (Esc to leave)">Full screen</button>
       <button class="btn edit-only" id="bDup" title="Copy this variant">Duplicate</button>
       <button class="btn edit-only" id="bRen">Rename</button>
@@ -155,12 +164,14 @@ const S = {
   sel: null,             // {kind: 'inst'|'decap'|'strap', id}
   settings: Object.assign({}, FP.DEFAULT_SETTINGS),
   view: null,
+  mode: 'layout',
   layers: { flylines: true, pins: true, m4: false, labels: true, grid: true, decap: true },
   hoverNet: null,
   canWrite: true, db: null, user: null, uid: null, names: {},
   dirty: new Set(), saving: new Set(), dragging: false,
 };
 try { const l = JSON.parse(localStorage.getItem('fp.layers') || 'null'); if (l) Object.assign(S.layers, l); } catch (e) {}
+try { if (localStorage.getItem('fp.mode') === 'diagram') S.mode = 'diagram'; } catch (e) {}
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const cur = () => S.variants[S.cur] || null;
@@ -282,6 +293,10 @@ function text(x, y, s, size, attrs) {
 }
 let last = null;
 function draw() {
+  $('#stage').classList.toggle('diagram', S.mode === 'diagram');
+  $('#cv').classList.toggle('dg', S.mode === 'diagram');
+  document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode)));
+  if (S.mode === 'diagram') { if (cur()) last = FP.evaluate(DATA, CAT, cur(), S.settings); drawDiagram(); return; }
   const v = cur(); const svg = $('#cv');
   if (!S.view) fit();
   svg.setAttribute('viewBox', `${S.view.x} ${S.view.y} ${S.view.w} ${S.view.h}`);
@@ -374,6 +389,116 @@ function draw() {
   out.push(text(0, -24, 'parking: unplaced blocks wait here; drag them into the tile', 3.4, 'fill="var(--muted)" font-family="var(--mono)" ' + (Object.values(vv.place).some(p => p.parked) ? '' : 'visibility="hidden"')));
   svg.innerHTML = out.join('');
 }
+
+// ---- block diagram: how the blocks join, RX on top, TX below; lengths from the open variant
+const DG = {
+  blocks: [
+    ['pad:ua[2]', 'ua[2]', 'rx_p', 20, 110, 46, 22, 'pad'], ['pad:ua[3]', 'ua[3]', 'rx_n', 20, 150, 46, 22, 'pad'],
+    ['xchain', 'lna_chain', '', 100, 90, 330, 100, 'rx'],
+    ['xdet', 'log_det', 'successive detection, t1-t6', 100, 240, 330, 56, 'rx'],
+    ['xlpf', 'lpf_rc', '14 kHz RC', 470, 240, 110, 40, 'rx'],
+    ['xdbg', 'dbg_tg', '', 470, 294, 60, 24, 'rx'], ['pad:ua[4]', 'ua[4]', '', 566, 295, 46, 22, 'pad'],
+    ['xavg', 'avg_sc', 'SC average', 640, 250, 120, 44, 'rx'],
+    ['xcomp', 'comp_ct', 'comparator', 800, 150, 120, 80, 'rx'],
+    ['xdac', 'r2r', '8-bit trim DAC', 700, 28, 120, 48, 'trim'],
+    ['xctrim', 'Ctrim', '1 pF est.', 820, 92, 80, 34, 'trim'],
+    ['xbias', 'bias_gen', '', 470, 30, 120, 50, 'bias'],
+    ['macro', 'radio_digital', '', 960, 10, 90, 530, 'dig'],
+    ['pad:ua[0]', 'ua[0]', 'tx_p', 40, 372, 46, 22, 'pad'], ['pad:ua[1]', 'ua[1]', 'tx_n', 40, 462, 46, 22, 'pad'],
+    ['xtx.xdrv_p', 'tx_drv', 'p arm', 140, 360, 110, 46, 'tx'], ['xtx.xdrv_n', 'tx_drv', 'n arm', 140, 450, 110, 46, 'tx'],
+    ['xtx.xls', 'tx_ls', 'level shift', 340, 400, 100, 50, 'tx'],
+    ['xtx.xlse_p', 'tx_ls_en', 'enable p', 340, 334, 100, 36, 'tx'], ['xtx.xlse_n', 'tx_ls_en', 'enable n', 340, 482, 100, 36, 'tx'],
+    ['xtx.xring', 'tx_ring', '~434 MHz ring', 500, 405, 100, 40, 'tx'],
+  ],
+  // [net name (as in the engine), points, label anchor segment]
+  wires: [
+    ['rx_p', [[66, 121], [100, 121]], { name: '', pos: [68, 134, 'start'] }], ['rx_n', [[66, 161], [100, 161]], { name: '', pos: [68, 174, 'start'] }],
+    ['o1', [[157, 150], [157, 240]]], ['o2', [[207, 150], [207, 240]]], ['o3', [[257, 150], [257, 240]]],
+    ['o4', [[307, 150], [307, 240]]], ['o5', [[357, 150], [357, 240]]], ['out', [[407, 150], [407, 240]]],
+    ['det', [[430, 268], [450, 268], [450, 260], [470, 260]], { pos: [452, 236, 'middle'] }],
+    ['det dbg', [[450, 268], [450, 306], [470, 306]], { pos: [454, 290, 'start'] }], ['dbg', [[530, 306], [566, 306]], { pos: [548, 330, 'middle'] }],
+    ['lpf comp', [[580, 260], [620, 260], [620, 200], [800, 200]]], ['lpf', [[620, 260], [620, 272], [640, 272]], { pos: [584, 290, 'start'] }],
+    ['avg', [[760, 272], [780, 272], [780, 178], [800, 178]]],
+    ['comp_in', [[920, 190], [960, 190]]],
+    ['sc_phi1', [[960, 282], [760, 282]]], ['sc_phi2', [[960, 290], [760, 290]], { below: true }],
+    ['trim[7]', [[960, 52], [820, 52]], { name: 'trim_out[7:0]' }], ['dac', [[760, 76], [760, 110], [820, 110]]], ['trim', [[900, 110], [910, 110], [910, 150]]],
+    ['vcm', [[470, 45], [125, 45], [125, 90]]], ['ib_chain', [[470, 65], [260, 65], [260, 90]]],
+    ['ib_det', [[530, 80], [530, 225], [440, 225], [440, 268], [430, 268]]],
+    ['ib_comp', [[590, 55], [640, 55], [640, 160], [800, 160]]],
+    ['rx_en', [[960, 16], [530, 16], [530, 30]]], ['dbg_en', [[960, 314], [500, 314], [500, 318]]],
+    ['tx_en key', [[960, 425], [600, 425]]], ['ring', [[500, 425], [440, 425]]],
+    ['a', [[340, 412], [300, 412], [300, 383], [250, 383]]], ['b', [[340, 438], [280, 438], [280, 473], [250, 473]]],
+    ['tx_en', [[960, 352], [440, 352]]], ['enh_p', [[340, 352], [195, 352], [195, 360]]],
+    ['tx_en_n', [[960, 506], [440, 506]]], ['enh_n', [[340, 506], [195, 506], [195, 496]]],
+    ['tx_p', [[140, 383], [86, 383]]], ['tx_n', [[140, 473], [86, 473]]],
+  ],
+};
+function drawDiagram() {
+  const svg = $('#cv'), nets = last ? last.nets : [], o = [];
+  const byName = (n) => nets.find(q => q.name === n);
+  const VB = [0, -6, 1060, 572];
+  svg.setAttribute('viewBox', VB.join(' '));
+  o.push(`<defs><marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="context-stroke"/></marker></defs>`);
+  o.push(`<rect x="${VB[0]}" y="${VB[1]}" width="${VB[2]}" height="${VB[3]}" fill="var(--die)"/>`);
+  o.push(`<line x1="8" y1="326" x2="950" y2="326" stroke="var(--line)" stroke-dasharray="4 4"/>`);
+  o.push(`<text x="12" y="12" font-size="13" font-weight="700" fill="var(--rx)" letter-spacing="1">RX</text>`);
+  o.push(`<text x="12" y="344" font-size="13" font-weight="700" fill="var(--tx)" letter-spacing="1">TX</text>`);
+  for (const [id, name, sub, x, y, w, h, g] of DG.blocks) {
+    const col = g === 'pad' ? 'var(--ink)' : GROUP_COLOR[g] || 'var(--dig)', est = CAT[id] && CAT[id].estimate;
+    const placed = !id.startsWith('pad:') && cur() && cur().place && cur().place[id];
+    o.push(`<g ${id.startsWith('pad:') ? '' : `data-dinst="${id}"`}><title>${esc(id.startsWith('pad:') ? id.slice(4) : id + ' (' + name + ')' + (placed ? '' : ' — not placed in this variant'))}</title>`);
+    o.push(`<rect class="blk" x="${x}" y="${y}" width="${w}" height="${h}" rx="${g === 'pad' ? 0 : 3}" fill="${col}" fill-opacity="${g === 'pad' ? .9 : .12}" stroke="${col}" stroke-width="1.4" ${placed || id.startsWith('pad:') ? '' : 'stroke-dasharray="4 3"'}/>`);
+    if (est) o.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#hatchD)" style="color:${col}"/>`);
+    if (g === 'pad') o.push(`<text x="${x + w / 2}" y="${y + 15}" font-size="10" text-anchor="middle" fill="var(--die)" font-family="var(--mono)">${esc(name)}</text><text x="${x + w / 2}" y="${y - 4}" font-size="9" text-anchor="middle" fill="var(--muted)" font-family="var(--mono)">${esc(sub)}</text>`);
+    else if (id === 'macro') o.push(`<text x="${x + w / 2}" y="${y + h / 2}" font-size="14" font-weight="600" text-anchor="middle" fill="var(--ink)" transform="rotate(-90 ${x + w / 2} ${y + h / 2})">radio_digital (macro)</text>`);
+    else {
+      o.push(`<text x="${x + 8}" y="${y + 16}" font-size="13" font-weight="600" fill="var(--ink)">${esc(name)}</text>`);
+      if (sub && h > 26) o.push(`<text x="${x + 8}" y="${y + 30}" font-size="10" fill="var(--muted)" font-family="var(--mono)">${esc(sub)}</text>`);
+    }
+    o.push('</g>');
+  }
+  // chain stages and log_det taps
+  for (let i = 0; i < 6; i++) {
+    const x0 = 115 + i * 50;
+    o.push(`<path d="M${x0} 118 L${x0} 162 L${x0 + 34} 140 Z" fill="var(--die)" stroke="var(--rx)" stroke-width="1.2"/><text x="${x0 + 10}" y="144" font-size="10" fill="var(--ink)" font-family="var(--mono)">${i + 1}</text>`);
+    o.push(`<line x1="${x0 + 34}" y1="140" x2="${x0 + 50}" y2="140" stroke="var(--rx)" stroke-width="1.2"/>`);
+    o.push(`<text x="${157 + i * 50 + 3}" y="292" font-size="9" fill="var(--muted)" font-family="var(--mono)">t${i + 1}</text>`);
+  }
+  o.push(`<line x1="100" y1="121" x2="108" y2="121" stroke="var(--rxin)"/><line x1="108" y1="121" x2="108" y2="140" stroke="var(--rxin)"/><line x1="100" y1="161" x2="108" y2="161" stroke="var(--rxin)"/><line x1="108" y1="161" x2="108" y2="140" stroke="var(--rxin)"/><line x1="108" y1="140" x2="115" y2="140" stroke="var(--rxin)"/>`);
+  const tw = (t) => t.length * 5.5;                       // 9px mono text width
+  const lab = (x, y, t, col, anchor) => `<text x="${x}" y="${y}" font-size="9" text-anchor="${anchor || 'middle'}" fill="${col}" font-family="var(--mono)">${esc(t)}</text>`;
+  for (const [n, pts, opt = {}] of DG.wires) {
+    const net = byName(n), cls = (FP.NETS.find(q => q[0] === n) || [])[1] || 'rx';
+    const col = NET_COLOR[cls], hot = S.hoverNet === n;
+    o.push(`<polyline data-net="${esc(n)}" points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${col}" stroke-width="${hot ? 3 : 1.6}" ${cls === 'en' ? 'stroke-dasharray="5 3"' : ''} marker-end="url(#ar)"/>`);
+    o.push(`<polyline data-net="${esc(n)}" points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="transparent" stroke-width="10"/>`);
+    const len = n === 'trim[7]' ? (nets.some(q => q.name.startsWith('trim[') && !q.missing) ? Math.max(...nets.filter(q => q.name.startsWith('trim[') && !q.missing).map(q => q.len)) : null)
+      : net && !net.missing ? net.len : null;
+    const name = opt.name !== undefined ? opt.name : n, L = len !== null ? `${len.toFixed(0)} µm` : '';
+    if (opt.pos) { o.push(lab(opt.pos[0], opt.pos[1], [name, L].filter(Boolean).join(' '), col, opt.pos[2])); continue; }
+    let best = 0, bl = -1;                                    // label the longest segment
+    for (let i = 0; i < pts.length - 1; i++) { const l = Math.abs(pts[i + 1][0] - pts[i][0]) + Math.abs(pts[i + 1][1] - pts[i][1]); if (l > bl) { bl = l; best = i; } }
+    const a = pts[best], b = pts[best + 1], one = [name, L].filter(Boolean).join(' ');
+    if (a[1] === b[1]) {
+      const mx = (a[0] + b[0]) / 2;
+      if (Math.abs(b[0] - a[0]) >= tw(one) + 8) o.push(lab(mx, opt.below ? a[1] + 11 : a[1] - 4, one, col));
+      else { o.push(lab(mx, a[1] - 4, name, col)); if (L) o.push(lab(mx, a[1] + 11, L, col)); }
+    } else {
+      const my = (a[1] + b[1]) / 2;
+      o.push(lab(a[0] + 4, my - 2, name, col, 'start')); if (L) o.push(lab(a[0] + 4, my + 9, L, col, 'start'));
+    }
+  }
+  o.push(`<text x="12" y="552" font-size="10" fill="var(--muted)" font-family="var(--mono)">Lengths: Manhattan, in the open variant (none shown when an end is unplaced). Dashed outline: not placed. Click a block to find it in the layout.</text>`);
+  o.push(`<text x="12" y="565" font-size="10" fill="var(--muted)" font-family="var(--mono)">Decaps (VAPWR 50 pF, VDPWR 30 pF) sit on the supplies, off the signal path.</text>`);
+  o.unshift(`<defs><pattern id="hatchD" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line x1="0" y1="0" x2="0" y2="5" stroke="currentColor" stroke-width="0.8" opacity=".5"/></pattern></defs>`);
+  svg.innerHTML = o.join('');
+}
+function setMode(m) {
+  S.mode = m; try { localStorage.setItem('fp.mode', m); } catch (e) {}
+  if (m === 'layout') fit();
+  draw();
+}
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 
 // ---- panels
 function badge(st) { return `<span class="st">${st}</span>`; }
@@ -589,6 +714,11 @@ function setOrient(n, o) {
 }
 svg.addEventListener('pointerdown', (e) => {
   if (e.button !== 0) return;
+  if (S.mode === 'diagram') {
+    const g = e.target.closest('[data-dinst]');
+    if (g && CAT[g.dataset.dinst]) { S.sel = { kind: 'inst', id: g.dataset.dinst }; setMode('layout'); render(); }
+    return;
+  }
   const v = cur(); const [x, y] = toUm(e);
   const gi = e.target.closest('[data-inst]'), gd = e.target.closest('[data-decap]'), gs = e.target.closest('[data-strap]');
   svg.setPointerCapture(e.pointerId);
@@ -643,6 +773,7 @@ function endDrag() {
 svg.addEventListener('pointerup', endDrag);
 svg.addEventListener('pointercancel', endDrag);
 svg.addEventListener('wheel', (e) => {
+  if (S.mode === 'diagram') return;
   e.preventDefault();
   const r = svg.getBoundingClientRect(), k = Math.exp(e.deltaY * 0.0015);
   const fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
@@ -652,6 +783,7 @@ svg.addEventListener('wheel', (e) => {
 }, { passive: false });
 document.addEventListener('keydown', (e) => {
   if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName)) return;
+  if (S.mode === 'diagram') return;
   if (e.key === 'f' || e.key === 'F') { fit(); draw(); return; }
   const v = cur(); if (!v || !S.sel || !S.canWrite) return;
   if (S.sel.kind === 'inst') {
