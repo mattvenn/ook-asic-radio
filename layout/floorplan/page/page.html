@@ -102,6 +102,7 @@ details > summary { cursor: pointer; font-size: 12px; color: var(--muted) }
     <div class="brand"><h1>OOK Radio Floorplan</h1><span class="sub">tt_analog_3x2_3v3 · 493.12 × 225.76 µm</span></div>
     <div class="tabs" id="tabs" role="tablist" aria-label="Variants"></div>
     <div class="tools">
+      <button class="btn" id="bFull" title="Fill the screen (Esc to leave)">Full screen</button>
       <button class="btn edit-only" id="bDup" title="Copy this variant">Duplicate</button>
       <button class="btn edit-only" id="bRen">Rename</button>
       <button class="btn edit-only" id="bDel">Delete</button>
@@ -540,6 +541,13 @@ function newBlank() {
   addVariant({ name: 'Blank', note: '', place: { macro: { x: 228.12, y: 23.76, orient: 'R0' } }, decaps: {}, straps: [], est: {} });
 }
 $('#bNew').onclick = newBlank;
+$('#bFull').onclick = async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (e) { setSync('full screen not available here: open the link in its own tab'); }
+};
+document.addEventListener('fullscreenchange', () => { $('#bFull').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; setTimeout(() => { fit(); draw(); }, 50); });
 $('#bDup').onclick = () => { const v = cur(); if (!v) return; const c = clone(v); c.name = v.name.replace(/( \(copy\))*$/, '') + ' (copy)'; addVariant(c); };
 $('#bRen').onclick = () => {
   const v = cur(); if (!v) return;
