@@ -12,6 +12,7 @@ bare-wire dipole antennas and no external components.
 
 Docs:
 - [docs/how_it_works.md](docs/how_it_works.md): **start here**: theory, specs, schematics and layout.
+- [docs/verification.md](docs/verification.md): testing and verification, with links to every test.
 - [PLAN.md](PLAN.md): the design plan and the measurements behind each decision.
 - [docs/slicer.md](docs/slicer.md): how the receiver's comparator and trim servo work.
 - [docs/info.md](docs/info.md): the datasheet (short test instructions).

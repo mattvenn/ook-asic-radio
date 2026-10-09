@@ -148,6 +148,7 @@ The finished tile is DRC and LVS clean. Power delivery (supply resistance, IR dr
 ![tile](images/tile.png)
 
 ## Further reading
+- [verification.md](verification.md): how it was tested: RTL, gate level, mixed signal, per block and system level.
 - [PLAN.md](../PLAN.md): every design decision and the evidence behind it.
 - [STATUS.md](../STATUS.md): current state and next steps.
 - [history.md](history.md): per-block simulation results.
