@@ -53,6 +53,10 @@ esac
 cat > ext.tcl <<EOF
 gds read $OUT/radio_analog_lay.gds
 load radio_analog_lay
+flatten radio_analog_flat
+load radio_analog_flat
+cellname delete radio_analog_lay
+cellname rename radio_analog_flat radio_analog_lay
 select top cell
 extract do local
 extract all
