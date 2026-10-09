@@ -280,6 +280,9 @@ class Router:
         viaok = ~padblk | (ownpad & free)          # (a pad on an own shape must fit inside it)
         if capmask is not None:
             viaok[1] &= ~capmask
+            # via3 not on a MIM keeps 0.08 from it (capm.5): no via3 in a band round each capm edge
+            band = cap.sized(int(round((0.08 + 0.1 + 0.02) / DBU))) - cap.sized(-int(round((0.1 + 0.02) / DBU)))
+            viaok[3] &= ~self.raster(band, win)
         viacost = net.get('viacost', 6.0)
 
         def cells(mask):
@@ -294,8 +297,12 @@ class Router:
             if not s:
                 return self.fail(name, f'terminal {terms[ti]} has no free cell', t0)
         wps = [(net.get('via_layer', None), wp) for wp in net.get('via', [])]
-        tree = set(tsets[0])
-        remaining = list(range(1, len(tsets)))
+        # 'late' terminals (a strap, for a net drawn inside a subcell) connect only after all the
+        # others, so the subcell's wiring is connected on its own
+        late = [ti for ti, t in enumerate(terms) if set(t) & set(net.get('late', []))]
+        first = [ti for ti in range(len(terms)) if ti not in late]
+        tree = set(tsets[first[0]])
+        remaining = first[1:]
         if net.get('anchors'):
             # start from shared anchors (straps, bars) only; every terminal then connects to
             # the nearest point of the growing tree
@@ -326,7 +333,9 @@ class Router:
             paths.append(p)
             tree = set(p)                               # continue from the waypoint path only
             tree = {p[-1]}
-        while remaining:
+        while remaining or late:
+            if not remaining:
+                remaining, late = late, []
             # nearest remaining terminal (by bbox centre distance to the tree)
             # nearest remaining terminal first (bbox distance to the tree's bbox: cheap)
             tk = np.array([c for c in tree])

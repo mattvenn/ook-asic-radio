@@ -63,10 +63,10 @@ def nets():
     tx_vss = ['xtx.xring.VSS', 'xtx.xls.VSS', 'xtx.xlse_p.VSS', 'xtx.xlse_n.VSS', 'xtx.xdrv_p.VSS',
               'xtx.xdrv_n.VSS']
     out.append(N('VAPWR_TX', 'VAPWR@w', 'xtx.xdrv_n.VAPWR', 'xtx.xdrv_p.VAPWR', 'xtx.xls.VAPWR',
-                 'xtx.xlse_n.VAPWR', 'xtx.xlse_p.VAPWR', w=2.5, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top'))
-    out.append(N('VGND_TX', 'VGND@w', *tx_vss, w=2.0, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top'))
+                 'xtx.xlse_n.VAPWR', 'xtx.xlse_p.VAPWR', w=2.5, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top', late=['VAPWR@w']))
+    out.append(N('VGND_TX', 'VGND@w', *tx_vss, w=2.0, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top', late=['VGND@w']))
     out.append(N('VDPWR_TX', 'VDPWR@w', 'xtx.xring.VDD', 'xtx.xls.VDD', 'xtx.xlse_p.VDD',
-                 'xtx.xlse_n.VDD', w=0.8, layers=['m2', 'm3', 'm4'], margin=8, wide=True, cell='tx_top'))
+                 'xtx.xlse_n.VDD', w=0.8, layers=['m2', 'm3', 'm4'], margin=8, wide=True, cell='tx_top', late=['VDPWR@w']))
     out.append(N('ring', 'xtx.xring.out', 'xtx.xls.in', margin=8, label='ring', cell='tx_top'))
     out.append(N('tx_a', 'xtx.xls.A', 'xtx.xdrv_p.in', margin=6, label='a', cell='tx_top'))
     out.append(N('tx_b', 'xtx.xls.B', 'xtx.xdrv_n.in', margin=6, label='b', cell='tx_top'))
