@@ -45,7 +45,8 @@ def nets():
     out.append(N('trim', 'xdac.out', 'xctrim.trim', 'xcomp.trim', layers=['m1', 'm2', 'm3', 'm4'],
                  layer_cost={'m1': 4, 'm2': 1, 'm3': 2, 'm4': 2}, label='trim'))
     # comp_in: down between Ctrim and r2r, east under r2r; off the trim node
-    out.append(N('comp', 'xcomp.out', 'macro.comp_in', via=[(183.2, 105.0), (190.0, 89.4)],
+    # (the m4 waypoint at x 275.2 is an antenna jumper: the macro input sees only the last met3)
+    out.append(N('comp', 'xcomp.out', 'macro.comp_in', via=[(183.2, 105.0), (190.0, 89.4), (274.4, 89.4, 'm4'), (275.4, 89.4, 'm4')],
                  avoid=[(TRIM, 3.0, 30)], margin=10, label='comp'))
     # trim_out[i] -> r2r b_i: straight horizontals across xdeca part 1 and the straps
     for i in range(8):
@@ -155,9 +156,16 @@ def tt_bus():
         b = P['pins']['macro'][n][0][1]
         mac[n] = (b[0], round((b[1] + b[3]) / 2, 3))          # (left x, centre y)
     order = sorted(tt, key=lambda n: xpin[n])                 # west -> east
+
+    def into_pin(x0, y, x1):
+        # antenna: a met4 jumper just west of the straps, so at the met3 etch a macro input gate
+        # sees only the last ~7 um of met3 (the long track is on the other side of the jumper)
+        return [('wire', 'm3', x0, y, XJ0, y), ('via', 'm3', 'm4', XJ0, y), ('wire', 'm4', XJ0, y, XJ1, y),
+                ('via', 'm3', 'm4', XJ1, y), ('wire', 'm3', XJ1, y, x1, y)]
     W, E = order[:24], order[24:]
     YPIN = 225.26                                             # tile pin centre
     XSTRAP = 15.6                   # first met4 drop x clear of the west VGND strap (13.9-15.1)
+    XJ0, XJ1 = 274.0, 275.4         # antenna jumper (met4) west of the mid straps (met4 from 276.5)
     XMAC = lambda n: round(mac[n][0] + 0.3, 3)                # into the macro pin
     nets = []
     # east group: tracks
@@ -180,13 +188,13 @@ def tt_bus():
         f = [('wire', 'm4', x0, YPIN, x0, yt), ('via', 'm3', 'm4', x0, yt),
              ('wire', 'm3', x0, yt, xc, yt), ('via', 'm3', 'm4', xc, yt),
              ('wire', 'm4', xc, yt, xc, yp), ('via', 'm3', 'm4', xc, yp),
-             ('wire', 'm3', xc, yp, XMAC(n), yp)]
+             *into_pin(xc, yp, XMAC(n))]
         nets.append(dict(name=n, fixed=f, w=0.3))
         xc = round(xc + 0.7, 3)                                # (via3 pads on met4)
     for n in straight:
         x0, yp = xpin[n], mac[n][1]
         f = [('wire', 'm4', x0, YPIN, x0, yp), ('via', 'm3', 'm4', x0, yp),
-             ('wire', 'm3', x0, yp, XMAC(n), yp)]
+             *into_pin(x0, yp, XMAC(n))]
         nets.append(dict(name=n, fixed=f, w=0.3))
     # west group: met2 tracks; column x rises with the track
     yts = [round(ylow + 0.48 * k, 3) for k in range(len(W))]
@@ -204,7 +212,7 @@ def tt_bus():
         f += [('wire', 'm4', x0, YPIN if not f else 221.4, x0, yt), ('via', 'm3', 'm4', x0, yt),
               ('via', 'm2', 'm3', x0, yt), ('pad', 'm3', x0, yt, 0.5),
              ('wire', 'm2', x0, yt, xc, yt), ('wire', 'm2', xc, yt, xc, yp), ('via', 'm2', 'm3', xc, yp),
-             ('wire', 'm3', xc, yp, XMAC(n), yp)]
+             *into_pin(xc, yp, XMAC(n))]
         nets.append(dict(name=n, fixed=f, w=0.3))
         xc = round(xc + 0.6, 3)
     assert xc < 275.0, xc
