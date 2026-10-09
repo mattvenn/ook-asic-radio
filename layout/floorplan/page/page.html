@@ -30,8 +30,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; pad
 .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0 }
 .brand h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: .01em }
 .brand .sub { font: 12px var(--mono); color: var(--muted) }
-.tabs { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0 }
-.tab { border: 1px solid var(--line); background: transparent; padding: 4px 10px; border-radius: 3px; cursor: pointer; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; order: 3; flex: 1 1 100%; min-width: 0 }
+.tools { margin-left: auto }
+.tab { flex: 0 0 auto; border: 1px solid var(--line); background: transparent; padding: 4px 10px; border-radius: 3px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
 .tab .dots { font: 11px var(--mono); margin-left: 6px; opacity: .85 }
 .tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
@@ -83,7 +84,11 @@ textarea { width: 100%; font: 12px var(--mono); resize: vertical }
 .tbl td { padding: 2px 4px; border-bottom: 1px solid var(--grid) } .tbl td.n { text-align: right }
 .tbl tr:hover td { background: var(--grid); cursor: default }
 .scroll { max-height: 280px; overflow-y: auto }
-.note { font-size: 13px; white-space: pre-wrap }
+.note { font-size: 12px; color: var(--muted); white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.note.open { display: block }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; font-size: 12px; justify-self: start }
+main.wide { grid-template-columns: minmax(0, 1fr) 0 }
+main.wide aside { display: none }
 .warnbox { font-size: 12px; padding: 6px 8px; border-radius: 3px; background: var(--die); border-left: 3px solid var(--warn) }
 .ro .edit-only { display: none !important }
 details > summary { cursor: pointer; font-size: 12px; color: var(--muted) }
@@ -102,6 +107,7 @@ details > summary { cursor: pointer; font-size: 12px; color: var(--muted) }
     <div class="brand"><h1>OOK Radio Floorplan</h1><span class="sub">tt_analog_3x2_3v3 · 493.12 × 225.76 µm</span></div>
     <div class="tabs" id="tabs" role="tablist" aria-label="Variants"></div>
     <div class="tools">
+      <button class="btn" id="bPanel" title="Hide or show the checklist panel">Hide panel</button>
       <button class="btn" id="bFull" title="Fill the screen (Esc to leave)">Full screen</button>
       <button class="btn edit-only" id="bDup" title="Copy this variant">Duplicate</button>
       <button class="btn edit-only" id="bRen">Rename</button>
@@ -393,8 +399,10 @@ function renderVariantBox() {
   }
   const who = v.updatedBy ? (v.updatedBy === S.uid ? 'you' : (S.names[v.updatedBy] || 'someone')) : '';
   el.innerHTML = `<h2>${esc(v.name)} <span class="meta">${v.updatedAt ? new Date(v.updatedAt).toLocaleString() : ''}${who ? ' · ' + esc(who) : ''}</span></h2>
-    <div class="note" id="noteView">${esc(v.note || '')}</div>
-    <details class="edit-only"><summary>Edit the note</summary><textarea id="noteEd" rows="6">${esc(v.note || '')}</textarea></details>`;
+    <div class="note${S.noteOpen ? ' open' : ''}" id="noteView">${esc(v.note || '')}</div>
+    <div class="row"><button class="linkbtn" id="noteMore">${S.noteOpen ? 'less' : 'more'}</button>
+    <details class="edit-only"><summary>Edit the note</summary><textarea id="noteEd" rows="6">${esc(v.note || '')}</textarea></details></div>`;
+  $('#noteMore').onclick = () => { S.noteOpen = !S.noteOpen; renderVariantBox(); };
   const ne = $('#noteEd'); if (ne) ne.oninput = () => { v.note = ne.value; $('#noteView').textContent = ne.value; touchQuiet(); };
 }
 let quietT = null;
@@ -541,6 +549,13 @@ function newBlank() {
   addVariant({ name: 'Blank', note: '', place: { macro: { x: 228.12, y: 23.76, orient: 'R0' } }, decaps: {}, straps: [], est: {} });
 }
 $('#bNew').onclick = newBlank;
+$('#bPanel').onclick = () => {
+  const m = document.querySelector('main'); m.classList.toggle('wide');
+  $('#bPanel').textContent = m.classList.contains('wide') ? 'Show panel' : 'Hide panel';
+  try { localStorage.setItem('fp.wide', m.classList.contains('wide') ? '1' : ''); } catch (e) {}
+  setTimeout(() => { fit(); draw(); }, 30);
+};
+try { if (localStorage.getItem('fp.wide')) { document.querySelector('main').classList.add('wide'); $('#bPanel').textContent = 'Show panel'; } } catch (e) {}
 $('#bFull').onclick = async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
