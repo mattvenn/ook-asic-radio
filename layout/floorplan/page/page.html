@@ -374,7 +374,7 @@ function draw() {
       const fs = Math.max(2.4, Math.min(8, Math.min(w / (ins.name.length * 0.62 + 1), h / 2.6)));
       g.push(text(x + w / 2, y + h / 2 + fs * 0.1, ins.name === 'macro' ? 'radio_digital' : ins.name, fs, `text-anchor="middle" fill="var(--ink)" font-weight="600"`));
       if (h > fs * 2.4) g.push(text(x + w / 2, y + h / 2 - fs * 0.95, `${c.label || c.cell} · ${ins.pl.orient}`, fs * 0.55, `text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"`));
-      if (c.inst === 'macro') g.push(text(x + w / 2, y + h / 2 - 13, (Math.abs(ins.w - 260) > 1e-6 ? `reshaped ${f1(ins.w)} × ${f1(ins.h)} (same area; needs a re-harden)` : 'outline real (260 × 190)') + '; pin positions estimated from pin_order.cfg', 3.4, 'text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"'));
+      if (c.inst === 'macro') g.push(text(x + w / 2, y + h / 2 - 13, (Math.abs(ins.w - 260) > 1e-6 || Math.abs(ins.h - 190) > 1e-6 ? `${f1(ins.w)} × ${f1(ins.h)}, ${Math.abs(ins.w * ins.h - 49400) > 1 ? ((ins.w * ins.h / 49400 - 1) * 100 >= 0 ? '+' : '') + ((ins.w * ins.h / 49400 - 1) * 100).toFixed(1) + ' % area' : 'same area'}: needs a re-harden` : 'outline real (260 × 190)') + '; pin positions estimated from pin_order.cfg', 3.4, 'text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"'));
     }
     g.push('</g>');
     out.push(g.join(''));
@@ -548,10 +548,12 @@ function renderSel() {
       <div class="row"><label class="f">x<input type="number" step="0.5" id="sx" value="${f1(p.x)}"></label><label class="f">y<input type="number" step="0.5" id="sy" value="${f1(p.y)}"></label>
       ${c.estimate ? `<label class="f">w<input type="number" step="0.5" id="sw" value="${f1(est.w)}"></label><label class="f">h<input type="number" step="0.5" id="sh" value="${f1(est.h)}"></label>` : ''}</div>
       <div class="orients edit-only">${Object.keys(FP.ORIENTS).map(o => `<button class="btn" data-or="${o}" aria-pressed="${p.orient === o}">${o}</button>`).join('')}</div>
-      ${c.reshape ? `<label class="f">width (height follows, area ${f1(c.w * c.h)} µm²)<input type="range" id="mwR" min="220" max="480" step="0.5" value="${f1(est.w)}"></label>
-      <div class="row edit-only"><label class="f">w<input type="number" step="0.5" min="220" max="480" id="mw" value="${f1(est.w)}"></label><label class="f">h<input type="number" id="mh" value="${(c.w * c.h / est.w).toFixed(2)}" disabled></label><button class="btn" id="mReset">260 × 190</button></div>
-      <label class="f">r2r trim drive, trim_out[7:0], on the macro's<select id="mTrim">${Object.entries(FP.TRIM_SIDES).map(([k, l]) => `<option value="${k}" ${((v.macroPins && v.macroPins.trim) || 'W') === k ? 'selected' : ''}>${l} edge</option>`).join('')}</select></label>` : ''}
-      <dl class="kv"><dt>placed size</dt><dd>${ins ? `${f1(ins.rect[2])} × ${f1(ins.rect[3])} µm` : '-'}</dd><dt>area</dt><dd>${f1(c.estimate ? est.w * est.h : c.w * c.h)} µm²</dd>${c.reshape && (Math.abs(est.w - c.w) > 1e-6 || (v.macroPins && v.macroPins.trim && v.macroPins.trim !== 'W')) ? '<dt>note</dt><dd>needs a re-harden (shape or pin order)</dd>' : ''}
+      ${c.reshape ? (() => { const A0 = c.w * c.h, A = est.area || A0; return `<label class="f">width (height follows, at the area below)<input type="range" id="mwR" min="${Math.ceil(A / 220)}" max="485" step="0.5" value="${f1(est.w)}"></label>
+      <div class="row edit-only"><label class="f">w<input type="number" step="0.5" id="mw" value="${f1(est.w)}"></label><label class="f">h<input type="number" id="mh" value="${(A / est.w).toFixed(2)}" disabled></label>
+      <label class="f">area, µm²<input type="number" step="500" id="mA" value="${Math.round(A)}"></label><span class="sync" id="mApct">${A >= A0 ? '+' : ''}${(100 * (A / A0 - 1)).toFixed(1)} % vs hardened</span></div>
+      <div class="row edit-only"><button class="btn" id="mReset">Back to 260 × 190</button><button class="btn" id="mAreaReset">Back to the hardened area</button></div>
+      <label class="f">r2r trim drive, trim_out[7:0], on the macro's<select id="mTrim">${Object.entries(FP.TRIM_SIDES).map(([k, l]) => `<option value="${k}" ${((v.macroPins && v.macroPins.trim) || 'W') === k ? 'selected' : ''}>${l} edge</option>`).join('')}</select></label>`; })() : ''}
+      <dl class="kv"><dt>placed size</dt><dd>${ins ? `${f1(ins.rect[2])} × ${f1(ins.rect[3])} µm` : '-'}</dd><dt>area</dt><dd>${f1(c.estimate ? est.w * est.h : c.reshape ? (est.area || c.w * c.h) : c.w * c.h)} µm²</dd>${c.reshape && (Math.abs(est.w - c.w) > 1e-6 || (est.area && Math.abs(est.area - c.w * c.h) > 1) || (v.macroPins && v.macroPins.trim && v.macroPins.trim !== 'W')) ? '<dt>note</dt><dd>needs a re-harden (size, shape or pin order)</dd>' : ''}
       <dt>status</dt><dd>${c.estimate ? 'estimate: not laid out yet (hatched)' : p.parked ? 'parked, not placed' : 'GDS outline'}</dd>
       ${ins && Object.values(ins.pins).some(q => q.moved) ? `<dt>pins moved</dt><dd>${esc(Object.entries(ins.pins).filter(([, q]) => q.moved).map(([k]) => k).join(', '))}</dd><dt></dt><dd>${n === 'macro' ? 'needs a new pin_order.cfg' : 'needs a block re-layout'} (orange rings)</dd>` : ''}</dl>
       ${ins && Object.values(ins.pins).some(q => q.moved) ? '<div class="row edit-only"><button class="btn" id="bPinReset">Put its pins back (GDS)</button></div>' : ''}
@@ -559,19 +561,31 @@ function renderSel() {
     const setXY = () => { const x = +$('#sx').value, y = +$('#sy').value; if (isFinite(x) && isFinite(y)) { v.place[n] = Object.assign({}, p, { x, y }); delete v.place[n].parked; touch(); } };
     $('#sx').onchange = setXY; $('#sy').onchange = setXY;
     if (c.reshape) {
-      const setW = (w, live) => {
-        w = Math.min(480, Math.max(220, snap(+w))); if (!isFinite(w)) return;
-        const A = c.w * c.h, o = viewVariant(v).place[n], old = est.w, oh = A / old;
-        const [pw0, ph0] = FP.placedSize(o.orient, old, oh), [pw1, ph1] = FP.placedSize(o.orient, w, A / w);
-        v.est = v.est || {}; v.est[n] = { w, h: +(A / w).toFixed(4) };
-        v.place[n] = { x: +(o.x + pw0 - pw1).toFixed(3), y: +(o.y + ph0 - ph1).toFixed(3), orient: o.orient };   // keep the top-right corner
-        est.w = w;
+      const A0 = c.w * c.h;
+      // keep the top-right corner while the macro changes shape or size
+      const setWA = (w, A, live) => {
+        A = Math.min(110000, Math.max(20000, +A)); w = Math.min(485, Math.max(Math.ceil(A / 220), snap(+w)));
+        if (!isFinite(w) || !isFinite(A)) return;
+        const o = viewVariant(v).place[n], oldA = est.area || A0, old = est.w;
+        const [pw0, ph0] = FP.placedSize(o.orient, old, oldA / old), [pw1, ph1] = FP.placedSize(o.orient, w, A / w);
+        v.est = v.est || {}; v.est[n] = Object.assign({ w, h: +(A / w).toFixed(4) }, Math.abs(A - A0) > 1 ? { area: +A.toFixed(1) } : {});
+        // moved pins (own frame) follow the edges: scale along each edge, stay on the edge they were on
+        const sx = w / old, sy = (A / w) / (oldA / old), oh0 = oldA / old;
+        for (const q of Object.values((v.pins || {})[n] || {})) {
+          const onE = q.x >= old - 0.3, onN = q.y >= oh0 - 0.3;
+          q.x = +(onE ? w - (old - q.x) : q.x * sx).toFixed(3); q.y = +(onN ? A / w - (oh0 - q.y) : q.y * sy).toFixed(3);
+        }
+        v.place[n] = { x: +(o.x + pw0 - pw1).toFixed(3), y: +(o.y + ph0 - ph1).toFixed(3), orient: o.orient };
+        est.w = w; est.area = Math.abs(A - A0) > 1 ? A : undefined;
         if (live) { draw(); renderChecks(); $('#mw').value = f1(w); $('#mh').value = (A / w).toFixed(2); } else touch();
       };
-      $('#mwR').oninput = () => setW($('#mwR').value, true);
-      $('#mwR').onchange = () => setW($('#mwR').value, false);
-      $('#mw').onchange = () => setW($('#mw').value, false);
-      $('#mReset').onclick = () => setW(260, false);
+      const curA = () => est.area || A0;
+      $('#mwR').oninput = () => setWA($('#mwR').value, curA(), true);
+      $('#mwR').onchange = () => setWA($('#mwR').value, curA(), false);
+      $('#mw').onchange = () => setWA($('#mw').value, curA(), false);
+      $('#mA').onchange = () => setWA(est.w, +$('#mA').value, false);
+      $('#mReset').onclick = () => setWA(260, A0, false);
+      $('#mAreaReset').onclick = () => setWA(est.w, A0, false);
       $('#mTrim').onchange = () => { v.macroPins = Object.assign({}, v.macroPins, { trim: $('#mTrim').value }); touch(); };
     }
     if (c.estimate) { const se = () => { v.est = v.est || {}; v.est[n] = { w: Math.max(1, +$('#sw').value), h: Math.max(1, +$('#sh').value) }; touch(); }; $('#sw').onchange = se; $('#sh').onchange = se; }

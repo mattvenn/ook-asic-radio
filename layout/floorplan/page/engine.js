@@ -154,7 +154,7 @@
       if (!p) continue;
       let w = c.w, h = c.h;
       const scaled = c.estimate || c.reshape;      // estimated blocks, and the macro (re-hardened at a new aspect ratio, same area)
-      if (scaled && v.est && v.est[n]) { w = v.est[n].w; h = c.reshape ? c.w * c.h / w : v.est[n].h; }
+      if (scaled && v.est && v.est[n]) { w = v.est[n].w; h = c.reshape ? (v.est[n].area || c.w * c.h) / w : v.est[n].h; }   // macro: est.area overrides the hardened area
       const pl = { x: p.x, y: p.y, orient: p.orient || 'R0' };
       const [pw, ph] = placedSize(pl.orient, w, h);
       const rect = [pl.x, pl.y, pw, ph];
@@ -409,8 +409,9 @@
       const [k, m] = ORIENTS[i.pl.orient];
       const b = { inst: i.name, cell: i.cat.cell, x: +i.rect[0].toFixed(2), y: +i.rect[1].toFixed(2), orient: i.pl.orient,
         rot: k * 90, mirror: m, estimate: !!i.cat.estimate };
-      if (i.cat.estimate || (i.cat.reshape && Math.abs(i.w - i.cat.w) > 1e-6)) { b.w = +i.w.toFixed(3); b.h = +i.h.toFixed(3); }
-      if (i.cat.reshape && Math.abs(i.w - i.cat.w) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um (same area as ${i.cat.w} x ${i.cat.h})`;
+      if (i.cat.estimate || (i.cat.reshape && (Math.abs(i.w - i.cat.w) > 1e-6 || Math.abs(i.h - i.cat.h) > 1e-6))) { b.w = +i.w.toFixed(3); b.h = +i.h.toFixed(3); }
+      if (i.cat.reshape && Math.abs(i.w - i.cat.w) < 1e-6 && Math.abs(i.h - i.cat.h) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um`;
+      if (i.cat.reshape && Math.abs(i.w - i.cat.w) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um (${(i.w * i.h).toFixed(0)} um2; hardened ${i.cat.w} x ${i.cat.h} = ${i.cat.w * i.cat.h} um2)`;
       blocks.push(b);
     }
     for (const d of R.decaps) blocks.push(Object.assign({ inst: d.base, part: d.idx + 1, cell: d.def.cell, x: d.rect[0], y: d.rect[1], w: d.rect[2], h: d.rect[3], orient: 'R0', rot: 0, mirror: false, estimate: true }, d.mim ? { mim: true, note: 'MIM only (cap_mim_m3_1), on top of a met1-only block' } : {}));
@@ -432,7 +433,7 @@
       const n = b.inst;
       if (!cat[n]) continue;
       v.place[n] = { x: +b.x, y: +b.y, orient: ORIENTS[b.orient] ? b.orient : 'R0' };
-      if ((cat[n].estimate || cat[n].reshape) && b.w && b.h) v.est[n] = { w: +b.w, h: +b.h };
+      if ((cat[n].estimate || cat[n].reshape) && b.w && b.h) { v.est[n] = { w: +b.w, h: +b.h }; if (cat[n].reshape && Math.abs(b.w * b.h - cat[n].w * cat[n].h) > 1) v.est[n].area = +b.w * +b.h; }
     }
     return v;
   }
