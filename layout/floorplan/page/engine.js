@@ -160,7 +160,13 @@
       const pins = {};
       const sx = scaled ? w / c.w : 1, sy = scaled ? h / c.h : 1;
       const src = n === 'macro' ? macroPins(c, v) : c.pins;
-      for (const [pn, pp] of Object.entries(src)) pins[pn] = Object.assign({}, pp, { at: mapPt(pl, w, h, pp.x * sx, pp.y * sy) });
+      // moved pins (floorplanning): v.pins[inst][pin] = {x, y} in the block's own frame at its
+      // placed size; they need a block re-layout (or, for the macro, a new pin_order.cfg)
+      const mv = (v.pins || {})[n] || {};
+      for (const [pn, pp] of Object.entries(src)) {
+        const m = mv[pn];
+        pins[pn] = Object.assign({}, pp, m ? { x: m.x, y: m.y, moved: true, at: mapPt(pl, w, h, m.x, m.y) } : { at: mapPt(pl, w, h, pp.x * sx, pp.y * sy) });
+      }
       const m4 = (c.m4 || []).map(r => scaled ? [0, 0, w, h] : r).map(r => mapRect(pl, w, h, r));
       const zones = {};
       for (const [zn, z] of Object.entries(c.zones || {})) zones[zn] = mapRect(pl, w, h, z);
@@ -405,6 +411,8 @@
     return {
       variant: v.name, note: v.note || '', tile: { w: data.tile.w, h: data.tile.h }, blocks,
       macro_pins: { 'trim_out[7:0]': (v.macroPins && v.macroPins.trim) || 'W' },
+      pins_moved: Object.fromEntries(Object.entries(v.pins || {}).filter(([, ps]) => Object.keys(ps).length).map(([i, ps]) => [i, Object.fromEntries(Object.entries(ps).map(([p, q]) => [p, [+q.x.toFixed(2), +q.y.toFixed(2)]]))])),
+      pins_note: 'pins_moved: [x, y] in each block\'s own frame (lower-left = 0, 0, before its orientation); they need a block re-layout, or for the macro a new pin_order.cfg.',
       straps: (v.straps || []).map(s => ({ net: s.net, x: s.x, w: s.w })),
       transform: 'x, y = lower-left of the placed bbox. KLayout: t = DCplxTrans(1, rot, mirror, 0, 0); bb = cell.dbbox().transformed(t); place with DCplxTrans(1, rot, mirror, x - bb.left, y - bb.bottom).',
     };
@@ -412,6 +420,7 @@
   function importJSON(cat, j) {
     const v = { name: j.variant || 'Imported', note: j.note || '', place: {}, decaps: {}, straps: (j.straps || []).map(s => ({ net: s.net, x: +s.x, w: +s.w })), est: {} };
     const ts = j.macro_pins && j.macro_pins['trim_out[7:0]']; if (TRIM_SIDES[ts]) v.macroPins = { trim: ts };
+    if (j.pins_moved) { v.pins = {}; for (const [i, ps] of Object.entries(j.pins_moved)) { if (!cat[i]) continue; v.pins[i] = {}; for (const [p, xy] of Object.entries(ps)) v.pins[i][p] = { x: +xy[0], y: +xy[1] }; } }
     for (const b of j.blocks || []) {
       if (DECAPS[b.inst]) { (v.decaps[b.inst] = v.decaps[b.inst] || []).push({ x: +b.x, y: +b.y, w: +b.w, h: +b.h }); continue; }
       const n = b.inst;
