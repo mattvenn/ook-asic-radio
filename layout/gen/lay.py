@@ -93,6 +93,22 @@ class Block:
         for k in range(i0, i1):
             self.via(CUT[(STACK[k], STACK[k + 1])], b)
 
+    def clear(self, lays, b):
+        """Cut box b out of the top cell's own shapes on each layer in lays (a gap in a
+        rail for a pin to drop through: clear the metal and the cuts that land on it).
+        Cut layers lose whole cuts within 0.1 of b (so what's left keeps its enclosure).
+        A metal's pin shapes are cut too: magic reads them as metal."""
+        dbu = self.ly.dbu
+        for lay in list(lays) + [PIN[m] for m in lays if m in PIN]:
+            sh = self.cell.shapes(self.li(lay))
+            if lay in VIA:
+                gone = pya.Region(b.enlarged(0.1, 0.1).to_itype(dbu))
+                r = pya.Region(sh).select_not_interacting(gone)
+            else:
+                r = pya.Region(sh) - pya.Region(b.to_itype(dbu))
+            sh.clear()
+            sh.insert(r)
+
     def pin(self, lay, b, name):
         """Pin shape + label on a metal (the metal itself must be drawn too)."""
         self.cell.shapes(self.li(PIN[lay])).insert(b)

@@ -18,7 +18,8 @@
 # Per net (Net): stub widths, track width, RMS current (cut check), and io:
 #   None: internal; 'L': pin at the left edge (track runs to x = 0);
 #   'R': pin at the right edge; 'riser': drain bars (met2+met3) into a riser on the
-#   right edge (big outputs), which is the pin.
+#   right edge (big outputs), which is the pin. pin=False: an 'L' / 'R' track still runs
+#   to its edge, but gets a label instead of a pin (the generator routes on to the pin).
 from collections import defaultdict
 from lay import box, snap, ring, cuts_needed
 
@@ -34,8 +35,9 @@ SEG_GAP = 4.7          # diffusion to diffusion across a segment boundary (rings
 
 
 class Net:
-    def __init__(self, stub_d=0.3, stub_g=0.3, track=0.5, irms=0.1, io=None):
+    def __init__(self, stub_d=0.3, stub_g=0.3, track=0.5, irms=0.1, io=None, pin=True):
         self.stub_d, self.stub_g, self.track, self.irms, self.io = stub_d, stub_g, track, irms, io
+        self.pin = pin
 
 
 class Dev:
@@ -396,7 +398,9 @@ def build(b, P, N, nets, rail_h=3.0, out_w=3.0, align_last=False, strip_w=0.45, 
         xa = 0 if io == 'L' else min(xs[net]) - 0.1
         xb = xmax if io == 'R' else max(xs[net]) + 0.1
         b.rect('m3', box(xa, t['y0'], xb, t['y1']))
-        if io == 'L':
+        if io in ('L', 'R') and not nets[net].pin:
+            b.label('m3', box(xa, t['y0'], xb, t['y1']), net)
+        elif io == 'L':
             b.pin('m3', box(0, t['y0'], 0.5, t['y1']), net)
         elif io == 'R':
             b.pin('m3', box(xmax - 0.5, t['y0'], xmax, t['y1']), net)

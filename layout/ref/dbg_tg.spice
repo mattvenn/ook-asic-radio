@@ -1,5 +1,5 @@
 * dbg_tg: xschem/dbg_tg.sch with {'wn': 2, 'wp': 4} (layout/gen/dbg_tg.py)
-** sch_path: /foss/designs/ook/xschem/dbg_tg.sch
+** sch_path: /Users/mattvenn/asic/ook-asic-radio/xschem/dbg_tg.sch
 .subckt dbg_tg a en b VDD VSS
 *.PININFO VDD:B VSS:B en:B a:B b:B
 XMip enb en VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1

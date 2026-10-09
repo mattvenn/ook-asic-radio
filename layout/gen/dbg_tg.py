@@ -5,8 +5,10 @@
 # Built with rows.py: PMOS row [Mip, Mp] over NMOS row [Min, Mn], VDD rail on top, VSS on
 # the bottom. rows.py routes one signal net per device, so the pass devices' left strip
 # is their 'drain' (a, through the channel to the left edge) and this generator wires the
-# right strips (b) itself: via1 on each, one met2 bar from the P strip down to the N
-# strip (over the rings and across the channel's met3), and a met2 stub to the right edge.
+# right strips (b) itself: via1 on each, one met2 bar from the P strip down past the N
+# strip (over the rings and across the channel's met3) through the VSS rail (no met2 there).
+# Pins (floorplan, layout/floorplan/pins.md): a and b on the south edge (a west of b; a on
+# met3 down the west edge through a gap in the rail's met3), en on the east edge (met3).
 # Currents are uA (det through 8 kOhm): minimum widths.
 # Also writes layout/ref/dbg_tg.spice (wn / wp substituted; netgen can't evaluate them).
 # Run: tools/osic klayout -b -r layout/gen/dbg_tg.py
@@ -19,7 +21,7 @@ from lay import Block, Fet, REPO, box          # noqa: E402
 from rows import Dev, Net, build, inverter_roles   # noqa: E402
 
 PARAMS = dict(wn=2, wp=4)
-NETS = {'en': Net(io='L'), 'a': Net(io='L'), 'enb': Net()}
+NETS = {'en': Net(io='R', pin=False), 'a': Net(io='L', pin=False), 'enb': Net()}
 LG = 0.15
 
 
@@ -53,12 +55,25 @@ def make():
         b.rect('m1', v)
         b.via('via1', v, enc=(0.055, 0.085))
         jogs.append(b.rect('m2', box(v.left, v.bottom, xbar + w, v.top)))
-    bar = b.rect('m2', box(xbar, jogs[1].bottom, xbar + w, jogs[0].top))
-    b.pin('m2', bar, 'b')
+    # the bar runs on down through the VSS rail (its met2 stops short) to the south edge
+    b.rect('m2', box(xbar, bb.bottom, xbar + w, jogs[0].top))
+    b.pin('m2', box(xbar, bb.bottom, xbar + w, bb.bottom + 0.5), 'b')
     # extend the rails (metal only: abutting via arrays can break via spacing) to the new edge
-    for y0, y1 in ((bb.top - 2.0, bb.top), (bb.bottom, bb.bottom + 2.0)):
-        for lay in ('m1', 'm2', 'm3'):
+    for y0, y1, lays in ((bb.top - 2.0, bb.top, ('m1', 'm2', 'm3')), (bb.bottom, bb.bottom + 2.0, ('m1', 'm3'))):
+        for lay in lays:
             b.rect(lay, box(xmax - 1.0, y0, xbar + w, y1))
+
+    # en: its track (io 'R') goes on east over the b bar (met3 over met2) to the east edge
+    te = b.rows['tracks']['en']
+    b.rect('m3', box(xmax - 0.5, te['y0'], xbar + w, te['y1']))
+    b.pin('m3', box(xbar + w - 0.5, te['y0'], xbar + w, te['y1']), 'en')
+    # a: its track (io 'L') turns down the west edge on met3, over the N ring, and through
+    # a gap in the VSS rail's met3 to the south edge (west of b)
+    ta = b.rows['tracks']['a']
+    b.clear(('m3', 'via2'), box(bb.left, bb.bottom, bb.left + 0.5 + 0.4, bb.bottom + 2.0))
+    b.rect('m3', box(bb.left, ta['y0'], 0, ta['y1']))
+    b.rect('m3', box(bb.left, bb.bottom, bb.left + 0.5, ta['y1']))
+    b.pin('m3', box(bb.left, bb.bottom, bb.left + 0.5, bb.bottom + 0.5), 'a')
     return b
 
 
