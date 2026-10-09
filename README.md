@@ -8,7 +8,7 @@ A mixed-signal Tiny Tapeout project: two demo boards with the same chip talk ove
 bare-wire dipole antennas and no external components.
 
 - **TX:** an on-chip ring oscillator at ~433 MHz, keyed on and off (OOK), with antiphase drivers into a dipole.
-- **RX:** a differential inverter LNA, a log envelope detector, and one comparator with an averaged, trimmed threshold. A digital Gold-code correlator detects the transmitter's code and toggles an LED.
+- **RX:** a 6-stage NMOS differential-pair limiting chain with a successive-detection log detector, and one comparator with an averaged, trimmed threshold. A digital Gold-code correlator detects the transmitter's code and toggles an LED.
 
 Docs:
 - [PLAN.md](PLAN.md): the design plan and the measurements behind each decision.
