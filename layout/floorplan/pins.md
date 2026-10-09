@@ -13,9 +13,9 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | 1. Chain input far from the macro | warn | 60 µm |
 | 2. Late stages away from the input | pass | 60 µm |
 | 3. Clock edges off the RX | pass | 70 µm |
-| 4. Short analog path | warn | 373 µm |
+| 4. Short analog path | warn | 377 µm |
 | 5. TX at ua[3] / ua[4] | pass | 36 µm |
-| 6. Bias next to the chain | pass | 5 µm |
+| 6. Bias next to the chain | pass | 3 µm |
 | 7. Decap VAPWR | fail | 61 % |
 | 7. Decap VDPWR | pass | 103 % |
 | 8. TX away from the RX input | warn | 14 µm |
@@ -33,51 +33,56 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
-| clk | 341.66 | 109.41 | moved |
-| rst_n | 344.42 | 109.41 | moved |
-| ui_in[0] | 347.18 | 109.41 | moved |
-| ui_in[1] | 349.94 | 109.41 | moved |
-| ui_in[2] | 352.70 | 109.41 | moved |
-| ui_in[3] | 355.46 | 109.41 | moved |
-| ui_in[4] | 358.22 | 109.41 | moved |
-| ui_in[5] | 360.98 | 109.41 | moved |
-| ui_in[6] | 363.74 | 109.41 | moved |
-| ui_in[7] | 366.50 | 109.41 | moved |
-| uio_in[0] | 369.26 | 109.41 | moved |
-| uio_in[1] | 372.02 | 109.41 | moved |
-| uio_in[2] | 374.78 | 109.41 | moved |
-| uio_in[3] | 377.54 | 109.41 | moved |
-| uio_in[4] | 380.30 | 109.41 | moved |
-| uio_in[5] | 383.06 | 109.41 | moved |
-| uio_in[6] | 385.82 | 109.41 | moved |
-| uio_in[7] | 388.58 | 109.41 | moved |
-| uo_out[0] | 391.34 | 109.41 | moved |
-| uo_out[1] | 394.10 | 109.41 | moved |
-| uo_out[2] | 396.86 | 109.41 | moved |
-| uo_out[3] | 399.62 | 109.41 | moved |
-| uo_out[4] | 402.38 | 109.41 | moved |
-| uo_out[5] | 405.14 | 109.41 | moved |
-| uo_out[6] | 407.90 | 109.41 | moved |
-| uo_out[7] | 410.66 | 109.41 | moved |
-| uio_out[0] | 413.42 | 109.41 | moved |
-| uio_out[1] | 416.18 | 109.41 | moved |
-| uio_out[2] | 418.94 | 109.41 | moved |
-| uio_out[3] | 421.70 | 109.41 | moved |
-| uio_out[4] | 424.46 | 109.41 | moved |
-| uio_out[5] | 427.22 | 109.41 | moved |
-| uio_out[6] | 429.98 | 109.41 | moved |
-| uio_out[7] | 432.74 | 109.41 | moved |
-| uio_oe[0] | 435.50 | 109.41 | moved |
-| uio_oe[1] | 438.26 | 109.41 | moved |
-| uio_oe[2] | 441.02 | 109.41 | moved |
-| uio_oe[3] | 443.78 | 109.41 | moved |
-| uio_oe[4] | 446.54 | 109.41 | moved |
-| uio_oe[5] | 449.30 | 109.41 | moved |
+| clk | 339.86 | 109.41 | moved |
+| rst_n | 342.62 | 109.41 | moved |
+| ui_in[0] | 345.38 | 109.41 | moved |
+| ui_in[1] | 348.14 | 109.41 | moved |
+| ui_in[2] | 350.90 | 109.41 | moved |
+| ui_in[3] | 353.66 | 109.41 | moved |
+| ui_in[4] | 356.42 | 109.41 | moved |
+| ui_in[5] | 359.18 | 109.41 | moved |
+| ui_in[6] | 361.94 | 109.41 | moved |
+| ui_in[7] | 364.70 | 109.41 | moved |
+| uio_in[0] | 367.46 | 109.41 | moved |
+| uio_in[1] | 370.22 | 109.41 | moved |
+| uio_in[2] | 372.98 | 109.41 | moved |
+| uio_in[3] | 375.74 | 109.41 | moved |
+| uio_in[4] | 378.50 | 109.41 | moved |
+| uio_in[5] | 381.26 | 109.41 | moved |
+| uio_in[6] | 384.02 | 109.41 | moved |
+| uio_in[7] | 386.78 | 109.41 | moved |
+| uo_out[0] | 389.54 | 109.41 | moved |
+| uo_out[1] | 392.30 | 109.41 | moved |
+| uo_out[2] | 395.06 | 109.41 | moved |
+| uo_out[3] | 397.82 | 109.41 | moved |
+| uo_out[4] | 400.58 | 109.41 | moved |
+| uo_out[5] | 403.34 | 109.41 | moved |
+| uo_out[6] | 406.10 | 109.41 | moved |
+| uo_out[7] | 408.86 | 109.41 | moved |
+| uio_out[0] | 411.62 | 109.41 | moved |
+| uio_out[1] | 414.38 | 109.41 | moved |
+| uio_out[2] | 417.14 | 109.41 | moved |
+| uio_out[3] | 419.90 | 109.41 | moved |
+| uio_out[4] | 422.66 | 109.41 | moved |
+| uio_out[5] | 425.42 | 109.41 | moved |
+| uio_out[6] | 428.18 | 109.41 | moved |
+| uio_out[7] | 430.94 | 109.41 | moved |
+| uio_oe[0] | 433.70 | 109.41 | moved |
+| uio_oe[1] | 436.46 | 109.41 | moved |
+| uio_oe[2] | 439.22 | 109.41 | moved |
+| uio_oe[3] | 441.98 | 109.41 | moved |
+| uio_oe[4] | 444.74 | 109.41 | moved |
+| uio_oe[5] | 447.50 | 109.41 | moved |
+| uio_oe[6] | 448.50 | 109.41 | moved |
+| uio_oe[7] | 449.50 | 109.41 | moved |
 
 **S edge** (faces south in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
+| trim_out[7] | 1.00 | 0.25 | moved |
+| trim_out[6] | 2.00 | 0.25 | moved |
+| trim_out[5] | 3.00 | 0.25 | moved |
 | trim_out[4] | 5.75 | 0.25 | moved |
 | trim_out[3] | 13.25 | 0.25 | moved |
 | trim_out[2] | 20.75 | 0.25 | moved |
@@ -85,26 +90,11 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | sc_phi2 | 39.74 | 0.25 | moved |
 | sc_phi1 | 41.39 | 0.25 | moved |
 | trim_out[0] | 43.25 | 0.25 | moved |
-| comp_in | 51.62 | 0.25 | moved |
+| comp_in | 52.37 | 0.25 | moved |
 | rx_en | 381.45 | 0.25 | moved |
 | dbg_en | 389.00 | 0.25 | moved |
 | tx_en | 415.25 | 0.25 | moved |
 | tx_en_n | 436.07 | 0.25 | moved |
-
-**W edge** (faces east in the tile; bottom → top, y):
-
-| pin | x | y | |
-|---|---|---|---|
-| trim_out[5] | 0.25 | 0.25 | moved |
-| trim_out[6] | 0.25 | 1.25 | moved |
-| trim_out[7] | 0.25 | 2.25 | moved |
-
-**E edge** (faces west in the tile; bottom → top, y):
-
-| pin | x | y | |
-|---|---|---|---|
-| uio_oe[7] | 450.25 | 108.16 | moved |
-| uio_oe[6] | 450.25 | 109.16 | moved |
 
 ## xchain (lna_chain)
 
@@ -128,6 +118,8 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
+| ibias | 1.00 | 0.25 | moved |
+| vcm | 2.00 | 0.25 | moved |
 | o1p | 106.42 | 17.61 |  |
 | o2p | 138.96 | 17.61 |  |
 | o3p | 171.50 | 17.61 |  |
@@ -138,9 +130,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
-| ibias | 0.25 | 0.25 | moved |
 | VSS | 0.50 | 0.75 |  |
-| vcm | 0.25 | 1.25 | moved |
 | g1n | 7.04 | 25.75 |  |
 | g1p | 6.04 | 25.75 |  |
 
@@ -168,8 +158,8 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
-| ib_chain | 4.25 | 0.25 | moved |
-| vcm | 5.25 | 0.25 | moved |
+| ib_chain | 5.00 | 0.25 | moved |
+| vcm | 6.00 | 0.25 | moved |
 | tail | 14.10 | 12.85 |  |
 | VSS | 15.18 | 0.75 |  |
 | d1 | 15.64 | 9.65 |  |
@@ -237,9 +227,9 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 |---|---|---|---|
 | t4p | 1.70 | 7.99 |  |
 | VSS | 0.50 | 15.51 |  |
-| ibias_det | 0.25 | 17.21 | moved |
+| ibias_det | 0.25 | 17.71 | moved |
 | t1p | 1.70 | 23.02 |  |
-| det | 0.25 | 30.51 | moved |
+| det | 0.25 | 30.01 | moved |
 
 **E edge** (faces east in the tile; bottom → top, y):
 
@@ -277,7 +267,6 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | r10 | 33.20 | 5.58 |  |
 | r12 | 35.20 | 5.58 |  |
 | r14 | 37.20 | 5.58 |  |
-| in | 64.95 | 0.00 | moved |
 
 **W edge** (faces west in the tile; bottom → top, y):
 
@@ -289,7 +278,8 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
-| out | 64.95 | 1.00 | moved |
+| in | 64.95 | 1.00 | moved |
+| out | 64.95 | 2.00 | moved |
 
 ## xavg (avg_sc)
 
@@ -301,6 +291,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
+| out | 1.00 | 30.15 | moved |
 | phi1 | 67.49 | 30.15 | moved |
 | phi1b | 67.71 | 24.75 |  |
 | VDD | 68.52 | 29.65 |  |
@@ -311,8 +302,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
-| out | 0.25 | 28.90 | moved |
-| in | 0.25 | 29.90 | moved |
+| in | 0.25 | 29.40 | moved |
 
 **E edge** (faces east in the tile; bottom → top, y):
 
@@ -338,19 +328,19 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | VDD | 37.00 | 41.22 |  |
 | sa | 40.30 | 32.52 |  |
 | sb | 44.45 | 28.52 |  |
+| out | 72.45 | 41.72 | moved |
 
 **S edge** (faces south in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| inp | 0.25 | 0.00 | moved |
 | rdeg4 | 6.08 | 5.61 |  |
 | rdeg6 | 8.09 | 5.61 |  |
 | rdeg8 | 10.09 | 5.61 |  |
 | rdeg10 | 12.09 | 5.61 |  |
 | rdeg12 | 14.09 | 5.61 |  |
 | rdeg14 | 16.09 | 5.61 |  |
-| inn | 16.19 | 0.25 | moved |
+| inn | 16.94 | 0.25 | moved |
 | rdeg15 | 17.09 | 16.69 |  |
 | rdeg16 | 18.09 | 5.61 |  |
 | rdeg17 | 19.09 | 16.69 |  |
@@ -367,12 +357,13 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | rdeg28 | 30.09 | 5.61 |  |
 | rdeg29 | 31.09 | 16.69 |  |
 | VSS | 37.00 | 19.72 |  |
-| trim | 73.20 | -0.25 | moved |
+| trim | 72.45 | 0.25 | moved |
 
 **W edge** (faces west in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
+| inp | 0.25 | 1.00 | moved |
 | rdeg2 | 4.08 | 5.61 |  |
 | rdeg1 | 3.08 | 16.69 |  |
 | rdeg11 | 13.09 | 16.69 |  |
@@ -388,7 +379,6 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | pin | x | y | |
 |---|---|---|---|
 | o2 | 69.34 | 34.12 |  |
-| out | 73.20 | 41.47 | moved |
 
 ## xdac (r2r)
 
@@ -400,7 +390,7 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
-| out | 20.34 | 53.87 | moved |
+| out | 20.87 | 53.87 | moved |
 
 **S edge** (faces north in the tile; left → right, x):
 
@@ -417,9 +407,9 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | e | 39.62 | 2.50 |  |
 | b4 | 43.12 | 0.25 | moved |
 | f | 47.12 | 2.50 |  |
-| b5 | 48.62 | 0.25 | moved |
-| b6 | 49.62 | 0.25 | moved |
-| b7 | 50.62 | 0.25 | moved |
+| b5 | 47.87 | 0.25 | moved |
+| b6 | 48.87 | 0.25 | moved |
+| b7 | 49.87 | 0.25 | moved |
 | g | 54.62 | 2.50 |  |
 
 ## xctrim (ctrim_1p)
@@ -432,8 +422,8 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
-| n | 0.25 | 0.00 | moved |
-| p | 0.50 | 0.25 | moved |
+| n | 1.00 | 0.25 | moved |
+| p | 2.00 | 0.25 | moved |
 
 ## xdbg (dbg_tg)
 
@@ -453,7 +443,6 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 | pin | x | y | |
 |---|---|---|---|
 | VSS | 2.83 | 1.00 |  |
-| b | 5.45 | -0.50 | moved |
 
 **W edge** (faces west in the tile; bottom → top, y):
 
@@ -465,7 +454,8 @@ Generated from the floorplan page's variant **Matt layout 3 (Claude)** by `layou
 
 | pin | x | y | |
 |---|---|---|---|
-| a | 5.45 | 15.80 | moved |
+| b | 5.45 | 1.00 | moved |
+| a | 5.45 | 15.30 | moved |
 
 ## xtx.xring (tx_ring)
 
