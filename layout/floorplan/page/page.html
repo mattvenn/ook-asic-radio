@@ -25,7 +25,7 @@
 html, body { height: 100% }
 body { background: var(--bg); color: var(--ink); font: 14px/1.4 var(--ui); }
 button, input, select, textarea { font: inherit; color: inherit }
-.app { display: grid; grid-template-rows: auto 1fr; height: 100%; min-height: 560px }
+.app { display: block }
 header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel) }
 .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0 }
 .brand h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: .01em }
@@ -42,8 +42,8 @@ header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; pad
 .btn:disabled { opacity: .45; cursor: default }
 :focus-visible { outline: 2px solid var(--sel); outline-offset: 1px }
 .sync { font: 12px var(--mono); color: var(--muted) }
-main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0 }
-.stage { position: relative; min-width: 0; min-height: 420px; overflow: hidden; background: var(--bg) }
+main { display: block }
+.stage { position: relative; width: 100%; height: max(300px, min(calc(100vw * 0.56), calc(100vh - 96px))); overflow: hidden; background: var(--bg); border-bottom: 1px solid var(--line) }
 svg#cv { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; cursor: grab }
 svg#cv.panning { cursor: grabbing }
 .overlay { position: absolute; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px }
@@ -52,8 +52,9 @@ svg#cv.panning { cursor: grabbing }
 .coords { position: absolute; right: 12px; bottom: 12px; font: 12px var(--mono); color: var(--muted); background: var(--panel); border: 1px solid var(--line); padding: 2px 8px; border-radius: 3px }
 .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font: 12px var(--mono); padding: 3px 7px; border-radius: 3px; white-space: nowrap; z-index: 3 }
 .keys { position: absolute; right: 12px; top: 12px; font: 11px var(--mono); color: var(--muted); text-align: right; line-height: 1.5 }
-aside { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; min-width: 0 }
-section.box { border-bottom: 1px solid var(--line); padding: 12px 16px; display: grid; gap: 8px }
+aside { background: var(--panel); display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: start; min-width: 0 }
+section.box { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); padding: 12px 16px; display: grid; gap: 8px; min-width: 0 }
+#secChecks { grid-row: span 3 }
 section.box > h2 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 8px }
 section.box > h2 .meta { letter-spacing: 0; text-transform: none; font: 12px var(--mono) }
 .empty { color: var(--muted); font-size: 13px }
@@ -87,16 +88,12 @@ textarea { width: 100%; font: 12px var(--mono); resize: vertical }
 .note { font-size: 12px; color: var(--muted); white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
 .note.open { display: block }
 .linkbtn { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; font-size: 12px; justify-self: start }
-main.wide { grid-template-columns: minmax(0, 1fr) 0 }
-main.wide aside { display: none }
+
 .warnbox { font-size: 12px; padding: 6px 8px; border-radius: 3px; background: var(--die); border-left: 3px solid var(--warn) }
 .ro .edit-only { display: none !important }
 details > summary { cursor: pointer; font-size: 12px; color: var(--muted) }
 @media (max-width: 860px) {
-  .app { height: auto }
-  main { grid-template-columns: minmax(0, 1fr) }
   .stage { height: min(62vh, 80vw); min-height: 300px }
-  aside { border-left: 0; border-top: 1px solid var(--line) }
   .keys { display: none }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important } }
@@ -107,7 +104,6 @@ details > summary { cursor: pointer; font-size: 12px; color: var(--muted) }
     <div class="brand"><h1>OOK Radio Floorplan</h1><span class="sub">tt_analog_3x2_3v3 · 493.12 × 225.76 µm</span></div>
     <div class="tabs" id="tabs" role="tablist" aria-label="Variants"></div>
     <div class="tools">
-      <button class="btn" id="bPanel" title="Hide or show the checklist panel">Hide panel</button>
       <button class="btn" id="bFull" title="Fill the screen (Esc to leave)">Full screen</button>
       <button class="btn edit-only" id="bDup" title="Copy this variant">Duplicate</button>
       <button class="btn edit-only" id="bRen">Rename</button>
@@ -263,11 +259,11 @@ async function resolveNames() {
 const Y = (y) => H - y;
 function fit() {
   const st = $('#stage').getBoundingClientRect();
-  const m = 14, vw = W + 2 * m, vh = H + 2 * m + 70;
+  const m = 10, vw = W + 2 * m, vh = H + 2 * m + 24;
   const ar = st.width / Math.max(1, st.height);
   let w = vw, h = vh;
   if (w / h < ar) w = h * ar; else h = w / ar;
-  S.view = { x: -m - (w - vw) / 2, y: -m - (h - vh) / 2 - 2, w, h };
+  S.view = { x: -m - (w - vw) / 2, y: -m - (h - vh) / 2 - 4, w, h };
 }
 function toUm(evt) {
   const svg = $('#cv'), r = svg.getBoundingClientRect(), v = S.view;
@@ -549,13 +545,6 @@ function newBlank() {
   addVariant({ name: 'Blank', note: '', place: { macro: { x: 228.12, y: 23.76, orient: 'R0' } }, decaps: {}, straps: [], est: {} });
 }
 $('#bNew').onclick = newBlank;
-$('#bPanel').onclick = () => {
-  const m = document.querySelector('main'); m.classList.toggle('wide');
-  $('#bPanel').textContent = m.classList.contains('wide') ? 'Show panel' : 'Hide panel';
-  try { localStorage.setItem('fp.wide', m.classList.contains('wide') ? '1' : ''); } catch (e) {}
-  setTimeout(() => { fit(); draw(); }, 30);
-};
-try { if (localStorage.getItem('fp.wide')) { document.querySelector('main').classList.add('wide'); $('#bPanel').textContent = 'Show panel'; } } catch (e) {}
 $('#bFull').onclick = async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
