@@ -368,7 +368,7 @@ function draw() {
       const fs = Math.max(2.4, Math.min(8, Math.min(w / (ins.name.length * 0.62 + 1), h / 2.6)));
       g.push(text(x + w / 2, y + h / 2 + fs * 0.1, ins.name === 'macro' ? 'radio_digital' : ins.name, fs, `text-anchor="middle" fill="var(--ink)" font-weight="600"`));
       if (h > fs * 2.4) g.push(text(x + w / 2, y + h / 2 - fs * 0.95, `${c.label || c.cell} · ${ins.pl.orient}`, fs * 0.55, `text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"`));
-      if (c.inst === 'macro') g.push(text(x + w / 2, y + h / 2 - 13, 'outline real (260 × 190); pin positions estimated from pin_order.cfg', 3.4, 'text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"'));
+      if (c.inst === 'macro') g.push(text(x + w / 2, y + h / 2 - 13, (Math.abs(ins.w - 260) > 1e-6 ? `reshaped ${f1(ins.w)} × ${f1(ins.h)} (same area; needs a re-harden)` : 'outline real (260 × 190)') + '; pin positions estimated from pin_order.cfg', 3.4, 'text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"'));
     }
     g.push('</g>');
     out.push(g.join(''));
@@ -542,11 +542,28 @@ function renderSel() {
       <div class="row"><label class="f">x<input type="number" step="0.5" id="sx" value="${f1(p.x)}"></label><label class="f">y<input type="number" step="0.5" id="sy" value="${f1(p.y)}"></label>
       ${c.estimate ? `<label class="f">w<input type="number" step="0.5" id="sw" value="${f1(est.w)}"></label><label class="f">h<input type="number" step="0.5" id="sh" value="${f1(est.h)}"></label>` : ''}</div>
       <div class="orients edit-only">${Object.keys(FP.ORIENTS).map(o => `<button class="btn" data-or="${o}" aria-pressed="${p.orient === o}">${o}</button>`).join('')}</div>
-      <dl class="kv"><dt>placed size</dt><dd>${ins ? `${f1(ins.rect[2])} × ${f1(ins.rect[3])} µm` : '-'}</dd><dt>area</dt><dd>${f1(c.estimate ? est.w * est.h : c.w * c.h)} µm²</dd>
+      ${c.reshape ? `<label class="f">width (height follows, area ${f1(c.w * c.h)} µm²)<input type="range" id="mwR" min="220" max="480" step="0.5" value="${f1(est.w)}"></label>
+      <div class="row edit-only"><label class="f">w<input type="number" step="0.5" min="220" max="480" id="mw" value="${f1(est.w)}"></label><label class="f">h<input type="number" id="mh" value="${(c.w * c.h / est.w).toFixed(2)}" disabled></label><button class="btn" id="mReset">260 × 190</button></div>` : ''}
+      <dl class="kv"><dt>placed size</dt><dd>${ins ? `${f1(ins.rect[2])} × ${f1(ins.rect[3])} µm` : '-'}</dd><dt>area</dt><dd>${f1(c.estimate ? est.w * est.h : c.w * c.h)} µm²</dd>${c.reshape && Math.abs(est.w - c.w) > 1e-6 ? '<dt>note</dt><dd>needs a re-harden at this shape</dd>' : ''}
       <dt>status</dt><dd>${c.estimate ? 'estimate: not laid out yet (hatched)' : p.parked ? 'parked, not placed' : 'GDS outline'}</dd></dl>
       ${p.parked ? '' : `<div class="row edit-only"><button class="btn" id="bPark">Park it (unplace)</button></div>`}`;
     const setXY = () => { const x = +$('#sx').value, y = +$('#sy').value; if (isFinite(x) && isFinite(y)) { v.place[n] = Object.assign({}, p, { x, y }); delete v.place[n].parked; touch(); } };
     $('#sx').onchange = setXY; $('#sy').onchange = setXY;
+    if (c.reshape) {
+      const setW = (w, live) => {
+        w = Math.min(480, Math.max(220, snap(+w))); if (!isFinite(w)) return;
+        const A = c.w * c.h, o = viewVariant(v).place[n], old = est.w, oh = A / old;
+        const [pw0, ph0] = FP.placedSize(o.orient, old, oh), [pw1, ph1] = FP.placedSize(o.orient, w, A / w);
+        v.est = v.est || {}; v.est[n] = { w, h: +(A / w).toFixed(4) };
+        v.place[n] = { x: +(o.x + pw0 - pw1).toFixed(3), y: +(o.y + ph0 - ph1).toFixed(3), orient: o.orient };   // keep the top-right corner
+        est.w = w;
+        if (live) { draw(); renderChecks(); $('#mw').value = f1(w); $('#mh').value = (A / w).toFixed(2); } else touch();
+      };
+      $('#mwR').oninput = () => setW($('#mwR').value, true);
+      $('#mwR').onchange = () => setW($('#mwR').value, false);
+      $('#mw').onchange = () => setW($('#mw').value, false);
+      $('#mReset').onclick = () => setW(260, false);
+    }
     if (c.estimate) { const se = () => { v.est = v.est || {}; v.est[n] = { w: Math.max(1, +$('#sw').value), h: Math.max(1, +$('#sh').value) }; touch(); }; $('#sw').onchange = se; $('#sh').onchange = se; }
     el.querySelectorAll('[data-or]').forEach(b => b.onclick = () => setOrient(n, b.dataset.or));
     const bp = $('#bPark'); if (bp) bp.onclick = () => { delete v.place[n]; touch(); };

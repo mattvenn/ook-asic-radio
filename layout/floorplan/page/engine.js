@@ -61,7 +61,7 @@
     N.push('rst_n', 'clk');
     N.forEach((n, i) => { mpins[n] = { layer: 'met2', x: +((i + 1) * 260 / 83).toFixed(2), y: 190, est: true }; });
     const list = [
-      { inst: 'macro', cell: 'radio_digital', w: 260, h: 190, halo: 5, pins: mpins, m4: [[0, 0, 260, 190]], group: 'dig', label: 'radio_digital' },
+      { inst: 'macro', cell: 'radio_digital', w: 260, h: 190, reshape: true, halo: 5, pins: mpins, m4: [[0, 0, 260, 190]], group: 'dig', label: 'radio_digital' },
       real('xchain', 'lna_chain', { zones: chainZones }),
       real('xdet', 'log_det'), real('xlpf', 'lpf_rc'),
       real('xavg', 'avg_sc'),
@@ -152,14 +152,15 @@
       const p = (v.place || {})[n];
       if (!p) continue;
       let w = c.w, h = c.h;
-      if (c.estimate && v.est && v.est[n]) { w = v.est[n].w; h = v.est[n].h; }
+      const scaled = c.estimate || c.reshape;      // estimated blocks, and the macro (re-hardened at a new aspect ratio, same area)
+      if (scaled && v.est && v.est[n]) { w = v.est[n].w; h = c.reshape ? c.w * c.h / w : v.est[n].h; }
       const pl = { x: p.x, y: p.y, orient: p.orient || 'R0' };
       const [pw, ph] = placedSize(pl.orient, w, h);
       const rect = [pl.x, pl.y, pw, ph];
       const pins = {};
-      const sx = c.estimate ? w / c.w : 1, sy = c.estimate ? h / c.h : 1;
+      const sx = scaled ? w / c.w : 1, sy = scaled ? h / c.h : 1;
       for (const [pn, pp] of Object.entries(c.pins)) pins[pn] = Object.assign({}, pp, { at: mapPt(pl, w, h, pp.x * sx, pp.y * sy) });
-      const m4 = (c.m4 || []).map(r => c.estimate ? [0, 0, w, h] : r).map(r => mapRect(pl, w, h, r));
+      const m4 = (c.m4 || []).map(r => scaled ? [0, 0, w, h] : r).map(r => mapRect(pl, w, h, r));
       const zones = {};
       for (const [zn, z] of Object.entries(c.zones || {})) zones[zn] = mapRect(pl, w, h, z);
       inst[n] = { name: n, cat: c, pl, w, h, rect, pins, m4, zones,
@@ -187,7 +188,7 @@
   function channelRect(tile, R, s) {
     const m = R.inst.macro;
     if (!s.channel || !m) return null;
-    const x1 = m.rect[0] + 135;    // to the last north pin (clk, ~132 um into the macro)
+    const x1 = Math.max(m.rect[0] + 3, m.pins.clk.at[0] + 3);    // to the last north pin (clk)
     return [15, tile.h - s.channel, Math.max(0, x1 - 15), s.channel];
   }
 
@@ -378,7 +379,8 @@
       const [k, m] = ORIENTS[i.pl.orient];
       const b = { inst: i.name, cell: i.cat.cell, x: +i.rect[0].toFixed(2), y: +i.rect[1].toFixed(2), orient: i.pl.orient,
         rot: k * 90, mirror: m, estimate: !!i.cat.estimate };
-      if (i.cat.estimate) { b.w = i.w; b.h = i.h; }
+      if (i.cat.estimate || (i.cat.reshape && Math.abs(i.w - i.cat.w) > 1e-6)) { b.w = +i.w.toFixed(3); b.h = +i.h.toFixed(3); }
+      if (i.cat.reshape && Math.abs(i.w - i.cat.w) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um (same area as ${i.cat.w} x ${i.cat.h})`;
       blocks.push(b);
     }
     for (const d of R.decaps) blocks.push({ inst: d.base, part: d.idx + 1, cell: d.def.cell, x: d.rect[0], y: d.rect[1], w: d.rect[2], h: d.rect[3], orient: 'R0', rot: 0, mirror: false, estimate: true });
@@ -395,7 +397,7 @@
       const n = b.inst;
       if (!cat[n]) continue;
       v.place[n] = { x: +b.x, y: +b.y, orient: ORIENTS[b.orient] ? b.orient : 'R0' };
-      if (cat[n].estimate && b.w && b.h) v.est[n] = { w: +b.w, h: +b.h };
+      if ((cat[n].estimate || cat[n].reshape) && b.w && b.h) v.est[n] = { w: +b.w, h: +b.h };
     }
     return v;
   }
