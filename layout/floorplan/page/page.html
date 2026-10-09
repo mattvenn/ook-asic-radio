@@ -77,7 +77,11 @@ textarea { width: 100%; font: 12px var(--mono); resize: vertical }
 .orients button { padding: 3px 0; font: 12px var(--mono) }
 .orients button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
 .checks { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none }
-.check { display: grid; grid-template-columns: 44px 1fr auto; gap: 2px 8px; align-items: baseline; padding: 6px 8px; border-radius: 3px; background: var(--die); border-left: 3px solid var(--info) }
+.check { position: relative; cursor: help; display: grid; grid-template-columns: 44px 1fr auto; gap: 2px 8px; align-items: baseline; padding: 6px 8px; border-radius: 3px; background: var(--die); border-left: 3px solid var(--info) }
+.check .why { display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 6; background: var(--ink); color: var(--bg); padding: 8px 10px; border-radius: 3px; font-size: 12px; line-height: 1.45; box-shadow: 0 4px 14px rgb(0 0 0 / .25) }
+.check .why b { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 2px; opacity: .75 }
+.check:hover .why, .check:focus .why { display: block }
+.check:hover, .check:focus { outline: 1px solid var(--line) }
 .check.pass { border-left-color: var(--pass) } .check.warn { border-left-color: var(--warn) } .check.fail { border-left-color: var(--fail) }
 .check .st { font: 600 11px var(--mono); text-transform: uppercase }
 .check.pass .st { color: var(--pass) } .check.warn .st { color: var(--warn) } .check.fail .st { color: var(--fail) } .check.info .st { color: var(--info) }
@@ -592,13 +596,30 @@ function renderSel() {
     $('#bStDel').onclick = () => { v.straps.splice(S.sel.id, 1); S.sel = null; touch(); };
   }
 }
+// Why each rule exists (docs/floorplan_spec.md "Rules, ranked" and the results behind it)
+const WHY = {
+  'Chain input far from the macro': 'The macro runs at 10 MHz and its 43rd / 44th harmonics (430 / 440 MHz) fall in the chain\'s 330-560 MHz band; the correlator runs all the time in RX. Anything coupled into the chain input is amplified ~80 dB, so the input section and the ua[0] / ua[1] pad wires should be as far as possible from the macro, its supply and the TT-pin wiring. Measured from the input section + pad wires to the macro halo and the TT channel / clk wire. Fails if a switching macro wire (comp_in, phi, clk, trim) crosses the chain.',
+  'Late stages away from the input': 'With ~80 dB of gain, output-to-input coupling above ~0.1 fF (asymmetric) makes the chain peak or oscillate: at the ss 10 °C corner 0.2 fF gives +2.8 dB of peaking near 600 MHz and 0.5 fF oscillates. Stages 4-6, log_det\'s t4-t6 inputs and their tap wires carry the large signal, so they must stay away from the pads, the input wires and stage 1.',
+  'Clock edges off the RX': 'sc_phi1 / sc_phi2 (to avg_sc), comp_in (from comp_ct) and clk switch during RX. Their edges couple into the chain and the detector, which see µV-level signals. Fails if one of these wires crosses the chain or log_det; warns when it passes closer than the threshold. Also keep the phi lines off avg_sc\'s Cavg top plates.',
+  'Short analog path': 'det -> lpf -> avg_sc / comp_ct and r2r -> Ctrim -> comp.trim are slow, high-impedance nodes where tenths of a mV matter (the trim step is ~0.07 mV per LSB). Short wires keep pickup, leakage and parasitic capacitance down. The value is the sum of those Manhattan lengths.',
+  'TX at ua[3] / ua[4]': 'The drivers deliver about +4 dBm at 434 MHz, and the driver -> pad wires carry the full output current (met3, 2.5 µm wide for electromigration). Long ones add loss and inductance, and act as an antenna inside the tile.',
+  'Bias next to the chain': 'ib_chain (60 µA into the chain\'s current mirror) and vcm (the input common mode, through Rb) set the gain and operating point of the most sensitive block. Long wires pick up noise and coupling; ib_det and ib_comp are less critical and only reported.',
+  'Decap VAPWR': 'About 50 pF on VAPWR (3.3 V) keeps ~1 V peak-to-peak of 434 MHz TX ripple off the chip\'s shared 3.3 V net, which other projects use and which would also radiate. At 30 pF the ripple rises from ~0.05 to ~0.15 V; that is the lever if area runs out. Not laid out yet: area is the estimate.',
+  'Decap VDPWR': 'About 30 pF on VDPWR (1.8 V) holds up the RX and digital supply; with 30 pF the chain stays stable with up to 5 nH of supply / ground inductance. Not laid out yet: area is the estimate.',
+  'TX away from the RX input': 'Soft rule: the radio is half-duplex and the TX is stopped in RX (ring off, both arms low), so TX / RX distance only matters for leakage while transmitting. Never at the cost of rules 1 and 2.',
+  'Overlaps and spacing': 'Blocks need about 2-3 µm between them for guard rings and wiring (the keep-out setting). Nothing may overlap another block, sit outside the tile, or enter the macro\'s 5 µm halo.',
+  'TT pin channel clear': 'The 42 TT digital pins (top edge, x 15-131) connect to the macro\'s north pins. About 42 wires run horizontally above the analog area and drop into the macro from above, which needs a channel of ~12 µm. If the macro\'s top is closer to the tile edge than that, its north pins can\'t be reached.',
+  'Power straps': 'Power reaches the TT PDN through vertical met4 straps (≥ 1.2 µm wide, nearly full height); met5 is reserved for the TT PDN. A strap can\'t cross met4 shapes or MIM top plates (cap_mim_m3_1), nor the macro, which routes up to met4. Each net (VGND, VAPWR, VDPWR) needs at least one; turn on the met4 / MIM layer to see what blocks a lane.',
+  'Unplaced blocks': 'Blocks still in the parking row under the tile are left out of every check. Place them to have them scored.',
+};
+
 function renderChecks() {
   const el = $('#secChecks');
   if (!last) { el.innerHTML = '<h2>Checklist</h2><p class="empty">Rules appear once a variant is open.</p>'; return; }
   const cs = last.checks, n = (s) => cs.filter(c => c.status === s).length;
   el.innerHTML = `<h2>Checklist <span class="meta">ranked rules, live</span></h2>
     <div class="summary"><span style="color:var(--fail)"><b>${n('fail')}</b> fail</span><span style="color:var(--warn)"><b>${n('warn')}</b> warn</span><span style="color:var(--pass)"><b>${n('pass')}</b> pass</span></div>
-    <ol class="checks">${cs.map(c => `<li class="check ${c.status}">${badge(c.status)}<span class="t">${c.rule}. ${esc(c.title)}</span><span class="v">${esc(c.value)}</span><span class="d">${esc(c.detail)}</span></li>`).join('')}</ol>`;
+    <ol class="checks">${cs.map(c => `<li class="check ${c.status}" tabindex="0">${badge(c.status)}<span class="t">${c.rule}. ${esc(c.title)}</span><span class="v">${esc(c.value)}</span><span class="d">${esc(c.detail)}</span>${WHY[c.title] ? `<div class="why" role="tooltip"><b>Why</b>${esc(WHY[c.title])}</div>` : ''}</li>`).join('')}</ol>`;
 }
 function renderArea() {
   const el = $('#secArea');
