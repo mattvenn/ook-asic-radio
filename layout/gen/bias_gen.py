@@ -159,14 +159,14 @@ def mirror(b, x0, y0):
     b.rect('m2', spine_c)
     b.label('m2', bars[0], 'pr')
     b.label('m2', spine_c, 'ib_chain')
-    return dict(ring=rg, pr=spine_p, ib_chain=spine_c,
+    return dict(ring=rg, pr=spine_p, ib_chain=spine_c, ib_chain_bus=rows[2]['ys']['ib_chain'],
                 ib_det=rows[2]['ys']['ib_det'], ib_comp=rows[2]['ys']['ib_comp'], x_out=xr + 1.0)
 
 
 # small devices (rows.py): P row on VDD, N row on VSS. M1 / M2 (OTA pair, source tail)
 # and Mn (source x, to rref) have signal sources: single fingers with a named strip net
 # (rows.py's pass-device roles), the nets side by side; Mn is 4 parallel W 5 fingers.
-RNETS = {'en': Net(io='L'), 'enb': Net(), 'pb': Net(io='R'), 'tail': Net(), 'd1': Net(),
+RNETS = {'en': Net(io='L', pin=False), 'enb': Net(), 'pb': Net(io='R'), 'tail': Net(), 'd1': Net(),
          'vref': Net(io='R'), 'x': Net(io='R'), 'ota': Net(io='L'), 'pr': Net(io='L'),
          'dsw': Net(io='R'), 'tsw': Net(io='R')}
 
@@ -221,6 +221,8 @@ CGAP = 2.0              # bottom plate to bottom plate (capm.2b 1.2 / magic capm
 M3CAP = 1.2             # bottom plate to unrelated met3
 RAIL = 1.5
 LANE_V1 = (0.07, 0.085)  # via1 enclosure in a 0.4 column / 0.5 lane
+PIN_XY = {'ib_chain': (28.18, 48.82), 'vcm': (31.32, 48.82), 'ib_det': (79.22, 48.82),   # pins.md
+          'ib_comp': (79.97, 48.07), 'en': (2.05, 0.25)}
 INTERNAL = ('pb', 'vref', 'x', 'dsw', 'tsw', 'ota', 'pr')    # rows io nets that are not block pins
 
 
@@ -233,8 +235,9 @@ def make():
         track heights, met1 columns rise / fall to the resistor heads.
       top band: the mirror array on the middle VDD rail, under Cc + 2 x Cvcm.
       VSS rails at the bottom and the top (the MIM bottom plates abut them), VDD in the
-      middle. Pins: en (left, met3), ib_chain / ib_det / ib_comp (right, met2), vcm
-      (right, met3), VDD (middle rail), VSS (both rails)."""
+      middle. Pins (floorplan, layout/floorplan/pins.md): en (south, met2), ib_chain /
+      ib_det / vcm (north, met2 / met2 / met4), ib_comp (east at the top corner, met2),
+      VDD (middle rail), VSS (both rails)."""
     b = Block('bias_gen')
     pin0 = b.pin
     b.pin = lambda lay, bx, name: (b.label(lay, bx, name) if name in INTERNAL else pin0(lay, bx, name))
@@ -365,10 +368,6 @@ def make():
     for c in caps_t[1:]:
         mim(b, c, s1)
     b.rect('m4', s1)
-    pin_v = box(x_r - 0.8, s1.bottom, x_r, s1.top)
-    b.rect('m3', pin_v)
-    b.via('via3', pin_v)
-    b.pin('m3', pin_v, 'vcm')
     # vcm route: lane -> zone landing (met2 / met3 / met4) -> riser -> under the top caps
     # (met4 below their plates) to the cap0/1 gap -> up to the strip
     lv = box(X_VCM[0], yv0, X_VCM[1], lanes['vcm'][1])
@@ -388,15 +387,51 @@ def make():
     b.rect('m1', box(x_l, ybot - RAIL, x_l + 0.5, plate_t_top + RAIL))      # top VSS rail <-> bottom
     # top plates' met3 up to the top rail: they abut it (plate top = rail bottom)
 
-    # ---- mirror outputs to the right edge (met2 pins)
-    for n in ('ib_det', 'ib_comp'):
-        y0, y1 = mt[n]
-        b.rect('m2', box(mt['x_out'] - 0.5, y0, x_r, y1))
-        b.pin('m2', box(x_r - 0.5, y0, x_r, y1), n)
-    sc = mt['ib_chain']
-    yc0 = snap(sc.center().y - 0.2)
-    b.rect('m2', box(sc.left, yc0, x_r, yc0 + 0.4))
-    b.pin('m2', box(x_r - 0.5, yc0, x_r, yc0 + 0.4), 'ib_chain')
+    # ---- pins (floorplan, layout/floorplan/pins.md; x / y below in the block's own frame,
+    # lower-left = 0). The top VSS rail is the north edge: met2 pins cross it through gaps
+    # in its met2 (met1 / met3 stay whole).
+    ox, oy = x_l, ybot - RAIL                            # bbox lower-left
+    ytop_b = plate_t_top + RAIL                          # north edge
+    yr0 = plate_t_top                                    # rail bottom
+
+    def north_m2(x, y_from, name, w=0.4):
+        xa = snap(ox + x - w / 2)
+        b.clear(('m2', 'via1', 'via2'), box(xa - 0.3, yr0, xa + w + 0.3, ytop_b))
+        b.rect('m2', box(xa, y_from, xa + w, ytop_b))
+        b.pin('m2', box(xa, ytop_b - 0.5, xa + w, ytop_b), name)
+        return xa
+
+    # ib_chain (28.18, N): up from the mirror's row-2 ib_chain bus under Cc / Cvcm (met2 is
+    # free there) through the rail
+    north_m2(PIN_XY['ib_chain'][0], mt['ib_chain_bus'][0], 'ib_chain')
+    # vcm (31.32, N): the Cvcm top-plate strip (met4) straight up over the rail (met4: met3
+    # can't come within 1.34 of the caps' capm)
+    xv = snap(ox + PIN_XY['vcm'][0] - 0.3)
+    b.rect('m4', box(xv, s1.top - 0.1, xv + 0.6, ytop_b))
+    b.pin('m4', box(xv, ytop_b - 0.5, xv + 0.6, ytop_b), 'vcm')
+    # ib_det (79.22, N) and ib_comp (east edge, 48.07: in the rail's height) up the right
+    # margin (clear of the caps): ib_comp on the outside column, ib_det inside it. ib_comp's
+    # bus is above ib_det's, so it hops ib_det's column on met1 (free in the margin).
+    (d0, d1), (c0, c1) = mt['ib_det'], mt['ib_comp']
+    xd = north_m2(PIN_XY['ib_det'][0], d0, 'ib_det')
+    b.rect('m2', box(mt['x_out'] - 0.5, d0, xd + 0.4, d1))
+    xc = snap(x_r - 0.4)
+    yc = snap(oy + PIN_XY['ib_comp'][1])
+    hop = (snap(xd - 0.3 - 0.4), xc)                     # met2 off / on, either side of ib_det
+    b.rect('m2', box(mt['x_out'] - 0.5, c0, hop[0] + 0.4, c1))
+    b.rect('m1', box(hop[0], c0, x_r, c1))
+    for xh in hop:
+        b.via('via1', box(xh, c0, xh + 0.4, c1), enc=LANE_V1)
+    b.clear(('m2', 'via1', 'via2'), box(xc - 0.3, yr0, x_r, ytop_b))
+    b.rect('m2', box(xc, c0, x_r, yc + 0.2))
+    b.pin('m2', box(xc, yc - 0.2, x_r, yc + 0.2), 'ib_comp')
+    # en (2.05, S): from its channel track's left end (x 0, met3) down on met2 (via2) past
+    # the lower tracks (met3: ota / pr run out to the left edge) through the bottom rail
+    te = tr['en']
+    b.via('via2', box(0, te['y0'], 0.4, te['y1']), enc=(0.085, 0.065))
+    b.clear(('m2', 'via1', 'via2'), box(-0.3, oy, 0.7, ybot))
+    b.rect('m2', box(0, oy, 0.4, te['y1']))
+    b.pin('m2', box(0, oy, 0.4, oy + 0.5), 'en')
     print(f'bias_gen: {x_r - x_l:.1f} x {plate_t_top + RAIL - (ybot - RAIL):.1f} um')
     return b
 
