@@ -118,7 +118,9 @@ def main():
     # each strap reaches down / up to its own bar. The macro's met4 stripes join the same bars and
     # become power pins too (the PDN's met5 lands on them directly).
     BAR = {'VAPWR': (0.4, 1.3), 'VDPWR': (1.7, 2.6), 'VGND': (223.4, 224.4)}
-    joined = [s for s in FP['straps'] if s['x'] > 200]
+    # the VDPWR bar runs the full width (under the chain and the ua pads, on met3): it joins the
+    # west VDPWR strap too, and feeds bias_gen from below
+    joined = [s for s in FP['straps'] if s['x'] > 200 or s['net'] == 'VDPWR']
     for s in FP['straps']:
         y0, y1 = STRAP_Y0, STRAP_Y1
         if s in joined:
