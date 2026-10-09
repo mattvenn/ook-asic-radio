@@ -1,6 +1,6 @@
 {
- "variant": "matt layout 4 (handoff, chain folded)",
- "note": "Copy of matt layout 4 (handoff) with the pins of the macro, bias_gen, comp_ct, avg_sc, lpf_rc, r2r, Ctrim, dbg_tg, log_det det / ibias_det and the chain's vcm / ibias moved to the block edge facing what they connect to (orange rings). Floorplanning only: the blocks need a re-layout and the macro a new pin_order.cfg to match. lna_chain re-laid out as a U fold (145.36 x 70.47 um, R180 at 13.14, 6.5): input section and stages 1-2 along the bottom over ua[0]/ua[1], stages 3-6 back along the top across a 14 um guard-ring moat; xdecd part 1 trimmed to 10.64 um wide.",
+ "variant": "matt layout 5 (routing review)",
+ "note": "matt layout 4 (handoff, chain folded) with the 2026-10-09 routing review: comp_ct flipped to MYR90 (out at its tile-south-east corner without a long internal run; ibias / trim over the corridor west of Ctrim and over Ctrim n); avg_sc sc_phi1/2 on its north edge (clocks leave over the top, away from comp inp / inn); macro pins re-ordered: trim_out[i] level with r2r b_i (straight runs), comp_in in the gap under r2r, sc_phi then dbg_en / tx_en_n / tx_en just under the TT group (the enables run west in the TT channel). Block positions unchanged. lpf_rc, log_det, bias_gen, dbg_tg pins as laid out.",
  "tile": {
   "w": 493.12,
   "h": 225.76
@@ -64,9 +64,9 @@
    "cell": "comp_ct",
    "x": 137.5,
    "y": 116.6,
-   "orient": "R90",
-   "rot": 90,
-   "mirror": false,
+   "orient": "MYR90",
+   "rot": 270,
+   "mirror": true,
    "estimate": false
   },
   {
@@ -297,7 +297,7 @@
  "pins_moved": {
   "xdet": {
    "det": [
-    1,
+    0.2,
     0.25
    ],
    "ibias_det": [
@@ -312,16 +312,16 @@
    ],
    "out": [
     64.95,
-    34.02
+    33.9
    ]
   },
   "xdbg": {
    "a": [
-    3.7,
+    1,
     0.25
    ],
    "b": [
-    4.7,
+    5.55,
     0.25
    ],
    "en": [
@@ -339,269 +339,269 @@
     20.15
    ],
    "phi1": [
-    77.1,
-    19.15
+    75.35,
+    30.15
    ],
    "phi2": [
-    77.1,
-    1
+    74.35,
+    30.15
    ]
   },
   "xcomp": {
-   "inp": [
-    31.02,
+   "inn": [
+    37.85,
     41.72
    ],
-   "inn": [
-    35.6,
+   "inp": [
+    42.45,
     41.72
    ],
    "out": [
-    1,
+    72.45,
     0.25
    ],
-   "trim": [
-    0.25,
-    19.47
-   ],
    "ibias": [
-    0.25,
-    17.97
+    73.2,
+    22.47
+   ],
+   "trim": [
+    73.2,
+    19.47
    ]
   },
   "macro": {
    "comp_in": [
     199.75,
-    73.72
+    86.02
    ],
    "sc_phi1": [
     199.75,
-    148.1
+    156.74
    ],
    "sc_phi2": [
     199.75,
-    147.1
+    155.38
    ],
    "rx_en": [
     199.75,
-    6.6
+    7.14
    ],
    "dbg_en": [
     199.75,
-    86.47
+    158.1
    ],
    "tx_en": [
     199.75,
-    103.26
+    160.82
    ],
    "tx_en_n": [
     199.75,
-    92.47
+    159.46
    ],
    "clk": [
     199.75,
-    178
+    162.18
    ],
    "trim_out[0]": [
     199.75,
-    52.74
+    94.18
    ],
    "trim_out[1]": [
     199.75,
-    67.74
+    109.14
    ],
    "trim_out[2]": [
     199.75,
-    75.24
+    115.94
    ],
    "trim_out[3]": [
     199.75,
-    82.74
+    124.1
    ],
    "trim_out[4]": [
     199.75,
-    90.24
+    130.9
    ],
    "trim_out[5]": [
     199.75,
-    97.74
+    139.06
    ],
    "trim_out[6]": [
     199.75,
-    105.24
+    145.86
    ],
    "trim_out[7]": [
     199.75,
-    126.47
+    154.02
    ],
    "uio_oe[7]": [
     199.75,
-    179
+    163.54
    ],
    "uio_oe[6]": [
     199.75,
-    180
+    164.9
    ],
    "uio_oe[5]": [
     199.75,
-    181
+    166.26
    ],
    "uio_oe[4]": [
     199.75,
-    182
+    167.62
    ],
    "uio_oe[3]": [
     199.75,
-    183
+    168.98
    ],
    "uio_oe[2]": [
     199.75,
-    184
+    170.34
    ],
    "uio_oe[1]": [
     199.75,
-    185
+    171.7
    ],
    "uio_oe[0]": [
     199.75,
-    186
+    173.06
    ],
    "uio_out[7]": [
     199.75,
-    187
+    174.42
    ],
    "uio_out[6]": [
     199.75,
-    188
+    175.78
    ],
    "uio_out[5]": [
     199.75,
-    189
+    177.14
    ],
    "uio_out[4]": [
     199.75,
-    190
+    178.5
    ],
    "uio_out[3]": [
     199.75,
-    191
+    179.86
    ],
    "uio_out[2]": [
     199.75,
-    192
+    181.22
    ],
    "uio_out[1]": [
     199.75,
-    193
+    182.58
    ],
    "uio_out[0]": [
     199.75,
-    194
+    183.94
    ],
    "uo_out[7]": [
     199.75,
-    195
+    185.3
    ],
    "uo_out[6]": [
     199.75,
-    196
+    186.66
    ],
    "uo_out[5]": [
     199.75,
-    197
+    188.02
    ],
    "uo_out[4]": [
     199.75,
-    198
+    189.38
    ],
    "uo_out[3]": [
     199.75,
-    199
+    190.74
    ],
    "uo_out[2]": [
     199.75,
-    200
+    192.1
    ],
    "uo_out[1]": [
     199.75,
-    201
+    193.46
    ],
    "uo_out[0]": [
     199.75,
-    202
+    194.82
    ],
    "uio_in[7]": [
     199.75,
-    203
+    196.18
    ],
    "uio_in[6]": [
     199.75,
-    204
+    197.54
    ],
    "uio_in[5]": [
     199.75,
-    205
+    198.9
    ],
    "uio_in[4]": [
     199.75,
-    206
+    200.26
    ],
    "uio_in[3]": [
     199.75,
-    207
+    201.62
    ],
    "uio_in[2]": [
     199.75,
-    208
+    202.98
    ],
    "uio_in[1]": [
     199.75,
-    209
+    204.34
    ],
    "uio_in[0]": [
     199.75,
-    210
+    205.7
    ],
    "ui_in[7]": [
     199.75,
-    211
+    207.06
    ],
    "ui_in[6]": [
     199.75,
-    212
+    208.42
    ],
    "ui_in[5]": [
     199.75,
-    213
+    209.78
    ],
    "ui_in[4]": [
     199.75,
-    214
+    211.14
    ],
    "ui_in[3]": [
     199.75,
-    215
+    212.5
    ],
    "ui_in[2]": [
     199.75,
-    216
+    213.86
    ],
    "ui_in[1]": [
     199.75,
-    217
+    215.22
    ],
    "ui_in[0]": [
     199.75,
-    218
+    216.58
    ],
    "rst_n": [
     199.75,
-    219
+    217.94
    ]
   },
   "xbias": {
    "en": [
-    2.05,
+    2,
     0.25
    ],
    "ib_chain": [
@@ -617,7 +617,7 @@
     48.82
    ],
    "ib_comp": [
-    79.97,
+    80.02,
     48.07
    ]
   },

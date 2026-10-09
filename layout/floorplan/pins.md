@@ -1,6 +1,6 @@
 # Floorplan: block positions and pin positions
 
-Generated from the floorplan page's variant **matt layout 4 (handoff, chain folded)** by `layout/floorplan/page/pinreport.js`; the placements are also in `floorplan.json` next to this file.
+Generated from the floorplan page's variant **matt layout 5 (routing review)** by `layout/floorplan/page/pinreport.js`; the placements are also in `floorplan.json` next to this file.
 
 - Coordinates in µm. **Placement**: lower-left of the placed (transformed) bbox in the tile, and the GDS orientation (KLayout `DCplxTrans(1, rot, mirror, …)`, mirror about x first).
 - **Pins**: in each block's *own* frame (its bbox lower-left = 0, 0, before the orientation), grouped by the block's own edge. "moved" = a new position for the re-layout / re-harden; the others are where the GDS has them now. The tile direction each edge faces after placement is given in brackets.
@@ -13,7 +13,7 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 | 1. Chain input far from the macro | pass | 119 µm |
 | 2. Late stages away from the input | fail | 14 µm |
 | 3. Clock edges off the RX | pass | 25 µm |
-| 4. Short analog path | pass | 48 µm |
+| 4. Short analog path | pass | 49 µm |
 | 5. TX at ua[3] / ua[4] | fail | 121 µm |
 | 6. Bias next to the chain | pass | 11 µm |
 | 7. Decap VAPWR | warn | 97 % |
@@ -33,63 +33,63 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 
 | pin | x | y | |
 |---|---|---|---|
-| rx_en | 199.75 | 6.60 | moved |
-| trim_out[0] | 199.75 | 52.74 | moved |
-| trim_out[1] | 199.75 | 67.74 | moved |
-| comp_in | 199.75 | 73.72 | moved |
-| trim_out[2] | 199.75 | 75.24 | moved |
-| trim_out[3] | 199.75 | 82.74 | moved |
-| dbg_en | 199.75 | 86.47 | moved |
-| trim_out[4] | 199.75 | 90.24 | moved |
-| tx_en_n | 199.75 | 92.47 | moved |
-| trim_out[5] | 199.75 | 97.74 | moved |
-| tx_en | 199.75 | 103.26 | moved |
-| trim_out[6] | 199.75 | 105.24 | moved |
-| trim_out[7] | 199.75 | 126.47 | moved |
-| sc_phi2 | 199.75 | 147.10 | moved |
-| sc_phi1 | 199.75 | 148.10 | moved |
-| clk | 199.75 | 178.00 | moved |
-| uio_oe[7] | 199.75 | 179.00 | moved |
-| uio_oe[6] | 199.75 | 180.00 | moved |
-| uio_oe[5] | 199.75 | 181.00 | moved |
-| uio_oe[4] | 199.75 | 182.00 | moved |
-| uio_oe[3] | 199.75 | 183.00 | moved |
-| uio_oe[2] | 199.75 | 184.00 | moved |
-| uio_oe[1] | 199.75 | 185.00 | moved |
-| uio_oe[0] | 199.75 | 186.00 | moved |
-| uio_out[7] | 199.75 | 187.00 | moved |
-| uio_out[6] | 199.75 | 188.00 | moved |
-| uio_out[5] | 199.75 | 189.00 | moved |
-| uio_out[4] | 199.75 | 190.00 | moved |
-| uio_out[3] | 199.75 | 191.00 | moved |
-| uio_out[2] | 199.75 | 192.00 | moved |
-| uio_out[1] | 199.75 | 193.00 | moved |
-| uio_out[0] | 199.75 | 194.00 | moved |
-| uo_out[7] | 199.75 | 195.00 | moved |
-| uo_out[6] | 199.75 | 196.00 | moved |
-| uo_out[5] | 199.75 | 197.00 | moved |
-| uo_out[4] | 199.75 | 198.00 | moved |
-| uo_out[3] | 199.75 | 199.00 | moved |
-| uo_out[2] | 199.75 | 200.00 | moved |
-| uo_out[1] | 199.75 | 201.00 | moved |
-| uo_out[0] | 199.75 | 202.00 | moved |
-| uio_in[7] | 199.75 | 203.00 | moved |
-| uio_in[6] | 199.75 | 204.00 | moved |
-| uio_in[5] | 199.75 | 205.00 | moved |
-| uio_in[4] | 199.75 | 206.00 | moved |
-| uio_in[3] | 199.75 | 207.00 | moved |
-| uio_in[2] | 199.75 | 208.00 | moved |
-| uio_in[1] | 199.75 | 209.00 | moved |
-| uio_in[0] | 199.75 | 210.00 | moved |
-| ui_in[7] | 199.75 | 211.00 | moved |
-| ui_in[6] | 199.75 | 212.00 | moved |
-| ui_in[5] | 199.75 | 213.00 | moved |
-| ui_in[4] | 199.75 | 214.00 | moved |
-| ui_in[3] | 199.75 | 215.00 | moved |
-| ui_in[2] | 199.75 | 216.00 | moved |
-| ui_in[1] | 199.75 | 217.00 | moved |
-| ui_in[0] | 199.75 | 218.00 | moved |
-| rst_n | 199.75 | 219.00 | moved |
+| rx_en | 199.75 | 7.14 | moved |
+| comp_in | 199.75 | 86.02 | moved |
+| trim_out[0] | 199.75 | 94.18 | moved |
+| trim_out[1] | 199.75 | 109.14 | moved |
+| trim_out[2] | 199.75 | 115.94 | moved |
+| trim_out[3] | 199.75 | 124.10 | moved |
+| trim_out[4] | 199.75 | 130.90 | moved |
+| trim_out[5] | 199.75 | 139.06 | moved |
+| trim_out[6] | 199.75 | 145.86 | moved |
+| trim_out[7] | 199.75 | 154.02 | moved |
+| sc_phi2 | 199.75 | 155.38 | moved |
+| sc_phi1 | 199.75 | 156.74 | moved |
+| dbg_en | 199.75 | 158.10 | moved |
+| tx_en_n | 199.75 | 159.46 | moved |
+| tx_en | 199.75 | 160.82 | moved |
+| clk | 199.75 | 162.18 | moved |
+| uio_oe[7] | 199.75 | 163.54 | moved |
+| uio_oe[6] | 199.75 | 164.90 | moved |
+| uio_oe[5] | 199.75 | 166.26 | moved |
+| uio_oe[4] | 199.75 | 167.62 | moved |
+| uio_oe[3] | 199.75 | 168.98 | moved |
+| uio_oe[2] | 199.75 | 170.34 | moved |
+| uio_oe[1] | 199.75 | 171.70 | moved |
+| uio_oe[0] | 199.75 | 173.06 | moved |
+| uio_out[7] | 199.75 | 174.42 | moved |
+| uio_out[6] | 199.75 | 175.78 | moved |
+| uio_out[5] | 199.75 | 177.14 | moved |
+| uio_out[4] | 199.75 | 178.50 | moved |
+| uio_out[3] | 199.75 | 179.86 | moved |
+| uio_out[2] | 199.75 | 181.22 | moved |
+| uio_out[1] | 199.75 | 182.58 | moved |
+| uio_out[0] | 199.75 | 183.94 | moved |
+| uo_out[7] | 199.75 | 185.30 | moved |
+| uo_out[6] | 199.75 | 186.66 | moved |
+| uo_out[5] | 199.75 | 188.02 | moved |
+| uo_out[4] | 199.75 | 189.38 | moved |
+| uo_out[3] | 199.75 | 190.74 | moved |
+| uo_out[2] | 199.75 | 192.10 | moved |
+| uo_out[1] | 199.75 | 193.46 | moved |
+| uo_out[0] | 199.75 | 194.82 | moved |
+| uio_in[7] | 199.75 | 196.18 | moved |
+| uio_in[6] | 199.75 | 197.54 | moved |
+| uio_in[5] | 199.75 | 198.90 | moved |
+| uio_in[4] | 199.75 | 200.26 | moved |
+| uio_in[3] | 199.75 | 201.62 | moved |
+| uio_in[2] | 199.75 | 202.98 | moved |
+| uio_in[1] | 199.75 | 204.34 | moved |
+| uio_in[0] | 199.75 | 205.70 | moved |
+| ui_in[7] | 199.75 | 207.06 | moved |
+| ui_in[6] | 199.75 | 208.42 | moved |
+| ui_in[5] | 199.75 | 209.78 | moved |
+| ui_in[4] | 199.75 | 211.14 | moved |
+| ui_in[3] | 199.75 | 212.50 | moved |
+| ui_in[2] | 199.75 | 213.86 | moved |
+| ui_in[1] | 199.75 | 215.22 | moved |
+| ui_in[0] | 199.75 | 216.58 | moved |
+| rst_n | 199.75 | 217.94 | moved |
 
 ## xchain (lna_chain)
 
@@ -155,7 +155,7 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 
 | pin | x | y | |
 |---|---|---|---|
-| en | 2.05 | 0.25 | moved |
+| en | 2.00 | 0.25 | moved |
 | tail | 14.10 | 12.85 |  |
 | VSS | 15.18 | 0.75 |  |
 | d1 | 15.64 | 9.65 |  |
@@ -188,7 +188,7 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 
 | pin | x | y | |
 |---|---|---|---|
-| ib_comp | 79.97 | 48.07 | moved |
+| ib_comp | 80.02 | 48.07 | moved |
 
 ## xdet (log_det)
 
@@ -210,7 +210,6 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 
 | pin | x | y | |
 |---|---|---|---|
-| det | 1.00 | 0.25 | moved |
 | t4n | 12.77 | 7.99 |  |
 | t5p | 22.53 | 7.99 |  |
 | t5n | 33.59 | 7.99 |  |
@@ -221,6 +220,7 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 
 | pin | x | y | |
 |---|---|---|---|
+| det | 0.20 | 0.25 | moved |
 | t4p | 1.70 | 7.99 |  |
 | VSS | 0.50 | 15.51 |  |
 | t1p | 1.70 | 23.02 |  |
@@ -274,7 +274,7 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 
 | pin | x | y | |
 |---|---|---|---|
-| out | 64.95 | 34.02 | moved |
+| out | 64.95 | 33.90 | moved |
 
 ## xavg (avg_sc)
 
@@ -289,6 +289,8 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 | phi1b | 67.71 | 24.75 |  |
 | VDD | 68.52 | 29.65 |  |
 | phi2b | 68.91 | 25.55 |  |
+| phi2 | 74.35 | 30.15 | moved |
+| phi1 | 75.35 | 30.15 | moved |
 
 **S edge** (faces south in the tile; left → right, x):
 
@@ -300,16 +302,14 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 
 | pin | x | y | |
 |---|---|---|---|
-| phi2 | 77.10 | 1.00 | moved |
 | VSS | 68.52 | 15.55 |  |
-| phi1 | 77.10 | 19.15 | moved |
 | out | 77.10 | 20.15 | moved |
 | cs | 70.06 | 21.55 |  |
 
 ## xcomp (comp_ct)
 
 - Size: 73.45 × 41.97 (GDS)
-- Placement: x 137.50, y 116.60, R90 (rot 90, mirror false)
+- Placement: x 137.50, y 116.60, MYR90 (rot 270, mirror true)
 - Pins moved: 5
 
 **N edge** (faces west in the tile; left → right, x):
@@ -319,18 +319,17 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 | d1 | 18.65 | 33.31 |  |
 | tail | 27.30 | 29.32 |  |
 | vref | 28.60 | 31.71 |  |
-| inp | 31.02 | 41.72 | moved |
-| inn | 35.60 | 41.72 | moved |
 | d2 | 36.90 | 30.92 |  |
 | VDD | 37.00 | 41.22 |  |
+| inn | 37.85 | 41.72 | moved |
 | sa | 40.30 | 32.52 |  |
+| inp | 42.45 | 41.72 | moved |
 | sb | 44.45 | 28.52 |  |
 
 **S edge** (faces east in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| out | 1.00 | 0.25 | moved |
 | rdeg4 | 6.08 | 5.61 |  |
 | rdeg6 | 8.09 | 5.61 |  |
 | rdeg8 | 10.09 | 5.61 |  |
@@ -353,8 +352,9 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 | rdeg28 | 30.09 | 5.61 |  |
 | rdeg29 | 31.09 | 16.69 |  |
 | VSS | 37.00 | 19.72 |  |
+| out | 72.45 | 0.25 | moved |
 
-**W edge** (faces south in the tile; bottom → top, y):
+**W edge** (faces north in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -366,13 +366,13 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 | rdeg5 | 7.08 | 16.69 |  |
 | rdeg7 | 9.09 | 16.69 |  |
 | rdeg9 | 11.09 | 16.69 |  |
-| ibias | 0.25 | 17.97 | moved |
-| trim | 0.25 | 19.47 | moved |
 
-**E edge** (faces north in the tile; bottom → top, y):
+**E edge** (faces south in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
+| trim | 73.20 | 19.47 | moved |
+| ibias | 73.20 | 22.47 | moved |
 | o2 | 69.34 | 34.12 |  |
 
 ## xdac (r2r)
@@ -441,9 +441,8 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 
 | pin | x | y | |
 |---|---|---|---|
+| a | 1.00 | 0.25 | moved |
 | VSS | 2.83 | 1.00 |  |
-| a | 3.70 | 0.25 | moved |
-| b | 4.70 | 0.25 | moved |
 
 **W edge** (faces west in the tile; bottom → top, y):
 
@@ -455,6 +454,7 @@ Generated from the floorplan page's variant **matt layout 4 (handoff, chain fold
 
 | pin | x | y | |
 |---|---|---|---|
+| b | 5.55 | 0.25 | moved |
 | en | 5.45 | 6.35 | moved |
 
 ## xtx.xring (tx_ring)
