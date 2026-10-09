@@ -2,6 +2,8 @@
 
 # 433 MHz OOK radio on Tiny Tapeout (sky130, ttsky26d)
 
+[![Made with Claude](https://img.shields.io/badge/Made%20with-Claude-D97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code)
+
 A mixed-signal Tiny Tapeout project: two demo boards with the same chip talk over the air with
 bare-wire dipole antennas and no external components.
 
