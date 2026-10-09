@@ -1,5 +1,5 @@
 {
-  "//": "LibreLane (v3) config for the digital macro; same intent as config.tcl (OpenLane 1). DIE_AREA 200 x 220: the smallest width that routes clean at y 220 (2026-10-09 sweep: 220/210/200 pass, 190 fails; 450.5 x 109.66 fails on horizontal congestion). 2-row top/bottom margins.",
+  "//": "LibreLane (v3) config for the digital macro; same intent as config.tcl (OpenLane 1). DIE_AREA 200 x 220 (2026-10-09 sweep: 220/210/200 route clean, 190 fails; 450.5 x 109.66 fails on horizontal congestion), 2-row top/bottom margins. Pins: all on the E edge (pin_order.cfg, PIN_ORDER.md), floorplan matt layout 5. Final views in macros/radio_digital/.",
   "DESIGN_NAME": "radio_digital",
   "VERILOG_FILES": "dir::../../verilog/rtl/*.v",
   "CLOCK_PORT": "clk",

@@ -17,7 +17,7 @@ VERILOG_SOURCES += $(wildcard $(PWD)/../rtl/*.v)
 # RTL: behavioural clock gate (rd_cg.v). GL=1: the hardened netlist with the
 # sky130 cell models instead (set GL_NETLIST to override the default run).
 ifeq ($(GL),1)
-GL_NETLIST ?= $(PWD)/../../openlane/radio_digital/runs/cg_260x190/final/nl/radio_digital.nl.v
+GL_NETLIST ?= $(PWD)/../../macros/radio_digital/radio_digital.nl.v
 # cell models from the PDK in the tools image (the one the harden used); copy once with
 #   tools/osic bash -c 'mkdir -p build/gl_models && cp $PDK_ROOT/$PDK/libs.ref/sky130_fd_sc_hd/verilog/{primitives,sky130_fd_sc_hd}.v build/gl_models/'
 GL_MODELS ?= $(PWD)/../../build/gl_models
