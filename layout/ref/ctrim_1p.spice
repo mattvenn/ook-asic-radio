@@ -1,0 +1,4 @@
+* ctrim_1p: Ctrim of xschem/radio_analog.sch (xschem/gen/top.py), layout/gen/ctrim_1p.py
+.subckt ctrim_1p trim VGND
+XC1 trim VGND sky130_fd_pr__cap_mim_m3_1 W=22.035 L=22.035 m=1
+.ends
