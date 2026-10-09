@@ -6,7 +6,7 @@ Prompt for a new session (2026-10-09, second version: "matt layout 4 (handoff)")
 
 We've chosen the top-level floorplan of the 3x2 analog tile. Your job is to make the blocks match it: re-harden the digital macro at its new size and pin order, and move pins in the analog block layouts. Don't change block placements; ask if something can't be done as specified.
 
-**Read first:** `STATUS.md` (how to run things), `docs/layout.md` (the layout flow and power rules), `docs/floorplan_spec.md` (the last section, "Chosen floorplan"). The source of truth for positions is **`layout/floorplan/pins.md`** and **`layout/floorplan/floorplan.json`** (variant "matt layout 4 (handoff)" on the floorplan page).
+**Read first:** the "Notes from the size trials" section at the end of this file (pin-slot mechanics, Mac run commands, what's already in `config.json`), `STATUS.md` (how to run things), `docs/layout.md` (the layout flow and power rules), `docs/floorplan_spec.md` (the last section, "Chosen floorplan"). The source of truth for positions is **`layout/floorplan/pins.md`** and **`layout/floorplan/floorplan.json`** (variant "matt layout 4 (handoff)" on the floorplan page).
 
 **Conventions in `pins.md`:** µm. Each block's pins are given in the block's *own* frame (its bbox lower-left = 0, 0, before its placement orientation), grouped by its own edge, with the tile direction that edge faces once placed. Pins marked "moved" are the new positions; the rest stay where the GDS has them. Positions along an edge are targets (±a few µm is fine); **the edge and the order along it matter more than the exact x / y**. Keep each moved pin on the same layer as now unless the block's flow needs otherwise.
 
@@ -49,3 +49,30 @@ The chain is folded in this floorplan (134 × 70.5 µm outline at (21, 6.5), MX)
 
 ## Floorplan checks on this layout
 Pass: 1 (chain input ↔ macro 141 µm), 3 (clock edges 25 µm), 4 (analog path 48 µm), 6 (bias 6 µm), 7 VDPWR, 9 (no overlaps), straps (8, all lanes clear). Known and accepted: 2 (the fold, above), 5 (TX wire length, see TX note), 7 VAPWR at 97 %, 8 (soft), and the page's "TT pin channel clear" (a false fail: the TT wires end on the macro's own pins).
+
+## Notes from the size trials (2026-10-09, previous session)
+
+**What's in the tree now (uncommitted when written):** `openlane/radio_digital/config.json` has `DIE_AREA` [0, 0, 200, 220] and `TOP_MARGIN_MULT` / `BOTTOM_MARGIN_MULT` = 2 (default 4). `pin_order.cfg` is the **trial's N/S order** (TT pins north, analog south), *not* this handoff's east-edge order: replace it.
+
+**Size trials** (y 220 sweep, same config otherwise; the runs are Mac-local, `openlane/radio_digital/runs/trial_*`):
+
+| die (µm) | util | result |
+|---|---|---|
+| 450.5 × 109.66, default margins | 85 % | fails at antenna repair (DPL-0036: no room for diodes next to hold buffers). The default 4-row top/bottom margins cost ~22 µm of a 110 µm die. |
+| 450.5 × 109.66, 2-row margins | 76 % | fails detailed routing: GRT overflow 1,879 (horizontal met1 / met3), DRT stuck at ~10k violations (shorts). Too flat for the horizontal wiring; no met5 (TT PDN). |
+| 220 × 220 | 74 % | **clean**: setup ws 26.7 ns, hold ws 0.108 ns, 643 hold buffers |
+| 210 × 220 | 78 % | **clean**: setup 26.5, hold 0.108 |
+| **200 × 220** (`trial_200x220`) | 82 % | **clean**: 0 DRT / Magic DRC / LVS / antenna; setup 26.4, hold 0.106; 648 hold buffers; ~6 min |
+| 190 × 220 | 86 % | fails: GRT overflow 550, DRT stuck at 7 violations (met1 spacing / shorts) after 19 iterations |
+
+These went into `docs/history.md` "Size trials" when you update it. The trial pins were on N/S; moving them all to the east edge changes routing a little, so 200 × 220 should still route but isn't proven with this pin order.
+
+**How `pin_order.cfg` slots work** (LibreLane `scripts/odbpy/io_place.py`, read in the image):
+- Slots are track positions: N/S on met2 tracks (origin 0.23, step 0.46), **E/W on met3 tracks (origin 0.34, step 0.68)**, taking every `ceil(min_distance / step)`-th track. For a 220-tall die: 323 met3 tracks, so `@min_distance=1` gives 162 slots at y = 0.34 + 1.36·i; `@min_distance=0.5` gives 323 slots at 0.34 + 0.68·i. **A 1 µm pitch isn't on the grid:** use 1.36 (42 TT pins = 56 µm, e.g. clk at ~163 up to ~219, still above sc_phi at ~148) or 0.68.
+- Pins and `$n` fill consecutive slots. If the total (pins + `$n`) is **less than** the slot count, the whole group is spread (`floor(slots/total)` tracks per pin) and centred, so positions drift. If it **equals** the slot count, io_place hits an `AssertionError` (a bug in the all-tracks case). **So pad with a trailing `$n` to exactly slot count − 1**: then slot i is at origin + i·pitch, starting at the die edge.
+- Track count: the last track keeps half a pitch from the die edge: count = floor((L − 2·origin) / step) + 1 (L in µm).
+- E/W are bottom → top. Pins go on met3 for E/W (not met4: the tile's VAPWR / VGND / VDPWR straps at x 276.5–279.9 sit between the macro and the analog).
+
+**Quick pin check without a full harden** (~30 s): `librelane ... --to Odb.CustomIOPlacement config.json`, then read the PINS section of `runs/<tag>/final/def/radio_digital.def` (PLACED x y in DBU, 1000 / µm). The trial session iterated `$n` counts this way and landed every pin within 1.5 µm.
+
+**Running on the Mac:** `tools/longrun` needs systemd (Linux only). Use `caffeinate -i tools/osic-mac bash -c 'cd openlane/radio_digital && librelane --pdk sky130A --run-tag <tag> --overwrite config.json' > build/<tag>.log 2>&1` as a background job. Killing the client leaves the container running: `docker ps`, then `docker stop <id>`. For quick trials, `"DRT_OPT_ITERS": 20` caps a non-converging route (good runs reach 0 in ~6 iterations); leave it out of the final config.
