@@ -358,3 +358,14 @@ Lessons:
 - **capm.11:** unrelated met3 within 1.34 µm of a capm is a magic error. Near MIM caps, drop pins on met2 (under the plate) or met4, not met3.
 - **`tools/floorplan_blocks.py`** now prefers a label sitting on a pin shape: generators label internal wires with the pin's name (for readable extraction), and the first-found label used to win.
 - Committed extracted netlists can be stale: re-extract the old GDS with today's `pex.sh` before calling a difference a regression (dbg_tg: the committed PEX gave −78.9 dB isolation, the old GDS today −73.6, the new one −73.5).
+
+## TX corner re-floorplanned, tx_ls kn 14 / kp 8 (2026-10-10, branch tx-ls-swap)
+- **Simulate a driving block with its real load extracted.** tx_ls and tx_drv were each fine on their own (`tb_tx_ls --pex`, `tb_tx_drv --pex` −0.32 dB); together in the tile, ~9-13 fF on a / b cost 1.5 dB because the shifter's A rise had no margin. `sim/top/tb_tile_tx.py` drops / keeps extracted C per net to find which net it is.
+- **Cross-coupled level shifter sizing has a window:** the pull-ups (kp) set the rising edge; too strong and it latches (fs corner first), too weak a pull-down (kn) relative to kp skews it at ss 10 °C. Check every corner for "not switching", not only P / duty.
+- **Placement** (`floorplan.json`): ring 17.5, 140.5 R270 (out on top), xls 26.5, 141.0 MYR90 (18.5 × 15.85), xlse_n 13.0, 124.0 R270, xlse_p 39.5, 124.0 MYR90 (2.5 µm from xdbg). tx_ls kn 14 / kp 8 folds into nearly the old footprint (19.0 × 14.25 → 18.5 × 15.85).
+
+| net | old route | new route | extracted C old → new |
+|---|---|---|---|
+| ring | 30 µm | 22 µm | 10.9 → 8.6 fF |
+| a / b | 8 / 29 µm | 34 / 35 µm | 8.9 / 12.9 → 13.5 / 13.7 fF |
+| enh_p / enh_n | 35 / 4 µm | 6 / 4 µm | 11.6 / 7.0 → 7.1 / 7.0 fF |

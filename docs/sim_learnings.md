@@ -66,6 +66,8 @@ sky130A, run headless in Docker.
 - **`write` only happens at the end of a batch run:** a killed or crashed
   long run leaves nothing. Split very long runs into pieces when you can.
 
+- **A failed `op` silently becomes a "transient op".** When gmin and source stepping both fail, ngspice ramps the sources in a pseudo-transient and reports whatever the circuit holds at the end: slow nodes (big RC) are unsettled and supply currents include charging current, with no error. Grep the log for `Transient op started` / `singular matrix` before trusting an op. In extracted netlists the usual cause is nets with only parasitic C (unconnected pin stubs): tie them to ground through 1 GΩ.
+
 ## Watching a running ngspice
 
 - **Batch mode reports progress.** ngspice writes `Reference value : <x>`

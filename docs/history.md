@@ -3,6 +3,16 @@
 Moved out of STATUS.md (2026-10-08) to keep the start-up read short. Sections are in the order they were
 written; grep for the block or topic you need.
 
+## Extracted-tile sims: c-mode anomalies, TX loss, tx_ls resized and TX corner re-floorplanned (2026-10-10, branch tx-ls-swap)
+Handoff `docs/handoff_sim.md` steps 1-3. Runners: `sim/top/tb_tile.py` (whole deck), `sim/top/tb_tile_tx.py` (TX only: drop / keep C per net, extra C, scaled devices, kn / kp / corner / temp what-ifs).
+- **c-mode anomalies (lpf 0.89 V, off current 1.59 µA) were a failed op, not the layout.** The tile's digital-pin stubs (`nc_*`: the macro isn't extracted) carry wiring C and no DC path, so the op hit a singular matrix, gmin and source stepping failed and ngspice fell back to a transient op that returned unsettled nodes (lpf behind 2.95 MΩ × 3.7 pF). `tb_tile.py` ties them to VGND through 1 GΩ: c = lvs (lpf 1.4915 V, off 0.910 µA), det at −60 dBm 1.204 V (sch 1.206).
+- **TX loss split (old layout, c mode +2.32 dBm, 532 MHz; ring-C-only +3.93):** a / b (ls → drv, 8.9 / 12.9 fF) +1.48 dB; tx_drv internal C +0.7; ls internal +0.2; output C (ua[3]/[4], ~80 fF) +0.05; enable path 0 dB but the 8 ns on / off edges; the frequency shift itself ~0.4 dB at most. Mechanism: the p arm's duty 38 → 22 %, tx_ls's A rises through a 1.68 µm 5 V PMOS only after B falls. The block extractions already had about that a / b C: ls and drv were never extracted together before.
+- **Full RC, old layout:** RX = c (2.985 mA, det / lpf 1.491 V, −60 dBm det 1.203 V); TX 514 MHz +2.11 dBm.
+- **tx_ls kn 10 / kp 4 → 14 / 8** (schematic + 14 fF on a / b, cw 2.2 fF): kp is what helps, kn alone hurts (drain C, contention); kn 10 / kp 8 latches at fs and goes lopsided at ss 10 °C; kn 12-16 / kp 8 pass ss/ff/sf/fs × 10/50 °C. kn 14 / kp 8: tt +3.58 dBm, corners +3.24..+4.02, p duty ≥ 34.5 %; 18 fF on a / b: +3.49 tt. `tb_tx` (schematic, 27 °C): +4.14..+4.26 dBm at tt/ss/ff/sf/fs (was +3.7..+3.9); single-ended −2.16..−2.64. Block test `tb_tx_ls --pex`: A duty 43.4 → 36.4 %, arms 41.4 / 48.3 %.
+- **TX corner re-floorplanned (Matt):** tx_ls on top beside the ring (ring R270, out up), xlse_n / xlse_p underneath with an 11 µm channel for a / b, each A over its driver's en. Routes: ring 22 µm (was 30), a / b 34 / 35 (was 8 / 29), enh_p / enh_n 6 / 4 (enh_p was 35). Extracted a / b 13.5 / 13.7 fF (the 14 fF sized for).
+- **New layout, extracted:** c +3.43 dBm (538 MHz, duty 31 / 47 %; ring-C-only +3.98); **RC +3.18 dBm, 520 MHz** (+1.07 dB on the old layout's +2.11); RX unchanged (det idle 1.491 V, −60 dBm 1.203 V, off 0.910 µA; RX current 2.960 mA vs 2.985). The remaining ~0.55 dB to ring-C-only is tx_drv's own internal C (y4 ~55 fF).
+- **Checks:** magic + KLayout DRC 0, LVS "Circuits match uniquely", precheck pass. **Antenna 7** (ratios 491-1342), all on gates 40-80 µm inside the digital macro; **main's tile has the same 7** (same GDS check on a copy), so the "antenna fixed" note for main is out of date: open.
+
 ## Blocks and macro to the chosen floorplan (layout 5, 2026-10-09)
 - **Digital macro re-hardened at 200 × 220 µm** (from 260 × 190; `openlane/radio_digital`, final run `l5b_200x220`, views in `macros/radio_digital/`).
   - **Size trials** (y 220 sweep and the flat shapes; same config otherwise):
