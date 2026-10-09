@@ -67,8 +67,9 @@
       real('xavg', 'avg_sc'),
       real('xcomp', 'comp_ct'),
       real('xdac', 'r2r', { group: 'trim', overDecap: true }),   // met1-only: a MIM decap may sit on top
-      { inst: 'xctrim', cell: 'ctrim_1p', w: 23.5, h: 23.5, estimate: true, group: 'trim', label: 'Ctrim 1 pF',
-        pins: { p: { layer: 'met3', x: 0.5, y: 11.75 }, n: { layer: 'met4', x: 23, y: 11.75 } }, m4: [[0, 0, 23.5, 23.5]] },
+      C.ctrim_1p ? real('xctrim', 'ctrim_1p', { group: 'trim', label: 'Ctrim 1 pF' })     // laid out (layout/gen/ctrim_1p.py)
+        : { inst: 'xctrim', cell: 'ctrim_1p', w: 23.5, h: 23.5, estimate: true, group: 'trim', label: 'Ctrim 1 pF',
+          pins: { trim: { layer: 'met4', x: 1, y: 0.25 } }, m4: [[0, 0, 23.5, 23.5]] },
       real('xbias', 'bias_gen', { group: 'bias' }), real('xdbg', 'dbg_tg'),
       real('xtx.xring', 'tx_ring', { group: 'tx' }), real('xtx.xls', 'tx_ls', { group: 'tx' }),
       real('xtx.xlse_p', 'tx_ls_en', { group: 'tx' }), real('xtx.xlse_n', 'tx_ls_en', { group: 'tx' }),
@@ -89,14 +90,14 @@
     ['o1', 'rx', 'xchain.o1p', 'xdet.t1p'], ['o2', 'rx', 'xchain.o2p', 'xdet.t2p'], ['o3', 'rx', 'xchain.o3p', 'xdet.t3p'],
     ['o4', 'late', 'xchain.o4p', 'xdet.t4p'], ['o5', 'late', 'xchain.o5p', 'xdet.t5p'], ['out', 'late', 'xchain.outp', 'xdet.t6p'],
     ['det', 'rx', 'xdet.det', 'xlpf.in'], ['det dbg', 'rx', 'xdet.det', 'xdbg.a'], ['dbg', 'rx', 'xdbg.b', 'pad:ua[2]'],
-    ['lpf', 'rx', 'xlpf.out', 'xavg.in'], ['lpf comp', 'rx', 'xlpf.out', 'xcomp.inp'], ['avg', 'rx', 'xavg.out', 'xcomp.inn'],
+    ['lpf', 'rx', 'xlpf.out', 'xavg.in'], ['lpf comp', 'rx', 'xlpf.out', 'xcomp.inn'], ['avg', 'rx', 'xavg.out', 'xcomp.inp'],   // xschem/gen/top.py: inp = avg, inn = lpf
     ['comp_in', 'clk', 'xcomp.out', 'macro.comp_in'],
     ['sc_phi1', 'clk', 'macro.sc_phi1', 'xavg.phi1'], ['sc_phi2', 'clk', 'macro.sc_phi2', 'xavg.phi2'],
     ['rx_en', 'en', 'macro.rx_en', 'xbias.en'], ['dbg_en', 'en', 'macro.dbg_en', 'xdbg.en'],
     ['tx_en key', 'en', 'macro.tx_en', 'xtx.xring.en'], ['tx_en', 'en', 'macro.tx_en', 'xtx.xlse_p.in'], ['tx_en_n', 'en', 'macro.tx_en_n', 'xtx.xlse_n.in'],
     ['clk', 'clk', 'pad:clk', 'macro.clk'],
   ].concat([0, 1, 2, 3, 4, 5, 6, 7].map(i => [`trim[${i}]`, 'trim', `macro.trim_out[${i}]`, `xdac.b${i}`])).concat([
-    ['dac', 'trim', 'xdac.out', 'xctrim.p'], ['trim', 'trim', 'xctrim.n', 'xcomp.trim'],
+    ['dac', 'trim', 'xdac.out', 'xctrim.trim'], ['trim', 'trim', 'xctrim.trim', 'xcomp.trim'],   // one net: Ctrim is a shunt cap (trim -> VGND)
     ['ib_chain', 'bias', 'xbias.ib_chain', 'xchain.ibias'], ['vcm', 'bias', 'xbias.vcm', 'xchain.vcm'],
     ['ib_det', 'bias', 'xbias.ib_det', 'xdet.ibias_det'], ['ib_comp', 'bias', 'xbias.ib_comp', 'xcomp.ibias'],
     ['ring', 'tx', 'xtx.xring.out', 'xtx.xls.in'], ['a', 'tx', 'xtx.xls.A', 'xtx.xdrv_p.in'], ['b', 'tx', 'xtx.xls.B', 'xtx.xdrv_n.in'],

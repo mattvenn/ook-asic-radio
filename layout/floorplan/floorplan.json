@@ -1,6 +1,6 @@
 {
  "variant": "matt layout 5 (routing review)",
- "note": "matt layout 4 (handoff, chain folded) with the 2026-10-09 routing review: comp_ct flipped to MYR90 (out at its tile-south-east corner without a long internal run; ibias / trim over the corridor west of Ctrim and over Ctrim n); avg_sc sc_phi1/2 on its north edge (clocks leave over the top, away from comp inp / inn); macro pins re-ordered: trim_out[i] level with r2r b_i (straight runs), comp_in in the gap under r2r, sc_phi then dbg_en / tx_en_n / tx_en just under the TT group (the enables run west in the TT channel). Block positions unchanged. lpf_rc, log_det, bias_gen, dbg_tg pins as laid out.",
+ "note": "matt layout 4 (handoff, chain folded) with the 2026-10-09 routing review, and every block laid out to it (pins from the GDS). comp_ct MYR90 (out at its tile-south-east corner; inp = avg / inn = lpf on the west face; ibias over the corridor west of Ctrim, trim over Ctrim); r2r MYR90 (out level with Ctrim, a straight met2 run over r2r); avg_sc clocks on its north edge (leave over the top, away from comp inp / inn), in on its south edge; Ctrim laid out (1 pF shunt cap trim -> VGND, 22.4 um). Macro pins: trim_out[i] level with r2r b_i, comp_in in the gap under r2r, sc_phi then dbg_en / tx_en_n / tx_en just under the TT group (the enables run west in the TT channel). Block positions unchanged.",
  "tile": {
   "w": 493.12,
   "h": 225.76
@@ -74,9 +74,9 @@
    "cell": "r2r",
    "x": 185,
    "y": 91,
-   "orient": "R90",
-   "rot": 90,
-   "mirror": false,
+   "orient": "MYR90",
+   "rot": 270,
+   "mirror": true,
    "estimate": false
   },
   {
@@ -87,9 +87,7 @@
    "orient": "MX",
    "rot": 0,
    "mirror": true,
-   "estimate": true,
-   "w": 23.5,
-   "h": 23.5
+   "estimate": false
   },
   {
    "inst": "xbias",
@@ -295,144 +293,70 @@
   "trim_out[7:0]": "W"
  },
  "pins_moved": {
-  "xdet": {
-   "det": [
-    0.2,
-    0.25
-   ],
-   "ibias_det": [
-    87.08,
-    24.29
-   ]
-  },
-  "xlpf": {
-   "in": [
-    1.5,
-    0.25
-   ],
-   "out": [
-    64.95,
-    33.9
-   ]
-  },
-  "xdbg": {
-   "a": [
-    1,
-    0.25
-   ],
-   "b": [
-    5.55,
-    0.25
-   ],
-   "en": [
-    5.45,
-    6.35
-   ]
-  },
-  "xavg": {
-   "in": [
-    76.35,
-    0.25
-   ],
-   "out": [
-    77.1,
-    20.15
-   ],
-   "phi1": [
-    75.35,
-    30.15
-   ],
-   "phi2": [
-    74.35,
-    30.15
-   ]
-  },
-  "xcomp": {
-   "inn": [
-    37.85,
-    41.72
-   ],
-   "inp": [
-    42.45,
-    41.72
-   ],
-   "out": [
-    72.45,
-    0.25
-   ],
-   "ibias": [
-    73.2,
-    22.47
-   ],
-   "trim": [
-    73.2,
-    19.47
-   ]
-  },
   "macro": {
-   "comp_in": [
-    199.75,
-    86.02
-   ],
-   "sc_phi1": [
-    199.75,
-    156.74
-   ],
-   "sc_phi2": [
-    199.75,
-    155.38
-   ],
    "rx_en": [
     199.75,
     7.14
    ],
-   "dbg_en": [
+   "comp_in": [
     199.75,
-    158.1
+    86.02
    ],
-   "tx_en": [
-    199.75,
-    160.82
-   ],
-   "tx_en_n": [
-    199.75,
-    159.46
-   ],
-   "clk": [
-    199.75,
-    162.18
-   ],
-   "trim_out[0]": [
+   "trim_out[7]": [
     199.75,
     94.18
    ],
-   "trim_out[1]": [
+   "trim_out[6]": [
+    199.75,
+    102.34
+   ],
+   "trim_out[5]": [
     199.75,
     109.14
    ],
-   "trim_out[2]": [
+   "trim_out[4]": [
     199.75,
-    115.94
+    117.3
    ],
    "trim_out[3]": [
     199.75,
     124.1
    ],
-   "trim_out[4]": [
+   "trim_out[2]": [
     199.75,
-    130.9
+    132.26
    ],
-   "trim_out[5]": [
+   "trim_out[1]": [
     199.75,
     139.06
    ],
-   "trim_out[6]": [
-    199.75,
-    145.86
-   ],
-   "trim_out[7]": [
+   "trim_out[0]": [
     199.75,
     154.02
+   ],
+   "sc_phi2": [
+    199.75,
+    155.38
+   ],
+   "sc_phi1": [
+    199.75,
+    156.74
+   ],
+   "dbg_en": [
+    199.75,
+    158.1
+   ],
+   "tx_en_n": [
+    199.75,
+    159.46
+   ],
+   "tx_en": [
+    199.75,
+    160.82
+   ],
+   "clk": [
+    199.75,
+    162.18
    ],
    "uio_oe[7]": [
     199.75,
@@ -597,76 +521,6 @@
    "rst_n": [
     199.75,
     217.94
-   ]
-  },
-  "xbias": {
-   "en": [
-    2,
-    0.25
-   ],
-   "ib_chain": [
-    28.18,
-    48.82
-   ],
-   "vcm": [
-    31.32,
-    48.82
-   ],
-   "ib_det": [
-    79.22,
-    48.82
-   ],
-   "ib_comp": [
-    80.02,
-    48.07
-   ]
-  },
-  "xdac": {
-   "b0": [
-    5.62,
-    0.25
-   ],
-   "b1": [
-    20.62,
-    0.25
-   ],
-   "b2": [
-    28.12,
-    0.25
-   ],
-   "b3": [
-    35.62,
-    0.25
-   ],
-   "b4": [
-    43.12,
-    0.25
-   ],
-   "b5": [
-    50.62,
-    0.25
-   ],
-   "b6": [
-    58.12,
-    0.25
-   ],
-   "b7": [
-    65.62,
-    0.25
-   ],
-   "out": [
-    11.05,
-    53.87
-   ]
-  },
-  "xctrim": {
-   "p": [
-    23.25,
-    11.75
-   ],
-   "n": [
-    1,
-    0.25
    ]
   }
  },
