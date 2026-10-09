@@ -177,7 +177,11 @@ def make(p):
         e = CAPM_ENC_M3
         sheet_x = (xa - 0.2, xb + 0.2)
         cols = []
-        for lo, hi in spans(xa + 0.4, xb - 1.6, keep_x(p)):
+        # only the strap-free span that reaches the right band: its met4 bus meets the supply
+        # stack there (a bus across a strap of another net would short them)
+        sp_all = spans(xa + 0.4, xb - 1.6, keep_x(p))
+        bus_lo = sp_all[-1][0] if sp_all else xa
+        for lo, hi in sp_all[-1:]:
             span = hi - lo
             if span < 4:
                 continue
@@ -200,7 +204,7 @@ def make(p):
             # bottom plate on one VGND polygon
             sheet = box(groups[0][0] - e, yl - e, groups[-1][1] + e, yl + nr * ch + (nr - 1) * CAPM_SP + e)
             b.rect('m3', sheet)
-            b.rect('m4', box(xa, ytop, xb, ytop + 1.4))                       # top-plate bus
+            b.rect('m4', box(bus_lo, ytop, xb, ytop + 1.4))                   # top-plate bus
             b.pin('m4', box(xb - 1.0, ytop, xb, ytop + 1.4), sup)
             for cx, cw in cols:
                 st = box(cx + cw / 2 - 0.7, yl, cx + cw / 2 + 0.7, ytop + 0.1)

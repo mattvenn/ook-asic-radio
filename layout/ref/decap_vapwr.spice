@@ -103,7 +103,7 @@ XC12 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=11.58 L=18.69 m=1
 XC13 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=11.58 L=18.69 m=1
 XC14 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=11.58 L=18.69 m=1
 XC15 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=11.58 L=18.69 m=1
-XC16 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=4 L=15.8 m=1
+XC16 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=19.05 L=15.8 m=1
 XC17 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=19.05 L=15.8 m=1
 XC18 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=19.05 L=15.8 m=1
 XC19 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=19.05 L=15.8 m=1
@@ -114,16 +114,16 @@ XC23 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=19.05 L=15.8 m=1
 XC24 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=19.05 L=15.8 m=1
 XC25 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=19.05 L=15.8 m=1
 XC26 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=19.05 L=15.8 m=1
-XC27 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=19.05 L=15.8 m=1
-XC28 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=4 L=11.48 m=1
-XC29 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=4 L=11.48 m=1
+XC27 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
+XC28 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
+XC29 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
 XC30 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
-XC31 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
-XC32 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
-XC33 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
-XC34 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=15.44 L=19.8 m=1
-XC35 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=15.44 L=19.8 m=1
-XC36 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=15.44 L=19.8 m=1
+XC31 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=15.44 L=19.8 m=1
+XC32 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=15.44 L=19.8 m=1
+XC33 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=15.44 L=19.8 m=1
+XC34 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC35 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC36 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
 XC37 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
 XC38 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
 XC39 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
@@ -133,7 +133,4 @@ XC42 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
 XC43 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
 XC44 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
 XC45 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
-XC46 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
-XC47 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
-XC48 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
 .ends

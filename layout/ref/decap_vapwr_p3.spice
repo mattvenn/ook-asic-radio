@@ -9,10 +9,8 @@ XM5 VGND VAPWR VGND VGND sky130_fd_pr__nfet_g5v0d10v5 L=5 W=11.6 nf=2
 XM6 VGND VAPWR VGND VGND sky130_fd_pr__nfet_g5v0d10v5 L=5 W=11.6 nf=2
 XM7 VGND VAPWR VGND VGND sky130_fd_pr__nfet_g5v0d10v5 L=5 W=11.6 nf=2
 XM8 VGND VAPWR VGND VGND sky130_fd_pr__nfet_g5v0d10v5 L=5 W=11.6 nf=2
-XC0 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=4 L=11.48 m=1
-XC1 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=4 L=11.48 m=1
+XC0 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
+XC1 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
 XC2 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
 XC3 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
-XC4 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
-XC5 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.08 L=11.48 m=1
 .ends
