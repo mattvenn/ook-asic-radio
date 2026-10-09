@@ -6,16 +6,11 @@ This page covers the idea, the measurements and models that set the specs, each 
 
 ## Overview
 
-```
-TX:  digital ─► ring oscillator ─► level shifter ─► 3.3 V drivers ─► ua[3]/ua[4] ─► dipole
-     (on/off)    (~433 MHz)        (1.8 → 3.3 V)    (antiphase)
+![block diagram](images/block_diagram.png)
 
-RX:  dipole ─► ua[0]/ua[1] ─► 6-stage amplifier chain ─► log detector ─► low-pass filter ─┬─► comparator (−)
-                              (~80 dB gain)              (RF → DC level)   (14 kHz)          │
-                                                                    slow average (0.45 ms) ─┴─► comparator (+)
-                                                                    trim DAC ──────────────────► comparator (trim)
-     comparator bit ─► digital: trim servo, correlator, 2-of-3 bursts ─► LED toggle, 7-seg link quality
-```
+- **RX (top):** the dipole on ua[0]/ua[1] feeds a 6-stage amplifier chain (`lna_chain`). Each stage's output taps into the log detector (`log_det`), which turns RF power into a DC level. That level is filtered (`lpf_rc`) and compared (`comp_ct`) against its own slow average (`avg_sc`), plus a fine trim from the DAC (`r2r`). The comparator bit goes to the digital macro. `bias_gen` supplies every block's currents.
+- **TX (bottom):** the digital macro keys the ring oscillator (`tx_ring`). The level shifter (`tx_ls`) turns it into two opposite-phase 3.3 V signals, one driver per dipole arm (`tx_drv`, ua[3]/ua[4]).
+- Dashed lines are enables from the digital. This is the "Block diagram" view of the floorplanning tool ([layout/floorplan](../layout/floorplan)).
 
 ## Theory of operation
 
@@ -24,7 +19,7 @@ The transmitter switches a 433 MHz carrier on and off, and that is all it does. 
 
 Because of that, the transmitter needs no crystal or PLL. It is a free-running ring of inverters, and if it lands anywhere in 330–560 MHz the receiver still works. 433 MHz was chosen for its ecosystem: cheap SDRs, `rtl_433`, and garage remotes as test signals.
 
-**dBm** is power on a log scale: 0 dBm = 1 mW, −30 dBm = 1 µW, and every −10 dB is another 10× less. The transmitter puts out about +4 dBm. At 1 m the receiver sees about −44 dBm, and it can still detect a signal at about −92 dBm, which is 50,000 times weaker in voltage.
+**dBm** is power on a log scale: 0 dBm = 1 mW, and every −10 dB is 10× less power (−30 dBm = 1 µW). Voltage changes more slowly: −20 dB is 10× less voltage. The transmitter puts out about +4 dBm. At 1 m the receiver sees about −44 dBm, and it can still detect a signal at about −92 dBm. That is 48 dB lower: ~60,000× less power, or ~250× less voltage.
 
 ### Finding a signal weaker than the noise
 Near the sensitivity limit, "carrier on" moves the detector output by only ~1 mV, and the noise is about as large. A single on/off decision there is barely better than a coin flip. So we don't send single bits:
