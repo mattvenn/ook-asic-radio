@@ -11,9 +11,10 @@ bare-wire dipole antennas and no external components.
 - **RX:** a 6-stage NMOS differential-pair limiting chain with a successive-detection log detector, and one comparator with an averaged, trimmed threshold. A digital Gold-code correlator detects the transmitter's code and toggles an LED.
 
 Docs:
+- [docs/how_it_works.md](docs/how_it_works.md): **start here**: theory, specs, schematics and layout.
 - [PLAN.md](PLAN.md): the design plan and the measurements behind each decision.
 - [docs/slicer.md](docs/slicer.md): how the receiver's comparator and trim servo work.
-- [docs/info.md](docs/info.md): the datasheet.
+- [docs/info.md](docs/info.md): the datasheet (short test instructions).
 
 ## Layout of this repo
 Follows the TT analog template flow used for `mattvenn/tt08-analog-r2r-dac-3v3`:
