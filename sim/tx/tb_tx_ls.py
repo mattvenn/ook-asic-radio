@@ -16,7 +16,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 B = os.path.join(ROOT, 'build')
-OSIC = os.path.join(ROOT, 'tools', 'osic')
+OSIC = os.environ.get('OSIC', os.path.join(ROOT, 'tools', 'osic'))
 T = 1 / 433.92e6
 PRM = {'tx_ls': 'kn=14 kp=8 wpi=9 wni=3', 'tx_ls_en': 'kn=1 kp=1 wpi=1 wni=0.42'}
 

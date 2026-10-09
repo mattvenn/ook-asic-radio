@@ -29,7 +29,7 @@ import numpy as np
 
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 B = os.path.join(ROOT, 'build')
-OSIC = os.path.join(ROOT, 'tools', 'osic')
+OSIC = os.environ.get('OSIC', os.path.join(ROOT, 'tools', 'osic'))
 TON, TOFF = 5e-9, 60e-9
 
 
