@@ -39,7 +39,7 @@ More detail: [slicer.md](slicer.md).
 ## Testing that set the specs
 
 ### Bench measurements (phase 0)
-These were measured on an existing chip (ttsky25b) that has a ring oscillator, using wire antennas, a scope and an SDR. Data and scripts are in [`bench/`](../bench).
+These were measured on an existing chip (ttsky25b) that has a ring oscillator, using wire antennas and a scope. Data and scripts are in [`bench/`](../bench).
 
 | What | Result |
 |---|---|
