@@ -101,7 +101,11 @@ def main():
     pins, insts = {}, {}
     for b in FP['blocks']:
         if b['cell'].startswith('decap_'):
-            continue
+            # decap parts (layout/gen/decap.py), above the full-width VDPWR bar
+            cell = f"{b['cell']}_p{b['part']}"
+            if not os.path.exists(os.path.join(REPO, 'layout', cell + '.gds')):
+                continue                                   # (xdecd part 4: in the TT channel, dropped)
+            b = dict(b, cell=cell, inst=f"{b['inst']}{b['part']}", y=max(b['y'], 3.2), rot=0, mirror=False)
         c = t.import_gds(b['cell'])
         tr = place_trans(c, b)
         parent = txc if b['inst'].startswith('xtx.') else top

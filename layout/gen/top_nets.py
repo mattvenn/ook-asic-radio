@@ -85,10 +85,10 @@ def nets():
 
     # ---------------- power ----------------
     # RX: both the west and the mid straps (this also joins them inside the tile)
-    out.append(N('VDPWR_RX', STRAPS['VDPWR'], 'xchain.VDD', 'xdet.VDD', 'xavg.VDD', 'xcomp.VDD',
-                 'xbias.VDD', 'xdbg.VDD', w=1.0, layers=['m2', 'm3', 'm4'], layer_cost={'m2': 2, 'm3': 1, 'm4': 1},
+    out.append(N('VDPWR_RX', STRAPS['VDPWR'], 'xchain.VDD', 'xdecd1.VDPWR', 'xdecd2.VDPWR', 'xdecd3.VDPWR', 'xdet.VDD', 'xavg.VDD', 'xcomp.VDD',
+                 'xbias.VDD', 'xdbg.VDD', w=1.0, layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1},
                  margin=30, anchors=STRAPS['VDPWR'], zones=[blk(0, 192.6, 300, 226)], wide=True))
-    out.append(N('VGND_RX', STRAPS['VGND'], 'xchain.VSS', 'xdet.VSS', 'xlpf.VSS', 'xavg.VSS',
+    out.append(N('VGND_RX', STRAPS['VGND'], 'xchain.VSS', 'xdecd1.VGND', 'xdecd2.VGND', 'xdecd3.VGND', 'xdet.VSS', 'xlpf.VSS', 'xavg.VSS',
                  'xcomp.VSS', 'xdac.VGND', 'xctrim.VGND', 'xbias.VSS', 'xdbg.VSS', w=1.0, anchors=STRAPS['VGND'],
                  layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1}, margin=30,
                  zones=[blk(0, 192.6, 300, 226)], wide=True))
@@ -117,6 +117,14 @@ def nets():
                  margin=8, label='tx_en'))
     out.append(N('tx_en_n', 'macro.tx_en_n', 'xtx.xlse_n.in', via=[(237.4, 175.0, 'm2'), (237.4, 195.1), (40.0, 195.1)], zones=en_z,
                  margin=8, label='tx_en_n'))
+
+    # VAPWR decaps: their rails also join the west and mid VAPWR / VGND straps (the TX supply's
+    # own return: joins the RX ground only at the straps)
+    deca = [f'xdeca{k}' for k in range(1, 6)]
+    out.append(N('VAPWR_DEC', 'VAPWR@w', 'VAPWR@m', *[f'{d}.VAPWR' for d in deca], w=1.0,
+                 layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1}, margin=30, wide=True))
+    out.append(N('VGND_DEC', 'VGND@w', 'VGND@m', *[f'{d}.VGND' for d in deca], w=1.0,
+                 layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1}, margin=30, wide=True))
 
     return out
 

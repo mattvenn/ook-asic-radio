@@ -116,7 +116,11 @@ class Router:
         self.capm = (getattr(self, 'capm', db.Region()) + capm).merged()
         rest = capm.dup()
         for tag, reg in own['m4'].items():
-            rest -= capm.interacting(reg)        # under its own top plate (real met4 covers it)
+            mine = capm.interacting(reg)
+            if not mine.is_empty():
+                # a keep-out every net but the top plate's own must respect; never a terminal
+                self.S.add('m4', tag + '~cap', mine)
+                rest -= mine
         self.S.add('m4', '?', rest)
         # capm.2b_a: met3 not touching a bottom plate (capm & met3, grown 0.14) stays 1.2 away
         # from it. The halo is foreign to every net, the plate's own too (a wire that runs near
@@ -136,7 +140,7 @@ class Router:
                     continue
                 for pl, b in shp:
                     if pl == 'm3':
-                        near = ring & db.Region(ibox(*b)).sized(int(round(0.8 / DBU)))
+                        near = ring & db.Region(ibox(*b)).sized(int(round(1.3 / DBU)))
                         self.S.add('m3', tag + '~near', near)      # passable, not a terminal
                         ring -= near
         self.S.add('m3', '?h', ring)                   # a keep-out, not metal
@@ -170,7 +174,7 @@ class Router:
         hw = w / 2
         layers = net.get('layers', ['m2', 'm3', 'm4'])
         own = set(net['own']) | {name}
-        own |= {t + '~near' for t in own}
+        own |= {t + '~near' for t in own} | {t + '~cap' for t in own}
         terms = net['terms']                              # list of lists of tags (each one terminal)
         # terminal boxes, for the window
         tb = []
@@ -563,7 +567,7 @@ class Router:
         if reg.is_empty():
             return
         win = reg.bbox().enlarged(2000, 2000)
-        keepouts = {t for t in self.S.r[L] if t == '?h' or t.endswith('~near')}
+        keepouts = {t for t in self.S.r[L] if t == '?h' or t.endswith('~near') or t.endswith('~cap')}
         _, f = self.S.split(L, set(own) | {tag} | keepouts, win)
         reg = reg - f.sized(int(round(SPACE[L] / DBU)))
         # drop thin protrusions the clip may leave: open the merged own metal + fill, keep only
@@ -670,8 +674,8 @@ def build(place_gds, pins_json, fp_json):
                 x = b.center().x * DBU
                 tag += '@' + ('w' if x < 100 else 'm' if x < 290 else 'e')
             R.S.add(L, tag, db.Region(b))
-    # decap areas (not laid out yet): reserve met1, met3, met4 (MOS + MIM); met2 stays free
-    for b in FP['blocks']:
+    # decap areas not laid out (none now): reserve met1, met3, met4 (MOS + MIM); met2 stays free
+    for b in FP['blocks'] if False else []:
         if b['cell'].startswith('decap_') and not (b['inst'] == 'xdecd' and b['part'] == 4):
             # (xdecd part 4, x 0-51 y 216-222, sits in the TT pin channel: left free for now)
             bx = [b['x'], max(b['y'], 3.2), b['x'] + b['w'], b['y'] + b['h']]   # (clear of the VDPWR bar)

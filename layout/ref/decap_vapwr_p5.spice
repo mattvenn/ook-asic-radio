@@ -1,0 +1,15 @@
+* decap_vapwr_p5: layout/gen/decap.py
+.subckt decap_vapwr_p5 VAPWR VGND
+XC0 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC1 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC2 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC3 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC4 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC5 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC6 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC7 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC8 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC9 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC10 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+XC11 VAPWR VGND sky130_fd_pr__cap_mim_m3_1 W=14.47 L=16.25 m=1
+.ends

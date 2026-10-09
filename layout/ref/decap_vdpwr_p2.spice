@@ -1,0 +1,6 @@
+* decap_vdpwr_p2: layout/gen/decap.py
+.subckt decap_vdpwr_p2 VDPWR VGND
+XM0 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=8.15 nf=1
+XM1 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=8.15 nf=1
+XM2 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=8.15 nf=1
+.ends

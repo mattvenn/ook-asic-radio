@@ -1,0 +1,14 @@
+* decap_vdpwr_p3: layout/gen/decap.py
+.subckt decap_vdpwr_p3 VDPWR VGND
+XM0 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=17.6 nf=2
+XM1 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=17.6 nf=2
+XM2 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=17.6 nf=2
+XM3 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=17.6 nf=2
+XM4 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=17.6 nf=2
+XM5 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=17.6 nf=2
+XM6 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=17.6 nf=2
+XC0 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=17 L=19.52 m=1
+XC1 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=17 L=19.52 m=1
+XC2 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=17 L=19.52 m=1
+XC3 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=17 L=19.52 m=1
+.ends
