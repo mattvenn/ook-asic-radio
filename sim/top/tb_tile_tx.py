@@ -131,7 +131,15 @@ def analyse(variant):
         return
     v = dict(read_raw(path)[0]['vars'])
     v['v(ant_p)'], v['v(ant_n)'], v['i(vd)'] = v['v(ant_tx_p)'], v['v(ant_tx_n)'], v['i(vdpwr)']
-    m = ring_metrics(v, 5e-9, 60e-9, drv=('tx_p', 'tx_n'))
+    try:
+        m = ring_metrics(v, 5e-9, 60e-9, drv=('tx_p', 'tx_n'))
+    except (IndexError, ValueError):
+        t = np.real(v['time'])
+        w = (t > 25e-9) & (t < 60e-9)
+        rng = ', '.join(f'{k} {np.real(v[f"v({k})"])[w].min():.2f}..{np.real(v[f"v({k})"])[w].max():.2f} V'
+                        for k in ('tx_p', 'tx_n'))
+        print(f'{variant}: NOT SWITCHING (latched?): {rng}', flush=True)
+        return
     # arm duty (fraction of the steady window above half VAPWR)
     t = np.real(v['time'])
     g = np.arange(25e-9, 60e-9, 1e-12)
