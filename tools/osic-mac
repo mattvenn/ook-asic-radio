@@ -1,10 +1,17 @@
 #!/bin/bash
 # Mac stand-in for tools/osic (which only works under /home/matt/work/asic-workshop):
-# the local iic-osic-tools image, the repo mounted at its own path, sky130A via .designinit.
+# the local iic-osic-tools image, the repo (or a worktree of it) mounted at its own path, sky130A via .designinit.
 # Usage, from the repo root: tools/osic-mac <command...>
-REPO=/Users/mattvenn/asic/ook-asic-radio
+# OSIC_PDK_ROOT=<dir> uses that PDK root instead of the image's (e.g. the TT precheck's open_pdks version:
+#   ciel enable --pdk-family sky130 --pdk-root <dir> 0536d02d875c8f67dd7cca3902ac457e62f20005).
+REPO=$(cd "$(dirname "$0")/.." && pwd)
+mkdir -p "$REPO/build"
 cp "$REPO/.spiceinit" "$REPO/build/.spiceinit"
 cd "$REPO"
-exec docker run --rm -i -v "$REPO:$REPO" -v /Users/mattvenn/asic/.designinit:/foss/designs/.designinit:ro \
-  -e PDK=sky130A -w "$REPO" --entrypoint /bin/bash hpretl/iic-osic-tools:2026.05 -lc "$(printf '%q ' "$@")" 2>&1 \
+PDKARGS=(); PRE=
+if [ -n "${OSIC_PDK_ROOT:-}" ]; then
+  PDKARGS=(-v "$OSIC_PDK_ROOT:/pdkci:ro"); PRE='export PDK_ROOT=/pdkci PDKPATH=/pdkci/sky130A; '
+fi
+exec docker run --rm -i -v "$REPO:$REPO" -v /Users/mattvenn/asic/.designinit:/foss/designs/.designinit:ro "${PDKARGS[@]}" \
+  -e PDK=sky130A -w "$REPO" --entrypoint /bin/bash hpretl/iic-osic-tools:2026.05 -lc "$PRE$(printf '%q ' "$@")" 2>&1 \
   | grep -v '^\[INFO\]'

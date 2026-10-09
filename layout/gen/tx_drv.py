@@ -45,4 +45,4 @@ def make():
 
 
 if __name__ == '__main__':
-    make().write(os.path.join(REPO, 'layout', 'tx_drv.gds'))
+    make().write(os.path.join(REPO, 'layout', 'tx_drv.gds'), flatten=True)

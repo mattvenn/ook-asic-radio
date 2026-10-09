@@ -125,8 +125,13 @@ class Block:
             return self.cell.insert(pya.DCellInstArray(cell.cell_index(), pya.DTrans(pya.DVector(snap(x), snap(y)))))
         return self.cell.insert(pya.DCellInstArray(cell.cell_index(), pya.DCplxTrans(1, rot, mirror, snap(x), snap(y))))
 
-    def write(self, path):
+    def write(self, path, flatten=False):
+        """flatten: pcells into the block, so their markers merge with the block's own (the TT precheck
+        reads the GDS with magic 'gds maskhints yes': per-device hvi 0.16 um apart fails hvi.5 even under
+        a covering hvi drawn in the parent)."""
         os.makedirs(os.path.dirname(path), exist_ok=True)
+        if flatten:
+            self.cell.flatten(-1, True)
         self.ly.write(path)
         print('wrote', path, self.cell.dbbox())
 

@@ -55,14 +55,15 @@ def make():
         rs = PolyRes(b, LRS, 2, typ='sky130_fd_pr__res_high_po_0p35')
         wrb = 3 * rb.pitch + rb._bbox.width()
         wrs = rs.pitch + rs._bbox.width()
-        sp_ = 0.6                                         # Rb (urpm) to Rs (rpm) array gap
+        sp_ = 0.9                                         # Rb (urpm) to Rs (rpm) array gap (magic rpm.2: 0.84 across urpm/rpm)
         # x of the arrays' bbox: Rb outer, Rs inner, under the plate
         inner_edge = cx + sgn * (gap / 2)                 # plate edge on the gap side
+        rs_in = 0.2 - (sp_ - 0.6)                         # Rs moves in toward the FETs, Rb stays put
         if sgn < 0:
-            xrs = inner_edge - 0.2 - wrs
+            xrs = inner_edge - rs_in - wrs
             xrb = xrs - sp_ - wrb
         else:
-            xrs = inner_edge + 0.2
+            xrs = inner_edge + rs_in
             xrb = xrs + wrs + sp_
         yb = y_dev - rb._bbox.bottom + rb._poly.bottom
         rb.place(xrb - (rb._bbox.left - rb._poly.left), yb)

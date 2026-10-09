@@ -62,6 +62,7 @@ if has magic || has lvs; then
   DO_DRC=0; has magic && DO_DRC=1
   DO_EXT=0; has lvs && DO_EXT=1
   cat > magic.tcl <<EOF
+gds maskhints yes
 gds read $GDS
 load $B
 select top cell
@@ -96,6 +97,7 @@ fi
 if has antenna; then
   mkdir -p ant
   cat > ant/ant.tcl <<EOF
+gds maskhints yes
 gds read $GDS
 load $B
 flatten ${B}_flat

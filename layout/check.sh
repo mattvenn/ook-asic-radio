@@ -19,6 +19,7 @@ else (cd "$REPO" && xschem -n -s -q --tcl "set top_subckt 1; set lvs_netlist 1" 
 
 # magic: DRC (full) and LVS extraction, from the GDS
 cat > magic.tcl <<EOF
+gds maskhints yes
 gds read $GDS
 load $B
 select top cell
@@ -51,6 +52,7 @@ echo "== magic DRC"; cat magic_drc.txt
 # violation (a 0.5 x 0.42 um g5 gate on 300 um^2 of met1: ratio 1033 > 400).
 mkdir -p ant
 cat > ant/ant.tcl <<EOF
+gds maskhints yes
 gds read $GDS
 load $B
 flatten ${B}_flat
