@@ -128,7 +128,7 @@ details > summary { cursor: pointer; font-size: 12px; color: var(--muted) }
   <main>
     <div class="stage" id="stage">
       <svg id="cv" aria-label="Tile floorplan"></svg>
-      <div class="keys">drag: move · wheel: zoom · drag empty: pan<br>R rotate · X flip ↕ (MX) · Y flip ↔ (MY) · arrows nudge · F fit</div>
+      <div class="keys">drag: move · wheel: zoom · drag empty: pan · shift-drag: select a group · shift-click: add / remove<br>Esc clear · R rotate · X flip ↕ (MX) · Y flip ↔ (MY) · arrows nudge · F fit</div>
       <div class="overlay" id="layers"></div>
       <div class="coords" id="coords">x –, y – µm</div>
       <div class="tip" id="tip" hidden></div>
@@ -296,6 +296,24 @@ function text(x, y, s, size, attrs) {
   return `<text x="${x}" y="${Y(y)}" font-size="${size}" ${attrs || ''}>${esc(s)}</text>`;
 }
 let last = null;
+// group selection: S.sel = {kind: 'group', items: [{kind: 'inst' | 'decap', id}]}
+function isSel(kind, id) {
+  if (!S.sel) return false;
+  if (S.sel.kind === 'group') return S.sel.items.some(q => q.kind === kind && q.id === id);
+  return S.sel.kind === kind && S.sel.id === id;
+}
+function selItems() { return !S.sel ? [] : S.sel.kind === 'group' ? S.sel.items : (S.sel.kind === 'inst' || S.sel.kind === 'decap') ? [{ kind: S.sel.kind, id: S.sel.id }] : []; }
+function setGroup(items) { S.sel = items.length === 0 ? null : items.length === 1 ? { kind: items[0].kind, id: items[0].id } : { kind: 'group', items }; }
+function toggleSel(kind, id) {
+  const items = selItems().slice(), i = items.findIndex(q => q.kind === kind && q.id === id);
+  if (i >= 0) items.splice(i, 1); else items.push({ kind, id });
+  setGroup(items);
+}
+function bandRect() { const b = drag; return [Math.min(b.x0, b.x1), Math.min(b.y0, b.y1), Math.abs(b.x1 - b.x0), Math.abs(b.y1 - b.y0)]; }
+function decapRef(v, id) { const [b, i] = id.split('.'); return (v.decaps[b] || [])[+i - 1]; }
+function itemPos(v, q) { if (q.kind === 'inst') { const p = viewVariant(v).place[q.id]; return { x: p.x, y: p.y, orient: p.orient }; } const d = decapRef(v, q.id); return { x: d.x, y: d.y }; }
+function setItemPos(v, q, x, y, o) { if (q.kind === 'inst') v.place[q.id] = { x, y, orient: o.orient }; else { const d = decapRef(v, q.id); d.x = x; d.y = y; } }
+function moveGroup(v, dx, dy) { for (const q of selItems()) { const o = itemPos(v, q); setItemPos(v, q, +(o.x + dx).toFixed(3), +(o.y + dy).toFixed(3), o); } }
 function draw() {
   $('#stage').classList.toggle('diagram', S.mode === 'diagram');
   $('#cv').classList.toggle('dg', S.mode === 'diagram');
@@ -345,7 +363,7 @@ function draw() {
   });
   // decaps
   for (const d of S.layers.decap ? r.R.decaps : []) {
-    const sel = S.sel && S.sel.kind === 'decap' && S.sel.id === d.name;
+    const sel = isSel('decap', d.name);
     out.push(`<g data-decap="${d.name}" style="cursor:move">` + rectEl(d.rect, `fill="url(#hatch)" stroke="${sel ? 'var(--sel)' : 'var(--decap)'}" stroke-width="${(sel ? 1.6 : 0.8) * scale}"`) +
       (d.mim ? rectEl(d.rect, `fill="none" stroke="var(--decap)" stroke-dasharray="${2 * scale} ${1.5 * scale}" stroke-width="${0.8 * scale}"`) : '') +
       (d.rect[2] > 20 && d.rect[3] > 6 ? text(d.rect[0] + 2, d.rect[1] + d.rect[3] - 4.5, `${d.def.label} ${d.idx + 1}${d.mim ? ' (MIM over block)' : ''}`, 3.2, 'fill="var(--muted)" font-family="var(--mono)"') +
@@ -355,7 +373,7 @@ function draw() {
   // blocks
   const order = Object.values(r.R.inst).sort((a, b) => (a.name === 'macro' ? -1 : 0) - (b.name === 'macro' ? -1 : 0));
   for (const ins of order) {
-    const c = ins.cat, col = GROUP_COLOR[c.group] || 'var(--dig)', sel = S.sel && S.sel.kind === 'inst' && S.sel.id === ins.name;
+    const c = ins.cat, col = GROUP_COLOR[c.group] || 'var(--dig)', sel = isSel('inst', ins.name);
     const isParked = vv.place[ins.name].parked;
     const g = [`<g data-inst="${ins.name}" style="cursor:move;color:${col}" opacity="${isParked ? .55 : 1}">`];
     if (ins.halo) g.push(rectEl(ins.halo, `fill="none" stroke="${col}" stroke-dasharray="${2 * scale} ${2 * scale}" stroke-width="${0.8 * scale}"`));
@@ -392,6 +410,7 @@ function draw() {
     const m = r.R.inst.macro, a = m.pins['uio_oe[7]'].at, b = m.pins['clk'].at;
     out.push(`<path d="M15 ${Y(H)} L${a[0]} ${Y(a[1])} M131 ${Y(H)} L${b[0]} ${Y(b[1])}" stroke="var(--dig)" stroke-width="${0.8 * scale}" stroke-dasharray="${1.5 * scale} ${1.5 * scale}" fill="none"/>`);
   }
+  if (drag && drag.kind === 'band') { const b = bandRect(); out.push(rectEl(b, `fill="var(--sel)" fill-opacity=".08" stroke="var(--sel)" stroke-dasharray="${3 * scale} ${2 * scale}" stroke-width="${scale}"`)); }
   out.push(text(0, -24, 'parking: unplaced blocks wait here; drag them into the tile', 3.4, 'fill="var(--muted)" font-family="var(--mono)" ' + (Object.values(vv.place).some(p => p.parked) ? '' : 'visibility="hidden"')));
   svg.innerHTML = out.join('');
 }
@@ -539,7 +558,20 @@ function touchQuiet() { clearTimeout(quietT); quietT = setTimeout(() => { const 
 
 function renderSel() {
   const el = $('#secSel'), v = cur();
-  if (!v || !S.sel) { el.innerHTML = `<h2>Selection</h2><p class="empty">Click a block, decap or strap to edit it. Dragging snaps to 0.5 µm.</p>`; return; }
+  if (!v || !S.sel) { el.innerHTML = `<h2>Selection</h2><p class="empty">Click a block, decap or strap to edit it. Dragging snaps to 0.5 µm. Shift-drag over empty space selects a group; shift-click adds or removes one.</p>`; return; }
+  if (S.sel.kind === 'group') {
+    const items = S.sel.items, names = items.map(q => q.kind === 'inst' ? q.id : FP.DECAPS[q.id.split('.')[0]].label + ' ' + q.id.split('.')[1]);
+    const R0 = FP.resolve(CAT, viewVariant(v)), rs = items.map(q => q.kind === 'inst' ? R0.inst[q.id] && R0.inst[q.id].rect : R0.decaps.find(d => d.name === q.id).rect).filter(Boolean);
+    const bx = Math.min(...rs.map(r => r[0])), by = Math.min(...rs.map(r => r[1])), bx1 = Math.max(...rs.map(r => r[0] + r[2])), by1 = Math.max(...rs.map(r => r[1] + r[3]));
+    el.innerHTML = `<h2>Group <span class="meta">${items.length} selected</span></h2>
+      <p class="note" style="display:block">${esc(names.join(', '))}</p>
+      <dl class="kv"><dt>group outline</dt><dd>x ${f1(bx)}–${f1(bx1)}, y ${f1(by)}–${f1(by1)}</dd></dl>
+      <div class="row edit-only"><label class="f">move by x<input type="number" step="0.5" id="gdx" value="0"></label><label class="f">y<input type="number" step="0.5" id="gdy" value="0"></label><button class="btn" id="gMove">Move</button><button class="btn" id="gClear">Clear selection</button></div>
+      <p class="empty" style="margin:0">Drag any of them to move the group. Arrows nudge 0.5 µm (shift: 5 µm). Esc clears.</p>`;
+    $('#gMove').onclick = () => { const dx = +$('#gdx').value, dy = +$('#gdy').value; if (isFinite(dx) && isFinite(dy) && (dx || dy)) { moveGroup(v, dx, dy); touch(); } };
+    $('#gClear').onclick = () => { S.sel = null; render(); };
+    return;
+  }
   if (S.sel.kind === 'inst') {
     const n = S.sel.id, c = CAT[n], p = viewVariant(v).place[n];
     const ins = last && last.R.inst[n];
@@ -781,8 +813,25 @@ svg.addEventListener('pointerdown', (e) => {
     return;
   }
   const v = cur(); const [x, y] = toUm(e);
-  const gi = e.target.closest('[data-inst]'), gd = e.target.closest('[data-decap]'), gs = e.target.closest('[data-strap]');
+  let gi = e.target.closest('[data-inst]'), gd = e.target.closest('[data-decap]'); const gs = e.target.closest('[data-strap]');
+  if (v && !gi && !gd && !gs && !e.target.closest('[data-resize]')) {   // a flyline or label on top: hit-test the blocks underneath
+    const R0 = FP.resolve(CAT, viewVariant(v)), inR = (r) => x >= r[0] && x <= r[0] + r[2] && y >= r[1] && y <= r[1] + r[3];
+    const bi = Object.values(R0.inst).filter(i => inR(i.rect)).sort((a, b) => a.rect[2] * a.rect[3] - b.rect[2] * b.rect[3])[0];
+    const bd = S.layers.decap ? R0.decaps.filter(d => inR(d.rect)).sort((a, b) => a.rect[2] * a.rect[3] - b.rect[2] * b.rect[3])[0] : null;
+    const pick = bi && bd ? (bi.rect[2] * bi.rect[3] <= bd.rect[2] * bd.rect[3] ? 'i' : 'd') : bi ? 'i' : bd ? 'd' : null;
+    if (pick === 'i') gi = { dataset: { inst: bi.name } }; else if (pick === 'd') gd = { dataset: { decap: bd.name } };
+  }
   svg.setPointerCapture(e.pointerId);
+  if (v && e.shiftKey && (gi || gd)) {                       // shift-click: add to / remove from the group
+    toggleSel(gi ? 'inst' : 'decap', gi ? gi.dataset.inst : gd.dataset.decap); drag = null; render(); return;
+  }
+  if (v && e.shiftKey && !gs) {                              // shift-drag on empty space: selection box
+    drag = { kind: 'band', x0: x, y0: y, x1: x, y1: y, keep: selItems().slice() }; S.dragging = false; draw(); return;
+  }
+  const hit = gi ? { kind: 'inst', id: gi.dataset.inst } : gd && !e.target.dataset.resize ? { kind: 'decap', id: gd.dataset.decap } : null;
+  if (v && S.canWrite && hit && S.sel && S.sel.kind === 'group' && isSel(hit.kind, hit.id)) {   // drag the whole group
+    drag = { kind: 'group', x0: x, y0: y, orig: S.sel.items.map(q => [q, itemPos(v, q)]) }; S.dragging = true; render(); return;
+  }
   if (v && S.canWrite && gi) {
     const n = gi.dataset.inst, p = viewVariant(v).place[n];
     S.sel = { kind: 'inst', id: n }; drag = { kind: 'inst', n, dx: x - p.x, dy: y - p.y, p0: p, moved: false };
@@ -820,6 +869,12 @@ svg.addEventListener('pointermove', (e) => {
     S.view.y = drag.v0.y - (e.clientY - drag.cy) / r.height * S.view.h;
     draw(); return;
   }
+  if (drag.kind === 'band') { drag.x1 = x; drag.y1 = y; draw(); return; }
+  if (drag.kind === 'group') {
+    const dx = snap(x - drag.x0), dy = snap(y - drag.y0);
+    for (const [q, o] of drag.orig) setItemPos(v, q, +(o.x + dx).toFixed(3), +(o.y + dy).toFixed(3), o);
+    drag.moved = dx !== 0 || dy !== 0; draw(); renderChecks(); return;
+  }
   if (drag.kind === 'inst') { v.place[drag.n] = { x: snap(x - drag.dx), y: snap(y - drag.dy), orient: drag.p0.orient }; drag.moved = true; }
   else if (drag.kind === 'decap') { drag.d.x = snap(x - drag.dx); drag.d.y = snap(y - drag.dy); }
   else if (drag.kind === 'resize') { drag.d.w = Math.max(2, snap(x - drag.x0)); const ny = Math.min(drag.y1 - 2, snap(y)); drag.d.h = drag.y1 - ny; drag.d.y = ny; }
@@ -829,6 +884,17 @@ svg.addEventListener('pointermove', (e) => {
 function endDrag() {
   if (!drag) return;
   const was = drag; drag = null; S.dragging = false; svg.classList.remove('panning');
+  if (was.kind === 'band') {
+    const v = cur(), b = [Math.min(was.x0, was.x1), Math.min(was.y0, was.y1), Math.abs(was.x1 - was.x0), Math.abs(was.y1 - was.y0)];
+    const R0 = FP.resolve(CAT, viewVariant(v)), items = was.keep.slice();
+    const add = (kind, id) => { if (!items.some(q => q.kind === kind && q.id === id)) items.push({ kind, id }); };
+    if (b[2] > 0.5 || b[3] > 0.5) {
+      for (const i of Object.values(R0.inst)) if (FP.overlap(i.rect, b) > 0) add('inst', i.name);
+      if (S.layers.decap) for (const d of R0.decaps) if (FP.overlap(d.rect, b) > 0) add('decap', d.name);
+    }
+    setGroup(items); render(); return;
+  }
+  if (was.kind === 'group') { if (was.moved) touch(); else render(); return; }
   if (was.kind !== 'pan') touch(); else render();
 }
 svg.addEventListener('pointerup', endDrag);
@@ -846,7 +912,13 @@ document.addEventListener('keydown', (e) => {
   if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName)) return;
   if (S.mode === 'diagram') return;
   if (e.key === 'f' || e.key === 'F') { fit(); draw(); return; }
+  if (e.key === 'Escape' && S.sel) { S.sel = null; render(); return; }
   const v = cur(); if (!v || !S.sel || !S.canWrite) return;
+  if (S.sel.kind === 'group') {
+    const st = e.shiftKey ? 5 : 0.5, dir = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, st], ArrowDown: [0, -st] }[e.key];
+    if (dir) { e.preventDefault(); moveGroup(v, dir[0], dir[1]); touch(); }
+    return;
+  }
   if (S.sel.kind === 'inst') {
     const n = S.sel.id, p = viewVariant(v).place[n];
     const op = { r: 'rot', R: 'rot', x: 'mx', X: 'mx', y: 'my', Y: 'my' }[e.key];
