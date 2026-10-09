@@ -1,0 +1,859 @@
+<title>OOK Radio Floorplan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a layout-editor workbench. Canvas fills the left, a dense inspector column on the right; stacks on phones. */
+:root {
+  --bg: #eef0ec; --panel: #f8f9f6; --ink: #1d2320; --muted: #5f6a64; --line: #cfd5cf; --grid: #dfe4de;
+  --die: #fbfcfa; --accent: #0f6e63; --accent-ink: #ffffff; --sel: #d9480f;
+  --rx: #127a6c; --late: #b4237d; --rxin: #0b5fa5; --clk: #c2410c; --en: #8a6a12; --bias: #4d7c0f; --tx: #b45309; --trim: #6d28d9; --dig: #475569;
+  --decap: #7b8794; --pass: #2f7d32; --warn: #b7791f; --fail: #c0392b; --info: #6b7280;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --ui: "IBM Plex Sans Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121614; --panel: #181d1b; --ink: #e3e8e4; --muted: #94a19a; --line: #2c3430; --grid: #222a26;
+  --die: #0d100f; --accent: #3fb8a6; --accent-ink: #06201c; --sel: #ff8a4c;
+  --rx: #3fc1ad; --late: #ef6ab8; --rxin: #5aa9ef; --clk: #fb8a4a; --en: #d9b44a; --bias: #9acd4c; --tx: #f2a23a; --trim: #a78bfa; --dig: #94a3b8;
+  --decap: #8b98a6; --pass: #5cbf60; --warn: #e3a83b; --fail: #f0675a; --info: #9aa3ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121614; --panel: #181d1b; --ink: #e3e8e4; --muted: #94a19a; --line: #2c3430; --grid: #222a26;
+  --die: #0d100f; --accent: #3fb8a6; --accent-ink: #06201c; --sel: #ff8a4c;
+  --rx: #3fc1ad; --late: #ef6ab8; --rxin: #5aa9ef; --clk: #fb8a4a; --en: #d9b44a; --bias: #9acd4c; --tx: #f2a23a; --trim: #a78bfa; --dig: #94a3b8;
+  --decap: #8b98a6; --pass: #5cbf60; --warn: #e3a83b; --fail: #f0675a; --info: #9aa3ad; color-scheme: dark }
+* { box-sizing: border-box }
+html, body { height: 100% }
+body { background: var(--bg); color: var(--ink); font: 14px/1.4 var(--ui); }
+button, input, select, textarea { font: inherit; color: inherit }
+.app { display: block }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel) }
+.brand { display: flex; align-items: baseline; gap: 10px; min-width: 0 }
+.brand h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: .01em }
+.brand .sub { font: 12px var(--mono); color: var(--muted) }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; order: 3; flex: 1 1 100%; min-width: 0 }
+.tools { margin-left: auto }
+.tab { flex: 0 0 auto; border: 1px solid var(--line); background: transparent; padding: 4px 10px; border-radius: 3px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.tab .dots { font: 11px var(--mono); margin-left: 6px; opacity: .85 }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.btn { border: 1px solid var(--line); background: var(--die); padding: 4px 10px; border-radius: 3px; cursor: pointer }
+.btn:hover { border-color: var(--accent) }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.btn:disabled { opacity: .45; cursor: default }
+:focus-visible { outline: 2px solid var(--sel); outline-offset: 1px }
+.sync { font: 12px var(--mono); color: var(--muted) }
+main { display: block }
+.stage { position: relative; width: 100%; height: max(300px, min(calc(100vw * 0.56), calc(100vh - 96px))); overflow: hidden; background: var(--bg); border-bottom: 1px solid var(--line) }
+svg#cv { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; cursor: grab }
+svg#cv.panning { cursor: grabbing }
+.overlay { position: absolute; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 3px; overflow: hidden }
+.seg button { border: 0; background: var(--die); padding: 4px 12px; cursor: pointer }
+.seg button + button { border-left: 1px solid var(--line) }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg) }
+.diagram .keys, .diagram .overlay, .diagram .coords { display: none }
+svg#cv.dg { cursor: default }
+.dg [data-dinst] { cursor: pointer }
+.dg [data-dinst]:hover rect.blk { stroke-width: 2.4 }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); cursor: pointer }
+.chip input { margin: 0 }
+.coords { position: absolute; right: 12px; bottom: 12px; font: 12px var(--mono); color: var(--muted); background: var(--panel); border: 1px solid var(--line); padding: 2px 8px; border-radius: 3px }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font: 12px var(--mono); padding: 3px 7px; border-radius: 3px; white-space: nowrap; z-index: 3 }
+.keys { position: absolute; right: 12px; top: 12px; font: 11px var(--mono); color: var(--muted); text-align: right; line-height: 1.5 }
+aside { background: var(--panel); display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: start; min-width: 0 }
+section.box { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); padding: 12px 16px; display: grid; gap: 8px; min-width: 0 }
+#secChecks { grid-row: span 3 }
+section.box > h2 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 8px }
+section.box > h2 .meta { letter-spacing: 0; text-transform: none; font: 12px var(--mono) }
+.empty { color: var(--muted); font-size: 13px }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font: 12px var(--mono) }
+.kv dt { color: var(--muted) } .kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums }
+label.f { display: grid; gap: 2px; font-size: 12px; color: var(--muted) }
+input[type=number], input[type=text], select, textarea { background: var(--die); border: 1px solid var(--line); border-radius: 3px; padding: 3px 6px; min-width: 0 }
+input[type=number] { width: 84px; font-family: var(--mono); font-size: 12px }
+textarea { width: 100%; font: 12px var(--mono); resize: vertical }
+.orients { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px }
+.orients button { padding: 3px 0; font: 12px var(--mono) }
+.orients button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.checks { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none }
+.check { position: relative; cursor: help; display: grid; grid-template-columns: 44px 1fr auto; gap: 2px 8px; align-items: baseline; padding: 6px 8px; border-radius: 3px; background: var(--die); border-left: 3px solid var(--info) }
+.check .why { display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 6; background: var(--ink); color: var(--bg); padding: 8px 10px; border-radius: 3px; font-size: 12px; line-height: 1.45; box-shadow: 0 4px 14px rgb(0 0 0 / .25) }
+.check .why b { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 2px; opacity: .75 }
+.check:hover .why, .check:focus .why { display: block }
+.check:hover, .check:focus { outline: 1px solid var(--line) }
+.check.pass { border-left-color: var(--pass) } .check.warn { border-left-color: var(--warn) } .check.fail { border-left-color: var(--fail) }
+.check .st { font: 600 11px var(--mono); text-transform: uppercase }
+.check.pass .st { color: var(--pass) } .check.warn .st { color: var(--warn) } .check.fail .st { color: var(--fail) } .check.info .st { color: var(--info) }
+.check .t { font-weight: 600 } .check .v { font: 12px var(--mono); font-variant-numeric: tabular-nums; text-align: right }
+.check .d { grid-column: 2 / 4; font-size: 12px; color: var(--muted) }
+.summary { display: flex; gap: 10px; font: 12px var(--mono) }
+.summary b { font-weight: 600 }
+.bar { height: 12px; display: flex; border-radius: 2px; overflow: hidden; background: var(--grid) }
+.bar span { display: block; height: 100% }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted) }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px }
+.tbl { width: 100%; border-collapse: collapse; font: 12px var(--mono); font-variant-numeric: tabular-nums }
+.tbl td { padding: 2px 4px; border-bottom: 1px solid var(--grid) } .tbl td.n { text-align: right }
+.tbl tr:hover td { background: var(--grid); cursor: default }
+.scroll { max-height: 280px; overflow-y: auto }
+.note { font-size: 12px; color: var(--muted); white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.note.open { display: block }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; font-size: 12px; justify-self: start }
+
+.warnbox { font-size: 12px; padding: 6px 8px; border-radius: 3px; background: var(--die); border-left: 3px solid var(--warn) }
+.ro .edit-only { display: none !important }
+details > summary { cursor: pointer; font-size: 12px; color: var(--muted) }
+@media (max-width: 860px) {
+  .stage { height: min(62vh, 80vw); min-height: 300px }
+  .keys { display: none }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<div class="app" id="app">
+  <header>
+    <div class="brand"><h1>OOK Radio Floorplan</h1><span class="sub">tt_analog_3x2_3v3 · 493.12 × 225.76 µm</span></div>
+    <div class="tabs" id="tabs" role="tablist" aria-label="Variants"></div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="View"><button id="mLayout" data-mode="layout">Layout</button><button id="mDiagram" data-mode="diagram">Block diagram</button></div>
+      <button class="btn" id="bFull" title="Fill the screen (Esc to leave)">Full screen</button>
+      <button class="btn edit-only" id="bDup" title="Copy this variant">Duplicate</button>
+      <button class="btn edit-only" id="bRen">Rename</button>
+      <button class="btn edit-only" id="bDel">Delete</button>
+      <button class="btn edit-only" id="bNew" title="A new variant with the macro placed and every other block parked under the tile">Blank</button>
+      <span class="sync" id="sync">connecting…</span>
+    </div>
+  </header>
+  <main>
+    <div class="stage" id="stage">
+      <svg id="cv" aria-label="Tile floorplan"></svg>
+      <div class="keys">drag: move · wheel: zoom · drag empty: pan<br>R rotate · X flip ↕ (MX) · Y flip ↔ (MY) · arrows nudge · F fit</div>
+      <div class="overlay" id="layers"></div>
+      <div class="coords" id="coords">x –, y – µm</div>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+    <aside id="side">
+      <section class="box" id="secVariant"></section>
+      <section class="box" id="secSel"></section>
+      <section class="box" id="secChecks"></section>
+      <section class="box" id="secArea"></section>
+      <section class="box" id="secNets"></section>
+      <section class="box" id="secStraps"></section>
+      <section class="box" id="secIO"></section>
+      <section class="box" id="secSettings"></section>
+    </aside>
+  </main>
+</div>
+
+<script>/*DATA*/</script>
+<script>/*ENGINE*/</script>
+<script>
+(function () {
+'use strict';
+const DATA = window.FP_DATA, FP = window.FP, CAT = FP.buildCatalog(DATA), TILE = DATA.tile, H = TILE.h, W = TILE.w;
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const f1 = (x) => (Math.round(x * 100) / 100).toString();
+const snap = (x) => Math.round(x * 2) / 2;
+const NET_COLOR = { rxin: 'var(--rxin)', rx: 'var(--rx)', late: 'var(--late)', clk: 'var(--clk)', en: 'var(--en)', bias: 'var(--bias)', tx: 'var(--tx)', trim: 'var(--trim)' };
+const GROUP_COLOR = { rx: 'var(--rx)', tx: 'var(--tx)', trim: 'var(--trim)', bias: 'var(--bias)', dig: 'var(--dig)' };
+const STRAP_COLOR = { VGND: 'var(--dig)', VAPWR: 'var(--tx)', VDPWR: 'var(--rx)' };
+
+// ---- state
+const S = {
+  variants: {},          // id -> variant body (from the store, or local when there is no store)
+  order: [],
+  cur: null,
+  sel: null,             // {kind: 'inst'|'decap'|'strap', id}
+  settings: Object.assign({}, FP.DEFAULT_SETTINGS),
+  view: null,
+  mode: 'layout',
+  layers: { flylines: true, pins: true, m4: false, labels: true, grid: true, decap: true },
+  hoverNet: null,
+  canWrite: true, db: null, user: null, uid: null, names: {},
+  dirty: new Set(), saving: new Set(), dragging: false,
+};
+try { const l = JSON.parse(localStorage.getItem('fp.layers') || 'null'); if (l) Object.assign(S.layers, l); } catch (e) {}
+try { if (localStorage.getItem('fp.mode') === 'diagram') S.mode = 'diagram'; } catch (e) {}
+
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const cur = () => S.variants[S.cur] || null;
+
+// Unplaced blocks wait in a parking row under the tile.
+function parked(v) {
+  const out = {}; let x = 0;
+  for (const [n, c] of Object.entries(CAT)) {
+    if (v.place && v.place[n]) continue;
+    const w = (v.est && v.est[n] ? v.est[n].w : c.w), h = (v.est && v.est[n] ? v.est[n].h : c.h);
+    if (x + w > W) x = 0;
+    out[n] = { x, y: -40 - h, orient: 'R0', parked: true };
+    x += w + 6;
+  }
+  return out;
+}
+function viewVariant(v) {           // the variant with parked blocks filled in, for drawing only
+  return Object.assign({}, v, { place: Object.assign({}, parked(v), v.place || {}) });
+}
+
+// ---- store
+let unsub = null;
+async function connect() {
+  let db = null, user = null;
+  try { db = window.claude && await window.claude.use('db'); } catch (e) { db = null; }
+  try { user = window.claude && await window.claude.use('user'); } catch (e) { user = null; }
+  S.db = db; S.user = user;
+  if (user) {
+    try { S.uid = await user.id(); } catch (e) {}
+    try { const c = await user.can('data.write'); if (c === false) setReadOnly(); } catch (e) {}
+  }
+  if (!db) { setSync('local only: changes stay in this view'); if (!S.order.length) render(); return; }
+  setSync('loading…');
+  db.collection('variants').onSnapshot((snap) => {
+    const seen = new Set();
+    for (const d of snap.docs) {
+      seen.add(d.id);
+      if (S.dirty.has(d.id) || S.saving.has(d.id) || (S.dragging && d.id === S.cur)) continue;
+      S.variants[d.id] = clone(d.data());
+    }
+    for (const id of Object.keys(S.variants)) if (!seen.has(id) && !S.dirty.has(id) && !S.saving.has(id)) delete S.variants[id];
+    sortOrder();
+    if (!S.cur || !S.variants[S.cur]) S.cur = pickStart();
+    setSync(snap.metadata.fromCache ? 'syncing…' : 'saved');
+    render(); resolveNames();
+  }, (e) => setSync('store unavailable: ' + e.code));
+  db.doc('config/settings').onSnapshot((d) => {
+    if (d.exists && !S.dirty.has('$settings')) { Object.assign(S.settings, FP.DEFAULT_SETTINGS, d.data()); render(); }
+  }, () => {});
+}
+function pickStart() {
+  let id = null; try { id = localStorage.getItem('fp.cur'); } catch (e) {}
+  return id && S.variants[id] ? id : S.order[0] || null;
+}
+function sortOrder() {
+  S.order = Object.keys(S.variants).sort((a, b) => ((S.variants[a].order ?? 99) - (S.variants[b].order ?? 99)) || a.localeCompare(b));
+}
+function setSync(t) { $('#sync').textContent = t; }
+function setReadOnly() { S.canWrite = false; $('#app').classList.add('ro'); setSync('view only'); }
+
+const timers = {};
+function touch(id) {                // a local edit: save after a pause, one write at a time per doc
+  id = id || S.cur;
+  const v = S.variants[id]; if (!v) return;
+  v.updatedAt = new Date().toISOString(); if (S.uid) v.updatedBy = S.uid;
+  S.dirty.add(id); setSync('unsaved…');
+  clearTimeout(timers[id]);
+  timers[id] = setTimeout(() => flush(id), 700);
+  render();
+}
+async function flush(id) {
+  if (S.dragging && id === S.cur) { timers[id] = setTimeout(() => flush(id), 300); return; }
+  if (!S.db) { S.dirty.delete(id); setSync('local only: changes stay in this view'); return; }
+  if (S.saving.has(id)) { timers[id] = setTimeout(() => flush(id), 300); return; }
+  S.dirty.delete(id); S.saving.add(id); setSync('saving…');
+  try {
+    if (id === '$settings') await S.db.doc('config/settings').set(clone(S.settings));
+    else if (S.variants[id]) await S.db.collection('variants').doc(id).set(clone(S.variants[id]));
+    else await S.db.collection('variants').doc(id).delete();
+    setSync('saved');
+  } catch (e) {
+    if (e && e.code === 'invalid_argument') { setReadOnly(); setSync('view only: this view cannot save'); }
+    else if (e && e.code === 'quota_exceeded') setSync('store full: delete a variant');
+    else setSync('save failed (' + (e && e.code || 'error') + '), retrying');
+    if (e && e.code === 'unavailable') { S.dirty.add(id); timers[id] = setTimeout(() => flush(id), 1500 + Math.random() * 1000); }
+  } finally { S.saving.delete(id); }
+}
+async function resolveNames() {
+  if (!S.user || !S.user.profiles) return;
+  const ids = [...new Set(Object.values(S.variants).map(v => v.updatedBy).filter(Boolean))];
+  if (!ids.length) return;
+  try { const ps = await S.user.profiles(ids); for (const id of ids) S.names[id] = (ps[id] && ps[id].name) || ''; renderVariantBox(); } catch (e) {}
+}
+
+// ---- view transform (SVG user units = um, y flipped)
+const Y = (y) => H - y;
+function fit() {
+  const st = $('#stage').getBoundingClientRect();
+  const v = cur(), pk = v ? Object.values(viewVariant(v).place).filter(p => p.parked) : [];
+  const extra = pk.length ? Math.max(...pk.map(p => -p.y)) - 18 : 0;   // show the parking row under the tile
+  const m = 10, vw = W + 2 * m, vh = H + 2 * m + 24 + Math.max(0, extra);
+  const ar = st.width / Math.max(1, st.height);
+  let w = vw, h = vh;
+  if (w / h < ar) w = h * ar; else h = w / ar;
+  S.view = { x: -m - (w - vw) / 2, y: -m - (h - vh) / 2 - 4, w, h };
+}
+function toUm(evt) {
+  const svg = $('#cv'), r = svg.getBoundingClientRect(), v = S.view;
+  const x = v.x + (evt.clientX - r.left) / r.width * v.w, sy = v.y + (evt.clientY - r.top) / r.height * v.h;
+  return [x, H - sy];
+}
+
+// ---- drawing
+function rectEl(r, attrs) {
+  return `<rect x="${r[0]}" y="${Y(r[1] + r[3])}" width="${Math.max(0, r[2])}" height="${Math.max(0, r[3])}" ${attrs || ''}/>`;
+}
+function text(x, y, s, size, attrs) {
+  return `<text x="${x}" y="${Y(y)}" font-size="${size}" ${attrs || ''}>${esc(s)}</text>`;
+}
+let last = null;
+function draw() {
+  $('#stage').classList.toggle('diagram', S.mode === 'diagram');
+  $('#cv').classList.toggle('dg', S.mode === 'diagram');
+  document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode)));
+  if (S.mode === 'diagram') { if (cur()) last = FP.evaluate(DATA, CAT, cur(), S.settings); drawDiagram(); return; }
+  const v = cur(); const svg = $('#cv');
+  if (!S.view) fit();
+  svg.setAttribute('viewBox', `${S.view.x} ${S.view.y} ${S.view.w} ${S.view.h}`);
+  const scale = S.view.w / Math.max(1, svg.getBoundingClientRect().width);   // um per px
+  const out = [];
+  out.push(`<defs>
+    <pattern id="g10" width="10" height="10" patternUnits="userSpaceOnUse" y="${Y(0) % 10}"><path d="M10 0H0V10" fill="none" stroke="var(--grid)" stroke-width="${0.6 * scale}"/></pattern>
+    <pattern id="g50" width="50" height="50" patternUnits="userSpaceOnUse" y="${Y(0) % 50}"><rect width="50" height="50" fill="url(#g10)"/><path d="M50 0H0V50" fill="none" stroke="var(--line)" stroke-width="${0.9 * scale}"/></pattern>
+    <pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="var(--decap)" stroke-width="0.8" opacity=".55"/></pattern>
+    <pattern id="hatchE" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line x1="0" y1="0" x2="0" y2="3" stroke="currentColor" stroke-width="0.5" opacity=".5"/></pattern>
+  </defs>`);
+  out.push(rectEl([0, 0, W, H], `fill="var(--die)" stroke="var(--ink)" stroke-width="${1.2 * scale}"`));
+  if (S.layers.grid) out.push(rectEl([0, 0, W, H], 'fill="url(#g50)"'));
+  // tile pins
+  for (const [n, p] of Object.entries(TILE.pins)) {
+    const bottom = p.y0 < 1, ua = n.startsWith('ua'), dead = n === 'ua[6]' || n === 'ua[7]';
+    out.push(rectEl([p.x0, bottom ? -1.5 : H - 1, p.x1 - p.x0, 2.5], `fill="${ua ? (dead ? 'var(--muted)' : 'var(--ink)') : 'var(--dig)'}"`));
+    if (ua) {
+      const x = (p.x0 + p.x1) / 2;
+      const role = { 'ua[0]': 'rx_p', 'ua[1]': 'rx_n', 'ua[2]': 'dbg', 'ua[3]': 'tx_p', 'ua[4]': 'tx_n', 'ua[5]': 'free', 'ua[6]': 'n/a', 'ua[7]': 'n/a' }[n];
+      out.push(text(x, -7, n, 4.2, `text-anchor="middle" fill="var(--ink)" font-family="var(--mono)"`));
+      out.push(text(x, -12.5, role, 3.6, `text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"`));
+    }
+  }
+  out.push(text(73, H + 3.5, 'TT digital pins  x 15–131', 3.6, `text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"`));
+  out.push(text(W, -7, '0, 0 lower-left · µm', 3.4, `text-anchor="end" fill="var(--muted)" font-family="var(--mono)"`));
+  if (!v) { svg.innerHTML = out.join(''); return; }
+  const vv = viewVariant(v);
+  const r = FP.evaluate(DATA, CAT, vv, S.settings);
+  last = r;
+  // TT channel
+  if (r.channel) out.push(rectEl(r.channel, `fill="var(--dig)" fill-opacity=".08" stroke="var(--dig)" stroke-dasharray="${3 * scale} ${2 * scale}" stroke-width="${0.8 * scale}"`),
+    text(r.channel[0] + 2, r.channel[1] + r.channel[3] / 2 - 1.2, `TT pin channel ${S.settings.channel} µm`, 3.2, 'fill="var(--muted)" font-family="var(--mono)"'));
+  // straps
+  (v.straps || []).forEach((st, i) => {
+    const issue = r.checks.find(c => c.rule === 'P' && c.status === 'fail' && c.detail.includes(`${st.net} @ ${(Math.round(st.x * 10) / 10).toFixed(1)}`));
+    const sel = S.sel && S.sel.kind === 'strap' && S.sel.id === i;
+    out.push(`<g data-strap="${i}" style="cursor:ew-resize">` +
+      rectEl([st.x - 1.5, S.settings.strapY, st.w + 3, H - 2 * S.settings.strapY], 'fill="transparent"') +
+      rectEl([st.x, S.settings.strapY, st.w, H - 2 * S.settings.strapY], `fill="${STRAP_COLOR[st.net] || 'var(--muted)'}" fill-opacity="${sel ? .7 : .35}" stroke="${issue ? 'var(--fail)' : sel ? 'var(--sel)' : 'none'}" stroke-width="${1.2 * scale}"`) +
+      text(st.x + st.w / 2, H - S.settings.strapY - 3, st.net, 2.6, `text-anchor="middle" fill="var(--ink)" font-family="var(--mono)" transform="rotate(-90 ${st.x + st.w / 2} ${Y(H - S.settings.strapY - 3)})"`) + '</g>');
+  });
+  // decaps
+  for (const d of S.layers.decap ? r.R.decaps : []) {
+    const sel = S.sel && S.sel.kind === 'decap' && S.sel.id === d.name;
+    out.push(`<g data-decap="${d.name}" style="cursor:move">` + rectEl(d.rect, `fill="url(#hatch)" stroke="${sel ? 'var(--sel)' : 'var(--decap)'}" stroke-width="${(sel ? 1.6 : 0.8) * scale}"`) +
+      (d.mim ? rectEl(d.rect, `fill="none" stroke="var(--decap)" stroke-dasharray="${2 * scale} ${1.5 * scale}" stroke-width="${0.8 * scale}"`) : '') +
+      (d.rect[2] > 20 && d.rect[3] > 6 ? text(d.rect[0] + 2, d.rect[1] + d.rect[3] - 4.5, `${d.def.label} ${d.idx + 1}${d.mim ? ' (MIM over block)' : ''}`, 3.2, 'fill="var(--muted)" font-family="var(--mono)"') +
+        text(d.rect[0] + 2, d.rect[1] + d.rect[3] - 8.5, `${f1(d.rect[2])} × ${f1(d.rect[3])}`, 2.8, 'fill="var(--muted)" font-family="var(--mono)"') : '') +
+      (sel ? rectEl([d.rect[0] + d.rect[2] - 2, d.rect[1] - 0.5, 2.5, 2.5], 'data-resize="1" fill="var(--sel)" style="cursor:nwse-resize"') : '') + '</g>');
+  }
+  // blocks
+  const order = Object.values(r.R.inst).sort((a, b) => (a.name === 'macro' ? -1 : 0) - (b.name === 'macro' ? -1 : 0));
+  for (const ins of order) {
+    const c = ins.cat, col = GROUP_COLOR[c.group] || 'var(--dig)', sel = S.sel && S.sel.kind === 'inst' && S.sel.id === ins.name;
+    const isParked = vv.place[ins.name].parked;
+    const g = [`<g data-inst="${ins.name}" style="cursor:move;color:${col}" opacity="${isParked ? .55 : 1}">`];
+    if (ins.halo) g.push(rectEl(ins.halo, `fill="none" stroke="${col}" stroke-dasharray="${2 * scale} ${2 * scale}" stroke-width="${0.8 * scale}"`));
+    g.push(rectEl(ins.rect, `fill="${col}" fill-opacity="${c.inst === 'macro' ? .1 : .14}" stroke="${sel ? 'var(--sel)' : col}" stroke-width="${(sel ? 2 : 1) * scale}"`));
+    if (c.estimate) g.push(rectEl(ins.rect, 'fill="url(#hatchE)"'));
+    if (S.layers.m4 && ins.name !== 'macro') for (const m of ins.m4) g.push(rectEl(m, `fill="var(--fail)" fill-opacity=".18" stroke="var(--fail)" stroke-opacity=".5" stroke-width="${0.5 * scale}"`));
+    if (S.layers.pins) for (const [pn, p] of Object.entries(ins.pins)) {
+      if (ins.name === 'macro' && !/^(tx_en|tx_en_n|rx_en|dbg_en|comp_in|sc_phi|trim_out|clk)/.test(pn)) continue;
+      const s = ins.name === 'macro' ? 1.0 : 1.2;
+      g.push(rectEl([p.at[0] - s / 2, p.at[1] - s / 2, s, s], `fill="${/^(VDD|VSS|VAPWR|VGND)$/.test(pn) ? 'var(--muted)' : col}"`));
+      if (p.moved) g.push(`<circle cx="${p.at[0]}" cy="${Y(p.at[1])}" r="1.5" fill="none" stroke="var(--sel)" stroke-width="${0.9 * scale}"/>`);
+      if (S.layers.labels && scale < 0.35 && !/^(VDD|VSS|VAPWR|VGND)$/.test(pn)) g.push(text(p.at[0] + 0.9, p.at[1] + 0.5, pn, 1.6, 'fill="var(--ink)" font-family="var(--mono)"'));
+    }
+    const [x, y, w, h] = ins.rect;
+    if (S.layers.labels) {
+      const fs = Math.max(2.4, Math.min(8, Math.min(w / (ins.name.length * 0.62 + 1), h / 2.6)));
+      g.push(text(x + w / 2, y + h / 2 + fs * 0.1, ins.name === 'macro' ? 'radio_digital' : ins.name, fs, `text-anchor="middle" fill="var(--ink)" font-weight="600"`));
+      if (h > fs * 2.4) g.push(text(x + w / 2, y + h / 2 - fs * 0.95, `${c.label || c.cell} · ${ins.pl.orient}`, fs * 0.55, `text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"`));
+      if (c.inst === 'macro') g.push(text(x + w / 2, y + h / 2 - 13, (Math.abs(ins.w - 260) > 1e-6 ? `reshaped ${f1(ins.w)} × ${f1(ins.h)} (same area; needs a re-harden)` : 'outline real (260 × 190)') + '; pin positions estimated from pin_order.cfg', 3.4, 'text-anchor="middle" fill="var(--muted)" font-family="var(--mono)"'));
+    }
+    g.push('</g>');
+    out.push(g.join(''));
+  }
+  // flylines
+  if (S.layers.flylines) for (const n of r.nets) {
+    if (n.missing) continue;
+    const hot = S.hoverNet === n.name;
+    const pts = [n.pa, n.segs[0].slice(2, 4), n.pb];
+    out.push(`<polyline data-net="${esc(n.name)}" points="${pts.map(p => `${p[0]},${Y(p[1])}`).join(' ')}" fill="none" stroke="${NET_COLOR[n.cls]}" stroke-width="${(hot ? 2.6 : 1.1) * scale}" stroke-opacity="${hot ? 1 : .8}" ${n.cls === 'en' ? `stroke-dasharray="${3 * scale} ${2 * scale}"` : ''}/>`);
+    out.push(`<polyline data-net="${esc(n.name)}" points="${pts.map(p => `${p[0]},${Y(p[1])}`).join(' ')}" fill="none" stroke="transparent" stroke-width="${7 * scale}"/>`);
+  }
+  // TT bus: 42 pins to the macro's north edge
+  if (S.layers.flylines && r.R.inst.macro) {
+    const m = r.R.inst.macro, a = m.pins['uio_oe[7]'].at, b = m.pins['clk'].at;
+    out.push(`<path d="M15 ${Y(H)} L${a[0]} ${Y(a[1])} M131 ${Y(H)} L${b[0]} ${Y(b[1])}" stroke="var(--dig)" stroke-width="${0.8 * scale}" stroke-dasharray="${1.5 * scale} ${1.5 * scale}" fill="none"/>`);
+  }
+  out.push(text(0, -24, 'parking: unplaced blocks wait here; drag them into the tile', 3.4, 'fill="var(--muted)" font-family="var(--mono)" ' + (Object.values(vv.place).some(p => p.parked) ? '' : 'visibility="hidden"')));
+  svg.innerHTML = out.join('');
+}
+
+// ---- block diagram: how the blocks join, RX on top, TX below; lengths from the open variant
+const DG = {
+  blocks: [
+    ['pad:ua[0]', 'ua[0]', 'rx_p', 20, 110, 46, 22, 'pad'], ['pad:ua[1]', 'ua[1]', 'rx_n', 20, 150, 46, 22, 'pad'],
+    ['xchain', 'lna_chain', '', 100, 90, 330, 100, 'rx'],
+    ['xdet', 'log_det', 'successive detection, t1-t6', 100, 240, 330, 56, 'rx'],
+    ['xlpf', 'lpf_rc', '14 kHz RC', 470, 240, 110, 40, 'rx'],
+    ['xdbg', 'dbg_tg', '', 470, 294, 60, 24, 'rx'], ['pad:ua[2]', 'ua[2]', '', 566, 295, 46, 22, 'pad'],
+    ['xavg', 'avg_sc', 'SC average', 640, 250, 120, 44, 'rx'],
+    ['xcomp', 'comp_ct', 'comparator', 800, 150, 120, 80, 'rx'],
+    ['xdac', 'r2r', '8-bit trim DAC', 700, 28, 120, 48, 'trim'],
+    ['xctrim', 'Ctrim', '1 pF est.', 820, 92, 80, 34, 'trim'],
+    ['xbias', 'bias_gen', '', 470, 30, 120, 50, 'bias'],
+    ['macro', 'radio_digital', '', 960, 10, 90, 530, 'dig'],
+    ['pad:ua[3]', 'ua[3]', 'tx_p', 40, 372, 46, 22, 'pad'], ['pad:ua[4]', 'ua[4]', 'tx_n', 40, 462, 46, 22, 'pad'],
+    ['xtx.xdrv_p', 'tx_drv', 'p arm', 140, 360, 110, 46, 'tx'], ['xtx.xdrv_n', 'tx_drv', 'n arm', 140, 450, 110, 46, 'tx'],
+    ['xtx.xls', 'tx_ls', 'level shift', 340, 400, 100, 50, 'tx'],
+    ['xtx.xlse_p', 'tx_ls_en', 'enable p', 340, 334, 100, 36, 'tx'], ['xtx.xlse_n', 'tx_ls_en', 'enable n', 340, 482, 100, 36, 'tx'],
+    ['xtx.xring', 'tx_ring', '~434 MHz ring', 500, 405, 100, 40, 'tx'],
+  ],
+  // [net name (as in the engine), points, label anchor segment]
+  wires: [
+    ['rx_p', [[66, 121], [100, 121]], { name: '', pos: [68, 134, 'start'] }], ['rx_n', [[66, 161], [100, 161]], { name: '', pos: [68, 174, 'start'] }],
+    ['o1', [[157, 150], [157, 240]]], ['o2', [[207, 150], [207, 240]]], ['o3', [[257, 150], [257, 240]]],
+    ['o4', [[307, 150], [307, 240]]], ['o5', [[357, 150], [357, 240]]], ['out', [[407, 150], [407, 240]]],
+    ['det', [[430, 268], [450, 268], [450, 260], [470, 260]], { pos: [452, 236, 'middle'] }],
+    ['det dbg', [[450, 268], [450, 306], [470, 306]], { pos: [454, 290, 'start'] }], ['dbg', [[530, 306], [566, 306]], { pos: [548, 330, 'middle'] }],
+    ['lpf comp', [[580, 260], [620, 260], [620, 200], [800, 200]]], ['lpf', [[620, 260], [620, 272], [640, 272]], { pos: [584, 290, 'start'] }],
+    ['avg', [[760, 272], [780, 272], [780, 178], [800, 178]]],
+    ['comp_in', [[920, 190], [960, 190]]],
+    ['sc_phi1', [[960, 282], [760, 282]]], ['sc_phi2', [[960, 290], [760, 290]], { below: true }],
+    ['trim[7]', [[960, 52], [820, 52]], { name: 'trim_out[7:0]' }], ['dac', [[760, 76], [760, 110], [820, 110]]], ['trim', [[900, 110], [910, 110], [910, 150]]],
+    ['vcm', [[470, 45], [125, 45], [125, 90]]], ['ib_chain', [[470, 65], [260, 65], [260, 90]]],
+    ['ib_det', [[530, 80], [530, 225], [440, 225], [440, 268], [430, 268]]],
+    ['ib_comp', [[590, 55], [640, 55], [640, 160], [800, 160]]],
+    ['rx_en', [[960, 16], [530, 16], [530, 30]]], ['dbg_en', [[960, 314], [500, 314], [500, 318]]],
+    ['tx_en key', [[960, 425], [600, 425]]], ['ring', [[500, 425], [440, 425]]],
+    ['a', [[340, 412], [300, 412], [300, 383], [250, 383]]], ['b', [[340, 438], [280, 438], [280, 473], [250, 473]]],
+    ['tx_en', [[960, 352], [440, 352]]], ['enh_p', [[340, 352], [195, 352], [195, 360]]],
+    ['tx_en_n', [[960, 506], [440, 506]]], ['enh_n', [[340, 506], [195, 506], [195, 496]]],
+    ['tx_p', [[140, 383], [86, 383]]], ['tx_n', [[140, 473], [86, 473]]],
+  ],
+};
+function drawDiagram() {
+  const svg = $('#cv'), nets = last ? last.nets : [], o = [];
+  const byName = (n) => nets.find(q => q.name === n);
+  const VB = [0, -6, 1060, 572];
+  svg.setAttribute('viewBox', VB.join(' '));
+  o.push(`<defs><marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="context-stroke"/></marker></defs>`);
+  o.push(`<rect x="${VB[0]}" y="${VB[1]}" width="${VB[2]}" height="${VB[3]}" fill="var(--die)"/>`);
+  o.push(`<line x1="8" y1="326" x2="950" y2="326" stroke="var(--line)" stroke-dasharray="4 4"/>`);
+  o.push(`<text x="12" y="12" font-size="13" font-weight="700" fill="var(--rx)" letter-spacing="1">RX</text>`);
+  o.push(`<text x="12" y="344" font-size="13" font-weight="700" fill="var(--tx)" letter-spacing="1">TX</text>`);
+  for (const [id, name, sub, x, y, w, h, g] of DG.blocks) {
+    const col = g === 'pad' ? 'var(--ink)' : GROUP_COLOR[g] || 'var(--dig)', est = CAT[id] && CAT[id].estimate;
+    const placed = !id.startsWith('pad:') && cur() && cur().place && cur().place[id];
+    o.push(`<g ${id.startsWith('pad:') ? '' : `data-dinst="${id}"`}><title>${esc(id.startsWith('pad:') ? id.slice(4) : id + ' (' + name + ')' + (placed ? '' : ' — not placed in this variant'))}</title>`);
+    o.push(`<rect class="blk" x="${x}" y="${y}" width="${w}" height="${h}" rx="${g === 'pad' ? 0 : 3}" fill="${col}" fill-opacity="${g === 'pad' ? .9 : .12}" stroke="${col}" stroke-width="1.4" ${placed || id.startsWith('pad:') ? '' : 'stroke-dasharray="4 3"'}/>`);
+    if (est) o.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#hatchD)" style="color:${col}"/>`);
+    if (g === 'pad') o.push(`<text x="${x + w / 2}" y="${y + 15}" font-size="10" text-anchor="middle" fill="var(--die)" font-family="var(--mono)">${esc(name)}</text><text x="${x + w / 2}" y="${y - 4}" font-size="9" text-anchor="middle" fill="var(--muted)" font-family="var(--mono)">${esc(sub)}</text>`);
+    else if (id === 'macro') o.push(`<text x="${x + w / 2}" y="${y + h / 2}" font-size="14" font-weight="600" text-anchor="middle" fill="var(--ink)" transform="rotate(-90 ${x + w / 2} ${y + h / 2})">radio_digital (macro)</text>`);
+    else {
+      o.push(`<text x="${x + 8}" y="${y + 16}" font-size="13" font-weight="600" fill="var(--ink)">${esc(name)}</text>`);
+      if (sub && h > 26) o.push(`<text x="${x + 8}" y="${y + 30}" font-size="10" fill="var(--muted)" font-family="var(--mono)">${esc(sub)}</text>`);
+    }
+    o.push('</g>');
+  }
+  // chain stages and log_det taps
+  for (let i = 0; i < 6; i++) {
+    const x0 = 115 + i * 50;
+    o.push(`<path d="M${x0} 118 L${x0} 162 L${x0 + 34} 140 Z" fill="var(--die)" stroke="var(--rx)" stroke-width="1.2"/><text x="${x0 + 10}" y="144" font-size="10" fill="var(--ink)" font-family="var(--mono)">${i + 1}</text>`);
+    o.push(`<line x1="${x0 + 34}" y1="140" x2="${x0 + 50}" y2="140" stroke="var(--rx)" stroke-width="1.2"/>`);
+    o.push(`<text x="${157 + i * 50 + 3}" y="292" font-size="9" fill="var(--muted)" font-family="var(--mono)">t${i + 1}</text>`);
+  }
+  o.push(`<line x1="100" y1="121" x2="108" y2="121" stroke="var(--rxin)"/><line x1="108" y1="121" x2="108" y2="140" stroke="var(--rxin)"/><line x1="100" y1="161" x2="108" y2="161" stroke="var(--rxin)"/><line x1="108" y1="161" x2="108" y2="140" stroke="var(--rxin)"/><line x1="108" y1="140" x2="115" y2="140" stroke="var(--rxin)"/>`);
+  const tw = (t) => t.length * 5.5;                       // 9px mono text width
+  const lab = (x, y, t, col, anchor) => `<text x="${x}" y="${y}" font-size="9" text-anchor="${anchor || 'middle'}" fill="${col}" font-family="var(--mono)">${esc(t)}</text>`;
+  for (const [n, pts, opt = {}] of DG.wires) {
+    const net = byName(n), cls = (FP.NETS.find(q => q[0] === n) || [])[1] || 'rx';
+    const col = NET_COLOR[cls], hot = S.hoverNet === n;
+    o.push(`<polyline data-net="${esc(n)}" points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${col}" stroke-width="${hot ? 3 : 1.6}" ${cls === 'en' ? 'stroke-dasharray="5 3"' : ''} marker-end="url(#ar)"/>`);
+    o.push(`<polyline data-net="${esc(n)}" points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="transparent" stroke-width="10"/>`);
+    const len = n === 'trim[7]' ? (nets.some(q => q.name.startsWith('trim[') && !q.missing) ? Math.max(...nets.filter(q => q.name.startsWith('trim[') && !q.missing).map(q => q.len)) : null)
+      : net && !net.missing ? net.len : null;
+    const name = opt.name !== undefined ? opt.name : n, L = len !== null ? `${len.toFixed(0)} µm` : '';
+    if (opt.pos) { o.push(lab(opt.pos[0], opt.pos[1], [name, L].filter(Boolean).join(' '), col, opt.pos[2])); continue; }
+    let best = 0, bl = -1;                                    // label the longest segment
+    for (let i = 0; i < pts.length - 1; i++) { const l = Math.abs(pts[i + 1][0] - pts[i][0]) + Math.abs(pts[i + 1][1] - pts[i][1]); if (l > bl) { bl = l; best = i; } }
+    const a = pts[best], b = pts[best + 1], one = [name, L].filter(Boolean).join(' ');
+    if (a[1] === b[1]) {
+      const mx = (a[0] + b[0]) / 2;
+      if (Math.abs(b[0] - a[0]) >= tw(one) + 8) o.push(lab(mx, opt.below ? a[1] + 11 : a[1] - 4, one, col));
+      else { o.push(lab(mx, a[1] - 4, name, col)); if (L) o.push(lab(mx, a[1] + 11, L, col)); }
+    } else {
+      const my = (a[1] + b[1]) / 2;
+      o.push(lab(a[0] + 4, my - 2, name, col, 'start')); if (L) o.push(lab(a[0] + 4, my + 9, L, col, 'start'));
+    }
+  }
+  o.push(`<text x="12" y="552" font-size="10" fill="var(--muted)" font-family="var(--mono)">Lengths: Manhattan, in the open variant (none shown when an end is unplaced). Dashed outline: not placed. Click a block to find it in the layout.</text>`);
+  o.push(`<text x="12" y="565" font-size="10" fill="var(--muted)" font-family="var(--mono)">Decaps (VAPWR 50 pF, VDPWR 30 pF) sit on the supplies, off the signal path.</text>`);
+  o.unshift(`<defs><pattern id="hatchD" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line x1="0" y1="0" x2="0" y2="5" stroke="currentColor" stroke-width="0.8" opacity=".5"/></pattern></defs>`);
+  svg.innerHTML = o.join('');
+}
+function setMode(m) {
+  S.mode = m; try { localStorage.setItem('fp.mode', m); } catch (e) {}
+  if (m === 'layout') fit();
+  draw();
+}
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+
+// ---- panels
+function badge(st) { return `<span class="st">${st}</span>`; }
+function renderTabs() {
+  const t = $('#tabs');
+  if (!S.order.length) { t.innerHTML = '<span class="empty">No variants yet</span>'; return; }
+  t.innerHTML = S.order.map(id => {
+    const v = S.variants[id];
+    const r = FP.evaluate(DATA, CAT, viewVariant(v), S.settings);
+    const f = r.checks.filter(c => c.status === 'fail').length, w = r.checks.filter(c => c.status === 'warn').length;
+    return `<button class="tab" role="tab" data-tab="${esc(id)}" aria-selected="${id === S.cur}" title="${esc(v.name)}">${esc(v.name)}<span class="dots">${f} fail · ${w} warn</span></button>`;
+  }).join('');
+}
+function renderVariantBox() {
+  const v = cur(), el = $('#secVariant');
+  if (!v) {
+    el.innerHTML = `<h2>Variants</h2><p class="empty">Nothing here yet. Claude writes named variants into this page's shared store, and they appear as tabs above.
+      Start a blank variant, or import a floorplan.json below.</p><div class="row edit-only"><button class="btn primary" id="bNew2">Start a blank variant</button></div>`;
+    const b = $('#bNew2'); if (b) b.onclick = newBlank;
+    return;
+  }
+  const who = v.updatedBy ? (v.updatedBy === S.uid ? 'you' : (S.names[v.updatedBy] || 'someone')) : '';
+  el.innerHTML = `<h2>${esc(v.name)} <span class="meta">${v.updatedAt ? new Date(v.updatedAt).toLocaleString() : ''}${who ? ' · ' + esc(who) : ''}</span></h2>
+    <div class="note${S.noteOpen ? ' open' : ''}" id="noteView">${esc(v.note || '')}</div>
+    <div class="row"><button class="linkbtn" id="noteMore">${S.noteOpen ? 'less' : 'more'}</button>
+    <details class="edit-only"><summary>Edit the note</summary><textarea id="noteEd" rows="6">${esc(v.note || '')}</textarea></details></div>`;
+  $('#noteMore').onclick = () => { S.noteOpen = !S.noteOpen; renderVariantBox(); };
+  const ne = $('#noteEd'); if (ne) ne.oninput = () => { v.note = ne.value; $('#noteView').textContent = ne.value; touchQuiet(); };
+}
+let quietT = null;
+function touchQuiet() { clearTimeout(quietT); quietT = setTimeout(() => { const v = cur(); if (v) { S.dirty.add(S.cur); v.updatedAt = new Date().toISOString(); if (S.uid) v.updatedBy = S.uid; flush(S.cur); } }, 800); }
+
+function renderSel() {
+  const el = $('#secSel'), v = cur();
+  if (!v || !S.sel) { el.innerHTML = `<h2>Selection</h2><p class="empty">Click a block, decap or strap to edit it. Dragging snaps to 0.5 µm.</p>`; return; }
+  if (S.sel.kind === 'inst') {
+    const n = S.sel.id, c = CAT[n], p = viewVariant(v).place[n];
+    const ins = last && last.R.inst[n];
+    const est = v.est && v.est[n] ? v.est[n] : { w: c.w, h: c.h };
+    el.innerHTML = `<h2>${esc(n)} <span class="meta">${esc(c.cell)}${c.part ? ' part ' + c.part : ''}</span></h2>
+      <div class="row"><label class="f">x<input type="number" step="0.5" id="sx" value="${f1(p.x)}"></label><label class="f">y<input type="number" step="0.5" id="sy" value="${f1(p.y)}"></label>
+      ${c.estimate ? `<label class="f">w<input type="number" step="0.5" id="sw" value="${f1(est.w)}"></label><label class="f">h<input type="number" step="0.5" id="sh" value="${f1(est.h)}"></label>` : ''}</div>
+      <div class="orients edit-only">${Object.keys(FP.ORIENTS).map(o => `<button class="btn" data-or="${o}" aria-pressed="${p.orient === o}">${o}</button>`).join('')}</div>
+      ${c.reshape ? `<label class="f">width (height follows, area ${f1(c.w * c.h)} µm²)<input type="range" id="mwR" min="220" max="480" step="0.5" value="${f1(est.w)}"></label>
+      <div class="row edit-only"><label class="f">w<input type="number" step="0.5" min="220" max="480" id="mw" value="${f1(est.w)}"></label><label class="f">h<input type="number" id="mh" value="${(c.w * c.h / est.w).toFixed(2)}" disabled></label><button class="btn" id="mReset">260 × 190</button></div>
+      <label class="f">r2r trim drive, trim_out[7:0], on the macro's<select id="mTrim">${Object.entries(FP.TRIM_SIDES).map(([k, l]) => `<option value="${k}" ${((v.macroPins && v.macroPins.trim) || 'W') === k ? 'selected' : ''}>${l} edge</option>`).join('')}</select></label>` : ''}
+      <dl class="kv"><dt>placed size</dt><dd>${ins ? `${f1(ins.rect[2])} × ${f1(ins.rect[3])} µm` : '-'}</dd><dt>area</dt><dd>${f1(c.estimate ? est.w * est.h : c.w * c.h)} µm²</dd>${c.reshape && (Math.abs(est.w - c.w) > 1e-6 || (v.macroPins && v.macroPins.trim && v.macroPins.trim !== 'W')) ? '<dt>note</dt><dd>needs a re-harden (shape or pin order)</dd>' : ''}
+      <dt>status</dt><dd>${c.estimate ? 'estimate: not laid out yet (hatched)' : p.parked ? 'parked, not placed' : 'GDS outline'}</dd>
+      ${ins && Object.values(ins.pins).some(q => q.moved) ? `<dt>pins moved</dt><dd>${esc(Object.entries(ins.pins).filter(([, q]) => q.moved).map(([k]) => k).join(', '))}</dd><dt></dt><dd>${n === 'macro' ? 'needs a new pin_order.cfg' : 'needs a block re-layout'} (orange rings)</dd>` : ''}</dl>
+      ${ins && Object.values(ins.pins).some(q => q.moved) ? '<div class="row edit-only"><button class="btn" id="bPinReset">Put its pins back (GDS)</button></div>' : ''}
+      ${p.parked ? '' : `<div class="row edit-only"><button class="btn" id="bPark">Park it (unplace)</button></div>`}`;
+    const setXY = () => { const x = +$('#sx').value, y = +$('#sy').value; if (isFinite(x) && isFinite(y)) { v.place[n] = Object.assign({}, p, { x, y }); delete v.place[n].parked; touch(); } };
+    $('#sx').onchange = setXY; $('#sy').onchange = setXY;
+    if (c.reshape) {
+      const setW = (w, live) => {
+        w = Math.min(480, Math.max(220, snap(+w))); if (!isFinite(w)) return;
+        const A = c.w * c.h, o = viewVariant(v).place[n], old = est.w, oh = A / old;
+        const [pw0, ph0] = FP.placedSize(o.orient, old, oh), [pw1, ph1] = FP.placedSize(o.orient, w, A / w);
+        v.est = v.est || {}; v.est[n] = { w, h: +(A / w).toFixed(4) };
+        v.place[n] = { x: +(o.x + pw0 - pw1).toFixed(3), y: +(o.y + ph0 - ph1).toFixed(3), orient: o.orient };   // keep the top-right corner
+        est.w = w;
+        if (live) { draw(); renderChecks(); $('#mw').value = f1(w); $('#mh').value = (A / w).toFixed(2); } else touch();
+      };
+      $('#mwR').oninput = () => setW($('#mwR').value, true);
+      $('#mwR').onchange = () => setW($('#mwR').value, false);
+      $('#mw').onchange = () => setW($('#mw').value, false);
+      $('#mReset').onclick = () => setW(260, false);
+      $('#mTrim').onchange = () => { v.macroPins = Object.assign({}, v.macroPins, { trim: $('#mTrim').value }); touch(); };
+    }
+    if (c.estimate) { const se = () => { v.est = v.est || {}; v.est[n] = { w: Math.max(1, +$('#sw').value), h: Math.max(1, +$('#sh').value) }; touch(); }; $('#sw').onchange = se; $('#sh').onchange = se; }
+    el.querySelectorAll('[data-or]').forEach(b => b.onclick = () => setOrient(n, b.dataset.or));
+    const bp = $('#bPark'); if (bp) bp.onclick = () => { delete v.place[n]; touch(); };
+    const br = $('#bPinReset'); if (br) br.onclick = () => { if (v.pins) delete v.pins[n]; touch(); };
+  } else if (S.sel.kind === 'decap') {
+    const [base, i] = S.sel.id.split('.'); const list = v.decaps[base]; const d = list && list[+i - 1];
+    if (!d) { S.sel = null; return renderSel(); }
+    const def = FP.DECAPS[base];
+    el.innerHTML = `<h2>${esc(def.label)} ${i} <span class="meta">${def.cell} · estimate</span></h2>
+      <div class="row"><label class="f">x<input type="number" step="0.5" id="dx" value="${f1(d.x)}"></label><label class="f">y<input type="number" step="0.5" id="dy" value="${f1(d.y)}"></label>
+      <label class="f">w<input type="number" step="0.5" id="dw" value="${f1(d.w)}"></label><label class="f">h<input type="number" step="0.5" id="dh" value="${f1(d.h)}"></label></div>
+      <label class="chip edit-only"><input type="checkbox" id="dMim" ${d.mim ? 'checked' : ''}> MIM only, on top of a met1-only block (r2r)</label>
+      <dl class="kv"><dt>this rectangle</dt><dd>${f1(d.w * d.h)} µm²${d.mim ? ' MIM' : ''}</dd><dt>all ${def.net} decap</dt><dd>${f1(list.reduce((t, q) => t + q.w * q.h, 0))} µm²</dd></dl>
+      <div class="row edit-only"><button class="btn" id="bDecDel">Remove this rectangle</button></div>`;
+    for (const k of ['x', 'y', 'w', 'h']) $('#d' + k).onchange = () => { d[k] = Math.max(k === 'w' || k === 'h' ? 1 : -1e9, +$('#d' + k).value); touch(); };
+    $('#bDecDel').onclick = () => { list.splice(+i - 1, 1); S.sel = null; touch(); };
+    const dm = $('#dMim'); if (dm) dm.onchange = () => { if (dm.checked) d.mim = true; else delete d.mim; touch(); };
+  } else if (S.sel.kind === 'strap') {
+    const st = (v.straps || [])[S.sel.id]; if (!st) { S.sel = null; return renderSel(); }
+    el.innerHTML = `<h2>Strap ${esc(st.net)} <span class="meta">met4, full height</span></h2>
+      <div class="row"><label class="f">net<select id="tn">${['VGND', 'VAPWR', 'VDPWR'].map(n => `<option ${n === st.net ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+      <label class="f">x<input type="number" step="0.1" id="tx" value="${f1(st.x)}"></label><label class="f">w<input type="number" step="0.1" id="tw" value="${f1(st.w)}"></label></div>
+      <div class="row edit-only"><button class="btn" id="bStDel">Remove strap</button></div>`;
+    $('#tn').onchange = () => { st.net = $('#tn').value; touch(); };
+    $('#tx').onchange = () => { st.x = +$('#tx').value; touch(); };
+    $('#tw').onchange = () => { st.w = Math.max(0.5, +$('#tw').value); touch(); };
+    $('#bStDel').onclick = () => { v.straps.splice(S.sel.id, 1); S.sel = null; touch(); };
+  }
+}
+// Why each rule exists (docs/floorplan_spec.md "Rules, ranked" and the results behind it)
+const WHY = {
+  'Chain input far from the macro': 'The macro runs at 10 MHz and its 43rd / 44th harmonics (430 / 440 MHz) fall in the chain\'s 330-560 MHz band; the correlator runs all the time in RX. Anything coupled into the chain input is amplified ~80 dB, so the input section and the ua[0] / ua[1] pad wires should be as far as possible from the macro, its supply and the TT-pin wiring. Measured from the input section + pad wires to the macro halo and the TT channel / clk wire. Fails if a switching macro wire (comp_in, phi, clk, trim) crosses the chain.',
+  'Late stages away from the input': 'With ~80 dB of gain, output-to-input coupling above ~0.1 fF (asymmetric) makes the chain peak or oscillate: at the ss 10 °C corner 0.2 fF gives +2.8 dB of peaking near 600 MHz and 0.5 fF oscillates. Stages 4-6, log_det\'s t4-t6 inputs and their tap wires carry the large signal, so they must stay away from the pads, the input wires and stage 1.',
+  'Clock edges off the RX': 'sc_phi1 / sc_phi2 (to avg_sc), comp_in (from comp_ct) and clk switch during RX. Their edges couple into the chain and the detector, which see µV-level signals. Fails if one of these wires crosses the chain or log_det; warns when it passes closer than the threshold. Also keep the phi lines off avg_sc\'s Cavg top plates.',
+  'Short analog path': 'det -> lpf -> avg_sc / comp_ct and r2r -> Ctrim -> comp.trim are slow, high-impedance nodes where tenths of a mV matter (the trim step is ~0.07 mV per LSB). Short wires keep pickup, leakage and parasitic capacitance down. The value is the sum of those Manhattan lengths.',
+  'TX at ua[3] / ua[4]': 'The drivers deliver about +4 dBm at 434 MHz, and the driver -> pad wires carry the full output current (met3, 2.5 µm wide for electromigration). Long ones add loss and inductance, and act as an antenna inside the tile.',
+  'Bias next to the chain': 'ib_chain (60 µA into the chain\'s current mirror) and vcm (the input common mode, through Rb) set the gain and operating point of the most sensitive block. Long wires pick up noise and coupling; ib_det and ib_comp are less critical and only reported.',
+  'Decap VAPWR': 'About 50 pF on VAPWR (3.3 V) keeps ~1 V peak-to-peak of 434 MHz TX ripple off the chip\'s shared 3.3 V net, which other projects use and which would also radiate. At 30 pF the ripple rises from ~0.05 to ~0.15 V; that is the lever if area runs out. Not laid out yet: area is the estimate.',
+  'Decap VDPWR': 'About 30 pF on VDPWR (1.8 V) holds up the RX and digital supply; with 30 pF the chain stays stable with up to 5 nH of supply / ground inductance. Not laid out yet: area is the estimate.',
+  'TX away from the RX input': 'Soft rule: the radio is half-duplex and the TX is stopped in RX (ring off, both arms low), so TX / RX distance only matters for leakage while transmitting. Never at the cost of rules 1 and 2.',
+  'Overlaps and spacing': 'Blocks need about 2-3 µm between them for guard rings and wiring (the keep-out setting). Nothing may overlap another block, sit outside the tile, or enter the macro\'s 5 µm halo.',
+  'TT pin channel clear': 'The 42 TT digital pins (top edge, x 15-131) connect to the macro\'s north pins. About 42 wires run horizontally above the analog area and drop into the macro from above, which needs a channel of ~12 µm. If the macro\'s top is closer to the tile edge than that, its north pins can\'t be reached.',
+  'Power straps': 'Power reaches the TT PDN through vertical met4 straps (≥ 1.2 µm wide, nearly full height); met5 is reserved for the TT PDN. A strap can\'t cross met4 shapes or MIM top plates (cap_mim_m3_1), nor the macro, which routes up to met4. Each net (VGND, VAPWR, VDPWR) needs at least one; turn on the met4 / MIM layer to see what blocks a lane.',
+  'Unplaced blocks': 'Blocks still in the parking row under the tile are left out of every check. Place them to have them scored.',
+};
+
+function renderChecks() {
+  const el = $('#secChecks');
+  if (!last) { el.innerHTML = '<h2>Checklist</h2><p class="empty">Rules appear once a variant is open.</p>'; return; }
+  const cs = last.checks, n = (s) => cs.filter(c => c.status === s).length;
+  el.innerHTML = `<h2>Checklist <span class="meta">ranked rules, live</span></h2>
+    <div class="summary"><span style="color:var(--fail)"><b>${n('fail')}</b> fail</span><span style="color:var(--warn)"><b>${n('warn')}</b> warn</span><span style="color:var(--pass)"><b>${n('pass')}</b> pass</span></div>
+    <ol class="checks">${cs.map(c => `<li class="check ${c.status}" tabindex="0">${badge(c.status)}<span class="t">${c.rule}. ${esc(c.title)}</span><span class="v">${esc(c.value)}</span><span class="d">${esc(c.detail)}</span>${WHY[c.title] ? `<div class="why" role="tooltip"><b>Why</b>${esc(WHY[c.title])}</div>` : ''}</li>`).join('')}</ol>`;
+}
+function renderArea() {
+  const el = $('#secArea');
+  if (!last) { el.innerHTML = '<h2>Area</h2>'; return; }
+  const a = last.area, k = (x) => (x / 1000).toFixed(1) + 'k';
+  const used = a.signal + a.decap + a.spacing, pct = (x) => Math.max(0, 100 * x / a.free).toFixed(1);
+  el.innerHTML = `<h2>Area <span class="meta">beside the macro: ${k(a.free)} µm²</span></h2>
+    <div class="bar" role="img" aria-label="Area use"><span style="width:${pct(a.signal)}%;background:var(--rx)"></span><span style="width:${pct(a.decap)}%;background:var(--decap)"></span><span style="width:${pct(a.spacing)}%;background:var(--warn)"></span></div>
+    <div class="legend"><span><i class="sw" style="background:var(--rx)"></i>signal ${k(a.signal)}</span><span><i class="sw" style="background:var(--decap)"></i>decap ${k(a.decap)} of ${k(a.decapTarget)}</span><span><i class="sw" style="background:var(--warn)"></i>spacing +10 % ${k(a.spacing)}</span></div>
+    <dl class="kv"><dt>tile</dt><dd>${k(a.tile)}</dd><dt>macro + halo</dt><dd>${k(a.macro)}</dd><dt>placed incl. spacing</dt><dd>${k(used)} · ${(100 * used / a.free).toFixed(0)} %</dd>
+    <dt>needed at full decap</dt><dd>${k(a.need)} · ${(100 * a.need / a.free).toFixed(0)} %</dd><dt>free left</dt><dd>${k(a.free - used)}</dd></dl>`;
+}
+function renderNets() {
+  const el = $('#secNets');
+  if (!last) { el.innerHTML = '<h2>Nets</h2>'; return; }
+  const rows = last.nets.filter(n => !n.missing);
+  const total = rows.reduce((t, n) => t + n.len, 0);
+  el.innerHTML = `<h2>Nets <span class="meta">Manhattan, ${(total / 1000).toFixed(2)} mm total</span></h2>
+    <div class="legend">${Object.entries(FP.NET_CLASSES).map(([c, l]) => `<span><i class="sw" style="background:${NET_COLOR[c]}"></i>${l}</span>`).join('')}</div>
+    <div class="scroll"><table class="tbl"><tbody>${rows.map(n => `<tr data-net="${esc(n.name)}"><td><i class="sw" style="background:${NET_COLOR[n.cls]}"></i>${esc(n.name)}</td><td>${esc(n.a.replace('pad:', ''))} → ${esc(n.b.replace('pad:', ''))}</td><td class="n">${n.len.toFixed(1)}</td></tr>`).join('')}</tbody></table></div>`;
+  el.querySelectorAll('tr[data-net]').forEach(tr => { tr.onmouseenter = () => { S.hoverNet = tr.dataset.net; draw(); }; tr.onmouseleave = () => { S.hoverNet = null; draw(); }; });
+}
+function renderStraps() {
+  const el = $('#secStraps'), v = cur();
+  if (!v) { el.innerHTML = '<h2>Power straps</h2>'; return; }
+  const st = v.straps || [];
+  el.innerHTML = `<h2>Power straps <span class="meta">met4 ≥ 1.2 µm, y ${S.settings.strapY}–${f1(H - S.settings.strapY)}</span></h2>
+    ${st.length ? `<table class="tbl"><tbody>${st.map((s, i) => `<tr><td><i class="sw" style="background:${STRAP_COLOR[s.net]}"></i>${s.net}</td><td class="n">x ${f1(s.x)}</td><td class="n">w ${f1(s.w)}</td><td class="n"><button class="btn" data-ss="${i}">edit</button></td></tr>`).join('')}</tbody></table>` : '<p class="empty">No straps yet.</p>'}
+    <div class="row edit-only"><button class="btn" id="bStrap">Add a strap</button><button class="btn" id="bDecA">Add VAPWR decap</button><button class="btn" id="bDecD">Add VDPWR decap</button></div>
+    <div class="warnbox">Straps can't cross met4 or MIM (red with the met4 layer on), or the macro. A strap inside the macro's 5 µm halo clears it.</div>`;
+  el.querySelectorAll('[data-ss]').forEach(b => b.onclick = () => { S.sel = { kind: 'strap', id: +b.dataset.ss }; render(); });
+  const add = $('#bStrap'); if (add) add.onclick = () => { v.straps = v.straps || []; v.straps.push({ net: 'VGND', x: 2, w: 1.2 }); S.sel = { kind: 'strap', id: v.straps.length - 1 }; touch(); };
+  const ad = (base) => () => { v.decaps = v.decaps || {}; (v.decaps[base] = v.decaps[base] || []).push({ x: 0, y: -90, w: 40, h: 25 }); S.sel = { kind: 'decap', id: `${base}.${v.decaps[base].length}` }; touch(); };
+  const a1 = $('#bDecA'); if (a1) a1.onclick = ad('xdeca');
+  const a2 = $('#bDecD'); if (a2) a2.onclick = ad('xdecd');
+}
+async function saveFile(name, text) {
+  let dl = null; try { dl = window.claude && await window.claude.use('downloads'); } catch (e) {}
+  if (dl) { try { await dl.save({ filename: name, data: text }); setSync('file offered'); return; } catch (e) { if (e && e.code === 'declined') return; } }
+  copy(text);
+}
+async function copy(t) {
+  try { await navigator.clipboard.writeText(t); setSync('copied'); }
+  catch (e) { const ta = $('#ioText'); ta.value = t; ta.closest('details').open = true; ta.select(); setSync('select and copy the JSON'); }
+}
+function renderIO() {
+  const el = $('#secIO'), v = cur();
+  el.innerHTML = `<h2>floorplan.json <span class="meta">layout/floorplan/</span></h2>
+    <div class="row"><button class="btn primary" id="bExp" ${v ? '' : 'disabled'}>Save floorplan.json</button><button class="btn" id="bCopy" ${v ? '' : 'disabled'}>Copy JSON</button></div>
+    <details><summary>Show / paste JSON</summary><textarea id="ioText" rows="8" placeholder="Paste a floorplan.json here, then import it"></textarea>
+    <div class="row edit-only"><button class="btn" id="bImp">Import as a new variant</button><label class="btn">Open a file<input type="file" id="ioFile" accept=".json,application/json" hidden></label></div></details>
+    <p class="empty" style="margin:0">x, y are the lower-left of each placed bbox; rot / mirror give the KLayout DCplxTrans for layout/gen/top.py.</p>`;
+  const json = () => JSON.stringify(FP.exportJSON(DATA, CAT, v), null, 1);
+  if (v) { $('#bExp').onclick = () => saveFile('floorplan.json', json()); $('#bCopy').onclick = () => copy(json()); }
+  const imp = (txt) => { try { const j = JSON.parse(txt); const nv = FP.importJSON(CAT, j); addVariant(nv); } catch (e) { setSync('import failed: ' + e.message); } };
+  const bi = $('#bImp'); if (bi) bi.onclick = () => imp($('#ioText').value);
+  const fi = $('#ioFile'); if (fi) fi.onchange = () => { const f = fi.files[0]; if (f) f.text().then(imp); };
+}
+function renderSettings() {
+  const el = $('#secSettings'), s = S.settings;
+  const fields = [['keepout', 'keep-out between blocks, µm'], ['channel', 'TT pin channel height, µm (0 = off)'], ['r1', '1. input ↔ macro ≥'], ['r2', '2. late ↔ input ≥'], ['r3', '3. clocks ↔ RX ≥'],
+    ['r4', '4. analog path ≤'], ['r5', '5. driver → pad ≤'], ['r6', '6. ib_chain, vcm ≤'], ['r8', '8. TX ↔ RX input ≥'], ['deca', 'VAPWR decap target, µm²'], ['decd', 'VDPWR decap target, µm²'], ['strapY', 'strap end inset, µm']];
+  el.innerHTML = `<h2>Thresholds <span class="meta">shared with everyone</span></h2>
+    <div class="row">${fields.map(([k, l]) => `<label class="f">${l}<input type="number" step="0.5" data-set="${k}" value="${s[k]}"></label>`).join('')}</div>
+    <div class="row edit-only"><button class="btn" id="bReset">Reset to defaults</button></div>`;
+  el.querySelectorAll('[data-set]').forEach(i => i.onchange = () => { const x = +i.value; if (isFinite(x)) { s[i.dataset.set] = x; S.dirty.add('$settings'); clearTimeout(timers.$s); timers.$s = setTimeout(() => flush('$settings'), 600); render(); } });
+  const br = $('#bReset'); if (br) br.onclick = () => { Object.assign(s, FP.DEFAULT_SETTINGS); S.dirty.add('$settings'); flush('$settings'); render(); };
+}
+function renderLayers() {
+  $('#layers').innerHTML = Object.entries({ flylines: 'flylines', pins: 'pins', labels: 'labels', decap: 'decap', m4: 'met4 / MIM', grid: 'grid' })
+    .map(([k, l]) => `<label class="chip"><input type="checkbox" id="ly_${k}" data-layer="${k}" ${S.layers[k] ? 'checked' : ''}>${l}</label>`).join('') +
+    `<button class="chip" id="bFit">fit</button>`;
+  document.querySelectorAll('[data-layer]').forEach(c => c.onchange = () => { S.layers[c.dataset.layer] = c.checked; try { localStorage.setItem('fp.layers', JSON.stringify(S.layers)); } catch (e) {} draw(); });
+  $('#bFit').onclick = () => { fit(); draw(); };
+}
+function render() {
+  draw(); renderTabs(); renderVariantBox(); renderSel(); renderChecks(); renderArea(); renderNets(); renderStraps(); renderIO(); renderSettings();
+  const has = !!cur();
+  for (const b of ['#bDup', '#bRen', '#bDel']) $(b).disabled = !has;
+}
+
+// ---- variant actions
+function newId() { return 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+function addVariant(v) {
+  const id = newId();
+  v.order = Math.max(0, ...Object.values(S.variants).map(x => x.order || 0)) + 1;
+  S.variants[id] = v; sortOrder(); S.cur = id; S.sel = null; touch(id);
+}
+function newBlank() {
+  addVariant({ name: 'Blank', note: '', place: { macro: { x: 228.12, y: 23.76, orient: 'R0' } }, decaps: {}, straps: [], est: {} });
+}
+$('#bNew').onclick = newBlank;
+$('#bFull').onclick = async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (e) { setSync('full screen not available here: open the link in its own tab'); }
+};
+document.addEventListener('fullscreenchange', () => { $('#bFull').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; setTimeout(() => { fit(); draw(); }, 50); });
+$('#bDup').onclick = () => { const v = cur(); if (!v) return; const c = clone(v); c.name = v.name.replace(/( \(copy\))*$/, '') + ' (copy)'; addVariant(c); };
+$('#bRen').onclick = () => {
+  const v = cur(); if (!v) return;
+  const tab = document.querySelector(`[data-tab="${CSS.escape(S.cur)}"]`);
+  const inp = document.createElement('input'); inp.type = 'text'; inp.id = 'renameInput'; inp.value = v.name; inp.style.width = '260px';
+  tab.replaceWith(inp); inp.focus(); inp.select();
+  const done = (ok) => { if (ok && inp.value.trim()) { v.name = inp.value.trim(); touch(); } else render(); };
+  inp.onkeydown = (e) => { if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); };
+  inp.onblur = () => done(true);
+};
+let delArm = 0;
+$('#bDel').onclick = () => {
+  const b = $('#bDel');
+  if (Date.now() - delArm > 3000) { delArm = Date.now(); b.textContent = 'Delete? click again'; setTimeout(() => { b.textContent = 'Delete'; }, 3000); return; }
+  delArm = 0; b.textContent = 'Delete';
+  const id = S.cur; delete S.variants[id]; sortOrder(); S.cur = S.order[0] || null; S.sel = null;
+  S.dirty.add(id); flush(id); render();
+};
+$('#tabs').addEventListener('click', (e) => {
+  const t = e.target.closest('[data-tab]'); if (!t) return;
+  S.cur = t.dataset.tab; S.sel = null; try { localStorage.setItem('fp.cur', S.cur); } catch (err) {} fit(); render();
+});
+
+// ---- canvas interaction
+const svg = $('#cv');
+let drag = null;
+function setOrient(n, o) {
+  const v = cur(), vv = viewVariant(v), p = vv.place[n], c = CAT[n];
+  const est = v.est && v.est[n] ? v.est[n] : { w: c.w, h: c.h };
+  const [w0, h0] = FP.placedSize(p.orient, est.w, est.h), [w1, h1] = FP.placedSize(o, est.w, est.h);
+  v.place[n] = { x: snap(p.x + (w0 - w1) / 2), y: snap(p.y + (h0 - h1) / 2), orient: o };
+  touch();
+}
+svg.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0) return;
+  if (S.mode === 'diagram') {
+    const g = e.target.closest('[data-dinst]');
+    if (g && CAT[g.dataset.dinst]) { S.sel = { kind: 'inst', id: g.dataset.dinst }; setMode('layout'); render(); }
+    return;
+  }
+  const v = cur(); const [x, y] = toUm(e);
+  const gi = e.target.closest('[data-inst]'), gd = e.target.closest('[data-decap]'), gs = e.target.closest('[data-strap]');
+  svg.setPointerCapture(e.pointerId);
+  if (v && S.canWrite && gi) {
+    const n = gi.dataset.inst, p = viewVariant(v).place[n];
+    S.sel = { kind: 'inst', id: n }; drag = { kind: 'inst', n, dx: x - p.x, dy: y - p.y, p0: p, moved: false };
+  } else if (v && S.canWrite && gd) {
+    const [base, i] = gd.dataset.decap.split('.'), d = v.decaps[base][+i - 1];
+    S.sel = { kind: 'decap', id: gd.dataset.decap };
+    drag = e.target.dataset.resize ? { kind: 'resize', d, x0: d.x, y1: d.y + d.h } : { kind: 'decap', d, dx: x - d.x, dy: y - d.y };
+  } else if (v && S.canWrite && gs) {
+    const st = v.straps[+gs.dataset.strap]; S.sel = { kind: 'strap', id: +gs.dataset.strap }; drag = { kind: 'strap', st, dx: x - st.x };
+  } else if (!S.canWrite && (gi || gd || gs)) {
+    S.sel = gi ? { kind: 'inst', id: gi.dataset.inst } : gd ? { kind: 'decap', id: gd.dataset.decap } : { kind: 'strap', id: +gs.dataset.strap };
+    drag = { kind: 'pan', cx: e.clientX, cy: e.clientY, v0: Object.assign({}, S.view) };
+  } else {
+    if (e.target === svg || !e.target.closest('[data-net]')) S.sel = null;
+    drag = { kind: 'pan', cx: e.clientX, cy: e.clientY, v0: Object.assign({}, S.view) }; svg.classList.add('panning');
+  }
+  S.dragging = drag.kind !== 'pan';
+  render();
+});
+svg.addEventListener('pointermove', (e) => {
+  const [x, y] = toUm(e);
+  $('#coords').textContent = `x ${x.toFixed(1)}, y ${y.toFixed(1)} µm`;
+  const tip = $('#tip');
+  const tn = e.target.closest && e.target.closest('[data-net]');
+  if (tn && last && !drag) {
+    const n = last.nets.find(q => q.name === tn.dataset.net);
+    if (n) { const r = $('#stage').getBoundingClientRect(); tip.hidden = false; tip.textContent = `${n.name}: ${n.a.replace('pad:', '')} → ${n.b.replace('pad:', '')}  ${n.len.toFixed(1)} µm`; tip.style.left = (e.clientX - r.left + 12) + 'px'; tip.style.top = (e.clientY - r.top + 12) + 'px'; }
+    if (S.hoverNet !== n.name) { S.hoverNet = n.name; draw(); }
+  } else if (!drag) { tip.hidden = true; if (S.hoverNet) { S.hoverNet = null; draw(); } }
+  if (!drag) return;
+  const v = cur();
+  if (drag.kind === 'pan') {
+    const r = svg.getBoundingClientRect();
+    S.view.x = drag.v0.x - (e.clientX - drag.cx) / r.width * S.view.w;
+    S.view.y = drag.v0.y - (e.clientY - drag.cy) / r.height * S.view.h;
+    draw(); return;
+  }
+  if (drag.kind === 'inst') { v.place[drag.n] = { x: snap(x - drag.dx), y: snap(y - drag.dy), orient: drag.p0.orient }; drag.moved = true; }
+  else if (drag.kind === 'decap') { drag.d.x = snap(x - drag.dx); drag.d.y = snap(y - drag.dy); }
+  else if (drag.kind === 'resize') { drag.d.w = Math.max(2, snap(x - drag.x0)); const ny = Math.min(drag.y1 - 2, snap(y)); drag.d.h = drag.y1 - ny; drag.d.y = ny; }
+  else if (drag.kind === 'strap') { drag.st.x = Math.round((x - drag.dx) * 10) / 10; }
+  draw(); renderChecks();
+});
+function endDrag() {
+  if (!drag) return;
+  const was = drag; drag = null; S.dragging = false; svg.classList.remove('panning');
+  if (was.kind !== 'pan') touch(); else render();
+}
+svg.addEventListener('pointerup', endDrag);
+svg.addEventListener('pointercancel', endDrag);
+svg.addEventListener('wheel', (e) => {
+  if (S.mode === 'diagram') return;
+  e.preventDefault();
+  const r = svg.getBoundingClientRect(), k = Math.exp(e.deltaY * 0.0015);
+  const fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+  const nw = Math.min(2000, Math.max(20, S.view.w * k)), nh = S.view.h * nw / S.view.w;
+  S.view.x += (S.view.w - nw) * fx; S.view.y += (S.view.h - nh) * fy; S.view.w = nw; S.view.h = nh;
+  draw();
+}, { passive: false });
+document.addEventListener('keydown', (e) => {
+  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName)) return;
+  if (S.mode === 'diagram') return;
+  if (e.key === 'f' || e.key === 'F') { fit(); draw(); return; }
+  const v = cur(); if (!v || !S.sel || !S.canWrite) return;
+  if (S.sel.kind === 'inst') {
+    const n = S.sel.id, p = viewVariant(v).place[n];
+    const op = { r: 'rot', R: 'rot', x: 'mx', X: 'mx', y: 'my', Y: 'my' }[e.key];
+    if (op) { setOrient(n, FP.compose(p.orient, op)); e.preventDefault(); return; }
+  }
+  const st = e.shiftKey ? 5 : 0.5, dir = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, st], ArrowDown: [0, -st] }[e.key];
+  if (!dir) return;
+  e.preventDefault();
+  if (S.sel.kind === 'inst') { const p = viewVariant(v).place[S.sel.id]; v.place[S.sel.id] = { x: p.x + dir[0], y: p.y + dir[1], orient: p.orient }; }
+  else if (S.sel.kind === 'decap') { const [b, i] = S.sel.id.split('.'); const d = v.decaps[b][+i - 1]; d.x += dir[0]; d.y += dir[1]; }
+  else if (S.sel.kind === 'strap') { v.straps[S.sel.id].x = Math.round((v.straps[S.sel.id].x + dir[0] / 5) * 10) / 10; }
+  touch();
+});
+new ResizeObserver(() => { const old = S.view; fit(); if (old) { /* keep zoom on resize only when first fitting */ } draw(); }).observe($('#stage'));
+
+renderLayers();
+if (window.FP_DEV_VARIANTS) {        // local preview hook (not used in the published page)
+  for (const v of window.FP_DEV_VARIANTS) { S.variants[v.id] = clone(v); }
+  sortOrder(); S.cur = S.order[0];
+}
+render();
+connect();
+})();
+</script>

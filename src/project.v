@@ -9,9 +9,9 @@
 // blackbox gate-level netlist, so the instance and net names here must match
 // the layout. Instances are added as the blocks are laid out:
 //   radio_digital  - hardened digital macro (openlane/radio_digital)
-//   TX: ring oscillator + antiphase drivers -> ua[0], ua[1]
+//   TX: ring oscillator + antiphase drivers -> ua[3], ua[4]
 //   RX: differential LNA/limiter, log detector, LPF, switched-cap average,
-//       comparator, R2R trim DAC + attenuator; ua[2], ua[3] in, ua[4] debug
+//       comparator, R2R trim DAC + attenuator; ua[0], ua[1] in, ua[2] debug
 module tt_um_mattvenn_radio (
     input  wire       VGND,
     input  wire       VDPWR,    // 1.8v power supply

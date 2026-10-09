@@ -1,6 +1,6 @@
 """Block testbench for dbg_tg (schematic vs extracted layout).
 
-a = det side, b = ua[4] pad side, VDD 1.8 V.
+a = det side, b = ua[2] pad side, VDD 1.8 V.
   - on (en = 1.8): switch resistance at a = 0.2 / 0.9 / 1.6 V (b held 1 mV above a,
     Ron = 1 mV / I);
   - off (en = 0): isolation from the pad into det: b driven by a 50 Ohm source, a loaded

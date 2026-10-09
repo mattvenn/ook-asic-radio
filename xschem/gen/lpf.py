@@ -9,7 +9,7 @@ Generate the post-detection low-pass filter and its testbench:
            +-20-30 % spread of an on-chip RC is fine. The comparator is
            continuous-time (no kickback), so the cap only needs to be large
            against the averager's Cs charge sharing (0.1 / 3.7 pF).
-           Keep the ua[4] debug pin OFF this node (nA of pad/ESD leakage
+           Keep the ua[2] debug pin OFF this node (nA of pad/ESD leakage
            into 1 MOhm = mV of offset): tap 'det' instead.
   tb_lpf : AC response + step response, driven from an ideal source with the
            detector's 8 kOhm output resistance.

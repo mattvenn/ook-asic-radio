@@ -11,9 +11,9 @@ Generate the analog top, the TT top level and a whole-analog testbench.
   radio_digital (symbol): the hardened macro, a black box here (spice_sym_def);
       its netlist comes from the OpenLane run.
   tt_um_mattvenn_radio  : radio_analog + radio_digital on the TT pins.
-      ua[0] / ua[1] TX dipole, ua[2] / ua[3] RX dipole, ua[4] debug (det).
+      ua[0] / ua[1] RX dipole, ua[2] debug (det), ua[3] / ua[4] TX dipole.
   tb_radio_analog       : radio_analog with the RX front end (dipole + pad
-      models), pad models + dipole on the TX pins, a probe on ua[4], and
+      models), pad models + dipole on the TX pins, a probe on the debug pin, and
       sources for the digital interface. RX on: bias, operating points,
       det with / without a -60 dBm tone. TX keyed (RX off): power.
 
@@ -93,7 +93,7 @@ def radio_digital_sym():
 def tt_top():
     s = Sch()
     s.text(-900, -760, 'tt_um_mattvenn_radio: radio_analog + radio_digital (hardened macro) on the TT pins\n'
-           'ua[0]/ua[1] TX dipole, ua[2]/ua[3] RX dipole, ua[4] debug (det, dbg_en only)', 0.4)
+           'ua[0]/ua[1] RX dipole, ua[2] debug (det, dbg_en only), ua[3]/ua[4] TX dipole', 0.4)
     ports(s, -900, -660, ['VGND', 'VDPWR', 'VAPWR', 'ui_in[7:0]', 'uo_out[7:0]', 'uio_in[7:0]',
                           'uio_out[7:0]', 'uio_oe[7:0]', 'ua[7:0]', 'ena', 'clk', 'rst_n'])
     dg = s.place('radio_digital.sym', -300, 0, name='xdig')
@@ -105,7 +105,7 @@ def tt_top():
     an = s.place('radio_analog.sym', 400, 0, name='xana')
     s.connect(an, rx_en='rx_en', tx_en='tx_en', tx_en_n='tx_en_n', dbg_en='dbg_en', sc_phi1='sc_phi1',
               sc_phi2='sc_phi2', comp_out='comp', VDPWR='VDPWR', VAPWR='VAPWR', VGND='VGND',
-              tx_p='ua[0]', tx_n='ua[1]', rx_p='ua[2]', rx_n='ua[3]', dbg='ua[4]', **{'trim[7:0]': 'trim[7:0]'})
+              rx_p='ua[0]', rx_n='ua[1]', dbg='ua[2]', tx_p='ua[3]', tx_n='ua[4]', **{'trim[7:0]': 'trim[7:0]'})
     s.write(os.path.join(XDIR, 'tt_um_mattvenn_radio.sch'))
 
 

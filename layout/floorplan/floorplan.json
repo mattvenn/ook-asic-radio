@@ -1,0 +1,764 @@
+{
+ "variant": "Matt layout 3 (Claude)",
+ "note": "Copy of Matt layout 3, refined by Claude 2026-10-09: macro, chain, bias_gen, lpf_rc and TX area kept. log_det MX at x 255.35 so t4 is 60 um past stage 1 and the stage-1 tap only crosses stages 2-3; comp_ct in the band, r2r beside it under the macro's halo; avg_sc and Ctrim at the chain's output end; dbg_tg by the ua[2] pad (the external pad wire stays short, the det wire runs along the band). TX logic nudged to >= 2.5 um spacing; decap refilled from the free space; pins of the macro and the analog blocks on the edges facing their connections (orange rings). Left: rule 1 warn 60 um (macro over the chain input), rule 4 warn (lpf -> avg/comp ~130 um, slow node), VAPWR decap: tiles in the free space plus a MIM-only decap on top of r2r (met1-only).",
+ "tile": {
+  "w": 493.12,
+  "h": 225.76
+ },
+ "blocks": [
+  {
+   "inst": "macro",
+   "cell": "radio_digital",
+   "x": 19.5,
+   "y": 103.5,
+   "orient": "MY",
+   "rot": 180,
+   "mirror": true,
+   "estimate": false,
+   "w": 450.5,
+   "h": 109.656,
+   "note": "re-harden at 450.5 x 109.656 um (same area as 260 x 190)"
+  },
+  {
+   "inst": "xchain",
+   "cell": "lna_chain",
+   "x": 90.5,
+   "y": 3,
+   "orient": "MX",
+   "rot": 0,
+   "mirror": true,
+   "estimate": false
+  },
+  {
+   "inst": "xdet",
+   "cell": "log_det",
+   "x": 255.35,
+   "y": 41,
+   "orient": "MX",
+   "rot": 0,
+   "mirror": true,
+   "estimate": false
+  },
+  {
+   "inst": "xlpf",
+   "cell": "lpf_rc",
+   "x": 170,
+   "y": 42.5,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": false
+  },
+  {
+   "inst": "xavg",
+   "cell": "avg_sc",
+   "x": 361.12,
+   "y": 0.5,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": false
+  },
+  {
+   "inst": "xcomp",
+   "cell": "comp_ct",
+   "x": 345.18,
+   "y": 54.3,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": false
+  },
+  {
+   "inst": "xdac",
+   "cell": "r2r",
+   "x": 421.13,
+   "y": 44.33,
+   "orient": "MX",
+   "rot": 0,
+   "mirror": true,
+   "estimate": false
+  },
+  {
+   "inst": "xctrim",
+   "cell": "ctrim_1p",
+   "x": 441,
+   "y": 4.5,
+   "orient": "MX",
+   "rot": 0,
+   "mirror": true,
+   "estimate": true,
+   "w": 23.5,
+   "h": 23.5
+  },
+  {
+   "inst": "xbias",
+   "cell": "bias_gen",
+   "x": 86.5,
+   "y": 41,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": false
+  },
+  {
+   "inst": "xdbg",
+   "cell": "dbg_tg",
+   "x": 80,
+   "y": 3,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": false
+  },
+  {
+   "inst": "xtx.xring",
+   "cell": "tx_ring",
+   "x": 58,
+   "y": 68,
+   "orient": "MXR90",
+   "rot": 90,
+   "mirror": true,
+   "estimate": false
+  },
+  {
+   "inst": "xtx.xls",
+   "cell": "tx_ls",
+   "x": 51.5,
+   "y": 51,
+   "orient": "MYR90",
+   "rot": 270,
+   "mirror": true,
+   "estimate": false
+  },
+  {
+   "inst": "xtx.xlse_p",
+   "cell": "tx_ls_en",
+   "x": 40,
+   "y": 68,
+   "orient": "MYR90",
+   "rot": 270,
+   "mirror": true,
+   "estimate": false
+  },
+  {
+   "inst": "xtx.xlse_n",
+   "cell": "tx_ls_en",
+   "x": 25.5,
+   "y": 51,
+   "orient": "R270",
+   "rot": 270,
+   "mirror": false,
+   "estimate": false
+  },
+  {
+   "inst": "xtx.xdrv_p",
+   "cell": "tx_drv",
+   "x": 50,
+   "y": 7.5,
+   "orient": "R270",
+   "rot": 270,
+   "mirror": false,
+   "estimate": false
+  },
+  {
+   "inst": "xtx.xdrv_n",
+   "cell": "tx_drv",
+   "x": 18,
+   "y": 7.5,
+   "orient": "MYR90",
+   "rot": 270,
+   "mirror": true,
+   "estimate": false
+  },
+  {
+   "inst": "xdeca",
+   "part": 1,
+   "cell": "decap_vapwr",
+   "x": 362,
+   "y": 34,
+   "w": 56,
+   "h": 17,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdeca",
+   "part": 2,
+   "cell": "decap_vapwr",
+   "x": 40,
+   "y": 89,
+   "w": 30,
+   "h": 9,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdeca",
+   "part": 3,
+   "cell": "decap_vapwr",
+   "x": 17,
+   "y": 67,
+   "w": 20,
+   "h": 31,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdeca",
+   "part": 4,
+   "cell": "decap_vapwr",
+   "x": 421,
+   "y": 34,
+   "w": 43,
+   "h": 7,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdeca",
+   "part": 5,
+   "cell": "decap_vapwr",
+   "x": 0,
+   "y": 2,
+   "w": 14,
+   "h": 222,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdeca",
+   "part": 6,
+   "cell": "decap_vapwr",
+   "x": 467,
+   "y": 2,
+   "w": 26,
+   "h": 39,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdeca",
+   "part": 7,
+   "cell": "decap_vapwr",
+   "x": 475,
+   "y": 101,
+   "w": 18,
+   "h": 123,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdeca",
+   "part": 8,
+   "cell": "decap_vapwr",
+   "x": 422.13,
+   "y": 45.33,
+   "w": 65.29,
+   "h": 52.12,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true,
+   "mim": true,
+   "note": "MIM only (cap_mim_m3_1), on top of a met1-only block"
+  },
+  {
+   "inst": "xdecd",
+   "part": 1,
+   "cell": "decap_vdpwr",
+   "x": 238,
+   "y": 41,
+   "w": 14,
+   "h": 37,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdecd",
+   "part": 2,
+   "cell": "decap_vdpwr",
+   "x": 170,
+   "y": 81,
+   "w": 172,
+   "h": 17,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdecd",
+   "part": 3,
+   "cell": "decap_vdpwr",
+   "x": 346,
+   "y": 41,
+   "w": 13,
+   "h": 10,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdecd",
+   "part": 4,
+   "cell": "decap_vdpwr",
+   "x": 80,
+   "y": 22,
+   "w": 8,
+   "h": 16,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdecd",
+   "part": 5,
+   "cell": "decap_vdpwr",
+   "x": 73,
+   "y": 51,
+   "w": 11,
+   "h": 47,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  }
+ ],
+ "macro_pins": {
+  "trim_out[7:0]": "W"
+ },
+ "pins_moved": {
+  "xdet": {
+   "det": [
+    0.25,
+    30.01
+   ],
+   "ibias_det": [
+    0.25,
+    17.71
+   ]
+  },
+  "xlpf": {
+   "in": [
+    64.95,
+    1
+   ],
+   "out": [
+    64.95,
+    2
+   ]
+  },
+  "xdbg": {
+   "a": [
+    5.45,
+    15.3
+   ],
+   "b": [
+    5.45,
+    1
+   ],
+   "en": [
+    1,
+    16.05
+   ]
+  },
+  "xavg": {
+   "in": [
+    0.25,
+    29.4
+   ],
+   "out": [
+    1,
+    30.15
+   ],
+   "phi1": [
+    67.49,
+    30.15
+   ],
+   "phi2": [
+    69.14,
+    30.15
+   ]
+  },
+  "xcomp": {
+   "inp": [
+    0.25,
+    1
+   ],
+   "inn": [
+    16.94,
+    0.25
+   ],
+   "out": [
+    72.45,
+    41.72
+   ],
+   "trim": [
+    72.45,
+    0.25
+   ],
+   "ibias": [
+    0.25,
+    30.12
+   ]
+  },
+  "macro": {
+   "comp_in": [
+    52.37,
+    0.25
+   ],
+   "sc_phi1": [
+    41.39,
+    0.25
+   ],
+   "sc_phi2": [
+    39.74,
+    0.25
+   ],
+   "rx_en": [
+    381.45,
+    0.25
+   ],
+   "dbg_en": [
+    389,
+    0.25
+   ],
+   "tx_en": [
+    415.25,
+    0.25
+   ],
+   "tx_en_n": [
+    436.07,
+    0.25
+   ],
+   "clk": [
+    339.86,
+    109.41
+   ],
+   "trim_out[0]": [
+    43.25,
+    0.25
+   ],
+   "trim_out[1]": [
+    28.25,
+    0.25
+   ],
+   "trim_out[2]": [
+    20.75,
+    0.25
+   ],
+   "trim_out[3]": [
+    13.25,
+    0.25
+   ],
+   "trim_out[4]": [
+    5.75,
+    0.25
+   ],
+   "trim_out[5]": [
+    3,
+    0.25
+   ],
+   "trim_out[6]": [
+    2,
+    0.25
+   ],
+   "trim_out[7]": [
+    1,
+    0.25
+   ],
+   "uio_oe[7]": [
+    449.5,
+    109.41
+   ],
+   "uio_oe[6]": [
+    448.5,
+    109.41
+   ],
+   "uio_oe[5]": [
+    447.5,
+    109.41
+   ],
+   "uio_oe[4]": [
+    444.74,
+    109.41
+   ],
+   "uio_oe[3]": [
+    441.98,
+    109.41
+   ],
+   "uio_oe[2]": [
+    439.22,
+    109.41
+   ],
+   "uio_oe[1]": [
+    436.46,
+    109.41
+   ],
+   "uio_oe[0]": [
+    433.7,
+    109.41
+   ],
+   "uio_out[7]": [
+    430.94,
+    109.41
+   ],
+   "uio_out[6]": [
+    428.18,
+    109.41
+   ],
+   "uio_out[5]": [
+    425.42,
+    109.41
+   ],
+   "uio_out[4]": [
+    422.66,
+    109.41
+   ],
+   "uio_out[3]": [
+    419.9,
+    109.41
+   ],
+   "uio_out[2]": [
+    417.14,
+    109.41
+   ],
+   "uio_out[1]": [
+    414.38,
+    109.41
+   ],
+   "uio_out[0]": [
+    411.62,
+    109.41
+   ],
+   "uo_out[7]": [
+    408.86,
+    109.41
+   ],
+   "uo_out[6]": [
+    406.1,
+    109.41
+   ],
+   "uo_out[5]": [
+    403.34,
+    109.41
+   ],
+   "uo_out[4]": [
+    400.58,
+    109.41
+   ],
+   "uo_out[3]": [
+    397.82,
+    109.41
+   ],
+   "uo_out[2]": [
+    395.06,
+    109.41
+   ],
+   "uo_out[1]": [
+    392.3,
+    109.41
+   ],
+   "uo_out[0]": [
+    389.54,
+    109.41
+   ],
+   "uio_in[7]": [
+    386.78,
+    109.41
+   ],
+   "uio_in[6]": [
+    384.02,
+    109.41
+   ],
+   "uio_in[5]": [
+    381.26,
+    109.41
+   ],
+   "uio_in[4]": [
+    378.5,
+    109.41
+   ],
+   "uio_in[3]": [
+    375.74,
+    109.41
+   ],
+   "uio_in[2]": [
+    372.98,
+    109.41
+   ],
+   "uio_in[1]": [
+    370.22,
+    109.41
+   ],
+   "uio_in[0]": [
+    367.46,
+    109.41
+   ],
+   "ui_in[7]": [
+    364.7,
+    109.41
+   ],
+   "ui_in[6]": [
+    361.94,
+    109.41
+   ],
+   "ui_in[5]": [
+    359.18,
+    109.41
+   ],
+   "ui_in[4]": [
+    356.42,
+    109.41
+   ],
+   "ui_in[3]": [
+    353.66,
+    109.41
+   ],
+   "ui_in[2]": [
+    350.9,
+    109.41
+   ],
+   "ui_in[1]": [
+    348.14,
+    109.41
+   ],
+   "ui_in[0]": [
+    345.38,
+    109.41
+   ],
+   "rst_n": [
+    342.62,
+    109.41
+   ]
+  },
+  "xbias": {
+   "en": [
+    2.05,
+    48.82
+   ],
+   "ib_chain": [
+    5,
+    0.25
+   ],
+   "vcm": [
+    6,
+    0.25
+   ],
+   "ib_det": [
+    79.97,
+    13.3
+   ],
+   "ib_comp": [
+    79.97,
+    43.42
+   ]
+  },
+  "xdac": {
+   "b0": [
+    5.62,
+    0.25
+   ],
+   "b1": [
+    20.62,
+    0.25
+   ],
+   "b2": [
+    28.12,
+    0.25
+   ],
+   "b3": [
+    35.62,
+    0.25
+   ],
+   "b4": [
+    43.12,
+    0.25
+   ],
+   "b5": [
+    47.87,
+    0.25
+   ],
+   "b6": [
+    48.87,
+    0.25
+   ],
+   "b7": [
+    49.87,
+    0.25
+   ],
+   "out": [
+    20.87,
+    53.87
+   ]
+  },
+  "xctrim": {
+   "p": [
+    2,
+    0.25
+   ],
+   "n": [
+    1,
+    0.25
+   ]
+  },
+  "xchain": {
+   "ibias": [
+    1,
+    0.25
+   ],
+   "vcm": [
+    2,
+    0.25
+   ]
+  }
+ },
+ "pins_note": "pins_moved: [x, y] in each block's own frame (lower-left = 0, 0, before its orientation); they need a block re-layout, or for the macro a new pin_order.cfg.",
+ "straps": [
+  {
+   "net": "VGND",
+   "x": 13.9,
+   "w": 1.2
+  },
+  {
+   "net": "VDPWR",
+   "x": 9.3,
+   "w": 1.2
+  },
+  {
+   "net": "VAPWR",
+   "x": 488.02,
+   "w": 1.2
+  },
+  {
+   "net": "VGND",
+   "x": 489.72,
+   "w": 1.2
+  },
+  {
+   "net": "VDPWR",
+   "x": 491.42,
+   "w": 1.2
+  }
+ ],
+ "transform": "x, y = lower-left of the placed bbox. KLayout: t = DCplxTrans(1, rot, mirror, 0, 0); bb = cell.dbbox().transformed(t); place with DCplxTrans(1, rot, mirror, x - bb.left, y - bb.bottom)."
+}

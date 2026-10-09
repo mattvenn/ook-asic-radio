@@ -278,7 +278,7 @@ async def test_single_ended_strap(dut):
 
 @cocotb.test()
 async def test_debug_strap(dut):
-    """uio[2] with the magic at reset -> dbg_en (det on ua[4]); without the
+    """uio[2] with the magic at reset -> dbg_en (det on ua[2]); without the
     magic, or with uio[2] = 0, off. Independent of role, mode and uio after reset."""
     start_clock(dut)
     for role, uio, want in ((0, 0b1010_0100, 1), (1, 0b1010_0101, 1), (0, 0b0000_0100, 0),

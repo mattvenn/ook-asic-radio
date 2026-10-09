@@ -6,7 +6,7 @@ V {}
 S {}
 E {}
 T {tt_um_mattvenn_radio: radio_analog + radio_digital (hardened macro) on the TT pins
-ua[0]/ua[1] TX dipole, ua[2]/ua[3] RX dipole, ua[4] debug (det, dbg_en only)} -900 -760 0 0 0.4 0.4 {}
+ua[0]/ua[1] RX dipole, ua[2] debug (det, dbg_en only), ua[3]/ua[4] TX dipole} -900 -760 0 0 0.4 0.4 {}
 C {devices/iopin.sym} -900 -660 0 0 {name=p1
 lab=VGND}
 C {devices/iopin.sym} -900 -630 0 0 {name=p2
@@ -114,19 +114,19 @@ lab=VAPWR}
 C {devices/lab_pin.sym} 310 170 0 0 {name=p39
 sig_type=std_logic
 lab=VGND}
-C {devices/lab_pin.sym} 540 -80 0 1 {name=p40
+C {devices/lab_pin.sym} 540 0 0 1 {name=p40
 sig_type=std_logic
 lab=ua[0]}
-C {devices/lab_pin.sym} 540 -40 0 1 {name=p41
+C {devices/lab_pin.sym} 540 40 0 1 {name=p41
 sig_type=std_logic
 lab=ua[1]}
-C {devices/lab_pin.sym} 540 0 0 1 {name=p42
+C {devices/lab_pin.sym} 540 80 0 1 {name=p42
 sig_type=std_logic
 lab=ua[2]}
-C {devices/lab_pin.sym} 540 40 0 1 {name=p43
+C {devices/lab_pin.sym} 540 -80 0 1 {name=p43
 sig_type=std_logic
 lab=ua[3]}
-C {devices/lab_pin.sym} 540 80 0 1 {name=p44
+C {devices/lab_pin.sym} 540 -40 0 1 {name=p44
 sig_type=std_logic
 lab=ua[4]}
 C {devices/lab_pin.sym} 260 120 0 0 {name=p45

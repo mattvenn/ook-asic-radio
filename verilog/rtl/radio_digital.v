@@ -13,10 +13,10 @@
 //                 10 data (reserved; behaves as code mode for now)
 //                 11 reserved (code mode)
 //   uio_in[2]   at reset release, with the same magic: 1 = analog debug,
-//               dbg_en = 1 connects the detector output (det) to ua[4]
+//               dbg_en = 1 connects the detector output (det) to ua[2]
 //               through a transmission gate. Default: off (det isolated).
 //   uio_in[3]   single-ended TX strap, latched at reset release ONLY with
-//               the same magic: 1 = drive ua[0] only (monopole fallback;
+//               the same magic: 1 = drive ua[3] only (monopole fallback;
 //               tx_en_n stays 0). Default (no magic / floating): both arms.
 //               uio_oe is 0 during reset so the RP2350 can drive the strap
 //               on uio[7:4]; it must release those pins right after reset.

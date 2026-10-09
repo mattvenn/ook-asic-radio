@@ -1,6 +1,7 @@
 """Write layout/floorplan/blocks.json: every layout/*.gds top cell's bbox (um, origin
 moved to the bbox's lower-left corner) and its pin labels (text on the sky130
-label/pin purposes, met1..met4 and li), for the floorplan page.
+label/pin purposes, met1..met4 and li), and its met4 / MIM (capm) obstructions as merged
+boxes (a full-height met4 power strap can't cross them), for the floorplan page.
 
     tools/osic-mac python3 tools/floorplan_blocks.py      (needs the klayout module)
 """
@@ -11,6 +12,7 @@ import os
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 LAYERS = {67: 'li1', 68: 'met1', 69: 'met2', 70: 'met3', 71: 'met4'}   # sky130 drawing layer numbers
 PURPOSES = (5, 16)                                                     # label, pin
+OBS = ((71, 20), (89, 44))                                             # met4 drawing, capm (MIM top plate)
 
 
 def block(path):
@@ -32,7 +34,15 @@ def block(path):
                 pins.setdefault(t.string, {'layer': LAYERS[info.layer],
                                            'x': round(t.x - b.left, 2), 'y': round(t.y - b.bottom, 2)})
             it.next()
-    return {'w': round(b.width(), 2), 'h': round(b.height(), 2), 'pins': pins}
+    reg = kdb.Region()
+    for ln, dt in OBS:
+        li = ly.find_layer(ln, dt)
+        if li is not None:
+            reg += kdb.Region(top.begin_shapes_rec(li))
+    s = ly.dbu
+    m4 = sorted([round(r.left * s - b.left, 2), round(r.bottom * s - b.bottom, 2),
+                 round(r.width() * s, 2), round(r.height() * s, 2)] for r in (p.bbox() for p in reg.merged().each()))
+    return {'w': round(b.width(), 2), 'h': round(b.height(), 2), 'pins': pins, 'm4': m4}
 
 
 def main():
@@ -44,7 +54,7 @@ def main():
     with open(os.path.join(d, 'blocks.json'), 'w') as fh:
         json.dump(out, fh, indent=1, sort_keys=True)
     for k, v in out.items():
-        print(f"{k:10s} {v['w']:6.1f} x {v['h']:5.1f}  {' '.join(sorted(v['pins']))}")
+        print(f"{k:10s} {v['w']:6.1f} x {v['h']:5.1f}  m4 {len(v['m4']):2d}  {' '.join(sorted(v['pins']))}")
 
 
 if __name__ == '__main__':
