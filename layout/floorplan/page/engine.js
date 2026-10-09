@@ -232,11 +232,35 @@
     return p ? p.at : null;
   }
 
-  function channelRect(tile, R, s) {
+  // The TT digital pins (top edge) to the macro's pins: at each x, the channel along the top is as
+  // tall as the number of wires running horizontally there x the track pitch (s.channel = all 42).
+  // So it ramps up from x 15 to the last TT pin, is full height until the first macro pin, and
+  // ramps down again over the macro as the wires land.
+  function channelShapes(tile, R, s) {
     const m = R.inst.macro;
-    if (!s.channel || !m) return null;
-    const x1 = Math.max(m.rect[0] + 3, m.pins.clk.at[0] + 3);    // to the last north pin (clk)
-    return [15, tile.h - s.channel, Math.max(0, x1 - 15), s.channel];
+    if (!s.channel || !m) return [];
+    const spans = [];
+    for (const [n, tp] of Object.entries(tile.pins)) {
+      if (tp.y0 < 1 || !m.pins[n]) continue;                            // top-edge TT pins the macro has
+      const tx = (tp.x0 + tp.x1) / 2, mx = m.pins[n].at[0];
+      spans.push([Math.min(tx, mx), Math.max(tx, mx)]);
+    }
+    if (!spans.length) return [];
+    const pitch = s.channel / spans.length, xs = [...new Set(spans.flat())].sort((a, b) => a - b), out = [];
+    for (let i = 0; i < xs.length - 1; i++) {
+      const a = xs[i], b = xs[i + 1], mid = (a + b) / 2, k = spans.filter(([p, q]) => p <= mid && q >= mid).length;
+      if (!k) continue;
+      const h = k * pitch, last = out[out.length - 1];
+      if (last && Math.abs(last[3] - h) < 1e-9 && Math.abs(last[0] + last[2] - a) < 1e-9) last[2] = b - last[0];
+      else out.push([a, tile.h - h, b - a, h]);
+    }
+    return out;
+  }
+  function channelRect(tile, R, s) {                                   // bounding box of the channel
+    const sh = channelShapes(tile, R, s);
+    if (!sh.length) return null;
+    const x0 = Math.min(...sh.map(r => r[0])), x1 = Math.max(...sh.map(r => r[0] + r[2])), y0 = Math.min(...sh.map(r => r[1]));
+    return [x0, y0, x1 - x0, tile.h - y0];
   }
 
   function routeNets(tile, R) {
@@ -269,7 +293,7 @@
     const netBy = n => nets.find(x => x.name === n);
     const segsOf = list => list.filter(n => n && !n.missing).flatMap(n => n.segs.map(segRect));
     const lvl = (x, pass, warn, higher) => higher ? (x >= pass ? 'pass' : x >= warn ? 'warn' : 'fail') : (x <= pass ? 'pass' : x <= warn ? 'warn' : 'fail');
-    const chan = channelRect(tile, R, s);
+    const chanSh = channelShapes(tile, R, s), chan = chanSh.length ? channelRect(tile, R, s) : null;
     const missing = Object.keys(cat).filter(n => !I[n]);
 
     // inputs: chain input section + pad wires; late: stages 4-6, log_det's t4-t6 row and their tap wires
@@ -280,7 +304,7 @@
     // 1. chain input far from the digital macro and the TT digital wires
     if (A && M) {
       const dM = minGapShapes(inputZone, [M.halo]);
-      const dig = segsOf([netBy('clk')]).concat(chan ? [chan] : []);
+      const dig = segsOf([netBy('clk')]).concat(chanSh);
       const dC = minGapShapes(inputZone, dig);
       const d = Math.min(dM, dC);
       const crossers = nets.filter(n => !n.missing && (n.cls === 'clk' || n.cls === 'trim') &&
@@ -370,7 +394,7 @@
       for (let i = 0; i < boxes.length; i++) {
         const a = boxes[i], r = a.r;
         if (r[0] < -1e-6 || r[1] < -1e-6 || r[0] + r[2] > tile.w + 1e-6 || r[1] + r[3] > tile.h + 1e-6) outside.push(a.n);
-        if (chan && a.n !== 'macro' && overlap(r, chan) > 0) inChan.push(a.n);
+        if (a.n !== 'macro' && chanSh.some(c => overlap(r, c) > 0)) inChan.push(a.n);
         for (let j = i + 1; j < boxes.length; j++) {
           const b = boxes[j];
           const ra = a.halo || r, rb = b.halo || b.r;
@@ -386,11 +410,14 @@
         (tight.length ? `Closer than ${s.keepout} µm: ${tight.join(', ')}.` : `All gaps ≥ ${s.keepout} µm.`));
       if (chan) {
         const above = M ? tile.h - (M.rect[1] + M.rect[3]) : 0;
-        const st = inChan.length ? 'fail' : above + 1e-6 < s.channel ? 'fail' : 'pass';
+        const need = M ? Math.max(0, ...chanSh.filter(c => c[0] < M.rect[0] + M.rect[2] && c[0] + c[2] > M.rect[0]).map(c => c[3])) : 0;
+        const full = Math.max(...chanSh.map(c => c[3]));
+        const st = inChan.length ? 'fail' : above + 1e-6 < need ? 'fail' : 'pass';
         add(9, 'TT pin channel clear', st, `${fmt(above, 1)} µm`,
-          `42 TT pins (x 15-131) to the macro's north pins need a ~${s.channel} µm channel along the top; ${fmt(above, 1)} µm above the macro body.` +
+          `The 42 TT pins (x 15-131) run along the top to the macro's pins: the channel is as tall as the wires crossing each x (${fmt(full, 1)} µm where all ${Math.round(full / (s.channel / 42))} run side by side, at ${fmt(s.channel / 42, 2)} µm per track). ` +
+          `Over the macro it needs ${fmt(need, 1)} µm; there is ${fmt(above, 1)} µm above the macro body.` +
           (inChan.length ? ` Blocks in the channel: ${inChan.join(', ')}.` : '') +
-          (above + 1e-6 < s.channel ? ' The north pins can only be reached from above: move the macro down, or re-harden with these pins on the west edge.' : ''));
+          (above + 1e-6 < need ? ' Move the macro down, or put its TT pins nearer the TT pins.' : ''));
       }
     }
 
@@ -421,7 +448,7 @@
     const decTarget = s.deca + s.decd;
     const areaInfo = { tile: tileA, macro: area(macroBox), free: tileA - area(macroBox), signal: sig, decap: dec, decapTarget: decTarget,
       spacing: 0.1 * (sig + dec), need: 1.1 * (sig + decTarget) };
-    return { checks: res, nets, R, area: areaInfo, settings: s, channel: chan };
+    return { checks: res, nets, R, area: areaInfo, settings: s, channel: chan, channelShapes: chanSh };
   }
 
   // floorplan.json (docs/floorplan_spec.md, "Export/import")
@@ -463,5 +490,5 @@
   }
 
   root.FP = { TRIM_SIDES, ORIENTS, placedSize, mapPt, mapRect, compose, buildCatalog, DECAPS, NETS, NET_CLASSES, DEFAULT_SETTINGS,
-    resolve, routeNets, evaluate, exportJSON, importJSON, rectGap, overlap, channelRect };
+    resolve, routeNets, evaluate, exportJSON, importJSON, rectGap, overlap, channelRect, channelShapes };
 })(typeof window !== 'undefined' ? window : globalThis);

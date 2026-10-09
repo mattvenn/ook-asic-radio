@@ -350,8 +350,11 @@ function draw() {
   const r = FP.evaluate(DATA, CAT, vv, S.settings);
   last = r;
   // TT channel
-  if (r.channel) out.push(rectEl(r.channel, `fill="var(--dig)" fill-opacity=".08" stroke="var(--dig)" stroke-dasharray="${3 * scale} ${2 * scale}" stroke-width="${0.8 * scale}"`),
-    text(r.channel[0] + 2, r.channel[1] + r.channel[3] / 2 - 1.2, `TT pin channel ${S.settings.channel} µm`, 3.2, 'fill="var(--muted)" font-family="var(--mono)"'));
+  if (r.channelShapes && r.channelShapes.length) {
+    for (const c of r.channelShapes) out.push(rectEl(c, `fill="var(--dig)" fill-opacity=".1" stroke="none"`));
+    const top = r.channelShapes.reduce((a, c) => c[3] > a[3] ? c : a);
+    out.push(text(top[0] + 2, H - top[3] / 2 - 1.2, 'TT pin channel', 3.2, 'fill="var(--muted)" font-family="var(--mono)"'));
+  }
   // straps
   (v.straps || []).forEach((st, i) => {
     const issue = r.checks.find(c => c.rule === 'P' && c.status === 'fail' && c.detail.includes(`${st.net} @ ${(Math.round(st.x * 10) / 10).toFixed(1)}`));
@@ -741,7 +744,7 @@ function renderIO() {
 }
 function renderSettings() {
   const el = $('#secSettings'), s = S.settings;
-  const fields = [['keepout', 'keep-out between blocks, µm'], ['channel', 'TT pin channel height, µm (0 = off)'], ['r1', '1. input ↔ macro ≥'], ['r2', '2. late ↔ input ≥'], ['r3', '3. clocks ↔ RX ≥'],
+  const fields = [['keepout', 'keep-out between blocks, µm'], ['channel', 'TT pin channel, all 42 wires side by side, µm (0 = off)'], ['r1', '1. input ↔ macro ≥'], ['r2', '2. late ↔ input ≥'], ['r3', '3. clocks ↔ RX ≥'],
     ['r4', '4. analog path ≤'], ['r5', '5. driver → pad ≤'], ['r6', '6. ib_chain, vcm ≤'], ['r8', '8. TX ↔ RX input ≥'], ['deca', 'VAPWR decap target, µm²'], ['decd', 'VDPWR decap target, µm²'], ['strapY', 'strap end inset, µm']];
   el.innerHTML = `<h2>Thresholds <span class="meta">shared with everyone</span></h2>
     <div class="row">${fields.map(([k, l]) => `<label class="f">${l}<input type="number" step="0.5" data-set="${k}" value="${s[k]}"></label>`).join('')}</div>
