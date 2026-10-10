@@ -68,7 +68,7 @@ svg text{font-family:var(--sans)}
 .blk:hover{border-color:var(--sig)}
 .blk[aria-pressed=true]{outline:3px solid var(--sig); outline-offset:1px}
 .arrow{align-self:center; color:var(--faint); font-size:1.2rem; flex:0 0 auto}
-.focus{display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:1.5rem; align-items:start}
+.focus{display:grid; grid-template-columns:minmax(16rem,30rem) minmax(0,1fr); gap:2rem; align-items:start}
 .focus .side{display:flex; flex-direction:column; gap:.9rem; min-width:0}
 .focus .side h2{margin:0; font-family:var(--mono); font-weight:500; font-size:1.45rem}
 .focus .side .top{display:flex; justify-content:space-between; gap:1rem; align-items:flex-start}
@@ -77,8 +77,6 @@ svg text{font-family:var(--sans)}
 .fplots{display:flex; flex-direction:column; gap:.9rem; min-width:0}
 svg.dg{display:block; width:100%; height:auto}
 .dgwrap svg.dg.big{max-height:calc(100dvh - 17rem); margin:0 auto}
-.map{background:#0a0e11; border:1px solid var(--line); border-radius:10px; padding:.4rem}
-.map svg.dg{max-height:34vh}   /* short screens: the map gives way to the text */
 .dgb{cursor:pointer} .dgb:hover .hl, .dgb:focus-visible .hl{stroke:var(--sig); stroke-width:3}
 .hl.on{stroke:var(--sig); stroke-width:3}
 @media (max-width:1000px){ .focus{grid-template-columns:minmax(0,1fr)} }
@@ -552,15 +550,14 @@ function chipPage() {
   <p class="lede">${lede}</p>
   <div class="dgwrap">${dgSVG({hl: f ? DGHALF[f] : null, cls: 'big'})}</div>`;
 }
-/* one block per page: a small map of where it sits (the system diagram, or the link scene for the over-the-air ideas), its story, and its plots */
+/* one block per page: its story and its plots (the over-the-air ideas keep the link scene on top) */
 function focusPage(id) {
   const b = B[id], facts = typeof b.facts === 'function' ? b.facts() : b.facts, isLink = b.lvl === 'link';
-  const map = isLink ? linkScene(id) : `<div class="map">${dgSVG({hl: B2DG[id], small: true})}</div>`;
   useGeo('detail');
   const plots = b.plot();
   useGeo('stage');
-  return `${isLink ? map : ''}<div class="focus">
-    <div class="side">${isLink ? '' : map}
+  return `${isLink ? linkScene(id) : ''}<div class="focus">
+    <div class="side">
       <div class="top"><div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div><button type="button" class="close" data-close aria-label="Back to the ${isLink ? 'link' : 'chip'}">✕</button></div>
       <p>${b.text}</p>
       <div class="facts">${facts.map(f => `<span class="fact">${f[0]} <b>${f[1]}</b></span>`).join('')}</div>
