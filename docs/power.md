@@ -156,7 +156,10 @@ takes `IDEAL=1` (strap R = 0) and `TRUNK=k` (top-level routing outside the block
 
 TX average VAPWR drop at tx_drv_p: 29 → 20 (W) → 16 (ideal) → 17 mV (W+trunk3). Chain IR unchanged
 (~15 / 20 mV). EM with W: west strap via4 210 → 62 %, met4 202 → 51 %; still over: **VAPWR_TX met3
-at the drivers (56.5, 120.5) 18.7 mA/µm = 275 %** and via3 at the west strap 107 %.
+at (56.5, 120.5) 18.7 mA/µm = 275 %** (285 % with the routing ×3): that point is inside tx_drv_p's
+outline, its top met3 VAPWR rail where the route feeds in, so wider routes don't help: feed the rail
+at several points along it or widen / stack it there (cells at a rail edge read somewhat high, but it
+is far from 2× margin). Also via3 at the west strap 107 %.
 
 **Findings**
 - **Wider straps fix the TX** (VAPWR R and the strap / via4 EM) but **do nothing for the RX**: even
@@ -170,8 +173,9 @@ at the drivers (56.5, 120.5) 18.7 mA/µm = 275 %** and via3 at the west strap 10
   for 6 µm), next to the mid straps the RX already reaches: small gain.
 
 **Recommendation**
-1. **TX (do):** west VAPWR strap ≥ 5 µm (as W), VAPWR_TX met3 at the drivers ≥ 3× wider (or
-   met3 + met4 stacked) and ≥ 2× the via3 at the west strap; west VDPWR / VGND as wide as W.
+1. **TX (do):** west VAPWR strap ≥ 5 µm (as W); feed tx_drv_p's (and tx_drv_n's) top VAPWR rail at
+   several points along it (or widen / stack it where the route enters); ≥ 2× the via3 at the west
+   strap; west VDPWR / VGND as wide as W.
 2. **RX (do):** a **dedicated VGND_RX (and VDPWR_RX) trunk**, ≥ 4 µm, met3 + met4 stacked where free,
    from the mid VGND / VDPWR straps straight to avg_sc, comp_ct, lpf, log_det, Ctrim / r2r, so their
    current no longer runs through bias / decap rails. Make room by trimming decap (parts 1, 3, 4).
