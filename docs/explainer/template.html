@@ -76,6 +76,9 @@ svg text{font-family:var(--sans)}
 .focus .side .sub{color:var(--muted); margin:.15rem 0 0}
 .focus .side p{margin:0}
 .fplots{display:flex; flex-direction:column; gap:.9rem; min-width:0}
+@media (min-width:1001px){   /* block pages fill the screen; the links sit at the foot of the text column */
+  .stage > .inner{min-height:100%} .stage > .inner > .focus{flex:1; align-items:stretch} .focus .side .links{margin-top:auto; padding-top:.5rem}
+}
 svg.dg{display:block; width:100%; height:auto}
 .dgwrap svg.dg.big{max-height:calc(100dvh - 17rem); margin:0 auto}
 .dgb{cursor:pointer} .dgb:hover .hl, .dgb:focus-visible .hl{stroke:var(--sig); stroke-width:3}
@@ -97,8 +100,8 @@ svg.dg{display:block; width:100%; height:auto}
 .facts{display:flex; flex-wrap:wrap; gap:.5rem}
 .fact{background:var(--panel2); border:1px solid var(--line); border-radius:999px; padding:.25rem .75rem; font-size:.85rem}
 .fact b{font-family:var(--mono); font-weight:500}
-.links{display:flex; flex-wrap:wrap; gap:.6rem}
-.links a{display:inline-flex; align-items:center; gap:.4rem; min-height:44px; padding:0 1rem; border-radius:8px; text-decoration:none; font-weight:600}
+.links{display:flex; flex-wrap:wrap; gap:.5rem}
+.links a{display:inline-flex; align-items:center; gap:.3rem; min-height:40px; padding:0 .75rem; border-radius:8px; text-decoration:none; font-weight:600; font-size:.85rem; white-space:nowrap}
 .links a.primary{background:var(--sig); color:#05181c}
 .links a.secondary{border:1px solid var(--line); color:var(--text)}
 .links a:hover{filter:brightness(1.1)}
@@ -564,7 +567,7 @@ function focusPage(id) {
       <div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div>
       <p>${b.text}</p>
       <div class="facts">${facts.map(f => `<span class="fact">${f[0]} <b>${f[1]}</b></span>`).join('')}</div>
-      <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">Read more in How it works ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}</div>
+      <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">How it works ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}</div>
     </div>
     <div class="fplots"${COL.pz < 1 ? ` style="zoom:${COL.pz}"` : ''}>${isLink ? linkScene(id) : ''}${plots || ''}</div>
   </div>`;
@@ -697,8 +700,8 @@ const TOUR = [
   {level: 'chip', block: 'r2r', cap: 'An 8-bit DAC servo cancels the comparator\'s own offset in ~0.07 mV steps.'},
   {level: 'chip', block: 'slicer', cap: 'Eight samples per chip, majority vote, at four timing offsets at once.'},
   {level: 'chip', block: 'corr', cap: 'Count matches with the expected code: chance is ~64, 97 is a detection. Lots of wrong chips are fine.'},
-  {level: 'chip', block: 'led', cap: 'Two detections one burst period apart toggle the LED. Noise and other codes don\'t.'},
   {level: 'chip', block: 'corr', p: -94, cap: 'Turn the power down: near −94 dBm the score drops towards 97, and below that the send is missed.'},
+  {level: 'chip', block: 'led', cap: 'Two detections one burst period apart toggle the LED. Noise and other codes don\'t.'},
 ];
 
 // ------------------------------------------------------------------ render
@@ -727,7 +730,8 @@ function render() {
     const ph = [...box.querySelectorAll('.plot svg, svg.strip')].reduce((a, s) => a + s.getBoundingClientRect().height, 0);
     if (fp) {
       // a block page: the text column keeps its size on every page; only the plots give way
-      const side = el.querySelector('.focus .side').getBoundingClientRect().height, fh = fp.getBoundingClientRect().height;
+      const sd = el.querySelector('.focus .side'), fh = fp.getBoundingClientRect().height;   // the text column stretches, so add up what is in it
+      const side = [...sd.children].reduce((a, c) => a + c.getBoundingClientRect().height, 0) + parseFloat(getComputedStyle(sd).rowGap || 0) * COL.z * (sd.children.length - 1);
       const above = el.querySelector('.focus').getBoundingClientRect().top - inner(el).getBoundingClientRect().top;
       if (above + side > room + 1) { COL.z = Math.floor(COL.z * room / h * 1000) / 1000; continue; }   // only when the text itself can't fit
       if (COL.detail.ph > .45 && ph > 0) COL.detail.ph = Math.max(.45, COL.detail.ph * Math.max(.3, (ph - over) / ph) - .01);
