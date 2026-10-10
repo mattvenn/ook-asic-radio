@@ -81,8 +81,6 @@ svg text{font-family:var(--sans)}
 }
 svg.dg{display:block; width:100%; height:auto}
 .chippage{display:flex; flex-direction:column; gap:1rem}
-.chiphead{display:flex; justify-content:space-between; align-items:flex-start; gap:2rem}
-.chiphead .links{flex:none}
 @media (min-width:1001px){   /* the diagram takes all the height that is left */
   .stage > .inner:has(.chippage){height:100%} .chippage{flex:1; min-height:0}
   .dgwrap{flex:1; min-height:0} .dgwrap svg.dg.big{width:100%; height:100%}
@@ -112,6 +110,9 @@ svg.dg{display:block; width:100%; height:auto}
 .links a.secondary{border:1px solid var(--line); color:var(--text)}
 .links a:hover{filter:brightness(1.1)}
 .fig{display:flex; flex-direction:column; gap:.3rem}
+.bursts{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.5rem; margin-bottom:.5rem}
+.burst{border:1px solid var(--line); border-radius:8px; padding:.3rem .6rem; font-size:.85rem; font-family:var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.burst.now{border-color:var(--tx); color:var(--tx)} .burst.ok{border-color:var(--ok); color:var(--ok)} .burst.bad{border-color:var(--bad); color:var(--bad)} .burst.later{color:var(--faint)}
 .num{display:inline-block; white-space:nowrap; font-variant-numeric:tabular-nums}
 .fig .ft{font-size:.85rem; color:var(--muted); display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap}
 .fig .src{font-size:.72rem; color:var(--faint); font-family:var(--mono)}
@@ -513,7 +514,7 @@ function figLed() {
 
 // ------------------------------------------------------------------ levels
 function linkScene(focus = null) {
-  const d = dist(), p = prx(), gap = 560 + Math.max(0, Math.min(1, (Math.log10(d) + 1) / 3.1)) * 380, tx = 600 - gap / 2, rx = 600 + gap / 2;
+  const d = dist(), p = prx(), gap = 400 + Math.max(0, Math.min(1, (Math.log10(d) + 1) / 3.1)) * 490, tx = 600 - gap / 2, rx = 600 + gap / 2;
   const strength = Math.max(0.12, Math.min(1, (p + 100) / 60));
   /* vertical, parallel dipoles on the facing sides: the link is broadside to both (a dipole has a null along its own axis) */
   const board = (x, label, sub, color, lvl, pin, side) => `
@@ -562,11 +563,11 @@ function chipPage() {
   const f = S.focus, lede = {
     tx: 'The transmitter: the digital keys the ring oscillator with the Gold code, the level shifter makes two opposite-phase 3.3 V signals, and one driver feeds each dipole arm.',
     rx: `The receiver never tunes to the carrier: ~80 dB of gain, a log detector that turns RF power into a DC level, a comparator against its own slow average, then the digital correlates against the expected code. Received now: <b>${DBM(prx())}</b>.`,
-  }[f] || 'Functional diagram';
+  }[f] || '';   // the plain chip page has no intro: the caption already says 'Functional diagram'
   return `<div class="chippage">
-  <div class="chiphead"><p class="lede">${lede}</p>
-    <div class="links"><a class="secondary" href="${GDS('tt_um_mattvenn_radio', 'gds')}" target="_blank" rel="noopener">Whole layout ↗</a></div></div>
+  ${lede ? `<p class="lede">${lede}</p>` : ''}
   <div class="dgwrap">${dgSVG({hl: f ? DGHALF[f] : null, cls: 'big'})}</div>
+  <div class="links"><a class="secondary" href="${GDS('tt_um_mattvenn_radio', 'gds')}" target="_blank" rel="noopener">Whole layout ↗</a></div>
   </div>`;
 }
 /* one block per page: its story on the left, its plots on the right (the over-the-air ideas put the link scene above their plots) */
@@ -806,10 +807,19 @@ function setStep(i, initial = false) {
 }
 
 // ------------------------------------------------------------------ animation (link level)
+/* each burst's correlator peak: the score can only line up when the burst's last chip has arrived (lead + k·period + 127) */
+function burstPeaks(r) {
+  const m = D.model;
+  return [0, 1, 2].map(k => { const c = m.lead_chips + k * m.period + 127; let mx = 0; for (let i = c - 3; i <= c + 3; i++) mx = Math.max(mx, r._s[i] || 0); return mx; });
+}
 /* the sent / received chip strip at burst b, chip ib: built with the page too, so the fit measures its real height */
 function codeStrip(b = 0, ib = 0) {
-  const g = GOLD(), r = run(), on = b < 3 && ib < 127 ? g[ib] : 0;
-  return fig(`burst ${Math.min(b + 1, 3)} of 3 · chip ${N(b < 3 && ib < 127 ? ib + 1 : '–', 3)} · carrier ${N(on ? 'ON' : 'off', 3, 'left')}`,
+  const g = GOLD(), r = run(), on = b < 3 && ib < 127 ? g[ib] : 0, th = D.model.thresh, pk = burstPeaks(r);
+  const done = k => b > k || (b === k && ib >= 127), dets = [0, 1, 2].filter(k => done(k) && pk[k] >= th).length;
+  const box = k => done(k) ? `<div class="burst ${pk[k] >= th ? 'ok' : 'bad'}">burst ${k + 1}: peak ${pk[k]} ${pk[k] >= th ? '✓' : '✗'}</div>`
+    : b === k ? `<div class="burst now">burst ${k + 1}: sending</div>` : `<div class="burst later">burst ${k + 1}</div>`;
+  const led = r.toggled && dets >= 2 ? '<div class="burst ok">LED: toggled (2 of 3)</div>' : b >= 3 || (b === 2 && done(2)) ? '<div class="burst bad">LED: no toggle</div>' : '<div class="burst later">LED: waiting for 2 of 3</div>';
+  return `<div class="bursts">${[0, 1, 2].map(box).join('')}${led}</div>` + fig(`chip ${N(b < 3 && ib < 127 ? ib + 1 : '–', 3)} of 127 · carrier ${N(on ? 'ON' : 'off', 3, 'left')}`,
     strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {ph: b < 3 && ib < 127 ? ib : -1, aria: 'sent and received chips'}),
     `received chips: link model run at ${DBM(r.lvl)}`);
 }
@@ -837,7 +847,7 @@ const anim = {
     }
     const li = Math.min(r._s.length - 1, m.lead_chips + pos);
     const live = $('live'); if (live) { const sc = b < 3 ? r._s[li] : '–'; live.textContent = sc; live.className = sc >= m.thresh ? 'good' : ''; }
-    const led = $('led'); if (led) { const lit = r.toggled && pos >= m.period + 127 + 8; led.setAttribute('fill', lit ? 'var(--ok)' : '#2a3741'); }
+    const led = $('led'); if (led) { const pk = burstPeaks(r), second = [0, 1, 2].filter(k => pk[k] >= m.thresh)[1]; const lit = r.toggled && second != null && pos >= second * m.period + 127; led.setAttribute('fill', lit ? 'var(--ok)' : '#2a3741'); }
     const cs = $('codestrip');
     if (cs && (this._pos !== ib || this._lvl !== r.lvl || !cs.firstChild)) {
       this._pos = ib; this._lvl = r.lvl; this._b = b;
