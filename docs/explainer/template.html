@@ -291,7 +291,7 @@ function plot(opts) {
   if (opts.yl && opts.yl.length <= 3) g += `<text x="4" y="${T + F}" fill="${opts.ycolor || '#8a9ca8'}" font-size="${F}">${opts.yl}</text>`;
   else if (opts.yl) g += `<text transform="translate(${F + 2} ${(T + H - Bm) / 2}) rotate(-90)" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.yl}</text>`;
   (opts.hl || []).forEach(h => g += `<line x1="${L}" x2="${W - R}" y1="${sy(h.y)}" y2="${sy(h.y)}" stroke="${h.color}" stroke-dasharray="6 5" stroke-width="1.5"/>` + (h.label ? `<text x="${W - R - 6}" y="${sy(h.y) - 6}" fill="${h.color}" font-size="${F}" text-anchor="end">${h.label}</text>` : ''));
-  (opts.vl || []).forEach(h => g += `<line x1="${sx(h.x)}" x2="${sx(h.x)}" y1="${T}" y2="${H - Bm}" stroke="${h.color}" stroke-width="2"/>` + (h.label ? `<text x="${sx(h.x) + (sx(h.x) > W - 90 ? -6 : 6)}" y="${T + F + 2}" fill="${h.color}" font-size="${F}" text-anchor="${sx(h.x) > W - 90 ? 'end' : 'start'}">${h.label}</text>` : ''));
+  (opts.vl || []).forEach(h => g += `<line x1="${sx(h.x)}" x2="${sx(h.x)}" y1="${T}" y2="${H - Bm}" stroke="${h.color}" stroke-width="2"/>` + (h.label ? `<text x="${sx(h.x) + (sx(h.x) > W - 90 ? -6 : 6)}" y="${h.bottom ? H - Bm - 6 : T + F + 2}" fill="${h.color}" font-size="${F}" text-anchor="${sx(h.x) > W - 90 ? 'end' : 'start'}">${h.label}</text>` : ''));
   const sy1 = sy;
   g += `<clipPath id="${id}c"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - Bm}"/></clipPath><g clip-path="url(#${id}c)">`;
   opts.series.forEach(s => {
@@ -627,7 +627,7 @@ function figSweep() {
   const m = D.model, x = m.levels, y = m.runs.map(r => r.events.length ? Math.max(...r.events) : Math.max(...bytes(r.scores)));
   return fig('best score vs received power (one send per level)', plot({series: [{d: {x, y}, color: 'var(--dig)', label: 'peak score', w: 2}, {d: {x, y}, color: 'var(--dig)', pts: true}],
     xl: 'received power (dBm)', yl: 'peak score', ylim: [50, 130], h: 220, hl: [{y: m.thresh, color: 'var(--thr)', label: '97'}],
-    vl: [{x: Math.max(-110, Math.min(-26, prx())), color: '#fff', label: prx().toFixed(0) + ' dBm'}]}), 'model/ link model');   // the slider's power
+    vl: [{x: Math.max(-110, Math.min(-26, prx())), color: '#fff', label: prx().toFixed(0) + ' dBm', bottom: true}]}), 'model/ link model');   // the slider's power, labelled at the foot of the plot
 }
 function figLed() {
   const r = run(), m = D.model;
