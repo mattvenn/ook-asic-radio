@@ -661,7 +661,7 @@ function linkScene(focus = null) {
       <rect class="hl${focus === 'air' ? ' on' : ''}" x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10" fill="#ffffff04" stroke="#ffffff10"/>
       <clipPath id="gapclip"><rect x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10"/></clipPath>
       <g id="waves" clip-path="url(#gapclip)" data-x0="${tx + 168}" data-x1="${rx - 168}" data-cy="76" data-d="${d}">${waves}</g>
-      <text x="600" y="20" fill="#9db0bc" font-size="16" text-anchor="middle">≈ ${fmtd(d)} apart (${distSrc(d)}) · ${nlt} wavelength${nlt === '1.0' ? '' : 's'}</text>
+      ${focus ? '' : `<text x="600" y="20" fill="#9db0bc" font-size="16" text-anchor="middle">≈ ${fmtd(d)} apart (${distSrc(d)}) · ${nlt} wavelength${nlt === '1.0' ? '' : 's'}</text>`}
     </g>
     ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'chip:tx', 'ua[3] / ua[4]', 1)}
     ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'chip:rx', 'ua[0] / ua[1]', -1)}
