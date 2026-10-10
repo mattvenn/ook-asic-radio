@@ -33,6 +33,7 @@ LBLL = {'m1': (68, 5), 'm2': (69, 5), 'm3': (70, 5), 'm4': (71, 5)}
 CAPM = (89, 44)
 DECA1_MIM_TOP = 160.0           # xdeca part 1: MIM below this, MOS only above
 SPACE = {'m1': 0.14, 'm2': 0.14, 'm3': 0.3, 'm4': 0.3}
+WIDE_SP = {'m1': 0.28, 'm2': 0.28, 'm3': 0.4, 'm4': 0.4}   # next to metal wider than 3 um (m1.3b, m2.3b, m3.3cd, m4.5ab)
 # cut: size, space, enclosure below, enclosure above (as lay.py: conservative all round)
 VIA = {('m1', 'm2'): ((68, 44), 0.15, 0.17, 0.085, 0.085),
        ('m2', 'm3'): ((69, 44), 0.20, 0.20, 0.085, 0.065),
@@ -171,6 +172,7 @@ class Router:
         t0 = time.time()
         name = net['name']
         w = net.get('w', 0.3)
+        self.cur_sp = WIDE_SP if (w > 3.0 or net.get('wide')) else SPACE
         hw = w / 2
         layers = net.get('layers', ['m2', 'm3', 'm4'])
         own = set(net['own']) | {name}
@@ -210,14 +212,14 @@ class Router:
             if L not in layers:
                 continue
             sp = SPACE[L]
-            if L in ('m3', 'm4') and (w > 3.0 or net.get('wide')):
-                sp = 0.4                                     # m3.3cd / m4.5ab (> 3 um metal)
+            if w > 3.0 or net.get('wide'):
+                sp = WIDE_SP[L]                              # (> 3 um metal, or may merge into it)
             blocked[k] = self.raster(f.sized(int(round((hw + sp) / DBU))), win)
-            if L in ('m3', 'm4') and sp < 0.4:
-                # metal wider than 3 um wants 0.4 (m3.3cd / m4.5ab)
+            if sp < WIDE_SP[L]:
+                # foreign metal wider than 3 um wants the wide spacing
                 wide = f.merged().sized(-1500).sized(1500)
                 if not wide.is_empty():
-                    blocked[k] |= self.raster(wide.sized(int(round((hw + 0.4) / DBU))), win)
+                    blocked[k] |= self.raster(wide.sized(int(round((hw + WIDE_SP[L]) / DBU))), win)
             hp = max([w] + [p[0] for (a, b), p in pad.items() if a == L] + [p[1] for (a, b), p in pad.items() if b == L]) / 2
             padblk[k] = self.raster(f.sized(int(round((hp + sp) / DBU))), win)
             for ti, t in enumerate(terms):
@@ -358,23 +360,25 @@ class Router:
 
     def fixed(self, net):
         """Pre-computed geometry (net['fixed']): ('wire', L, x0, y0, x1, y1) centre lines of
-        width net['w'], ('via', lo, hi, x, y)."""
-        w = net.get('w', 0.3)
-        hw = w / 2
+        width net['w'], ('via', lo, hi, x, y) (an optional last item overrides the width),
+        ('box', L, x0, y0, x1, y1) a rectangle."""
         length = 0.0
         for it in net['fixed']:
             if it[0] == 'wire':
-                _, L, x0, y0, x1, y1 = it
+                _, L, x0, y0, x1, y1, *ow = it
+                hw = (ow[0] if ow else net.get('w', 0.3)) / 2
                 x0, x1 = sorted((x0, x1))
                 y0, y1 = sorted((y0, y1))
                 self.rect(L, [x0 - hw, y0 - hw, x1 + hw, y1 + hw], net['name'])
                 length += (x1 - x0) + (y1 - y0)
+            elif it[0] == 'box':
+                self.rect(it[1], list(it[2:6]), net['name'])
             elif it[0] == 'pad':
                 _, L, x, y, a = it
                 self.rect(L, [x - a / 2, y - a / 2, x + a / 2, y + a / 2], net['name'])
             else:
-                _, lo, hi, x, y = it
-                self.via(lo, hi, x, y, w, net['name'])
+                _, lo, hi, x, y, *ow = it
+                self.via(lo, hi, x, y, ow[0] if ow else net.get('w', 0.3), net['name'])
         # check: no fixed shape within the spacing of foreign metal (they aren't maze-routed)
         bad = []
         own = {net['name']} | set(net.get('own', []))
@@ -569,7 +573,7 @@ class Router:
         win = reg.bbox().enlarged(2000, 2000)
         keepouts = {t for t in self.S.r[L] if t == '?h' or t.endswith('~near') or t.endswith('~cap')}
         _, f = self.S.split(L, set(own) | {tag} | keepouts, win)
-        reg = reg - f.sized(int(round(SPACE[L] / DBU)))
+        reg = reg - f.sized(int(round(getattr(self, 'cur_sp', SPACE)[L] / DBU)))
         # drop thin protrusions the clip may leave: open the merged own metal + fill, keep only
         # fill that survives (a notch fill makes the merged shape wider, so it stays)
         mw = int(round((0.3 if L in ('m3', 'm4') else 0.14) / 2 / DBU))
@@ -672,7 +676,8 @@ def build(place_gds, pins_json, fp_json):
                     break
             if tag in ('VDPWR', 'VGND', 'VAPWR'):          # straps: by side (w / m / e)
                 x = b.center().x * DBU
-                tag += '@' + ('w' if x < 100 else 'm' if x < 290 else 'e')
+                # (the met3 bars under / over the macro and the full-width VDPWR bar: '@bar')
+                tag += '@' + ('bar' if L == 'm3' else 'w' if x < 100 else 'm' if x < 290 else 'e')
             R.S.add(L, tag, db.Region(b))
     # decap areas not laid out (none now): reserve met1, met3, met4 (MOS + MIM); met2 stays free
     for b in FP['blocks'] if False else []:
@@ -725,11 +730,20 @@ def main():
         if 'fixed' in net:
             R.fixed(net)
         else:
-            R.route(net)
+            # w_try: widths to try in turn (a supply trunk necks only where it has to)
+            for w in net.get('w_try', [net.get('w', 0.3)]):
+                if R.route(dict(net, w=w)):
+                    R.report[net['name']]['w'] = w
+                    break
     for q in os.environ.get('RWHO', '').split(';'):
         if q:
             L, *b = q.split(',')
             print('WHO', q, who(R, L, *map(float, b)))
+    if os.environ.get('RDUMP'):
+        # every tag's shapes (tile um polygons, per layer): for pictures of the routing
+        dump = {L: {t: [[(p.x * DBU, p.y * DBU) for p in poly.each_point_hull()] for poly in r.merged().each()]
+                    for t, r in R.S.r[L].items() if t != '?h'} for L in LAYERS}
+        json.dump(dump, open(os.path.join(out, 'route_shapes.json'), 'w'))
     clip_to_die(R.ly, R.top)
     R.ly.write(os.path.join(out, 'tt_um_mattvenn_radio.gds'))
     json.dump(R.report, open(os.path.join(out, 'route_report.json'), 'w'), indent=1)

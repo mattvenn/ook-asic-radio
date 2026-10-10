@@ -7,12 +7,16 @@ the bare name for a tile pin, 'NET@w|m|e' for a power strap (west / mid / east s
 Coordinates in tile um.
 """
 
-STRAPS = {n: [f'{n}@{s}' for s in 'wme'] for n in ('VDPWR', 'VGND', 'VAPWR')}
+STRAPS = {n: [f'{n}@{s}' for s in ('w', 'm', 'e', 'bar')] for n in ('VDPWR', 'VGND', 'VAPWR')}
 CHAIN = (13.14, 6.5, 158.5, 76.97)
 CHAIN_IN = (100, 0, 160, 45)                 # input section + stage 1 (rule 2)
 ANALOG = ['det', 'lpf', 'avg', 'xcomp.inp', 'xcomp.inn', 'xavg.in', 'xavg.out', 'xlpf.out', 'xlpf.in',
           'xdet.det', 'trim', 'xcomp.trim', 'xctrim.trim', 'xdac.out']
 TRIM = ['trim', 'xcomp.trim', 'xctrim.trim', 'xdac.out']
+# RX supply trunks from the mid straps, in routing order: (name, block supply pin)
+TRUNK_VGND = [('avg', 'xavg.VSS'), ('comp', 'xcomp.VSS'), ('lpf', 'xlpf.VSS'), ('det', 'xdet.VSS'),
+              ('bias', 'xbias.VSS'), ('ctrim', 'xctrim.VGND'), ('dac', 'xdac.VGND')]
+TRUNK_VDPWR = [('avg', 'xavg.VDD'), ('comp', 'xcomp.VDD'), ('det', 'xdet.VDD'), ('bias', 'xbias.VDD')]
 
 
 def N(name, *terms, **kw):
@@ -27,6 +31,8 @@ def blk(x0, y0, x1, y1, layers=None):
 
 def nets():
     out = tt_bus()          # fixed geometry first: every routed net then keeps clear of it
+    out.append(tx_feed())
+    out.append(vgnd_landing())
     # ---------------- RX analog path ----------------
     # antenna inputs: straight up from the pads, as a pair, nothing else near
     out.append(N('rx_p', 'ua[0]', 'xchain.inp', w=2.0, layers=['m3', 'm4']))
@@ -63,7 +69,8 @@ def nets():
     # TX: VAPWR from the west strap, its own ground run (joins the RX ground only at the straps)
     tx_vss = ['xtx.xring.VSS', 'xtx.xls.VSS', 'xtx.xlse_p.VSS', 'xtx.xlse_n.VSS', 'xtx.xdrv_p.VSS',
               'xtx.xdrv_n.VSS']
-    out.append(N('VAPWR_TX', 'VAPWR@w', 'xtx.xdrv_n.VAPWR', 'xtx.xdrv_p.VAPWR', 'xtx.xls.VAPWR',
+    # (the drivers are fed by tx_feed; this joins the level shifters to it inside tx_top)
+    out.append(N('VAPWR_TX', 'VAPWR@w', 'VAPWR_TXF', 'xtx.xls.VAPWR',
                  'xtx.xlse_n.VAPWR', 'xtx.xlse_p.VAPWR', w=2.5, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top', late=['VAPWR@w']))
     out.append(N('VGND_TX', 'VGND@w', *tx_vss, w=2.0, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top', late=['VGND@w']))
     out.append(N('VDPWR_TX', 'VDPWR@w', 'xtx.xring.VDD', 'xtx.xls.VDD', 'xtx.xlse_p.VDD',
@@ -83,16 +90,6 @@ def nets():
     out.append(N('tx_p_neck', 'xtx.xdrv_p.out', w=2.0, layers=['m3', 'm4'], margin=10,
                  via=[(52.1, 52.0, 'm4')]))
     out.append(N('tx_p', 'tx_p_neck', 'ua[3]', w=5.0, layers=['m3', 'm4'], margin=10))
-
-    # ---------------- power ----------------
-    # RX: both the west and the mid straps (this also joins them inside the tile)
-    out.append(N('VDPWR_RX', STRAPS['VDPWR'], 'xchain.VDD', 'xdecd1.VDPWR', 'xdecd2.VDPWR', 'xdecd3.VDPWR', 'xdet.VDD', 'xavg.VDD', 'xcomp.VDD',
-                 'xbias.VDD', 'xdbg.VDD', w=1.0, layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1},
-                 margin=30, anchors=STRAPS['VDPWR'], zones=[blk(0, 192.6, 300, 226)], wide=True))
-    out.append(N('VGND_RX', STRAPS['VGND'], 'xchain.VSS', 'xdecd1.VGND', 'xdecd2.VGND', 'xdecd3.VGND', 'xdet.VSS', 'xlpf.VSS', 'xavg.VSS',
-                 'xcomp.VSS', 'xdac.VGND', 'xctrim.VGND', 'xbias.VSS', 'xdbg.VSS', w=1.0, anchors=STRAPS['VGND'],
-                 layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1}, margin=30,
-                 zones=[blk(0, 192.6, 300, 226)], wide=True))
 
     # ---------------- digital interface ----------------
     # avg_sc clocks: over the top of avg_sc, east above comp_ct, down the x 239-242 gap, across
@@ -119,6 +116,30 @@ def nets():
     out.append(N('tx_en_n', 'macro.tx_en_n', 'xtx.xlse_n.in', via=[(237.4, 175.0, 'm2'), (237.4, 195.1), (40.0, 195.1)], zones=en_z,
                  margin=8, label='tx_en_n'))
 
+    # ---------------- power ----------------
+    # RX trunks (2026-10-10, docs/power.md): one net per block from the mid straps, w 4 (necked
+    # only where it has to). Each may land on the strap or on the trunks routed before it, never
+    # on another block's rail (those are foreign tags), so no block's supply current runs through
+    # another block. The biggest R first (avg_sc / comp_ct VGND 57-67 ohm).
+    for net, blocks in (('VGND', TRUNK_VGND), ('VDPWR', TRUNK_VDPWR)):
+        prev = []
+        for b, pins in blocks:
+            nm = f'{net}_RX_{b}'
+            land = [f'{net}@m'] + (['VGND_RXL'] if net == 'VGND' else [])
+            out.append(N(nm, land + prev, pins, anchors=land + prev, own=prev, w_try=[4.0, 3.0, 2.0, 1.0],
+                         layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 3, 'm3': 1, 'm4': 1}, margin=30,
+                         zones=[blk(0, 192.6, 300, 226), blk(236.5, 162, 243, 192.6)], wide=True))
+            prev.append(nm)
+    # the rest (chain, decaps, dbg_tg): both the west and the mid straps (this also joins them
+    # inside the tile)
+    out.append(N('VDPWR_RX', STRAPS['VDPWR'], 'xchain.VDD', 'xdecd1.VDPWR', 'xdecd2.VDPWR', 'xdecd3.VDPWR',
+                 'xdbg.VDD', w=1.0, layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1},
+                 margin=30, anchors=STRAPS['VDPWR'], zones=[blk(0, 192.6, 300, 226)], wide=True))
+    out.append(N('VGND_RX', STRAPS['VGND'], 'xchain.VSS', 'xdecd1.VGND', 'xdecd2.VGND', 'xdecd3.VGND',
+                 'xdbg.VSS', w=1.0, anchors=STRAPS['VGND'],
+                 layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1}, margin=30,
+                 zones=[blk(0, 192.6, 300, 226)], wide=True))
+
     # VAPWR decaps: their rails also join the west and mid VAPWR / VGND straps (the TX supply's
     # own return: joins the RX ground only at the straps)
     deca = [f'xdeca{k}' for k in range(1, 6)]
@@ -128,6 +149,37 @@ def nets():
                  layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1}, margin=30, wide=True))
 
     return out
+
+
+def tx_feed():
+    """The TX drivers' VAPWR feed (fixed, in tx_top), 2026-10-10 (docs/power.md EM): each driver's
+    met3 VAPWR rail (3 x 40 um) fed along its whole length, never through the other's rail.
+    - xdrv_n (rail x 5.5-8.5): a met3 sheet x 0.3-5.6 joined to the rail, via3 up into the west
+      VAPWR strap (met4 x 0.3-5.3) along its whole height.
+    - xdrv_p (rail x 61.18-64.18): a met3 bar under the west straps (y 99.4-106.2, the free band
+      inside xdrv_n), via3 up east of the VGND strap, a met4 bus east over both drivers (they
+      have no met4), a met4 strip over xdrv_p's rail with via3 along it.
+    """
+    Y0, Y1 = 80.5, 120.65                       # the drivers' rails
+    BY0, BY1 = 99.4, 106.2                      # bar / bus band (m3 free 99.22-106.43 in xdrv_n)
+    f = [('box', 'm3', 0.3, Y0, 5.6, Y1)]
+    f += [('via', 'm3', 'm4', 2.8, y, 4.4) for y in (82.9, 86.5, 90.1, 93.7, 97.3, 108.5, 112.1, 115.7, 118.25)]
+    f += [('box', 'm3', 0.3, BY0, 18.9, BY1), ('via', 'm3', 'm4', 2.8, 101.1, 4.4), ('via', 'm3', 'm4', 2.8, 104.5, 4.4)]
+    f += [('via', 'm3', 'm4', 17.25, 101.1, 3.3), ('via', 'm3', 'm4', 17.25, 104.5, 3.3)]
+    f += [('box', 'm4', 15.6, BY0, 64.18, BY1), ('box', 'm4', 61.18, Y0, 64.18, Y1)]
+    f += [('via', 'm3', 'm4', 62.68, round(Y0 + 1.5 + 2.5 * k, 2), 3.0) for k in range(15)] + [('via', 'm3', 'm4', 62.68, Y1 - 1.5, 3.0)]
+    return dict(name='VAPWR_TXF', fixed=f, w=3.0, cell='tx_top',
+                own=['VAPWR@w', 'xtx.xdrv_n.VAPWR', 'xtx.xdrv_p.VAPWR'])
+
+
+def vgnd_landing():
+    """A wide landing for the RX VGND trunks (fixed). The mid VGND strap (1.2 um) sits 0.5 um from
+    the VAPWR / VDPWR straps, so a wide trunk can't put a via on it below y 220.76; above that
+    the other two straps end: a met4 bar west from the strap's top end (y 221.45-224.4, 0.4 clear of
+    the TT jumpers and the TT bus columns) and a met4 column down the MOS-only top of xdeca part 1
+    (free met4 x 251.5-273.5, y 162-226)."""
+    f = [('box', 'm4', 252.0, 221.45, 279.4, 224.4), ('box', 'm4', 262.0, 162.3, 268.0, 224.4)]
+    return dict(name='VGND_RXL', fixed=f, w=3.0, own=['VGND@m'])
 
 
 def tt_bus():
@@ -164,7 +216,7 @@ def tt_bus():
                 ('via', 'm3', 'm4', XJ1, y), ('wire', 'm3', XJ1, y, x1, y)]
     W, E = order[:24], order[24:]
     YPIN = 225.26                                             # tile pin centre
-    XSTRAP = 15.6                   # first met4 drop x clear of the west VGND strap (13.9-15.1)
+    XSTRAP = 15.7                   # first met4 drop x clear of the west VGND strap (12.0-15.1: > 3 um, 0.4 apart)
     XJ0, XJ1 = 274.0, 275.4         # antenna jumper (met4) west of the mid straps (met4 from 276.5)
     XMAC = lambda n: round(mac[n][0] + 0.3, 3)                # into the macro pin
     nets = []
