@@ -423,7 +423,7 @@ function figTx(keys, zoom = '_z') {
   if (!D.tx) return NODATA('TX');
   const sr = z => keys.filter(k => k !== 'dipole').map(k => ({d: dec(D.tx[k + z]), label: TXL[k][0], color: TXL[k][1]}));
   let h = fig('whole keyed burst: enable on at 5 ns, off at 60 ns', plot({series: sr(''), xl: 'time (ns)', yl: 'V', h: 200}), 'build/tb_tx_ab.raw, tt');
-  h += fig(zoom === '_on' ? 'zoom 3–12 ns: the enable goes high and the ring starts' : 'zoom 40–46 ns', plot({series: sr(zoom), xl: 'time (ns)', yl: 'V', h: 200}));
+  h += fig(zoom === '_on' ? 'zoom 4–10 ns: the enable goes high and the ring starts' : 'zoom 40–46 ns', plot({series: sr(zoom), xl: 'time (ns)', yl: 'V', h: 200}));
   if (keys.includes('dipole')) h += fig('voltage across the dipole', plot({series: [{d: dec(D.tx.dipole), label: TXL.dipole[0], color: TXL.dipole[1], w: 1}], xl: 'time (ns)', yl: 'V', h: 200}));
   return h;
 }
