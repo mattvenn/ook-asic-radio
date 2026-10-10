@@ -21,7 +21,7 @@ The chip page and the per-block maps draw the system diagram from the floorplan 
 | RX antenna → 6 stages → det (−60 dBm tone, keyed) | `build/rx_rf_tone.raw`, `rx_rf_key.raw` from `sim/rx/rf.sh` |
 | log detector transfer, per-tap amplitude | `sim/logdet/taps.txt`, `transfer_cw.txt` |
 | baseband det → lpf → avg → comparator, trim (−70 / −94 dBm) | `build/rx_bb_<lvl>.raw` from `sim/rx/gen_det.py` + `sim/rx/bb.sh` |
-| sent vs received chips, score, 2-of-3 (follows the received-power slider) | `model/` link model at 2 dB steps, −110 to −60 dBm: one send of code 0x5A, NF 11 dB / 450 MHz noise, 2 mV offset, 0.07 mV trim, 0.3 mV comparator noise at 13 mV/dB, bit-exact `radio.RxDigital` |
+| sent vs received chips, score, 2-of-3 (follows the received-power slider) | `model/` link model at 2 dB steps, −110 to −26 dBm: one send of code 0x5A, NF 11 dB / 450 MHz noise, 2 mV offset, 0.07 mV trim, 0.3 mV comparator noise at 13 mV/dB, bit-exact `radio.RxDigital` |
 
 `sims.sh` stubs `pyvisa` (pulled in through `bench/scope.py`) so `gen_det.py` runs in the osic image.
 

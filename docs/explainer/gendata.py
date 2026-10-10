@@ -223,7 +223,7 @@ def model_sweep():
     ch.rxm.NF_DB, ch.B_RF = 11.0, 450e6
     rng = np.random.default_rng(7)
     on = e2e.send_onoff(CODE)
-    levels = list(range(-110, -58, 2))
+    levels = list(range(-110, -24, 2))   # the slider's whole range, -110 to -26 dBm
     res = []
     for lvl in levels:
         v = e2e.run_record(on, 10 ** ((lvl - 30) / 10), 'noise', rng)
