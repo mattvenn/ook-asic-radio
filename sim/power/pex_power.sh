@@ -9,12 +9,12 @@
 set -eu
 REPO=$(pwd)
 CASE=${CASE:-A}
-OUT=$REPO/build/power/ext_$CASE${TOL:+_t$TOL}${NOTAP:+_n$NOTAP}${SIMP:+_s$SIMP}${THR:+_r$THR}
+OUT=$REPO/build/power/ext_$CASE${VAR:+_$VAR}${TOL:+_t$TOL}${NOTAP:+_n$NOTAP}${SIMP:+_s$SIMP}${THR:+_r$THR}
 mkdir -p "$OUT"; cd "$OUT"
 RC=$PDK_ROOT/$PDK/libs.tech/magic/sky130A.magicrc
 
 klayout -b -rd src=$REPO/build/top/tt_um_mattvenn_radio.gds -rd pins=$REPO/build/top/pins.json \
-  -rd repo=$REPO -rd case=$CASE -rd notap=${NOTAP:-1} -rd dst=$OUT/radio_analog_lay.gds -r $REPO/sim/power/pdn_gds.py > strip.log 2>&1
+  -rd repo=$REPO -rd case=$CASE -rd strap_w="${STRAP_W:-}" -rd notap=${NOTAP:-1} -rd dst=$OUT/radio_analog_lay.gds -r $REPO/sim/power/pdn_gds.py > strip.log 2>&1
 
 cat > ext.tcl <<EOF
 gds read $OUT/radio_analog_lay.gds

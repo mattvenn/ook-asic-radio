@@ -137,6 +137,47 @@ The weak spots, in order: **(1) TX VAPWR EM at the west strap (a reliability fai
 Suggested set: **1 (must) + 2 + 3**, then 5 for the TX. Each can be checked on this flow before the
 top-level session commits it (the mesh run takes ~30 min per supply set).
 
+## What-ifs (2026-10-10, case A, 0.5 µm mesh, the extraction copy only)
+`pex_power.sh` takes `VAR=<tag> STRAP_W='{"<old x0>": [x0, x1]}'` (straps widened in the copy, kept
+0.3 µm from other nets' met4 / via3 / MIM; check `magic.log` for "shorted" before simulating); `mesh.py`
+takes `IDEAL=1` (strap R = 0) and `TRUNK=k` (top-level routing outside the blocks ×k), `MESH_TAG`.
+- **W**: west VAPWR 0.3–5.3, VDPWR 5.8–10.5, VGND 12.0–15.1 (10.8 shorts VDPWR in the copy), east
+  VAPWR 481.0–489.22. **ideal**: W with every strap ideal. **W+trunk3**: W with the routing ×3.
+
+| block (R mean, Ω) | VDPWR base / W / ideal / W+trunk3 | VGND base / W / ideal / W+trunk3 |
+|---|---|---|
+| chain | 6.0 / 5.7 / 5.5 / 5.6 | 7.1 / 7.0 / 6.7 / 7.0 |
+| log_det | 28.6 / 27.9 / 27.4 / 23.2 | 13.6 / 13.5 / 13.3 / 11.7 |
+| avg_sc | 27.7 / 28.5 / 28.0 / 21.6 | 66.8 / 67.3 / 66.0 / 64.7 |
+| comp_ct | 26.6 / 25.6 / 25.1 / 18.6 | 56.8 / 56.4 / 55.1 / 54.0 |
+| bias | 13.6 / 13.4 / 12.8 / 11.0 | 30.9 / 31.0 / 29.6 / 29.3 |
+| tx_drv_p (VAPWR) | 3.0 / 2.4 / 2.1 / 1.9 | 2.5 / 2.4 / 2.2 / 1.8 |
+| tx_drv_n (VAPWR) | 1.5 / 0.8 / 0.6 / 0.8 | 2.0 / 2.0 / 1.8 / 1.5 |
+
+TX average VAPWR drop at tx_drv_p: 29 → 20 (W) → 16 (ideal) → 17 mV (W+trunk3). Chain IR unchanged
+(~15 / 20 mV). EM with W: west strap via4 210 → 62 %, met4 202 → 51 %; still over: **VAPWR_TX met3
+at the drivers (56.5, 120.5) 18.7 mA/µm = 275 %** and via3 at the west strap 107 %.
+
+**Findings**
+- **Wider straps fix the TX** (VAPWR R and the strap / via4 EM) but **do nothing for the RX**: even
+  ideal straps leave avg_sc / comp_ct at 55–66 Ω to VGND.
+- **The RX ground resistance is in the path, not in any one wire**: the lowest-R path from avg_sc to
+  the grid winds through other blocks' rails (bias met3 ~14 Ω, decap part 3 met1 ~10 Ω, the chain,
+  comp_ct) and the 1 µm routes (~55 Ω), ~150 Ω in series (67 Ω with the parallel paths). Scaling the
+  top-level routes ×3 doesn't help VGND (its R is inside block bboxes: rails used as the trunk).
+- **No full-height column for a new strap in the RX area**: every x in 16–239 hits block met4 / MIM.
+  Removing decap frees full-height columns only in decap part 1 (x 239.5–242.5 for 3 µm, 251.5–273.5
+  for 6 µm), next to the mid straps the RX already reaches: small gain.
+
+**Recommendation**
+1. **TX (do):** west VAPWR strap ≥ 5 µm (as W), VAPWR_TX met3 at the drivers ≥ 3× wider (or
+   met3 + met4 stacked) and ≥ 2× the via3 at the west strap; west VDPWR / VGND as wide as W.
+2. **RX (do):** a **dedicated VGND_RX (and VDPWR_RX) trunk**, ≥ 4 µm, met3 + met4 stacked where free,
+   from the mid VGND / VDPWR straps straight to avg_sc, comp_ct, lpf, log_det, Ctrim / r2r, so their
+   current no longer runs through bias / decap rails. Make room by trimming decap (parts 1, 3, 4).
+   Not yet simulated: needs the route geometry (top-level session), then this flow re-runs on it.
+3. A strap in decap part 1 (x ~251–273, 6 µm): only if 2 can't reach the mid straps.
+
 ## Re-running
 ```
 tools/osic-mac bash -c 'CASE=A bash sim/power/pex_power.sh'    # extraction copy + magic rc (~30 s)

@@ -70,6 +70,31 @@ v4, m5, m5p, m5t = ly.layer(71, 44), ly.layer(72, 20), ly.layer(72, 16), ly.laye
 SUP = ('VAPWR', 'VDPWR', 'VGND', 'VPWR')
 
 # met4 power-pin shapes (tile straps, the macro's stripes) and their nets
+# what-if: widen tile straps (strap_w: JSON {"<old x0>": [new x0, new x1]}), the new met4 kept
+# 0.3 um from every met4 shape that doesn't touch the strap (other nets)
+WIDE = json.loads(globals().get('strap_w', '') or '{}')
+if WIDE:
+    m4all = pya.Region(top.begin_shapes_rec(m4))
+    m4all.merge()
+    for s in list(top.shapes(m4p).each()):
+        b = s.dbbox()
+        key = next((k for k in WIDE if abs(float(k) - b.left) < 0.01), None)
+        if key is None:
+            continue
+        nb = pya.DBox(WIDE[key][0], b.bottom, WIDE[key][1], b.top)
+        mine = pya.Region(b.to_itype(ly.dbu))
+        others = m4all.not_interacting(mine)
+        # and other nets' via3s / MIM top plates below (a met4 over them would connect to them)
+        below = (pya.Region(top.begin_shapes_rec(ly.layer(70, 44))) +
+                 pya.Region(top.begin_shapes_rec(ly.layer(89, 44)))).not_interacting(mine)
+        add = pya.Region(nb.to_itype(ly.dbu)) - others.sized(int(0.3 / ly.dbu)) - below.sized(int(0.3 / ly.dbu))
+        add = add.interacting(mine)
+        top.shapes(m4).insert(add)
+        top.shapes(m4p).erase(s)
+        top.shapes(m4p).insert(nb)
+    M4REG = pya.Region(top.begin_shapes_rec(m4)).merged()
+else:
+    M4REG = None
 cols = [s.dbbox() for s in top.shapes(m4p).each()]
 net_of = {}
 for s in top.shapes(m4t).each():
@@ -92,7 +117,10 @@ def via4(box):
     y0 = box.center().y - (ny * 1.6 - 0.8) / 2
     for i in range(nx):
         for j in range(ny):
-            top.shapes(v4).insert(pya.DBox(x0 + 1.6 * i, y0 + 1.6 * j, x0 + 1.6 * i + 0.8, y0 + 1.6 * j + 0.8))
+            cb = pya.DBox(x0 + 1.6 * i, y0 + 1.6 * j, x0 + 1.6 * i + 0.8, y0 + 1.6 * j + 0.8)
+            if M4REG is not None and not (pya.Region(cb.enlarged(0.19, 0.19).to_itype(ly.dbu)) - M4REG).is_empty():
+                continue                    # a widened strap clipped around another net's met4
+            top.shapes(v4).insert(cb)
     return nx * ny
 
 
@@ -108,6 +136,8 @@ for net in ('VDPWR', 'VAPWR'):
     top.shapes(m4).insert(g); top.shapes(m4p).insert(g)
     top.shapes(m4t).insert(pya.DText(net, pya.DTrans(g.center().x, g.center().y)))
     gate[net] = g
+if WIDE:                                    # now with the gate columns in
+    M4REG = pya.Region(top.begin_shapes_rec(m4)).merged()
 mycols = {n: [c for c, k in net_of.items() if k == n] for n in SUP[:3]}
 for net, stripes in pdn.CASES[case].items():
     xr = max(c[2] for c in mycols[net]) + 0.12

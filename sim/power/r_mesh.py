@@ -96,14 +96,14 @@ def main(case, pitch=0.5):
         name = f'r_mesh_{case}_{net}' + ('' if pitch == 0.5 else f'_p{pitch:g}')
         deck = [f'* {name}: R from each block to the {net} port (mesh)'] + lines + [f'Vport {net} 0 0']
         for b, nodes in pts.items():
-            deck.append(f'.param ib_{b}=0')
             for k, n in enumerate(nodes):
-                deck.append(f"I_{b}_{k} 0 {n} dc 'ib_{b}/{len(nodes)}'")
+                deck.append(f"I_{b}_{k} 0 {n} dc 0")
         deck.append('.save ' + ' '.join(sorted({f'v({n})' for v in pts.values() for n in v})))
         deck.append('.control')
-        for b in pts:
-            deck += [f'alterparam ib_{b2}={1 if b2 == b else 0}' for b2 in pts]
-            deck += ['reset', 'op', f'write {name}_{b}.raw', 'destroy all']
+        for b, nodes in pts.items():           # 1 A over the block's terminals, one op each
+            deck += [f'alter I_{b}_{k} dc = {1.0 / len(nodes):.6g}' for k in range(len(nodes))]
+            deck += ['op', f'write {name}_{b}.raw', 'destroy all']
+            deck += [f'alter I_{b}_{k} dc = 0' for k in range(len(nodes))]
         deck += ['.endc', '.end']
         open(os.path.join(common.B, name + '.spice'), 'w').write('\n'.join(deck) + '\n')
         print(f'{net}: {len(alive)} nodes on the port\'s mesh, {nisl} islands dropped; solving', flush=True)

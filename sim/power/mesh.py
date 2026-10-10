@@ -31,6 +31,13 @@ P = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
 DBU = 0.001
 GDS = os.path.join(ROOT, 'build', 'power', f'ext_{CASE}', 'radio_analog_lay.gds')
 OUT = os.path.join(ROOT, 'build', 'power', f'mesh_{CASE}' + ('' if P == 0.5 else f'_p{P:g}'))
+# what-ifs (env): IDEAL=1 ties every tile-strap met4 cell to the port (strap R = 0); TRUNK=k multiplies
+# the conductance of top-level routing (met1-met4 cells outside every block and not a strap) by k.
+# MESH_TAG names the output (mesh_<tag>), so `case` = <tag> works downstream (link ext_<tag>).
+IDEAL = os.environ.get('IDEAL') == '1'
+TRUNK = float(os.environ.get('TRUNK', '1'))
+if os.environ.get('MESH_TAG'):
+    OUT = os.path.join(ROOT, 'build', 'power', 'mesh_' + os.environ['MESH_TAG'])
 # sheet R (ohm/sq) and per-cut R (ohm) / cut size (um): magic sky130A.tech, tech LEF
 LAY = [('li', (67, 20), 12.8), ('m1', (68, 20), 0.125), ('m2', (69, 20), 0.125),
        ('m3', (70, 20), 0.047), ('m4', (71, 20), 0.047), ('m5', (72, 20), 0.0285)]
@@ -79,6 +86,20 @@ def main():
         cov = [raster(l2n.shapes_of_net(net, L[n], True).merged()) for n, _, _ in LAY]
         cut = [raster(l2n.shapes_of_net(net, C[n], True).merged()) for n, _, _, _ in CUT]
         live = [c > 0.02 for c in cov]
+        # strap cells (the tile's met4 power pins of this net) and the routing mask for the what-ifs
+        pins_net = db.Region()
+        for sh in top.shapes(ly.layer(71, 16)).each():
+            if not (l2n.shapes_of_net(net, L['m4'], True) & db.Region(sh.bbox())).is_empty():
+                pins_net.insert(sh.bbox())
+        strap = raster(pins_net) > 0.5
+        route = np.zeros((ny, nx), bool)
+        if TRUNK != 1:
+            insts = json.load(open(os.path.join(ROOT, 'build', 'top', 'pins.json')))['insts']
+            inb = db.Region()
+            for k_, b_ in insts.items():
+                if k_ != 'macro':
+                    inb.insert(db.DBox(*b_).to_itype(DBU))
+            route = (raster(inb) < 0.5) & ~strap
         name = lambda k, iy, ix: f'm{k}_{ix}_{iy}'
         lines = [f'* {netname} supply mesh, case {CASE}, pitch {P} um (sim/power/mesh.py)']
         nr = 0
@@ -90,6 +111,8 @@ def main():
                 g = np.minimum(c[ys, xs], c[ys + dy, xs + dx])
                 for iy, ix, gg in zip(ys, xs, g):
                     nr += 1
+                    if 1 <= k <= 4 and route[iy, ix] and route[iy + dy, ix + dx]:
+                        gg = gg * TRUNK
                     lines.append(f'R{nr} {name(k, iy, ix)} {name(k, iy + dy, ix + dx)} {rs / gg:.5g}')
         for k, (cn, _, rc, cs) in enumerate(CUT):
             a = (cut[k] > 0) & live[k] & live[k + 1]
@@ -113,6 +136,11 @@ def main():
         for iy, ix in zip(ys, xs):
             nr += 1
             lines.append(f'R{nr} {name(k, iy, ix)} {netname} 1e-6')
+        if IDEAL:
+            ys2, xs2 = np.nonzero(strap & live[4])
+            for iy, ix in zip(ys2, xs2):
+                nr += 1
+                lines.append(f'R{nr} {name(4, iy, ix)} {netname} 1e-6')
         open(os.path.join(OUT, f'{netname}.spice'), 'w').write('\n'.join(lines) + '\n')
         json.dump({'layers': [l[0] for l in LAY], 'x0': x0, 'y0': y0, 'p': P, 'nx': nx, 'ny': ny,
                    'live': {LAY[k][0]: [[int(i), int(j)] for i, j in zip(*np.nonzero(live[k]))] for k in (0, 1)}},
