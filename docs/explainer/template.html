@@ -523,7 +523,7 @@ function slicerData() {
 function slicerFig(i) {
   const d = slicerData(); if (!d) return NODATA('baseband');
   const F = GEO.f, W = GEO.w, L = Math.round(F * 6.5), Rr = Math.round(F * 5.5), cw = (W - L - Rr) / SL_N, x = k => L + k * cw;
-  const rowH = Math.round(F * 1.5), phH = Math.round(F * 2.3), voteH = Math.round(F * 3.2), H = 2 * rowH + 4 * phH + voteH + 24;
+  const rowH = Math.round(F * 1.5), phH = Math.round(F * 2.3), H = 2 * rowH + 4 * phH + 16;
   // the close-up follows the best-lined-up slicer: the one whose votes most often match what was sent
   if (d.best == null) { let bs = -1; for (const ph of [0, 2, 4, 6]) { let r = 0; for (let st = ph; st + 8 <= SL_N; st += 8) { let c = 0, t = 0; for (let k = st; k < st + 8; k++) { c += d.smp[k]; t += d.tru[k]; } if (t !== 4 && (c > 4 || (c === 4 && d.smp[st + 7]) ? 1 : 0) === (t > 4 ? 1 : 0)) r++; } if (r > bs) { bs = r; d.best = ph; } } }
   const bp = d.best, wc = i >= bp ? bp + 8 * Math.floor((Math.min(i, SL_N - 1) - bp) / 8) : -1;
@@ -557,22 +557,10 @@ function slicerFig(i) {
       if (xb - xa > F * 3) g += `<text x="${(xa + xb) / 2}" y="${y + 6 + (phH - 12) / 2 + F * .35}" font-size="${Math.round(F * .8)}" text-anchor="middle" fill="${v ? '#05181c' : '#9db0bc'}">${c}/8 → ${v}</text>`;
     }
     score.push([right, n]);
-    g += `<text x="${W - Rr + 8}" y="${y + phH * .55}" font-size="${F}" fill="#9db0bc">${n ? right + '/' + n + ' right' : ''}</text>`;
+    const xn = W - Rr + 8 + F * 2.6;   // the count ends here, 'right' starts just after: it stays put as the digits change
+    if (n) g += `<text x="${xn}" y="${y + phH * .55}" font-size="${F}" fill="#9db0bc" text-anchor="end" style="font-variant-numeric:tabular-nums">${right}/${n}</text>` +
+      `<text x="${xn + F * .35}" y="${y + phH * .55}" font-size="${F}" fill="#9db0bc">right</text>`;
   });
-  // the vote, close up: the current window of the best slicer filling sample by sample, then the rule and the result
-  const yv = 2 * rowH + 8 + 4 * phH + 8;
-  g += lab(yv + voteH * .55, 'vote', 'var(--sig)', 700);
-  if (ws >= 0 && ws + 8 <= SL_N) {
-    const sz = Math.min(voteH - 8, F * 2.2), gx = L;
-    let c = 0, n = 0;
-    for (let k = 0; k < 8; k++) {
-      const seen = ws + k <= i, v = d.smp[ws + k]; if (seen) { n++; c += v; }
-      g += `<rect x="${gx + k * (sz + 6)}" y="${yv + 4}" width="${sz}" height="${sz}" rx="3" fill="${!seen ? '#11181d' : v ? 'var(--rx)' : '#1c262e'}" stroke="#4a5a66"/>` + (seen ? `<text x="${gx + k * (sz + 6) + sz / 2}" y="${yv + 4 + sz / 2 + F * .35}" font-size="${F}" text-anchor="middle" fill="${v ? '#05181c' : '#9db0bc'}">${v}</text>` : '');
-    }
-    const done = n === 8, v = c > 4 || (c === 4 && d.smp[ws + 7]) ? 1 : 0;
-    const msg = !done ? `${c} of ${n} are 1 so far` : c === 4 ? `4 of 8 are 1, a tie: the last sample decides → ${v ? 'on (1)' : 'off (0)'}` : `${c} of 8 are 1 → ${c > 4 ? '5 or more: on (1)' : '4 or fewer: off (0)'}`;
-    g += `<text x="${gx + 8 * (sz + 6) + 12}" y="${yv + 4 + sz / 2 + F * .35}" font-size="${Math.round(F * 1.1)}" fill="${done ? 'var(--text)' : '#9db0bc'}" font-weight="${done ? 600 : 400}">${msg}</text>`;
-  }
   return g + '</svg>';
 }
 function figSlicer() {
@@ -983,13 +971,15 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('.hit') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.target.closest('.hit').dispatchEvent(new MouseEvent('click', {bubbles: true})); return; }
-  if (e.target.tagName === 'INPUT' || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  // the number keys always jump to a page, even with the distance slider focused (it keeps focus after a drag)
+  if (/^[1-4]$/.test(e.key)) { e.preventDefault(); if (e.target.blur && e.target !== document.body) e.target.blur(); go(['link', 'chip', 'chip:tx', 'chip:rx'][+e.key - 1]); return; }
+  if (e.target.tagName === 'INPUT') return;
   if (!$('help').hidden) { if (e.key === 'Escape' || e.key === '?') { $('help').hidden = true; } return; }
   const k = e.key;
   if (k === 'ArrowRight' || (k === ' ' && e.target.tagName !== 'BUTTON')) { e.preventDefault(); setStep(S.step + 1); }
   else if (k === 'ArrowLeft') { e.preventDefault(); setStep(S.step - 1); }
   else if (k === 'Escape') { if (S.block) S.block = null; else if (S.focus) S.focus = null; else S.level = 'link'; render(); }
-  else if (k === '1') go('link'); else if (k === '2') go('chip'); else if (k === '3') go('chip:tx'); else if (k === '4') go('chip:rx');
   else if ((k === '[' || k === ']') && usesPower()) { glideId++; S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); render(); }
   else if (k === 'p') S.playing = !S.playing;
   else if (k === '?') $('help').hidden = false;
