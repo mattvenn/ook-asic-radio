@@ -347,13 +347,13 @@ const B = {
     text: 'The 7 DIP switches pick one of 128 Gold codes: two 7-bit LFSRs, the second started later by the switch value, XORed together. Flip the switches below. 127 noise-like bits, half on, half off. Each bit lasts 104 µs, so one burst takes 13.2 ms. The TX keys the ring with the code three times, with 64 silent bits between bursts.',
     plot: () => figGold()},
   tx_ring: {lvl: 'tx', name: 'tx_ring', sub: 'free-running ring oscillator', anchor: 'transmitter', sch: 'tx_ring', color: 'tx',
-    text: () => `A NAND gate (the on/off enable) plus a ring of standard-cell inverters. No crystal: wherever it lands in 330–560 MHz the receiver still works. It runs at ${D.tx ? D.tx.f_mhz : '~485'} MHz in simulation (tt), and silicon ran at ×0.87 of simulation on the bench chip. In simulation it starts on the first edge after the enable (zoom below); the bench chip measured ~30–40 ns on/off, through its board and the scope.`,
+    text: () => `A NAND gate (the on/off enable) plus a ring of standard-cell inverters. No crystal: wherever it lands in 330–560 MHz the receiver still works. It runs at ${D.tx ? D.tx.f_mhz : '~485'} MHz in simulation (tt), and silicon ran at ×0.87 of simulation on the bench chip. In simulation it starts on the first edge after the enable (zoom below), and the voltage across the dipole reaches full swing ${D.tx ? D.tx.on_ns : '~4'} ns after the enable rises and dies away ${D.tx ? D.tx.off_ns : '~5'} ns after it falls: about two carrier cycles each way.`,
     plot: () => figTx(['key', 'ring'], '_on')},
   tx_ls: {lvl: 'tx', name: 'tx_ls', sub: 'level shifter 1.8 V → 3.3 V', anchor: 'transmitter', sch: 'tx_ls', color: 'tx',
     text: 'Turns the 1.8 V ring into 3.3 V swings. Its two latch nodes are naturally opposite in phase, which gives the dipole\'s two arms for free.',
     plot: () => figTx(['a', 'b'])},
   tx_drv: {lvl: 'tx', name: 'tx_drv ×2', sub: 'output drivers, one per dipole arm', anchor: 'transmitter', sch: 'tx_drv', color: 'tx',
-    text: () => `A tapered buffer: four thick-oxide 3.3 V inverters, each about 4× wider than the one before (PMOS 1.3 → 5 → 20 → 81 µm). The last one is big enough to drive the pin and antenna, but far too big for the small level shifter to switch quickly; stepping up 4× per stage gets the edge through fastest. One drives ua[3], the other ua[4]. Driving the two arms in antiphase puts the full swing across the dipole: ${D.tx ? '±' + D.tx.dipole_vpk + ' V' : 'the full swing'} in simulation, and +3.7 to +3.9 dBm into it across the process corners. Per-arm enables allow a monopole fallback.`,
+    text: () => `A tapered buffer: four thick-oxide 3.3 V inverters, each about 4× wider than the one before (PMOS 1.3 → 5 → 20 → 81 µm). The last one is big enough to drive the pin and antenna, but far too big for the small level shifter to switch quickly; stepping up 4× per stage gets the edge through fastest. One drives ua[3], the other ua[4]. Driving the two arms in antiphase puts the full swing across the dipole: ${D.tx ? '±' + D.tx.dipole_swing + ' V (peaks up to ±' + D.tx.dipole_vpk + ' V)' : 'the full swing'} in simulation, and +3.7 to +3.9 dBm into it across the process corners. Per-arm enables allow a monopole fallback.`,
     plot: () => figTx(['drv_p', 'drv_n', 'dipole'])},
   lna_chain: {lvl: 'rx', name: 'lna_chain', sub: '6 differential amplifier stages', anchor: 'receiver-amplifier-chain', sch: 'lna_chain', color: 'rx',
     text: 'Six differential stages, ~80 dB of gain in total. Differential means each stage amplifies the difference between two wires and ignores noise common to both, like the chip\'s own 10 MHz clock. Stage 1 is the low-noise amplifier, and the chain\'s noise figure is about 11 dB. Coupling capacitors between stages stop DC offsets building up.',
@@ -362,8 +362,8 @@ const B = {
     text: 'One rectifier cell per chain stage. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V, about 13 mV per dB. Note it goes down as the signal goes up.',
     plot: () => figLogdet()},
   lpf_rc: {lvl: 'rx', name: 'lpf_rc', sub: '14 kHz RC low-pass', anchor: 'receiver-detector-filter-threshold', sch: 'lpf_rc', color: 'rx',
-    text: 'A 14 kHz RC low-pass. It keeps the bit-rate envelope (one bit is 104 µs) and removes most of the noise from the detector output.',
-    plot: () => figBB(['det', 'lpf'])},
+    text: 'Up to the amplifiers the signal is the 434 MHz carrier itself (1). The log detector rectifies it, so its output just follows how strong the carrier is: the carrier is gone, leaving a few mV of ripple at twice its frequency (2). But that output is noisy, because the amplifiers pass 450 MHz of noise. This 14 kHz RC low-pass smooths away everything faster than a 104 µs bit, the noise and the ripple, leaving the on/off envelope (3).',
+    plot: () => figLpf()},
   avg_sc: {lvl: 'rx', name: 'avg_sc', sub: 'switched-capacitor slow average', anchor: 'where-the-threshold-goes', sch: 'avg_sc', color: 'rx',
     text: 'The threshold. A Gold code is half on and half off, so the slow average of the signal sits in the middle of it at any range. A small capacitor clocked by the digital (sc_phi1/2) acts as a very large resistor, giving a time constant of about 0.45 ms.',
     plot: () => figBB(['lpf', 'avg'])},
@@ -436,16 +436,22 @@ function bracket(runs, p) {
 }
 const blend = (a, b, w) => ({x: a.x, y: a.y.map((v, i) => v * (1 - w) + b.y[i] * w)});
 const runsNote = (br, what) => `${what} ${N(br.lo.lvl, 4)} and ${N(br.hi.lvl, 4)} dBm runs, interpolated`;
-function figChain() {
-  if (!D.rx_rf) return NODATA('RX RF');
-  // the tone transient nearest the slider (rf.sh's -60 dBm run, plus rf_levels.sh's other levels)
-  const TL = D.rx_rf.tone_levels && D.rx_rf.tone_levels.length ? D.rx_rf.tone_levels : [{lvl: -60, nodes: D.rx_rf.nodes}];
-  // between two runs: each stage's waveform shape is blended and scaled by the geometric mean of the two amplitudes (a straight
-  // average of a 1 mV and a 10 mV run would give 5.5 mV; in dB the midpoint is 3.2 mV)
-  const br = bracket(TL, prx()), w = br.w;
+const toneLevels = () => D.rx_rf.tone_levels && D.rx_rf.tone_levels.length ? D.rx_rf.tone_levels : [{lvl: -60, nodes: D.rx_rf.nodes}];
+/* the tone runs at power p: between two runs each stage's waveform shape is blended and scaled by the geometric mean of the two
+   amplitudes (a straight average of a 1 mV and a 10 mV run would give 5.5 mV; in dB the midpoint is 3.2 mV); det is linear in dB */
+const tly = () => { if (!D._tly) { let m = 0; for (const l of toneLevels()) for (const v of l.nodes) m = Math.max(m, v.vpk * 1000); D._tly = [-m * 1.05, m * 1.05]; } return D._tly; };   // one mV range over every level
+function toneAt(p) {
+  const br = bracket(toneLevels(), p), w = br.w;
   const n = br.lo.nodes.map((a, i) => { const b = br.hi.nodes[i], A = a.vpk, Bv = b.vpk, amp = A > 0 && Bv > 0 ? Math.pow(A, 1 - w) * Math.pow(Bv, w) : A * (1 - w) + Bv * w;
     const da = dec(a.w, 1000), db = dec(b.w, 1000);
     return {label: a.label, vpk: amp, d: {x: da.x, y: da.y.map((v, j) => ((1 - w) * v / (A * 1000 || 1) + w * db.y[j] / (Bv * 1000 || 1)) * amp * 1000)}}; });
+  const det = br.lo.det && br.hi.det ? blend(dec(br.lo.det), dec(br.hi.det), w) : null;
+  return {br, n, det};
+}
+function figChain() {
+  if (!D.rx_rf) return NODATA('RX RF');
+  // the tone transient nearest the slider (rf.sh's -60 dBm run, plus rf_levels.sh's other levels)
+  const TL = toneLevels(), {br, n} = toneAt(prx());
   const x = n.map((_, i) => i), y = n.map(v => v.vpk * 1000);
   // at the received power now: each stage's output from the chain's CW sweep (taps o1..o5, out = stages 1..6), log-interpolated
   const L = D.logdet, p = Math.max(L.pin[0], Math.min(L.pin[L.pin.length - 1], prx()));
@@ -456,8 +462,7 @@ function figChain() {
     ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), runsNote(br, 'taps.txt + rx_rf_tone'));
   h += '<p>Each stage multiplies the signal until the last stages limit at ~1 V: that limiting is what the log detector uses.</p>';
   const cols = ['#4c6b78', '#5d8592', 'var(--rx)', 'var(--rx)', 'var(--rx)', 'var(--sig2)', 'var(--sig2)', 'var(--sig2)'];
-  if (!D._tly) { let m = 0; for (const l of TL) for (const v of l.nodes) m = Math.max(m, v.vpk * 1000); D._tly = [-m * 1.05, m * 1.05]; }   // one range over every level
-  h += fig(`the same 10 ns at every stage, ${DBM(prx())} tone (differential, so it swings both ways)`, plot({series: n.map((v, i) => ({d: v.d, color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240, ylim: D._tly}), runsNote(br, 'rx_rf_tone'));
+  h += fig(`the same 10 ns at every stage, ${DBM(prx())} tone (differential, so it swings both ways)`, plot({series: n.map((v, i) => ({d: v.d, color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240, ylim: tly()}), runsNote(br, 'rx_rf_tone'));
   return h;
 }
 function figLogdet() {
@@ -489,13 +494,20 @@ function bbRange(keys, scale = 1000) {
     const pad = (hi - lo) * .05; BBY[id] = [lo - pad, hi + pad]; }
   return BBY[id];
 }
-function figBB(keys) {
+function figBB(keys, prefix = '') {
   if (!D.bb.length) return NODATA('baseband');
   // between two runs: a straight blend (the detector is linear in dB). The runs' noise is independent, so mid-way the blend is a bit quieter than either.
   const br = bracket(D.bb, prx());
   const ser = keys.map(k => ({d: blend(dec(br.lo[k]), dec(br.hi[k]), br.w), label: BBL[k][0], color: BBL[k][1], w: BBL[k][2], op: k === 'det' ? 0.7 : 1}));
-  return fig(`${DBM(prx())}, 3 ms of one burst: bits "on" pull the detector down from its ${br.lo.base.toFixed(2)} V no-signal level`,
+  return fig(`${prefix}${DBM(prx())}, 3 ms of one burst: bits "on" pull the detector down from its ${br.lo.base.toFixed(2)} V no-signal level`,
     plot({series: ser, xl: 'time (ms)', yl: 'V', h: 280, ylim: bbRange(keys, 1)}), runsNote(br, 'rx_bb'));
+}
+function figLpf() {
+  if (!D.rx_rf) return figBB(['det', 'lpf']);
+  const {br, n, det} = toneAt(prx()), st6 = n[n.length - 1];
+  let h = fig(`1. the 434 MHz carrier at the last amplifier stage, 10 ns at ${DBM(prx())}`, plot({series: [{d: st6.d, color: 'var(--sig2)', label: 'stage 6 (mV, differential)', w: 1.4}], xl: 'time (ns)', yl: 'mV', h: 150, ylim: tly()}), runsNote(br, 'rx_rf_tone'));
+  if (det) h += fig('2. the log detector output over the same 10 ns: the carrier is gone, a few mV of ripple at twice its frequency are left (axis zoomed in)', plot({series: [{d: det, color: 'var(--rx)', label: 'det (V)', w: 1.4}], xl: 'time (ns)', yl: 'V', h: 150, yfmt: v => v.toFixed(3)}), runsNote(br, 'rx_rf_tone'));
+  return h + figBB(['det', 'lpf'], '3. noise included, ');
 }
 function figComp() {
   const b = bb(); if (!b) return NODATA('baseband');

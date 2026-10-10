@@ -91,6 +91,19 @@ def tx():
     f = (len(zc) - 1) / (t[on][zc[-1]] - t[on][zc[0]]) * 1e3
     out['f_mhz'] = round(f, 1)
     out['dipole_vpk'] = round(float(np.max(np.abs(dip[on]))), 2)
+    # keying speed of the actual circuit: the dipole's AC swing (half the peak-to-peak over one carrier period) vs the enable edges
+    key = v['v(key)']
+    kr = t[np.argmax(key > 0.9)]
+    kf = t[np.where((key[:-1] > 0.9) & (key[1:] <= 0.9))[0][0]]
+    def swing(tq):
+        w = (t > tq - 2.3) & (t <= tq)
+        return float(np.ptp(dip[w]) / 2) if w.sum() > 2 else 0.0
+    steady = float(np.median([swing(x) for x in np.arange(25, 55, 0.5)]))
+    ts = np.arange(kr, kr + 20, 0.05)
+    out['on_ns'] = round(float(ts[np.argmax([swing(x) >= 0.9 * steady for x in ts])] - kr), 1)
+    ts = np.arange(kf, kf + 25, 0.05)
+    out['off_ns'] = round(float(ts[np.argmax([swing(x) <= 0.1 * steady for x in ts])] - kf), 1)
+    out['dipole_swing'] = round(steady, 2)
     return out
 
 
@@ -116,7 +129,7 @@ def rx_rf():
     for lvl in KEY_LEVELS:
         tv = v if lvl == -60 else raw(f'rx_rf_tone_{lvl}.raw')
         if tv is not None:
-            out['tone_levels'].append({'lvl': lvl, 'nodes': stages(tv)})
+            out['tone_levels'].append({'lvl': lvl, 'nodes': stages(tv), 'det': trace(tv['time'] * 1e9, tv['v(det)'], 380.0, 390.0, 300)})
     k = raw('rx_rf_key.raw')
     if k is not None:
         tk = k['time'] * 1e6
