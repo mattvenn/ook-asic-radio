@@ -29,6 +29,7 @@ nav.crumbs button[aria-current]{color:var(--text); font-weight:600}
 nav.crumbs button:hover{background:var(--panel2)}
 nav.crumbs .sep{color:var(--faint)}
 .dist{display:flex; align-items:center; gap:.75rem; min-width:0}
+.dist.off{opacity:.35} .dist.off input{cursor:not-allowed}
 .dist label{color:var(--muted); font-size:.85rem; white-space:nowrap; flex:none}
 @media (max-width:1250px) and (min-width:1001px){ .dist label{display:none} }   /* narrow windows: the readout says dBm, the breadcrumb keeps its room */
 .dist input{flex:1 1 auto; min-width:5rem; width:auto; accent-color:var(--sig)}
@@ -750,6 +751,8 @@ const TOUR = [
 const $ = id => document.getElementById(id);
 const COL = {stage: {w: 800, ph: 1}, detail: {w: 800, ph: 1}, z: 1, pz: 1, key: ''};   // z scales the whole page, pz only the plot column
 const useGeo = c => { GEO.w = Math.floor(COL[c].w / COL.z / (c === 'detail' ? COL.pz : 1)); GEO.ph = COL[c].ph; GEO.f = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * .82); };
+/* pages the received power doesn't change: the slider greys out there */
+const usesPower = () => S.block ? !(B[S.block].lvl === 'tx' || S.block === 'bias_gen') : !(S.level === 'chip' && S.focus !== 'rx');
 const fits = () => innerWidth > 1000;   // desktop: the page is fixed to the screen; narrower stacks and scrolls
 const inner = el => el.firstElementChild;
 /* build, measure, and rebuild until the page fits the screen: first at the real column widths,
@@ -798,6 +801,8 @@ function build() {
   const p = prx();
   $('distout').textContent = `${p.toFixed(0)} dBm ≈ ${fmtd(dist())}`;
   $('dist').value = -S.p;   // slider runs strong (left) to weak (right), like moving the boards apart
+  const live = usesPower(); $('dist').disabled = !live; document.querySelector('.dist').classList.toggle('off', !live);
+  document.querySelector('.dist').title = live ? '' : 'The received power does not change this page';
   $('dist').setAttribute('aria-valuetext', `${p.toFixed(0)} dBm received, about ${fmtd(dist())} (${distSrc()})`);
   // the step follows the page however you got there (tour, a click in the diagram, a key, the breadcrumb)
   const at = t => t.level === S.level && (t.focus || null) === S.focus && (t.block || null) === S.block;
@@ -913,7 +918,7 @@ document.addEventListener('keydown', e => {
   else if (k === 'ArrowLeft') { e.preventDefault(); setStep(S.step - 1); }
   else if (k === 'Escape') { if (S.block) S.block = null; else if (S.focus) S.focus = null; else S.level = 'link'; render(); }
   else if (k === '1') go('link'); else if (k === '2') go('chip'); else if (k === '3') go('chip:tx'); else if (k === '4') go('chip:rx');
-  else if (k === '[' || k === ']') { glideId++; S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); S.bbLvl = null; render(); }
+  else if ((k === '[' || k === ']') && usesPower()) { glideId++; S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); S.bbLvl = null; render(); }
   else if (k === 'p') S.playing = !S.playing;
   else if (k === '?') $('help').hidden = false;
 });
