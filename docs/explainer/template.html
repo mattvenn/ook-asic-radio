@@ -963,6 +963,8 @@ const anim = {
   t0: 0, reset() { this.t0 = performance.now(); },
   frame(now) {
     requestAnimationFrame(t => anim.frame(t));
+    if (!S.playing) { this.t0 += now - (this._last || now); }   // paused (p): every animation's clock stands still
+    this._last = now;
     if (D && S.block === 'slicer') {               // slicer page: sweep the samples, 10 per second, then hold for 2 s
       if (S.dragging) { this.t0 = now - SL_N / 10 * 1000; }   // while the slider is held: show the finished votes, sweep again on release
       const i = Math.floor((now - this.t0) / 1000 * 10) % (SL_N + 20);
@@ -974,8 +976,6 @@ const anim = {
     }
     if (!D || S.level !== 'link') return;
     const rate = 30, m = D.model, total = 3 * m.period + 40;
-    if (!S.playing) { this.t0 += now - (this._last || now); }
-    this._last = now;
     const pos = Math.floor((now - this.t0) / 1000 * rate) % total;
     const b = Math.floor(pos / m.period), ib = pos % m.period, g = GOLD();
     const on = b < 3 && ib < 127 ? g[ib] : 0;
