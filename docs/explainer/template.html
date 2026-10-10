@@ -596,7 +596,7 @@ function levelLink() {
 function chipPage() {
   const f = S.focus, lede = {
     tx: 'The transmitter: the digital keys the ring oscillator with the Gold code, the level shifter makes two opposite-phase 3.3 V signals, and one driver feeds each dipole arm.',
-    rx: `The receiver never tunes to the carrier: ~80 dB of gain, a log detector that turns RF power into a DC level, a comparator against its own slow average, then the digital correlates against the expected code. Received now: <b>${DBM(prx())}</b>.`,
+    rx: `The receiver never tunes to the carrier: ~80 dB of gain, a log detector that turns RF power into a DC level, a comparator against its own slow average, then the digital correlates against the expected code.`,
   }[f] || '';   // the plain chip page has no intro: the breadcrumb says Chip
   return `<div class="chippage">
   ${lede ? `<p class="lede">${lede}</p>` : ''}
@@ -756,7 +756,7 @@ const $ = id => document.getElementById(id);
 const COL = {stage: {w: 800, ph: 1}, detail: {w: 800, ph: 1}, z: 1, pz: 1, key: ''};   // z scales the whole page, pz only the plot column
 const useGeo = c => { GEO.w = Math.floor(COL[c].w / COL.z / (c === 'detail' ? COL.pz : 1)); GEO.ph = COL[c].ph; GEO.f = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * .82); };
 /* pages the received power doesn't change: the slider greys out there */
-const usesPower = () => S.block ? !(B[S.block].lvl === 'tx' || S.block === 'bias_gen') : !(S.level === 'chip' && S.focus !== 'rx');
+const usesPower = () => S.block ? !(B[S.block].lvl === 'tx' || S.block === 'bias_gen') : S.level !== 'chip';
 const fits = () => innerWidth > 1000;   // desktop: the page is fixed to the screen; narrower stacks and scrolls
 const inner = el => el.firstElementChild;
 /* build, measure, and rebuild until the page fits the screen: first at the real column widths,
