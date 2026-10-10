@@ -420,7 +420,7 @@ function figPath() {
       {d: two, color: 'var(--sig2)', label: `two-ray, boards ${HGT} m up`, w: 2},
       {d: {x: p.d_m, y: p.p_dbm}, color: '#e8eef2', label: 'measured', pts: true}],
     xlog: true, xlim: [0.1, 200], xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
-    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm', left: true}], vl: [{x: Math.max(0.1, Math.min(200, dist())), color: '#fff', label: fmtd(dist())}],
+    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm', left: true}], vl: [{x: Math.max(0.1, Math.min(200, dist())), color: '#fff'}],
     bands: [{x0: 4, x1: 200, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + '<p>Measured from 10 cm to 4 m. Further out (shaded) is a model: flat ground, line of sight, no walls or bodies. Real range will vary.</p>';
 }
 /* the Gold code page: seven DIP switches pick the code; code k = M1 xor M2 shifted by k bits (model/gold.py, as the RTL makes it) */
@@ -486,11 +486,11 @@ const STAGE_COLS = ['#4c6b78', '#5d8592', '#3cc4a8', '#8ad6c2', '#ffd166', '#f09
 function figLogdet() {
   const L = D.logdet, p = prx();
   let h = fig('detector output vs input power', plot({series: [{d: {x: L.pin, y: L.det}, color: 'var(--rx)', label: 'det (V)', w: 2.5}],
-    xl: 'input power (dBm)', yl: 'det (V)', h: 240, vl: [{x: Math.max(-110, Math.min(-10, p)), color: '#fff', label: p.toFixed(0) + ' dBm'}],
+    xl: 'input power (dBm)', yl: 'det (V)', h: 240, vl: [{x: Math.max(-110, Math.min(-10, p)), color: '#fff'}],
     hl: []}), 'sim/logdet/taps.txt, tt');
   const cols = STAGE_COLS;
   h += fig('amplitude reaching each detector cell: they saturate one after another', plot({series: L.tap_amp.map((a, i) => ({d: {x: L.pin, y: a}, color: cols[i], label: i < 5 ? 'o' + (i + 1) : 'out'})),
-    ylog: true, ylim: [1e-4, 3], xl: 'input power (dBm)', yl: 'V peak (log)', h: 240, vl: [{x: Math.max(-110, Math.min(-10, p)), color: '#fff', label: p.toFixed(0) + ' dBm'}]}));
+    ylog: true, ylim: [1e-4, 3], xl: 'input power (dBm)', yl: 'V peak (log)', h: 240, vl: [{x: Math.max(-110, Math.min(-10, p)), color: '#fff'}]}));
   const KL = D.rx_rf && D.rx_rf.key_levels;
   if (KL && KL.length && KL[0].rf_hi) {
     // the keyed runs at the slider's power: the RF going in (drawn as its envelope: ~870 cycles while on) and the detector's step
@@ -627,7 +627,7 @@ function figSweep() {
   const m = D.model, x = m.levels, y = m.runs.map(r => r.events.length ? Math.max(...r.events) : Math.max(...bytes(r.scores)));
   return fig('best score vs received power (one send per level)', plot({series: [{d: {x, y}, color: 'var(--dig)', label: 'peak score', w: 2}, {d: {x, y}, color: 'var(--dig)', pts: true}],
     xl: 'received power (dBm)', yl: 'peak score', ylim: [50, 130], h: 220, hl: [{y: m.thresh, color: 'var(--thr)', label: '97'}],
-    vl: [{x: Math.max(-110, Math.min(-26, prx())), color: '#fff', label: prx().toFixed(0) + ' dBm', bottom: true}]}), 'model/ link model');   // the slider's power, labelled at the foot of the plot
+    vl: [{x: Math.max(-110, Math.min(-26, prx())), color: '#fff'}]}), 'model/ link model');   // the slider's power (the slider and the axis say the value)
 }
 function figLed() {
   const r = run(), m = D.model;
