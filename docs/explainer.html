@@ -125,7 +125,10 @@ svg.dg{display:block; width:100%; height:auto}
 .burst{border:1px solid var(--line); border-radius:8px; padding:.3rem .6rem; font-size:.85rem; font-family:var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .burst.now{border-color:var(--tx); color:var(--tx)} .burst.ok{border-color:var(--ok); color:var(--ok)} .burst.bad{border-color:var(--bad); color:var(--bad)} .burst.later{color:var(--faint)}
 .num{display:inline-block; white-space:nowrap; font-variant-numeric:tabular-nums}
-.fig .ft{font-size:.85rem; color:var(--muted); display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap}
+.fig .ft{font-size:.85rem; color:var(--muted); display:flex; justify-content:space-between; gap:1rem}
+/* plot titles stay on one line, so a number changing width can't rewrap them: no padding needed in titles */
+.fig .ft > span:first-child{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0} .fig .ft .num{min-width:0 !important}
+.fig .src{flex:none}
 .fig .src{font-size:.72rem; color:var(--faint); font-family:var(--mono)}
 .legend{display:flex; flex-wrap:wrap; gap:.25rem 1rem; font-size:.8rem; color:var(--muted)}
 .legend i{display:inline-block; width:.9rem; height:.2rem; border-radius:2px; vertical-align:middle; margin-right:.35rem}
@@ -341,7 +344,7 @@ function strip(rows, opts = {}) {
 const N = (t, ch = 8, align = 'right') => `<span class="num" style="min-width:${ch}ch; text-align:${align}">${t}</span>`;
 const DBM = v => N(`${(+v).toFixed(0)} dBm`);
 function fig(title, body, src) {
-  return `<div class="fig"><div class="ft"><span>${title}</span>${src ? `<span class="src">${src}</span>` : ''}</div>${body}</div>`;
+  return `<div class="fig"><div class="ft"><span title="${String(title).replace(/<[^>]*>/g, '')}">${title}</span>${src ? `<span class="src">${src}</span>` : ''}</div>${body}</div>`;
 }
 const NODATA = what => `<div class="nodata">No ${what} data in this build: run docs/explainer/sims.sh, then gendata.py.</div>`;
 
@@ -400,7 +403,7 @@ const B = {
 // ------------------------------------------------------------------ figures
 function figCode() {
   const g = GOLD(), r = run();
-  return fig(`code 0x${D.code.toString(16).toUpperCase()}: what is sent, and what the receiver decided at ${DBM(prx())}`,
+  return fig(`code 0x${D.code.toString(16).toUpperCase()}: sent, and decided at ${DBM(prx())}`,
     strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {aria: 'sent and received bits'}),
     'model/ link model, one burst') + `<p>Wrong chips are red. ${N(r.chip_ok + '/127', 7)} right: ${r.chip_ok < 97 ? 'below 97, not a detection.' : '97 or more, a detection.'}</p>`;
 }
@@ -445,7 +448,7 @@ function bracket(runs, p) {
   return {lo, hi, w};
 }
 const blend = (a, b, w) => ({x: a.x, y: a.y.map((v, i) => v * (1 - w) + b.y[i] * w)});
-const runsNote = (br, what) => `${what} ${N(br.lo.lvl, 4)} and ${N(br.hi.lvl, 4)} dBm runs, interpolated`;
+const runsNote = (br, what) => `${what} ${br.lo.lvl}/${br.hi.lvl} dBm`;
 const toneLevels = () => D.rx_rf.tone_levels && D.rx_rf.tone_levels.length ? D.rx_rf.tone_levels : [{lvl: -60, nodes: D.rx_rf.nodes}];
 /* the tone runs at power p: between two runs each stage's waveform shape is blended and scaled by the geometric mean of the two
    amplitudes (a straight average of a 1 mV and a 10 mV run would give 5.5 mV; in dB the midpoint is 3.2 mV); det is linear in dB */
@@ -466,13 +469,13 @@ function figChain() {
   // at the received power now: each stage's output from the chain's CW sweep (taps o1..o5, out = stages 1..6), log-interpolated
   const L = D.logdet, p = Math.max(L.pin[0], Math.min(L.pin[L.pin.length - 1], prx()));
   const nowY = L.tap_amp.map(a => 1000 * Math.pow(10, interp(p, L.pin, a.map(Math.log10)))), nowX = nowY.map((_, i) => i + 2);
-  let h = fig(`peak signal at each point at ${DBM(prx())}: the CW sweep and the tone transient`, plot({series: [
+  let h = fig(`peak signal at each stage, ${DBM(prx())}`, plot({series: [
       {d: {x: nowX, y: nowY}, color: 'var(--sig2)', label: 'now (CW sweep)', w: 2.5}, {d: {x: nowX, y: nowY}, color: 'var(--sig2)', pts: true},
       {d: {x, y}, color: 'var(--rx)', label: 'tone transient', w: 1.5, op: .7}, {d: {x, y}, color: 'var(--rx)', pts: true}],
-    ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), runsNote(br, 'taps.txt + rx_rf_tone'));
+    ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), runsNote(br, 'rx_rf_tone'));
   h += '<p>Each stage multiplies the signal until the last stages limit at ~1 V: that limiting is what the log detector uses.</p>';
   const cols = ['#4c6b78', '#5d8592', 'var(--rx)', 'var(--rx)', 'var(--rx)', 'var(--sig2)', 'var(--sig2)', 'var(--sig2)'];
-  h += fig(`the same 10 ns at every stage, ${DBM(prx())} tone (differential, so it swings both ways)`, plot({series: n.map((v, i) => ({d: v.d, color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240, ylim: tly()}), runsNote(br, 'rx_rf_tone'));
+  h += fig(`10 ns at every stage, ${DBM(prx())}`, plot({series: n.map((v, i) => ({d: v.d, color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240, ylim: tly()}), runsNote(br, 'rx_rf_tone'));
   return h;
 }
 function figLogdet() {
@@ -496,7 +499,7 @@ function figLogdet() {
       return {x: A.x, y: A.y.map((v, i) => ((1 - br.w) * v / sa + br.w * Bv.y[i] / sb) * amp)}; })();
     const z = !!S.ldZoom;
     h += `<div class="segrow"><div class="seg" role="group" aria-label="Time span"><button type="button" data-ldzoom="0" aria-pressed="${!z}">whole 3.5 µs (RF drawn as its envelope)</button><button type="button" data-ldzoom="1" aria-pressed="${z}">zoom: 40 ns at switch-on</button></div></div>`;
-    h += fig(`the RF going in, and the detector's output, at ${DBM(p)}`,   // same title and legends in both views, so toggling never moves the plots
+    h += fig(`RF in and detector out, ${DBM(p)}`,   // same title and legends in both views, so toggling never moves the plots
       plot({series: [z ? {d: zr, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV, left axis)', w: 1.2, op: .8}
                        : {band: {x, lo, hi}, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV, left axis)', op: .35},
                      {d: z ? bw('det_z') : bw('det'), color: 'var(--rx)', label: 'detector output (V, right axis)', w: 2.5, y2: true}],
@@ -525,16 +528,16 @@ function figBB(keys, prefix = '', note = '', h = 280) {
   // one locked axis for every power and every baseband page: from the strongest run's lowest point to the no-signal level,
   // so a strong signal fills the plot and a weak one visibly shrinks
   const yl = bbRange(['det', 'lpf'], 1);
-  return fig(`${prefix}${DBM(prx())}, 3 ms of one burst${note ? ', ' + note : ''}: bits "on" pull the detector down from its ${br.lo.base.toFixed(2)} V no-signal level`,
+  return fig(`${prefix}3 ms of one burst, ${DBM(prx())}${note ? ', ' + note : ''}`,
     plot({series: ser, xl: 'time (ms)', yl: 'V', h, ylim: yl}), runsNote(br, 'rx_bb'));
 }
 function figLpf() {
-  return figBB(['det', 'lpf'], '', 'noise included');
+  return figBB(['det', 'lpf'], '', 'with noise');
 }
 function figComp() {
   const b = bb(); if (!b) return NODATA('baseband');
   const bits = unpack(b.bits, b.nbits), truth = unpack(b.truth, b.nbits), n = Math.min(240, b.nbits);
-  return figBB(['lpf', 'avg'], '', '', 196) + fig(`sampled comparator vs the bit actually sent, nearest run (${DBM(b.lvl)}): right ${N(b.agree + '%', 6)} over the whole burst`,
+  return figBB(['lpf', 'avg'], '', '', 196) + fig(`comparator samples vs the bits sent, ${DBM(b.lvl)} run: ${N(b.agree + '%', 6)} right`,
     strip([{bits: truth.slice(0, n), label: 'sent', color: 'var(--tx)'}, {bits: bits.slice(0, n), label: 'comparator', color: 'var(--rx)', cmp: truth.slice(0, n)}], {h: 22}));
 }
 function figTrim() {
@@ -542,7 +545,7 @@ function figTrim() {
   // trim and the comparator that drives it, from the same (nearest) run so cause and effect match; stacked, each on its own axis
   const tr = dec(b.trim), cp = dec(b.comp), tlo = Math.min(...tr.y), thi = Math.max(...tr.y), span = Math.max(thi - tlo, .02);
   let hiT = 0; for (const v of cp.y) if (v > .9) hiT++;
-  return fig(`the comparator output, and the trim DAC voltage it drives, nearest run (${DBM(b.lvl)})`,
+  return fig(`comparator and the trim it drives, ${DBM(b.lvl)} run`,
     plot({series: [{d: {x: cp.x, y: Array.from(cp.y, v => v / 1.8)}, color: 'var(--rx)', label: 'comparator output (logic, 1 = 1.8 V): 1 steps the trim up, 0 steps it down', w: 1.2}], yl: 'logic', h: 140, ylim: [-0.1, 1.1], yfmt: v => (v === 0 || v === 1 ? String(v) : '')}) +
     plot({series: [{d: tr, color: 'var(--dac)', label: 'trim (V)', w: 2}], xl: 'time (ms)', yl: 'V', h: 200, ylim: [tlo - span * .08, thi + span * .08]}), 'build/rx_bb_*.raw') +
     `<p>While the comparator is high the trim climbs one DAC step (7 mV) per 13 µs sample; while it is low it falls. Here it is high ${N(Math.round(100 * hiT / cp.y.length) + '%', 4)} of the time, so the trim hovers where the comparator's offset is cancelled. In this run a behavioural stand-in plays the digital servo; the mixed-signal run with the real RTL shows the code settling and dithering at −94 dBm (sim/plots/mixed_-94.png).</p>`;
@@ -603,7 +606,7 @@ function slicerFig(i) {
 }
 function figSlicer() {
   const b = bb(); if (!b) return NODATA('baseband');
-  return fig(`comparator samples, nearest run (${DBM(b.lvl)}), 8 per bit, voted by the four slicers`,
+  return fig(`comparator samples, ${DBM(b.lvl)} run, 8 per bit`,
     `<div id="slfig">${slicerFig(SL_N)}</div>`, 'build/rx_bb_*.raw, tt');
 }
 function figScore() {
