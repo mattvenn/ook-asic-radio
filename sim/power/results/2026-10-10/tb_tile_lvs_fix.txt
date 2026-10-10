@@ -1,0 +1,8 @@
+sch RESULT op_rx IDPWR_mA 2.97443 IAPWR_mA 1.26962E-07 vcm 1.20117 det 1.52139 lpf 1.52139 trim 0.949219 tx_p 2.83517E-09 tx_n 2.83517E-09
+sch RESULT op_off IDPWR_uA 0.907894 IAPWR_uA 0.000126962
+sch RESULT rx_m60dBm det 1.20626
+sch TX: f =  485.5 MHz (x0.866 -> 420.4 on silicon), P73  4.14 dBm, on in  3.2 ns, off in  3.9 ns, VAPWR  0.00 -> 11.51 mA, VDPWR  0.00 ->  0.24 mA
+lvs RESULT op_rx IDPWR_mA 2.98646 IAPWR_mA 3.30926E-07 vcm 1.201 det 1.49148 lpf 1.49148 trim 0.949219 tx_p 5.15004E-09 tx_n 5.15004E-09
+lvs RESULT op_off IDPWR_uA 0.910221 IAPWR_uA 0.000330926
+lvs RESULT rx_m60dBm det 1.09691
+lvs TX: f =  679.6 MHz (x0.866 -> 588.6 on silicon), P73  3.07 dBm, on in  3.8 ns, off in  3.3 ns, VAPWR  0.00 -> 12.85 mA, VDPWR  0.00 ->  0.26 mA

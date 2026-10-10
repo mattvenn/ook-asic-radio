@@ -182,6 +182,99 @@ is far from 2× margin). Also via3 at the west strap 107 %.
    Not yet simulated: needs the route geometry (top-level session), then this flow re-runs on it.
 3. A strap in decap part 1 (x ~251–273, 6 µm): only if 2 can't reach the mid straps.
 
+## After the fix (2026-10-10, branch power-fix, case A, 0.5 µm mesh)
+The routed tile with the fixes from `docs/handoff_power_fix.md` (steps 1 and 2), branch `power-fix`
+(final: `VDPWR_TX` widened, see below). Picture of the new power routing: `docs/images/power_fix_routing.png`
+(`tools/power_routing_draw.py`). DRC 0, LVS match, precheck pass; magic reported no shorts in the
+extraction copy. Raw results: `sim/power/results/2026-10-10/*_A_fix*`.
+- **Straps:** west VAPWR 0.3–5.3, VDPWR 5.8–10.5, VGND 12.0–15.1, east VAPWR 481.0–489.22.
+- **TX feeds (fixed geometry in tx_top):** before, xdrv_p's current ran up xdrv_n's 3 µm rail and into
+  xdrv_p's rail at its top corner (the met3 hot spot), and `VGND_TX` landed on xdrv_n's VSS rail at
+  one end. Now each driver's rails are fed along their length. `VAPWR_TXF`: xdrv_n from a met3 sheet
+  with via3 into the 5 µm strap; xdrv_p from a met3 bar under the west straps, a met4 bus (y
+  99.4–106.2) and a met4 strip over its rail. `VGND_TXF`: a met4 bus straight off the west VGND
+  strap (y 106.8–112.8) across both VSS rails, via3 onto them, met4 strips over their upper halves.
+- **RX trunks:** one net per block (`VGND_RX_<block>`, `VDPWR_RX_<block>`), 3–4 µm (Ctrim VGND and bias
+  VDPWR 2 µm) from the mid straps; dbg_tg's (2 µm) from the west straps. Another block's rail is
+  foreign to each, so no block's current runs through another block. The mid VGND trunks start from
+  `VGND_RXL`, a met4 bar off the mid VGND strap's top end and a 6 µm met4 column down xdeca part 1's
+  MOS-only top (a wide via doesn't fit on the 1.2 µm mid strap). No decap removed.
+
+| block | R VDD (Ω) base → fix | R VSS (Ω) base → fix | RX IR VDD / VSS (mV) base → fix |
+|---|---|---|---|
+| chain | 6.0 → 5.7 | 7.1 → 7.0 | 15.6 / 20.4 → 14.9 / 19.9 |
+| log_det | 28.7 → 17.9 | 13.6 → 10.7 | 2.3 / 0.5 → 1.1 / 1.5 |
+| avg_sc | 27.7 → **11.9** | 66.8 → **14.2** | 2.1 / 3.5 → 0.7 / 1.4 |
+| comp_ct | 26.6 → **8.9** | 56.8 → **8.2** | 2.1 / 3.5 → 0.8 / 1.3 |
+| bias | 13.6 → 5.2 | 30.9 → 23.6 | 2.5 / 3.1 → 0.9 / 2.5 |
+| r2r | – | 35.2 → 24.1 | – / 6.2 → – / 6.4 |
+| dbg_tg | 31.7 → 15.4 | 26.2 → 19.1 | |
+| tx_drv_p | 3.0 → **0.77** (VAPWR) | 2.5 → **0.81** | |
+| tx_drv_n | 1.6 → **0.36** (VAPWR) | 2.1 → **0.86** | |
+| tx_ring | 7.3 → **1.8** | 1.9 → 2.5 | |
+| tx_ls | 16.7 → **3.5** | 2.7 → 1.8 | |
+| tx_lse_n / _p | 16.1 / 15.5 → 3.2 / 3.4 | 3.0 / 3.9 → 2.9 / 3.9 | |
+| VAPWR decap | 10.9 → 8.5 | 7.5 → 3.8 | |
+
+- **TX IR (both arms):** VAPWR drop at tx_drv_p 29 → 5.6 mV average, 79 → 16 mV peak (tx_drv_n 19 →
+  2.8 / 53 → 7.9); VGND rise 9.5 → 2.9 mV average, 49 → 15 mV peak.
+- **tx_ring / tx_ls VDPWR:** moving dbg_tg to its own trunk took away a parallel path they had through
+  the old 1 µm `VDPWR_RX` net (tx_ring 7.3 → 12.8 Ω in between); `VDPWR_TX` widened 0.8 → 2 µm fixes it
+  and more (tx_ring 1.8 Ω, tx_ls 3.5 Ω).
+- bias VGND, r2r and log_det VDPWR improved less: their trunks are short, so most of what is left is
+  in the blocks' own rails.
+
+**|Z| (`z_ac.py`, 1 µm mesh, Ω between the block's local VDD and VSS) and TX → RX at 434 MHz (Ω per A
+at a driver):**
+
+| block | \|Z\| 77 kHz base → fix | \|Z\| 434 MHz base → fix | TX→RX base → fix |
+|---|---|---|---|
+| chain | 22.6 → 21.7 | 20.8 → 20.0 | 0.025 → 0.015 |
+| log_det | 52.2 → **33.8** (\*) | 50.9 → **32.6** (\*) | 0.59 → **0.068** |
+| avg_sc | 74.5 → **24.9** | 64.7 → **23.7** | 0.038 → 0.069 |
+| comp_ct | 81.0 → **24.3** | 71.1 → **23.1** | 0.037 → 0.069 |
+| bias | 56.2 → 26.8 | 46.9 → 25.6 | 0.034 → 0.069 |
+| dbg_tg | 63.7 → 34.7 | 62.6 → 33.7 | 0.58 → 0.27 |
+| tx_ring | 17.9 → **14.8** | 16.9 → **13.8** | |
+| tx_drv_p / _n | 12.0 / 10.2 → 11.6 / 11.4 | 10.8 / 8.9 → 10.3 / 10.1 | |
+
+(\*) `z_ac.py` probes one terminal per block (the one nearest the middle of its terminals). For log_det
+that pick moved between runs (VDD probe `pD_m3_222_91`, then `pD_m0_220_101`, after the re-route): 22.7 Ω
+in the previous run, 33.8 now, with its DC R unchanged (17.9 / 10.7 Ω).
+Read log_det's |Z| as 23–34 Ω.
+
+- RX |Z| is 2–3× lower; the TX → RX coupling into log_det (the worst path, ~5.5 mV per arm before the
+  arms' cancellation) is 8.5× lower (~0.65 mV). avg_sc / comp_ct / bias went 0.04 → 0.069 Ω (they
+  share the trunk tree now): still < 0.7 mV without cancellation.
+- Still flat to 500 MHz (|Z| ≈ R VDD + R VSS): the decaps sit behind the mesh. Proposal 5 (decap
+  at the load) was not part of this fix.
+
+**EM (both arms at their average current):** every line under 50 % except the VAPWR mcon.
+
+| path | base | fix |
+|---|---|---|
+| VAPWR via4 (west strap) | 210 % | 42 % |
+| VAPWR met4 (west strap) | 202 % | 29 % |
+| VAPWR met3 (at the drivers) | 155 % | 30 % |
+| VAPWR via3 | 110 % | 15 % |
+| VGND via3 | 62 % | 7 % |
+| VGND met3 | 40 % | 11 % |
+| VAPWR mcon (inside tx_drv, (56, 111)) | 67 % | 71 % (real ~9 %) |
+
+The mcon line is a modelling artefact: `em.py` injects each device terminal's current at one mesh
+point (here 36 terminals per driver, two in the worst 0.5 µm cell, ~1.5 cuts). In the cell the source
+current spreads along the finger: tx_drv's stage-5 PMOS has 22 mcon per source strip, so all 6.65 mA
+through its 18 fingers is 0.74 mA per inner strip, ~0.034 mA per cut (~9 %, ~13 % at the RMS).
+`em.py` now flags mcon / via1 lines over 50 % as point injection.
+
+**End-to-end deck** (`tb_tile.py sch lvs`, connectivity only, on the final layout): RX 2.99 mA, all off
+0.910 µA, det idle 1.49 V, det at −60 dBm 1.097 V, TX 680 MHz / +3.07 dBm: the same as the pre-fix
+layout in this mode (1.097 V, 679 MHz; no wiring C, so the ring runs fast and det reads low; with C
+they were 1.202 V and 532 MHz). The c / rc runs on the final layout are still to do.
+
+**Open:** optionally a wider mid VGND strap (~3 µm fits: the mid
+gap is 8.1 µm below y 162, 6.9 µm above) to replace `VGND_RXL`; decap at the load (proposal 5).
+
 ## Re-running
 ```
 tools/osic-mac bash -c 'CASE=A bash sim/power/pex_power.sh'    # extraction copy + magic rc (~30 s)
