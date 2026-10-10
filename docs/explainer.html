@@ -542,7 +542,7 @@ function figLpf() {
 function figComp() {
   const b = bb(); if (!b) return NODATA('baseband');
   const bits = unpack(b.bits, b.nbits), truth = unpack(b.truth, b.nbits), n = Math.min(240, b.nbits);
-  return figBB(['lpf', 'avg'], '', '', 196) + fig(`comparator samples vs the bits sent, ${DBM(b.lvl)} run: ${N(b.agree + '%', 6)} right`,
+  return figBB(['lpf', 'avg']) + fig(`comparator samples vs the bits sent, ${DBM(b.lvl)} run: ${N(b.agree + '%', 6)} right`,
     strip([{bits: truth.slice(0, n), label: 'sent', color: 'var(--tx)'}, {bits: bits.slice(0, n), label: 'comparator', color: 'var(--rx)', cmp: truth.slice(0, n)}], {h: 22}));
 }
 function figTrim() {
@@ -568,7 +568,7 @@ function slicerData() {
 function slicerFig(i) {
   const d = slicerData(); if (!d) return NODATA('baseband');
   const F = GEO.f, W = GEO.w, L = Math.round(F * 6.5), Rr = Math.round(F * 5.5), cw = (W - L - Rr) / SL_N, x = k => L + k * cw;
-  const rowH = Math.round(F * 1.5), phH = Math.round(F * 2.3), H = 2 * rowH + 4 * phH + 16;
+  const rowH = Math.round(F * 1.8), phH = Math.round(F * 2.76), H = 2 * rowH + 4 * phH + 19;
   // the close-up follows the best-lined-up slicer: the one whose votes most often match what was sent
   if (d.best == null) { let bs = -1; for (const ph of [0, 2, 4, 6]) { let r = 0; for (let st = ph; st + 8 <= SL_N; st += 8) { let c = 0, t = 0; for (let k = st; k < st + 8; k++) { c += d.smp[k]; t += d.tru[k]; } if (t !== 4 && (c > 4 || (c === 4 && d.smp[st + 7]) ? 1 : 0) === (t > 4 ? 1 : 0)) r++; } if (r > bs) { bs = r; d.best = ph; } } }
   const bp = d.best, wc = i >= bp ? bp + 8 * Math.floor((Math.min(i, SL_N - 1) - bp) / 8) : -1;
