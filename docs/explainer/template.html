@@ -332,68 +332,53 @@ const NODATA = what => `<div class="nodata">No ${what} data in this build: run d
 // ------------------------------------------------------------------ blocks
 const B = {
   ook: {lvl: 'link', name: 'On-off keying', sub: 'the whole idea', anchor: 'on-off-keying-ook',
-    text: 'The transmitter switches a 433 MHz carrier on and off, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives. Loud is 1, quiet is 0. So the TX needs no crystal or PLL, just a free-running ring of inverters.',
-    facts: [['TX power', '+4 dBm'], ['RX accepts', '330–560 MHz'], ['chip', '104 µs'], ['code', '127 chips']],
+    text: 'The transmitter switches a 433 MHz carrier on and off, at about +4 dBm, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. Each on/off slot (a chip) lasts 104 µs, and the pattern is a 127-chip code. So the TX needs no crystal or PLL, just a free-running ring of inverters.',
     plot: () => figCode()},
   air: {lvl: 'link', name: 'Over the air', sub: 'received power vs distance, two wire dipoles', anchor: 'bench-measurements-phase-0',
-    text: 'Measured on the bench with an earlier chip (ttsky25b, its ring at 518 MHz), 14.5 cm wire dipoles held parallel, 10 cm to 4 m: close to free space, −44 dBm at 1 m, falling as 1/d^1.89. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. Distances past 4 m are that model, not a measurement.',
-    facts: () => [['at 1 m', '−44 dBm (bench)'], ['two-ray past', fmtd(DB)], ['−94 dBm at', '≈ ' + fmtd(dist(-94))]],
+    text: 'Measured on the bench with an earlier chip (ttsky25b, its ring at 518 MHz), 14.5 cm wire dipoles held parallel, 10 cm to 4 m: close to free space, −44 dBm at 1 m, falling as 1/d^1.89. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. On that model the −94 dBm sensitivity is reached at about 45 m. Distances past 4 m are that model, not a measurement.',
     plot: () => figPath()},
   gold: {lvl: 'tx', name: 'Gold code (digital)', sub: 'radio_digital macro, TX side', anchor: 'digital-radio_digital-macro', color: 'dig',
-    text: 'The 7-bit DIP code picks one Gold code: two 7-bit LFSRs, one delayed by the code, XORed. 127 noise-like chips, half on, half off. The TX keys the ring with the code three times, with 64 silent chips between bursts.',
-    facts: [['chips', '127'], ['chip', '104 µs'], ['burst', '13.2 ms'], ['bursts', '3']],
+    text: 'The 7-bit DIP code picks one Gold code: two 7-bit LFSRs, one delayed by the code, XORed. 127 noise-like chips, half on, half off. Each chip lasts 104 µs, so one burst takes 13.2 ms. The TX keys the ring with the code three times, with 64 silent chips between bursts.',
     plot: () => figGold()},
   tx_ring: {lvl: 'tx', name: 'tx_ring', sub: 'free-running ring oscillator', anchor: 'transmitter', sch: 'tx_ring', color: 'tx',
-    text: 'A NAND gate (the on/off enable) plus a ring of standard-cell inverters. No crystal: wherever it lands in 330–560 MHz the receiver still works. Silicon ran at ×0.87 of simulation on the bench chip.',
-    facts: () => [['sim', (D.tx ? D.tx.f_mhz : '–') + ' MHz'], ['on silicon', '~×0.87'], ['on/off', '~30–40 ns']],
+    text: () => `A NAND gate (the on/off enable) plus a ring of standard-cell inverters. No crystal: wherever it lands in 330–560 MHz the receiver still works. It runs at ${D.tx ? D.tx.f_mhz : '~485'} MHz in simulation (tt), and silicon ran at ×0.87 of simulation on the bench chip. It switches on or off in ~30–40 ns.`,
     plot: () => figTx(['key', 'ring'])},
   tx_ls: {lvl: 'tx', name: 'tx_ls', sub: 'level shifter 1.8 V → 3.3 V', anchor: 'transmitter', sch: 'tx_ls', color: 'tx',
     text: 'Turns the 1.8 V ring into 3.3 V swings. Its two latch nodes are naturally opposite in phase, which gives the dipole\'s two arms for free.',
-    facts: [['in', '1.8 V'], ['out', '3.3 V, antiphase']],
     plot: () => figTx(['a', 'b'])},
   tx_drv: {lvl: 'tx', name: 'tx_drv ×2', sub: 'output drivers, one per dipole arm', anchor: 'transmitter', sch: 'tx_drv', color: 'tx',
-    text: 'Thick-oxide buffer tapers into the 3.3 V output drivers on ua[3] and ua[4]. Driving the two arms in antiphase puts the full swing across the dipole. Per-arm enables allow a monopole fallback.',
-    facts: () => [['into dipole', '+3.7 to +3.9 dBm'], ['dipole', (D.tx ? '±' + D.tx.dipole_vpk + ' V' : '–')], ['pins', 'ua[3], ua[4]']],
+    text: () => `Thick-oxide buffer tapers into the 3.3 V output drivers on ua[3] and ua[4]. Driving the two arms in antiphase puts the full swing across the dipole: ${D.tx ? '±' + D.tx.dipole_vpk + ' V' : 'the full swing'} in simulation, and +3.7 to +3.9 dBm into it across the process corners. Per-arm enables allow a monopole fallback.`,
     plot: () => figTx(['drv_p', 'drv_n', 'dipole'])},
   lna_chain: {lvl: 'rx', name: 'lna_chain', sub: '6 differential amplifier stages', anchor: 'receiver-amplifier-chain', sch: 'lna_chain', color: 'rx',
-    text: 'Six differential stages, ~80 dB of gain in total. Differential means each stage amplifies the difference between two wires and ignores noise common to both, like the chip\'s own 10 MHz clock. Stage 1 is the low-noise amplifier; coupling capacitors between stages stop DC offsets building up.',
-    facts: [['gain', '~80 dB'], ['noise figure', '≈ 11 dB'], ['stages', '6']],
+    text: 'Six differential stages, ~80 dB of gain in total. Differential means each stage amplifies the difference between two wires and ignores noise common to both, like the chip\'s own 10 MHz clock. Stage 1 is the low-noise amplifier, and the chain\'s noise figure is about 11 dB. Coupling capacitors between stages stop DC offsets building up.',
     plot: () => figChain()},
   log_det: {lvl: 'rx', name: 'log_det', sub: 'successive-detection log detector', anchor: 'receiver-detector-filter-threshold', sch: 'log_det', color: 'rx',
-    text: 'One rectifier cell per chain stage. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V. Note it goes down as the signal goes up.',
-    facts: [['slope', '~13 mV/dB'], ['range', '~70 dB'], ['cells', '6']],
+    text: 'One rectifier cell per chain stage. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V, about 13 mV per dB. Note it goes down as the signal goes up.',
     plot: () => figLogdet()},
   lpf_rc: {lvl: 'rx', name: 'lpf_rc', sub: '14 kHz RC low-pass', anchor: 'receiver-detector-filter-threshold', sch: 'lpf_rc', color: 'rx',
-    text: 'Keeps the chip-rate envelope (one chip is 104 µs) and removes most of the noise from the detector output.',
-    facts: [['corner', '14 kHz']],
+    text: 'A 14 kHz RC low-pass. It keeps the chip-rate envelope (one chip is 104 µs) and removes most of the noise from the detector output.',
     plot: () => figBB(['det', 'lpf'])},
   avg_sc: {lvl: 'rx', name: 'avg_sc', sub: 'switched-capacitor slow average', anchor: 'where-the-threshold-goes', sch: 'avg_sc', color: 'rx',
-    text: 'The threshold. A Gold code is half on and half off, so the slow average of the signal sits in the middle of it at any range. A small capacitor clocked by the digital acts as a very large resistor.',
-    facts: [['τ', '≈ 0.45 ms'], ['clocks', 'sc_phi1/2 from digital']],
+    text: 'The threshold. A Gold code is half on and half off, so the slow average of the signal sits in the middle of it at any range. A small capacitor clocked by the digital (sc_phi1/2) acts as a very large resistor, giving a time constant of about 0.45 ms.',
     plot: () => figBB(['lpf', 'avg'])},
   comp_ct: {lvl: 'rx', name: 'comp_ct', sub: 'continuous-time comparator', anchor: 'receiver-detector-filter-threshold', sch: 'comp_ct', color: 'rx',
-    text: 'Filtered signal on one input, slow average on the other: is this chip on or off? Near the sensitivity limit the difference is ~1 mV and the noise is about as big, so many decisions are wrong. That is fine: the correlator only needs most of them right.',
-    facts: [['window', '~1 mV'], ['sampled every', '13 µs']],
+    text: 'Filtered signal on one input, slow average on the other: is this chip on or off? Near the sensitivity limit the difference is ~1 mV and the noise is about as big, so many decisions are wrong. That is fine: the correlator only needs most of them right. The digital samples it every 13 µs, 8 times per chip.',
     plot: () => figComp()},
   r2r: {lvl: 'rx', name: 'r2r + trim servo', sub: '8-bit DAC, offset trim', anchor: 'where-the-threshold-goes', sch: 'r2r', color: 'dac',
-    text: 'The comparator\'s own offset (a few mV) is bigger than the signal. The digital moves an 8-bit DAC one step per sample so the comparator outputs 1 half the time, cancelling the offset in ~0.07 mV steps through a weak second input pair.',
-    facts: [['bits', '8'], ['step', '~0.07 mV'], ['rule', '1 → up, 0 → down']],
+    text: 'The comparator\'s own offset (a few mV) is bigger than the signal. The digital moves an 8-bit DAC one step per sample (a 1 steps it up, a 0 down) so the comparator outputs 1 half the time, cancelling the offset in ~0.07 mV steps through a weak second input pair.',
     plot: () => figTrim()},
   slicer: {lvl: 'rx', name: 'chip slicer (digital)', sub: 'majority vote per chip', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
     text: '8 comparator samples per chip, majority vote, at 4 timing offsets in parallel (so the RX needs no clock recovery). Each offset keeps the last 127 chip decisions.',
-    facts: [['samples/chip', '8'], ['phases', '4']],
     plot: () => figSlicer()},
   corr: {lvl: 'rx', name: 'correlator (digital)', sub: 'score the last 127 chips', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
     text: 'After every chip, count how many of the last 127 decisions match this board\'s own code. Chance gives ~64. 97 or more is a detection: 6σ above chance. Even when a quarter of the samples are wrong the score still clears 97.',
-    facts: [['chance', '~64'], ['threshold', '97'], ['max', '127']],
     plot: () => figScore()},
   led: {lvl: 'rx', name: '2-of-3 + LED', sub: 'burst check', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
-    text: 'The TX sends the burst three times. The LED toggles only if two detections arrive exactly one or two burst periods apart, then the code is ignored for ~1 s. Other codes, garage remotes and noise don\'t toggle it.',
-    facts: [['period', '191 chips'], ['tolerance', '±2 chips'], ['hold-off', '~1 s']],
+    text: 'The TX sends the burst three times. The LED toggles only if two detections arrive one or two burst periods (191 chips) apart, within ±2 chips, then the code is ignored for ~1 s. Other codes, garage remotes and noise don\'t toggle it.',
     plot: () => figLed()},
   bias_gen: {lvl: 'rx', name: 'bias_gen', sub: 'support', anchor: 'support', sch: 'bias_gen', color: 'bias',
     text: 'Makes the reference currents and the mid-rail voltage for every analog block. On-chip decoupling capacitors supply the TX\'s 433 MHz current spikes locally so they don\'t disturb the receiver.',
-    facts: [['feeds', 'every analog block']], plot: () => ''},
+    plot: () => ''},
 };
 
 // ------------------------------------------------------------------ figures
@@ -606,15 +591,14 @@ function chipPage() {
 }
 /* one block per page: its story on the left, its plots on the right (the over-the-air ideas put the link scene above their plots) */
 function focusPage(id) {
-  const b = B[id], facts = typeof b.facts === 'function' ? b.facts() : b.facts, isLink = b.lvl === 'link';
+  const b = B[id], isLink = b.lvl === 'link';
   useGeo('detail');
   const plots = b.plot();
   useGeo('stage');
   return `<div class="focus">
     <div class="side">
       <div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div>
-      <p>${b.text}</p>
-      <div class="facts">${facts.map(f => `<span class="fact">${f[0]} <b>${f[1]}</b></span>`).join('')}</div>
+      <p>${typeof b.text === 'function' ? b.text() : b.text}</p>
       <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">More details ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}</div>
     </div>
     <div class="fplots"${COL.pz < 1 ? ` style="zoom:${COL.pz}"` : ''}>${isLink ? linkScene(id) : ''}${plots || ''}</div>
