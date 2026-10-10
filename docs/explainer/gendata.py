@@ -129,7 +129,7 @@ def rx_rf():
     for lvl in KEY_LEVELS:
         tv = v if lvl == -60 else raw(f'rx_rf_tone_{lvl}.raw')
         if tv is not None:
-            out['tone_levels'].append({'lvl': lvl, 'nodes': stages(tv), 'det': trace(tv['time'] * 1e9, tv['v(det)'], 380.0, 390.0, 300)})
+            out['tone_levels'].append({'lvl': lvl, 'nodes': stages(tv)})
     k = raw('rx_rf_key.raw')
     if k is not None:
         tk = k['time'] * 1e6
@@ -201,7 +201,8 @@ def baseband(lvl):
         'det': trace(tm, v['v(det)'], 3.0, 6.0, 1500),          # absolute volts; base = the no-signal level
         'lpf': trace(tm, v['v(lpf)'], 3.0, 6.0, 1500),
         'avg': trace(tm, v['v(avg)'], 3.0, 6.0, 1500),
-        'trim': trace(tm, v['v(trim)'], 3.0, 6.0, 600),
+        'trim': trace(tm, v['v(trim)'], 3.0, 6.0, 1500),
+        'comp': trace(tm, v['v(comp)'], 3.0, 6.0, 1500),          # what drives the trim servo stand-in: high steps it up
         'bits': base64.b64encode(np.packbits(bits[w]).tobytes()).decode(),
         'truth': base64.b64encode(np.packbits(truth[w].astype(np.uint8)).tobytes()).decode(),
         'nbits': int(w.sum()), 'bt0': float(ts[w][0] * 1e3), 'bdt': 13e-3,
