@@ -536,7 +536,7 @@ function figTrim() {
   const tr = dec(b.trim), cp = dec(b.comp), tlo = Math.min(...tr.y), thi = Math.max(...tr.y), span = Math.max(thi - tlo, .02);
   let hiT = 0; for (const v of cp.y) if (v > .9) hiT++;
   return fig(`the comparator output, and the trim DAC voltage it drives, nearest run (${DBM(b.lvl)})`,
-    plot({series: [{d: cp, color: 'var(--rx)', label: 'comparator output (V): high steps the trim up, low steps it down', w: 1.2}], yl: 'V', h: 140, ylim: [-0.15, 1.95]}) +
+    plot({series: [{d: {x: cp.x, y: Array.from(cp.y, v => v / 1.8)}, color: 'var(--rx)', label: 'comparator output (logic, 1 = 1.8 V): 1 steps the trim up, 0 steps it down', w: 1.2}], yl: 'logic', h: 140, ylim: [-0.1, 1.1], yfmt: v => (v === 0 || v === 1 ? String(v) : '')}) +
     plot({series: [{d: tr, color: 'var(--dac)', label: 'trim (V)', w: 2}], xl: 'time (ms)', yl: 'V', h: 200, ylim: [tlo - span * .08, thi + span * .08]}), 'build/rx_bb_*.raw') +
     `<p>While the comparator is high the trim climbs one DAC step (7 mV) per 13 µs sample; while it is low it falls. Here it is high ${N(Math.round(100 * hiT / cp.y.length) + '%', 4)} of the time, so the trim hovers where the comparator's offset is cancelled. In this run a behavioural stand-in plays the digital servo; the mixed-signal run with the real RTL shows the code settling and dithering at −94 dBm (sim/plots/mixed_-94.png).</p>`;
 }
