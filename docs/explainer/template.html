@@ -506,7 +506,7 @@ const BBY = {};
 function bbRange(keys, scale = 1000) {
   const id = keys.join() + scale;
   if (!BBY[id]) { let lo = Infinity, hi = -Infinity; for (const b of D.bb) for (const k of keys) for (const v of dec(b[k], scale).y) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
-    const pad = (hi - lo) * .05; BBY[id] = [lo - pad, hi + pad]; }
+    const pad = (hi - lo) * .03; BBY[id] = [lo - pad, hi + pad]; }
   return BBY[id];
 }
 function figBB(keys, prefix = '', note = '', h = 280) {
@@ -514,10 +514,9 @@ function figBB(keys, prefix = '', note = '', h = 280) {
   // between two runs: a straight blend (the detector is linear in dB). The runs' noise is independent, so mid-way the blend is a bit quieter than either.
   const br = bracket(D.bb, prx());
   const ser = keys.map(k => ({d: blend(dec(br.lo[k]), dec(br.hi[k]), br.w), label: BBL[k][0], color: BBL[k][1], w: BBL[k][2], op: k === 'det' ? 0.7 : 1}));
-  // fixed top (the no-signal level); the bottom follows the signal but stays at least 120 mV down, so a strong signal fills the
-  // plot and a weak one visibly shrinks inside the same 120 mV window
-  const top = bbRange(keys, 1)[1], lo = Math.min(...ser.flatMap(s => Array.from(s.d.y)));
-  const yl = [Math.min(lo - (top - lo) * .05, top - .12), top];
+  // one locked axis for every power and every baseband page: from the strongest run's lowest point to the no-signal level,
+  // so a strong signal fills the plot and a weak one visibly shrinks
+  const yl = bbRange(['det', 'lpf'], 1);
   return fig(`${prefix}${DBM(prx())}, 3 ms of one burst${note ? ', ' + note : ''}: bits "on" pull the detector down from its ${br.lo.base.toFixed(2)} V no-signal level`,
     plot({series: ser, xl: 'time (ms)', yl: 'V', h, ylim: yl}), runsNote(br, 'rx_bb'));
 }
