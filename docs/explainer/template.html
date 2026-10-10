@@ -128,7 +128,8 @@ svg.dg{display:block; width:100%; height:auto}
 .plot svg{max-width:100%; height:auto; display:block; background:#0a0e11; border-radius:8px}
 svg.strip{max-width:100%; height:auto; display:block}
 .plot .hov{position:absolute; top:.4rem; right:.5rem; font-family:var(--mono); font-size:.72rem; color:var(--text); background:rgba(13,18,22,.85); padding:.15rem .4rem; border-radius:4px; pointer-events:none; white-space:pre; text-align:right}
-.seg{align-self:flex-start; display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.segrow{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap} .segrow > span{color:var(--muted); font-size:.85rem}
+.seg{align-self:flex-start; display:inline-flex; flex-wrap:wrap; border:1px solid var(--line); border-radius:8px; overflow:hidden}
 .seg button{background:var(--panel2); border:0; padding:.35rem .8rem; cursor:pointer; min-height:44px}
 .seg button[aria-pressed=true]{background:var(--sig); color:#05181c}
 .nodata{color:var(--faint); font-style:italic; padding:1rem; border:1px dashed var(--line); border-radius:8px}
@@ -457,7 +458,7 @@ function bb() {
   return D.bb.find(b => b.lvl === S.bbLvl) || D.bb[0];
 }
 function bbPick() {
-  return `<div class="seg" role="group" aria-label="Input level">${D.bb.map(b => `<button type="button" data-bb="${b.lvl}" aria-pressed="${b.lvl === S.bbLvl}">${b.lvl} dBm</button>`).join('')}</div>`;
+  return `<div class="segrow"><span>input level (dBm)</span><div class="seg" role="group" aria-label="Input level, dBm">${D.bb.map(b => `<button type="button" data-bb="${b.lvl}" aria-pressed="${b.lvl === S.bbLvl}">${b.lvl}</button>`).join('')}</div></div>`;
 }
 const BBL = {det: ['det (1 µs blocks)', '#6f8491', 0.8], lpf: ['after lpf_rc', 'var(--sig)', 1.6], avg: ['slow average', 'var(--sig2)', 2.6]};
 /* one y range over every simulated level, so stepping down in power shows the signal shrinking */
