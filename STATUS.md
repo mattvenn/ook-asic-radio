@@ -7,7 +7,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
-**State (end of 2026-10-09): every block laid out to the chosen floorplan ("matt layout 5"), the digital macro re-hardened to match (200 × 220 µm, all pins on the edge facing the analog). Next: top-level assembly, routing and extracted-tile verification: `docs/handoff_toplevel.md`.**
+**State (2026-10-10): the 3x2 tile is assembled and routed (all 95 nets, decaps in): magic + KLayout DRC 0, LVS clean, TT precheck pass. Extracted-tile sims done (`docs/handoff_sim.md`): the c-mode anomalies were floating pin stubs (tied off in `sim/top/tb_tile.py`), the TX loss is fixed (tx_ls kn 14 / kp 8, TX corner re-floorplanned; extracted RC +3.18 dBm). Power delivery benchmarked (`docs/power.md`): west VAPWR strap fails EM, RX ground 57–67 Ω; proposals there for Matt. How to run every check: `docs/verification.md`. Details: docs/history.md, docs/layout.md "Top level".**
 - **Floorplan:** `layout/floorplan/pins.md` / `floorplan.json` (layout 5: comp_ct and r2r flipped to MYR90, macro pins level with what they connect to; `docs/floorplan_spec.md` "Chosen floorplan"). Pin moves per block: `docs/layout.md` "Pin moves for the floorplan".
 - **Macro:** `macros/radio_digital/` (GDS, LEF, DEF, netlists), from `openlane/radio_digital` (`PIN_ORDER.md`). Signoff clean; RTL and GL cocotb 15/15 on the final netlist.
 - **RX:** every block is transistor level with real PDK passives and a real bias generator.
@@ -52,8 +52,10 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 - **Chain layout rule:** keep chain output → input coupling (pad or stage-2 input) **≤ 0.1 fF** asymmetric. At the highest-gain corner (ss 10 °C, 81 dB), 0.2 fF gives +2.8 dB of peaking near 600 MHz and **0.5 fF oscillates** (1 fF at tt). Supply/ground L up to 5 nH with the 30 pF decap is fine.
 
 **Next steps, in order:**
-1. **Top-level assembly, first routing, extracted-tile verification:** `docs/handoff_toplevel.md` (the prompt for that session): 3x2 template (`mag/`), place the blocks and the macro per `floorplan.json`, lay out the decaps and straps, route with the net-by-net intent there, then DRC / LVS, the end-to-end tests on a connectivity-only extraction, then on full parasitics.
-2. Open (Matt): **VDPWR decap at 89 %** of target (the strip west of the chain lost width to the folded chain); **ring inverter count**: the folded `tx_ring` runs ~459 MHz on silicon (+5.8 %), 24 inverters would give ~422 MHz (`NINV` in `xschem/gen/tx.py` and `layout/gen/tx_ring.py`, then `tb_tx_ring --pex` and `tb_tx`). Not blocking: overload recovery (key a −10 dBm tone), TX at 10/50 °C, the −90 dBm joined run, the macro's max-slew warnings (marginal, mostly ss).
+1. **Power fixes** (Matt to pick from `docs/power.md` "Proposals": 1 must (west VAPWR strap ≥ 4–6 µm, EM), 2 + 3 for RX R, 5 for the TX), then re-run `check_top.sh` and the power mesh.
+   **Open RX runs on the extracted tile** (Matt, on the faster machine, after the power changes): the tile joined run (`sim/top/tb_tile_joined.py`, 10+ h) and mixed `--pex`; see `docs/verification.md` "Open items". Antenna: 7 violations inside the macro (same as before the TX move).
+   Open from the top level (Matt): tx_p's 2 µm neck through the chain; decap 43 pF VAPWR / 11 pF VDPWR as laid out (xdecd part 4 dropped, top of xdeca part 1 MOS only); sc_phi 10–20 µm from avg / comp inputs; det / lpf not shielded yet.
+2. Open (Matt): **ring inverter count**: the folded `tx_ring` runs ~459 MHz on silicon (+5.8 %), 24 inverters would give ~422 MHz (`NINV` in `xschem/gen/tx.py` and `layout/gen/tx_ring.py`, then `tb_tx_ring --pex` and `tb_tx`). Not blocking: overload recovery (key a −10 dBm tone), TX at 10/50 °C, the −90 dBm joined run, the macro's max-slew warnings (marginal, mostly ss).
 
 **Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
 

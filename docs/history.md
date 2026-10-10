@@ -16,6 +16,47 @@ Handoff `docs/handoff_sim.md` steps 1-3. Runners: `sim/top/tb_tile.py` (whole de
   - **Joined run** (`sim/top/tb_tile_joined.py`, untested so far): joined.sh's keyed 434 MHz EMF + trnoise into the whole extracted tile (c mode), trim held at the comparator's flip code. Needs `layout/pex/radio_analog_c.spice` (`top.py`, `route.py`, `pex_tile.sh c`). Then `OSIC=$PWD/tools/osic python3 sim/top/tb_tile_joined.py scan` (DC scan for the flip code), `... run -90 400u <higher code of the flip pair>` (expect 10+ h: the schematic −70 run took 14.3 h), `... --no-run run -90` (lpf / avg, comp high fraction in on / off chips).
   - **Mixed-signal with extracted baseband blocks:** `python3 sim/mixed/gen_mixed.py --pex -94` (lpf_rc / avg_sc / comp_ct / r2r from `layout/pex/`), run `mixed_-94_pex.cir` from `build/mixed`, `plot_mixed.py -94_pex` (~15 min). Note `gen_det.py`'s detector model idles at 1.439 V (schematic) vs 1.49 V extracted.
 
+## Top level: tile assembled, routed, DRC / LVS clean (2026-10-09 evening)
+Handoff `docs/handoff_toplevel.md`. Flow: `layout/gen/decap.py` (decap parts) → `layout/gen/top.py` (template pins,
+placement from `floorplan.json`, straps, power joins) → `layout/gen/route.py` + `layout/gen/top_nets.py` (router and
+net list) → `build/top/tt_um_mattvenn_radio.gds`. Checks: `layout/check_top.sh`. Details and lessons:
+`docs/layout.md` "Top level".
+- **Template:** `mag/Makefile` now uses `tt_analog_3x2_3v3.def`. All TT pins are met4: ua[] at the bottom, the digital
+  pins along the top edge (x 15–131).
+- **West VAPWR strap at x 2.5** (Matt): the TX takes ~11 mA from VAPWR, and the nearest strap was 215–270 µm away.
+- **Power joins:**
+  - met3 bars under the macro (VAPWR y 0.4–1.3; VDPWR 1.7–2.6, full width, so it also joins the west VDPWR strap
+    and feeds bias_gen) and over it (VGND y 223.4–224.4).
+  - The macro's met4 stripes are extended to those bars and are power pins too.
+  - West ↔ mid VAPWR/VGND are joined through the decap rails.
+- **Decaps (8 parts, each DRC / antenna / LVS clean):**
+  - VAPWR ≈ 20 pF MOS (6750 µm² g5 gate) + 23 pF MIM ≈ 43 pF (target 50).
+  - VDPWR ≈ 8 pF MOS + 2.7 pF MIM ≈ 11 pF (target 30).
+  - The top of xdeca part 1 is MOS-only (the TT staircase needs met3/met4 there), xdecd parts 1/2 are MOS-only,
+    xdecd part 4 is dropped (it sat in the TT channel).
+  - The VAPWR decaps sit 7–33 Ω from the straps (rough mesh solve, `tools/power_r.py`): a power-delivery session is
+    to measure this properly (`docs/handoff_power.md`).
+- **Routing:** all 95 nets.
+  - The TT bus is fixed geometry, a two-layer channel above xdeca part 2.
+  - tx_p necks to 2 µm through a 2.6 µm gap between the chain's stage MIMs (EM fine, ~0.5 Ω): **open for Matt**.
+  - tx_n is 4.6 µm, down the chain's west column.
+  - sc_phi runs 10–20 µm from avg and comp_ct's inputs (intent ~20 µm).
+  - comp_in crosses trim once, on different layers (~0.01 fF; forced: trim enters Ctrim from the east).
+  - det/lpf are not shielded yet.
+- **Antenna:** the long top-level met3 into the macro's input gates gave 21 violations (ratio up to 1444). A met4
+  jumper just west of the mid straps on every TT wire and on comp_in fixes it.
+- **Checks:** magic DRC 0, KLayout DRC 0, TT power-pin precheck pass (13 pins), LVS "Circuits match uniquely"
+  (cosmetic only: tx_top port names, r2r's internal labels as port errors).
+- **Extracted tile in `tb_radio_analog`** (`layout/pex_tile.sh` + `sim/top/tb_tile.py`; schematic / connectivity
+  only / + wiring C):
+  - RX on: 2.97 / 2.99 / 2.98 mA.
+  - All off: 0.91 / 0.91 / **1.59** µA.
+  - det idle 1.52 / 1.49 / 1.49 V; det at −60 dBm 1.206 / 1.097 / 1.202 V.
+  - lpf idle 1.52 / 1.49 / **0.89** V.
+  - TX 485 / 679 / 532 MHz, +4.05 / +2.87 / +2.32 dBm, on 3.2 / 3.8 / 8.2 ns.
+  - **Unexplained:** with wiring C, lpf's DC level and the off current change, which capacitors can't do (lpf's
+    devices are identical in both extractions). The TX loses 1.7 dB and slows. Handed to `docs/handoff_sim.md`.
+
 ## Blocks and macro to the chosen floorplan (layout 5, 2026-10-09)
 - **Digital macro re-hardened at 200 × 220 µm** (from 260 × 190; `openlane/radio_digital`, final run `l5b_200x220`, views in `macros/radio_digital/`).
   - **Size trials** (y 220 sweep and the flat shapes; same config otherwise):

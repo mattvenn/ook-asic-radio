@@ -369,3 +369,63 @@ Lessons:
 | ring | 30 µm | 22 µm | 10.9 → 8.6 fF |
 | a / b | 8 / 29 µm | 34 / 35 µm | 8.9 / 12.9 → 13.5 / 13.7 fF |
 | enh_p / enh_n | 35 / 4 µm | 6 / 4 µm | 11.6 / 7.0 → 7.1 / 7.0 fF |
+
+## Top level (2026-10-09)
+Flow: `tools/osic-mac klayout -b -r layout/gen/decap.py` (only when the decaps change) →
+`tools/osic-mac klayout -b -r layout/gen/top.py` (writes `build/top/tt_um_mattvenn_radio_place.gds`, `build/top/pins.json`)
+→ `tools/osic-mac python3 layout/gen/route.py [net ...]` (writes `build/top/tt_um_mattvenn_radio.gds`,
+`build/top/route_report.json`; ~35 s for all nets) → `tools/osic-mac bash layout/check_top.sh [precheck klayout magic antenna lvs]`
+(KLayout DRC ~15 s; magic DRC + LVS ~5 min; antenna ~2 min). History and numbers: `docs/history.md` "Top level".
+
+**Router (`layout/gen/route.py`)**
+- A* on a 0.2 µm grid over met1–met4. Obstacles are the real placed geometry, bloated per net by half its width plus
+  the spacing, so routes are DRC-clean by construction. Via pads are checked on both layers; met3/met4 pads are
+  blocked at 0.5 µm because a stack's middle pad must meet the 0.24 µm² min area.
+- Every shape has a tag: a block pin's polygon is `inst.pin`, a strap `NET@w|m|e`, a route its net name. A net may
+  touch only its own tags.
+- Per net (`layout/gen/top_nets.py`): width, layers, preferred directions, keep-out boxes, `avoid` (cost near other
+  nets), `follow` (pairs), ordered waypoints (with a layer), `anchors` / `late` (power trees), and `cell` (draw into
+  tx_top).
+- **Lessons (each one was a DRC or LVS failure first):**
+  - **MIM bottom plates (capm.2b_a / capm.11):** other met3 stays 1.2 µm from `capm ∩ met3` grown by 0.14. The halo
+    is a keep-out for every net, the plate's own too: a wire that runs near its plate without touching it fails.
+    Near a pin that *is* a plate, a 1.3 µm carve lets its net come in on met3.
+  - **No via2 within 0.1 µm of a capm (capm.8, magic only), and no via3 within 0.08 µm of a capm edge (capm.5).**
+    KLayout's deck missed both; magic caught them.
+  - **capm under a top plate is a keep-out (`~cap`) passable only by the top plate's net, never a terminal.**
+    Otherwise another net drops a via3 onto the bottom plate between the top-plate strips.
+  - **Keep-outs aren't metal:** a route can "end" on a halo and leave an open. Terminals come only from real pin
+    shapes, and a wire end must lie inside the pin (a sliver otherwise: m3.1 / m4.1).
+  - **Metal wider than 3 µm needs 0.4 µm spacing (m3.3cd / m4.5ab).** A rail merged with a supply wire becomes
+    "wide": every net keeps 0.4 µm from wide foreign metal.
+  - **Same-net notches** (a via pad beside a wire or a pin): close them by growing and shrinking the net with its own
+    pins, then drop any fill that's under minimum width once clipped against foreign metal.
+  - **Fixed geometry (the TT bus) is checked against foreign metal**, and placed first so the maze-routed nets avoid
+    it. Its first version shorted uio_oe[7] to the west VGND strap.
+  - **A power tree must not start at its own terminals** (0-length "routes": the RX supplies were never drawn).
+    Use `anchors` (straps) and connect each terminal to the nearest point.
+  - **Nets drawn inside a subcell (tx_top) reach the strap last (`late`),** so the subcell is connected on its own
+    and matches hierarchically.
+- **Antenna:** long top-level met3 into the macro's input gates (TT inputs, comp_in) needs a met4 jumper just before
+  the macro (x 274–275.4, west of the mid straps).
+
+**TT bus:** 42 wires from the top-edge pins to the macro's west edge.
+- Only met2 is free over a MIM decap, so a single-layer staircase must be planar.
+- The working layout is a two-layer channel above xdeca part 2 (y 213.75–225.4):
+  - the 24 western pins: met4 drop, met2 track (0.48 pitch), met2 column over the MOS-only top of xdeca part 1,
+    met3 into the pin;
+  - the 18 eastern ones: met3 tracks (0.65 pitch, for the via3 pads), met4 columns. The 6 whose macro pins are level
+    with the channel run straight in.
+- The enables leave the macro below the TT pins and run west along the bottom of xdeca part 2, below the bus.
+
+**Decaps (`layout/gen/decap.py`):**
+- MOS rows on comb met1 rails, MIM over them (a VGND met3 sheet, met4 top-plate bus); via stacks only in the edge
+  bands, so met2 stays free for crossing routes.
+- **A met4 bus must not cross a strap of another net:** it shorted VAPWR/VDPWR/VGND in the first try. Found with a
+  metal-connectivity trace of the placed tile.
+
+**Extraction for the end-to-end decks:** `layout/pex_tile.sh {lvs|c|rc}`.
+- It flattens first (otherwise each block's substrate `VSUBS` floats in ngspice) and strips the macro.
+- It labels the macro-pin wire ends with the `radio_analog` port names, so the result drops into
+  `tb_radio_analog` (`sim/top/tb_tile.py`).
+- rc takes 11 s: 85k R, 18k C.
