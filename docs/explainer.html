@@ -532,14 +532,12 @@ function figComp() {
 }
 function figTrim() {
   const b = bb(); if (!b || !b.comp) return NODATA('baseband');
-  // trim and the comparator that drives it, from the same (nearest) run so cause and effect match; the comparator is drawn in a
-  // lane along the bottom of the trim's own axis
+  // trim and the comparator that drives it, from the same (nearest) run so cause and effect match; stacked, each on its own axis
   const tr = dec(b.trim), cp = dec(b.comp), tlo = Math.min(...tr.y), thi = Math.max(...tr.y), span = Math.max(thi - tlo, .02);
-  const ylo = tlo - span * .55, lane = span * .4, cy = Array.from(cp.y, v => ylo + span * .05 + (v / 1.8) * lane);
   let hiT = 0; for (const v of cp.y) if (v > .9) hiT++;
-  return fig(`trim DAC voltage and the comparator output driving it, nearest run (${DBM(b.lvl)})`,
-    plot({series: [{d: tr, color: 'var(--dac)', label: 'trim (V)', w: 2}, {d: {x: cp.x, y: cy}, color: 'var(--rx)', label: 'comparator output (high: trim steps up, low: down)', w: 1, step: true}],
-      xl: 'time (ms)', yl: 'V', h: 260, ylim: [ylo, thi + span * .05]}), 'build/rx_bb_*.raw') +
+  return fig(`the comparator output, and the trim DAC voltage it drives, nearest run (${DBM(b.lvl)})`,
+    plot({series: [{d: cp, color: 'var(--rx)', label: 'comparator output (V): high steps the trim up, low steps it down', w: 1.2}], yl: 'V', h: 140, ylim: [-0.15, 1.95]}) +
+    plot({series: [{d: tr, color: 'var(--dac)', label: 'trim (V)', w: 2}], xl: 'time (ms)', yl: 'V', h: 200, ylim: [tlo - span * .08, thi + span * .08]}), 'build/rx_bb_*.raw') +
     `<p>While the comparator is high the trim climbs one DAC step (7 mV) per 13 µs sample; while it is low it falls. Here it is high ${N(Math.round(100 * hiT / cp.y.length) + '%', 4)} of the time, so the trim hovers where the comparator's offset is cancelled. In this run a behavioural stand-in plays the digital servo; the mixed-signal run with the real RTL shows the code settling and dithering at −94 dBm (sim/plots/mixed_-94.png).</p>`;
 }
 /* the bit slicer in action: real comparator samples from the transistor-level baseband run (8 per 104 µs bit), and the four
