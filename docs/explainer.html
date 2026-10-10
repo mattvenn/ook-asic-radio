@@ -362,7 +362,7 @@ const B = {
     text: 'Six differential stages, ~80 dB of gain in total. Differential means each stage amplifies the difference between two wires and ignores noise common to both, like the chip\'s own 10 MHz clock. Stage 1 is the low-noise amplifier, and the chain\'s noise figure is about 11 dB. Coupling capacitors between stages stop DC offsets building up.',
     plot: () => figChain()},
   log_det: {lvl: 'rx', name: 'log_det', sub: 'successive-detection log detector', anchor: 'receiver-detector-filter-threshold', sch: 'log_det', color: 'rx',
-    text: 'One rectifier cell per chain stage. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V, about 13 mV per dB. Note it goes down as the signal goes up. The cells rectify the 434 MHz carrier, and the detector\'s output node smooths it with its own ~20 MHz low-pass: the output follows the carrier\'s strength, settling in ~16 ns, and only a few mV of ripple are left of the carrier.',
+    text: 'One rectifier cell per chain stage. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V, about 13 mV per dB. Note it goes down as the signal goes up. The cells rectify the 434 MHz carrier, and the detector\'s output node smooths it with its own ~20 MHz low-pass: the output follows the carrier\'s strength, settling in ~16 ns, and only a few mV of ripple are left of the carrier. Below, the carrier is keyed on at 0.5 µs and off at 2.5 µs: about 870 cycles while on, so the whole view draws it as its envelope; zoom in to see the cycles arrive and the detector settle.',
     plot: () => figLogdet()},
   lpf_rc: {lvl: 'rx', name: 'lpf_rc', sub: '14 kHz RC low-pass', anchor: 'receiver-detector-filter-threshold', sch: 'lpf_rc', color: 'rx',
     text: 'The log detector has already removed the 434 MHz carrier with its own ~20 MHz low-pass (see log_det), so its output follows how strong the carrier is. But that output is noisy (grey), because the amplifiers pass 450 MHz of noise. This 14 kHz RC low-pass, about 1,500 times slower, smooths away everything faster than a 104 µs bit, leaving the on/off envelope.',
@@ -488,10 +488,10 @@ function figLogdet() {
     const zr = (() => { const A = dec(br.lo.rf_z), Bv = dec(br.hi.rf_z), sa = Math.max(...A.y.map(Math.abs)) || 1, sb = Math.max(...Bv.y.map(Math.abs)) || 1, amp = Math.pow(sa, 1 - br.w) * Math.pow(sb, br.w);
       return {x: A.x, y: A.y.map((v, i) => ((1 - br.w) * v / sa + br.w * Bv.y[i] / sb) * amp)}; })();
     const z = !!S.ldZoom;
-    h += `<div class="segrow"><div class="seg" role="group" aria-label="Time span"><button type="button" data-ldzoom="0" aria-pressed="${!z}">whole 3.5 µs</button><button type="button" data-ldzoom="1" aria-pressed="${z}">zoom: 40 ns at switch-on</button></div></div>`;
-    h += fig(z ? `the switch-on, 40 ns at ${DBM(p)}: the sine arrives, and the detector settles in ~16 ns` : `carrier keyed on at 0.5 µs and off at 2.5 µs, ${DBM(p)}: the RF going in, and the detector's output`,
+    h += `<div class="segrow"><div class="seg" role="group" aria-label="Time span"><button type="button" data-ldzoom="0" aria-pressed="${!z}">whole 3.5 µs (RF drawn as its envelope)</button><button type="button" data-ldzoom="1" aria-pressed="${z}">zoom: 40 ns at switch-on</button></div></div>`;
+    h += fig(`the RF going in, and the detector's output, at ${DBM(p)}`,   // same title and legends in both views, so toggling never moves the plots
       plot({series: [z ? {d: zr, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV)', w: 1.2}
-                       : {band: {x, lo, hi}, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV): ~870 cycles while on, drawn as its envelope'}], yl: 'mV', h: 120, ylim: D._kry}) +
+                       : {band: {x, lo, hi}, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV)'}], yl: 'mV', h: 120, ylim: D._kry}) +
       plot({series: [{d: z ? bw('det_z') : bw('det'), color: 'var(--rx)', label: 'det (V)', w: 2}], xl: z ? 'time (ns)' : 'time (µs)', yl: 'det (V)', h: 140, ylim: D._kly}), runsNote(br, 'rx_rf_key'));
   }
   return h;
