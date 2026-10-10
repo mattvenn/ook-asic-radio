@@ -20,7 +20,7 @@ body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
 a{color:var(--sig)}
 button{font:inherit; color:inherit}
 :focus-visible{outline:3px solid var(--sig); outline-offset:2px}
-header{display:grid; grid-template-columns:auto minmax(19rem,1fr) minmax(0,30rem) auto;   /* 19rem: the longest breadcrumb, Link › Chip › chip slicer (digital) */ align-items:center; gap:.75rem 1.5rem; padding:.8rem 1.25rem; border-bottom:1px solid var(--line); background:var(--panel)}
+header{display:grid; grid-template-columns:auto minmax(19rem,1fr) minmax(0,30rem) auto;   /* 19rem: the longest breadcrumb, Link › Chip › bit slicer (digital) */ align-items:center; gap:.75rem 1.5rem; padding:.8rem 1.25rem; border-bottom:1px solid var(--line); background:var(--panel)}
 .brand{display:flex; flex-direction:column; gap:.1rem; min-width:0}
 .brand b{font-size:1.15rem; letter-spacing:-.01em}
 nav.crumbs{display:flex; align-items:center; gap:.35rem; flex-wrap:nowrap; white-space:nowrap; overflow:hidden; min-width:0; font-size:1rem}
@@ -333,13 +333,13 @@ const NODATA = what => `<div class="nodata">No ${what} data in this build: run d
 // ------------------------------------------------------------------ blocks
 const B = {
   ook: {lvl: 'link', name: 'On-off keying', sub: 'the whole idea', anchor: 'on-off-keying-ook',
-    text: 'The transmitter switches a 433 MHz carrier on and off, at about +4 dBm, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. Each on/off slot (a chip) lasts 104 µs, and the pattern is a 127-chip code. So the TX needs no crystal or PLL, just a free-running ring of inverters.',
+    text: 'The transmitter switches a 433 MHz carrier on and off, at about +4 dBm, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. Each on/off bit lasts 104 µs (the docs and code call these bits chips), and the pattern is a 127-bit code. So the TX needs no crystal or PLL, just a free-running ring of inverters.',
     plot: () => figCode()},
   air: {lvl: 'link', name: 'Over the air', sub: 'received power vs distance, two wire dipoles', anchor: 'bench-measurements-phase-0',
     text: 'Measured on the bench with an earlier chip (ttsky25b, its ring at 518 MHz), 14.5 cm wire dipoles held parallel, 10 cm to 4 m: close to free space, −44 dBm at 1 m, falling as 1/d^1.89. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. On that model the −94 dBm sensitivity is reached at about 45 m. Distances past 4 m are that model, not a measurement.',
     plot: () => figPath()},
   gold: {lvl: 'tx', name: 'Gold code (digital)', sub: 'radio_digital macro, TX side', anchor: 'digital-radio_digital-macro', color: 'dig',
-    text: 'The 7-bit DIP code picks one Gold code: two 7-bit LFSRs, one delayed by the code, XORed. 127 noise-like chips, half on, half off. Each chip lasts 104 µs, so one burst takes 13.2 ms. The TX keys the ring with the code three times, with 64 silent chips between bursts.',
+    text: 'The 7-bit DIP code picks one Gold code: two 7-bit LFSRs, one delayed by the code, XORed. 127 noise-like bits, half on, half off. Each bit lasts 104 µs, so one burst takes 13.2 ms. The TX keys the ring with the code three times, with 64 silent bits between bursts.',
     plot: () => figGold()},
   tx_ring: {lvl: 'tx', name: 'tx_ring', sub: 'free-running ring oscillator', anchor: 'transmitter', sch: 'tx_ring', color: 'tx',
     text: () => `A NAND gate (the on/off enable) plus a ring of standard-cell inverters. No crystal: wherever it lands in 330–560 MHz the receiver still works. It runs at ${D.tx ? D.tx.f_mhz : '~485'} MHz in simulation (tt), and silicon ran at ×0.87 of simulation on the bench chip. It switches on or off in ~30–40 ns.`,
@@ -357,25 +357,25 @@ const B = {
     text: 'One rectifier cell per chain stage. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V, about 13 mV per dB. Note it goes down as the signal goes up.',
     plot: () => figLogdet()},
   lpf_rc: {lvl: 'rx', name: 'lpf_rc', sub: '14 kHz RC low-pass', anchor: 'receiver-detector-filter-threshold', sch: 'lpf_rc', color: 'rx',
-    text: 'A 14 kHz RC low-pass. It keeps the chip-rate envelope (one chip is 104 µs) and removes most of the noise from the detector output.',
+    text: 'A 14 kHz RC low-pass. It keeps the bit-rate envelope (one bit is 104 µs) and removes most of the noise from the detector output.',
     plot: () => figBB(['det', 'lpf'])},
   avg_sc: {lvl: 'rx', name: 'avg_sc', sub: 'switched-capacitor slow average', anchor: 'where-the-threshold-goes', sch: 'avg_sc', color: 'rx',
     text: 'The threshold. A Gold code is half on and half off, so the slow average of the signal sits in the middle of it at any range. A small capacitor clocked by the digital (sc_phi1/2) acts as a very large resistor, giving a time constant of about 0.45 ms.',
     plot: () => figBB(['lpf', 'avg'])},
   comp_ct: {lvl: 'rx', name: 'comp_ct', sub: 'continuous-time comparator', anchor: 'receiver-detector-filter-threshold', sch: 'comp_ct', color: 'rx',
-    text: 'Filtered signal on one input, slow average on the other: is this chip on or off? Near the sensitivity limit the difference is ~1 mV and the noise is about as big, so many decisions are wrong. That is fine: the correlator only needs most of them right. The digital samples it every 13 µs, 8 times per chip.',
+    text: 'Filtered signal on one input, slow average on the other: is this bit on or off? Near the sensitivity limit the difference is ~1 mV and the noise is about as big, so many decisions are wrong. That is fine: the correlator only needs most of them right. The digital samples it every 13 µs, 8 times per bit.',
     plot: () => figComp()},
   r2r: {lvl: 'rx', name: 'r2r + trim servo', sub: '8-bit DAC, offset trim', anchor: 'where-the-threshold-goes', sch: 'r2r', color: 'dac',
     text: 'Every comparator has a small built-in error from imperfectly matched transistors, its offset: it might only flip when one input is 2 mV above the other. Near the sensitivity limit the signal is only ~1 mV, so without correction the comparator would always say 1 (or always 0). The digital nudges an 8-bit DAC one ~0.07 mV step per sample (a 1 steps it up, a 0 down), through a weak second input pair, until the comparator outputs 1 half the time, which cancels the offset.',
     plot: () => figTrim()},
-  slicer: {lvl: 'rx', name: 'chip slicer (digital)', sub: 'majority vote per chip', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
-    text: '8 comparator samples per chip, majority vote, at 4 timing offsets in parallel (so the RX needs no clock recovery). Each offset keeps the last 127 chip decisions.',
+  slicer: {lvl: 'rx', name: 'bit slicer (digital)', sub: 'majority vote per bit', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
+    text: 'The comparator is read every 13 µs: 8 samples per 104 µs bit. Many samples are wrong near the limit, so the 8 are combined by majority vote (5 or more 1s means on). The receiver doesn\'t know where each bit starts, so instead of recovering the transmitter\'s timing it runs four slicers at once, their windows offset by 2 samples; one of them is always nearly lined up. Each keeps its last 127 bit decisions for the correlator.',
     plot: () => figSlicer()},
-  corr: {lvl: 'rx', name: 'correlator (digital)', sub: 'score the last 127 chips', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
-    text: 'After every chip, count how many of the last 127 decisions match this board\'s own code. Chance gives ~64. 97 or more is a detection: 6σ above chance. Even when a quarter of the samples are wrong the score still clears 97.',
+  corr: {lvl: 'rx', name: 'correlator (digital)', sub: 'score the last 127 bits', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
+    text: 'After every bit, count how many of the last 127 decisions match this board\'s own code. Chance gives ~64. 97 or more is a detection: 6σ above chance. Even when a quarter of the samples are wrong the score still clears 97.',
     plot: () => figScore()},
   led: {lvl: 'rx', name: '2-of-3 + LED', sub: 'burst check', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
-    text: 'The TX sends the burst three times. The LED toggles only if two detections arrive one or two burst periods (191 chips) apart, within ±2 chips, then the code is ignored for ~1 s. Other codes, garage remotes and noise don\'t toggle it.',
+    text: 'The TX sends the burst three times. The LED toggles only if two detections arrive one or two burst periods (191 bits) apart, within ±2 bits, then the code is ignored for ~1 s. Other codes, garage remotes and noise don\'t toggle it.',
     plot: () => figLed()},
   bias_gen: {lvl: 'rx', name: 'bias_gen', sub: 'support', anchor: 'support', sch: 'bias_gen', color: 'bias',
     text: 'Makes the reference currents and the mid-rail voltage for every analog block. On-chip decoupling capacitors supply the TX\'s 433 MHz current spikes locally so they don\'t disturb the receiver.',
@@ -386,7 +386,7 @@ const B = {
 function figCode() {
   const g = GOLD(), r = run();
   return fig(`code 0x${D.code.toString(16).toUpperCase()}: what is sent, and what the receiver decided at ${DBM(prx())}`,
-    strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {aria: 'sent and received chips'}),
+    strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {aria: 'sent and received bits'}),
     'model/ link model, one burst') + `<p>Wrong chips are red. ${N(r.chip_ok + '/127', 7)} right: ${r.chip_ok < 97 ? 'below 97, not a detection.' : '97 or more, a detection.'}</p>`;
 }
 function figPath() {
@@ -404,8 +404,8 @@ function figPath() {
 function figGold() {
   const g = GOLD(), per = D.model.period, all = new Uint8Array(3 * per);
   for (let b = 0; b < 3; b++) all.set(g, b * per);
-  return fig('one burst, chip by chip', strip([{bits: g, label: '0x' + D.code.toString(16).toUpperCase(), color: 'var(--tx)'}], {h: 30}), 'model/gold.py') +
-    fig('one send: three bursts of 127 chips, 64 silent chips between', strip([{bits: all, label: 'carrier', color: 'var(--tx)'}], {h: 34}));
+  return fig('one burst, bit by bit', strip([{bits: g, label: '0x' + D.code.toString(16).toUpperCase(), color: 'var(--tx)'}], {h: 30}), 'model/gold.py') +
+    fig('one send: three bursts of 127 bits, 64 silent bits between', strip([{bits: all, label: 'carrier', color: 'var(--tx)'}], {h: 34}));
 }
 const TXL = {key: ['enable (key)', '#9db0bc'], ring: ['ring', 'var(--tx)'], a: ['latch A', 'var(--tx)'], b: ['latch B', 'var(--sig2)'],
   drv_p: ['driver p (ua[3])', 'var(--tx)'], drv_n: ['driver n (ua[4])', 'var(--sig2)'], dipole: ['across the dipole', 'var(--sig)']};
@@ -473,13 +473,13 @@ function figBB(keys) {
   const b = bb(); if (!b) return NODATA('baseband');
   const ser = keys.map(k => ({d: dec(b[k]), label: BBL[k][0], color: BBL[k][1], w: BBL[k][2], op: k === 'det' ? 0.7 : 1}));
   const yl = bbRange(keys, 1);
-  return bbPick() + fig(`${DBM(b.lvl)}, 3 ms of one burst: chips "on" pull the detector down from its ${b.base.toFixed(2)} V no-signal level`,
+  return bbPick() + fig(`${DBM(b.lvl)}, 3 ms of one burst: bits "on" pull the detector down from its ${b.base.toFixed(2)} V no-signal level`,
     plot({series: ser, xl: 'time (ms)', yl: 'V', h: 280, ylim: yl}), 'build/rx_bb_*.raw, tt');
 }
 function figComp() {
   const b = bb(); if (!b) return NODATA('baseband');
   const bits = unpack(b.bits, b.nbits), truth = unpack(b.truth, b.nbits), n = Math.min(240, b.nbits);
-  return figBB(['lpf', 'avg']) + fig(`sampled comparator vs the chip actually sent (first ${n} samples): right ${N(b.agree + '%', 6)} over the whole burst`,
+  return figBB(['lpf', 'avg']) + fig(`sampled comparator vs the bit actually sent (first ${n} samples): right ${N(b.agree + '%', 6)} over the whole burst`,
     strip([{bits: truth.slice(0, n), label: 'sent', color: 'var(--tx)'}, {bits: bits.slice(0, n), label: 'comparator', color: 'var(--rx)', cmp: truth.slice(0, n)}], {h: 22}));
 }
 function figTrim() {
@@ -492,7 +492,7 @@ function slicerMatch(i) {
   const g = GOLD(), r = run(), th = D.model.thresh, end = i >= 126;
   let n = 0; for (let j = 0; j <= Math.min(i, 126); j++) if (r._c[j] === g[j]) n++;
   const st = n >= th ? ['ok', `${th} reached: enough for a detection`] : end ? ['bad', `${n} < ${th}: not a detection`] : ['wait', `need ${th}`];
-  return `<div class="matchbar"><span class="mcount">matching chips ${N(n, 3)} of ${N(Math.min(i, 126) + 1, 3, 'left')}</span>
+  return `<div class="matchbar"><span class="mcount">matching bits ${N(n, 3)} of ${N(Math.min(i, 126) + 1, 3, 'left')}</span>
     <div class="mbar"><div class="mfill ${st[0]}" style="width:${(100 * n / 127).toFixed(1)}%"></div><div class="mthr" style="left:${(100 * th / 127).toFixed(1)}%"><span>${th}</span></div></div>
     <span class="mstate ${st[0]}">${st[1]}</span></div>`;
 }
@@ -502,15 +502,15 @@ function slicerStrip(i) {
 }
 function figSlicer() {
   const r = run();
-  return fig(`chip decisions at ${DBM(prx())} (best timing phase): ${N(r.chip_ok + '/127', 7)} right`,
+  return fig(`bit decisions at ${DBM(prx())} (best timing phase): ${N(r.chip_ok + '/127', 7)} right`,
     `<div id="slmatch">${slicerMatch(126)}</div><div id="slstrip">${slicerStrip(-1)}</div>`, 'model/ link model');
 }
 function figScore() {
   const r = run(), m = D.model, x = [], y = [];
   for (let i = 0; i < r._s.length; i++) { x.push(i - m.lead_chips); y.push(r._s[i]); }
   const bands = [0, 1, 2].map(k => ({x0: k * m.period, x1: k * m.period + 127, color: '#f0954a14'}));
-  let h = fig(`score after every chip, ${DBM(prx())}: peaks at the end of each burst`, plot({series: [{d: {x, y}, color: 'var(--dig)', label: 'score', w: 1.5}],
-    ylim: [40, 130], xl: 'chips since the send started', yl: 'score /127', h: 260, bands,
+  let h = fig(`score after every bit, ${DBM(prx())}: peaks at the end of each burst`, plot({series: [{d: {x, y}, color: 'var(--dig)', label: 'score', w: 1.5}],
+    ylim: [40, 130], xl: 'bits since the send started', yl: 'score /127', h: 260, bands,
     hl: [{y: m.thresh, color: 'var(--thr)', label: 'detect ≥ 97'}, {y: 63.5, color: '#6f8491', label: 'chance'}]}), 'model/ link model');
   h += figSweep();
   return h;
@@ -567,7 +567,7 @@ function linkScene(focus = null) {
 function levelLink() {
   const p = prx(), r = run(), margin = p - SENS;
   return `<h1>Send a 1 by switching the radio on. Send a 0 by switching it off.</h1>
-  <p class="lede">Two boards run the same chip: one transmits, the other receives. Each antenna is two bare wires. Click a board to open its signal chain, the gap for how power relates to distance, the LED for how a send is confirmed, or the chips below for the idea.</p>
+  <p class="lede">Two boards run the same chip: one transmits, the other receives. Each antenna is two bare wires. Click a board to open its signal chain, the gap for how power relates to distance, the LED for how a send is confirmed, or the bits below for the idea.</p>
   ${linkScene()}
   <div class="readouts">
     <div class="ro"><small>TX power</small><b>+4 dBm</b></div>
@@ -577,7 +577,7 @@ function levelLink() {
     <div class="ro"><small>correlator</small><b id="live">–</b></div>
     <div class="ro"><small>LED (2 of 3 bursts)</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'missed'}</b></div>
   </div>
-  <div class="hit striphit" role="button" tabindex="0" data-block="ook" aria-pressed="${S.block === 'ook'}" aria-label="On-off keying: the idea, chip by chip"><div id="codestrip">${codeStrip(anim._b || 0, anim._pos || 0)}</div></div>`;
+  <div class="hit striphit" role="button" tabindex="0" data-block="ook" aria-pressed="${S.block === 'ook'}" aria-label="On-off keying: the idea, bit by bit"><div id="codestrip">${codeStrip(anim._b || 0, anim._pos || 0)}</div></div>`;
 }
 function chipPage() {
   const f = S.focus, lede = {
@@ -629,7 +629,7 @@ const DG = {
     ['xtx.xring', 'tx_ring', '~434 MHz ring', 500, 405, 100, 40, 'tx'],
   ],
   // the digital macro's parts, drawn inside it so each one can be picked
-  sub: [['macro:slicer', 'chip slicer', 966, 160, 78, 40], ['macro:corr', 'correlator', 966, 210, 78, 40], ['macro:led', '2-of-3 + LED', 966, 260, 78, 40], ['macro:gold', 'Gold code', 966, 400, 78, 50]],
+  sub: [['macro:slicer', 'bit slicer', 966, 160, 78, 40], ['macro:corr', 'correlator', 966, 210, 78, 40], ['macro:led', '2-of-3 + LED', 966, 260, 78, 40], ['macro:gold', 'Gold code', 966, 400, 78, 50]],
   // [net, class, from, to, points, label]
   wires: [
     ['rx_p', 'rxin', 'pad:ua[0]', 'xchain', [[66, 121], [100, 121]], {name: ''}], ['rx_n', 'rxin', 'pad:ua[1]', 'xchain', [[66, 161], [100, 161]], {name: ''}],
@@ -716,7 +716,7 @@ function dgSVG(opts = {}) {
 // ------------------------------------------------------------------ tour
 const TOUR = [
   {level: 'link', block: null, p: -44, cap: 'Two boards, the same chip. The left one transmits, the right one receives, 1 m apart.'},
-  {level: 'link', block: 'ook', cap: 'On-off keying: carrier on is a 1, carrier off is a 0. The pattern is a 127-chip Gold code.'},
+  {level: 'link', block: 'ook', cap: 'On-off keying: carrier on is a 1, carrier off is a 0. The pattern is a 127-bit Gold code.'},
   {level: 'link', block: 'air', cap: 'At 1 m the receiver sees −44 dBm. It still works around −94 dBm: 50 dB, 100,000× less power.'},
   {level: 'chip', block: null, cap: 'Functional diagram'},
   {level: 'chip', focus: 'tx', block: null, cap: 'The transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
@@ -727,12 +727,12 @@ const TOUR = [
   {level: 'chip', focus: 'rx', block: null, cap: 'The receiver: amplify, measure energy, compare, then let the digital decide.'},
   {level: 'chip', block: 'lna_chain', cap: 'Six differential stages, ~80 dB of gain. The last stages limit: that is used by the detector.'},
   {level: 'chip', block: 'log_det', cap: 'The log detector turns RF power into a voltage that is a straight line in dB: 70 dB in ~1 V.'},
-  {level: 'chip', block: 'lpf_rc', cap: 'A 14 kHz low-pass keeps the chip-rate envelope and removes most of the noise.'},
+  {level: 'chip', block: 'lpf_rc', cap: 'A 14 kHz low-pass keeps the bit-rate envelope and removes most of the noise.'},
   {level: 'chip', block: 'avg_sc', cap: 'The threshold is the signal\'s own slow average: the code is half on, half off, so it sits in the middle.'},
   {level: 'chip', block: 'comp_ct', cap: 'The comparator decides on or off. Near the limit the difference is ~1 mV, as big as the noise.'},
   {level: 'chip', block: 'r2r', cap: 'An 8-bit DAC servo cancels the comparator\'s own offset in ~0.07 mV steps.'},
-  {level: 'chip', block: 'slicer', cap: 'Eight samples per chip, majority vote, at four timing offsets at once.'},
-  {level: 'chip', block: 'corr', cap: 'Count matches with the expected code: chance is ~64, 97 is a detection. Lots of wrong chips are fine.'},
+  {level: 'chip', block: 'slicer', cap: 'Eight samples per bit, majority vote, at four timing offsets at once.'},
+  {level: 'chip', block: 'corr', cap: 'Count matches with the expected code: chance is ~64, 97 is a detection. Lots of wrong bits are fine.'},
   {level: 'chip', block: 'led', cap: 'Two detections one burst period apart toggle the LED. Noise and other codes don\'t.'},
 ];
 
@@ -840,9 +840,9 @@ function codeStrip(b = 0, ib = 0) {
   const box = k => done(k) ? `<div class="burst ${pk[k] >= th ? 'ok' : 'bad'}">burst ${k + 1}: peak ${pk[k]} ${pk[k] >= th ? '✓' : '✗'}</div>`
     : b === k ? `<div class="burst now">burst ${k + 1}: sending</div>` : `<div class="burst later">burst ${k + 1}</div>`;
   const led = r.toggled && dets >= 2 ? '<div class="burst ok">LED: toggled (2 of 3)</div>' : b >= 3 || (b === 2 && done(2)) ? '<div class="burst bad">LED: no toggle</div>' : '<div class="burst later">LED: waiting for 2 of 3</div>';
-  return `<div class="bursts">${[0, 1, 2].map(box).join('')}${led}</div>` + fig(`chip ${N(b < 3 && ib < 127 ? ib + 1 : '–', 3)} of 127 · carrier ${N(on ? 'ON' : 'off', 3, 'left')}`,
-    strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {ph: b < 3 && ib < 127 ? ib : -1, aria: 'sent and received chips'}),
-    `received chips: link model run at ${DBM(r.lvl)}`);
+  return `<div class="bursts">${[0, 1, 2].map(box).join('')}${led}</div>` + fig(`bit ${N(b < 3 && ib < 127 ? ib + 1 : '–', 3)} of 127 · carrier ${N(on ? 'ON' : 'off', 3, 'left')}`,
+    strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {ph: b < 3 && ib < 127 ? ib : -1, aria: 'sent and received bits'}),
+    `received bits: link model run at ${DBM(r.lvl)}`);
 }
 const anim = {
   t0: 0, reset() { this.t0 = performance.now(); },
