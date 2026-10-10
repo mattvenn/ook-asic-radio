@@ -366,7 +366,7 @@ const B = {
     text: 'Filtered signal on one input, slow average on the other: is this chip on or off? Near the sensitivity limit the difference is ~1 mV and the noise is about as big, so many decisions are wrong. That is fine: the correlator only needs most of them right. The digital samples it every 13 µs, 8 times per chip.',
     plot: () => figComp()},
   r2r: {lvl: 'rx', name: 'r2r + trim servo', sub: '8-bit DAC, offset trim', anchor: 'where-the-threshold-goes', sch: 'r2r', color: 'dac',
-    text: 'The comparator\'s own offset (a few mV) is bigger than the signal. The digital moves an 8-bit DAC one step per sample (a 1 steps it up, a 0 down) so the comparator outputs 1 half the time, cancelling the offset in ~0.07 mV steps through a weak second input pair.',
+    text: 'Every comparator has a small built-in error from imperfectly matched transistors, its offset: it might only flip when one input is 2 mV above the other. Near the sensitivity limit the signal is only ~1 mV, so without correction the comparator would always say 1 (or always 0). The digital nudges an 8-bit DAC one ~0.07 mV step per sample (a 1 steps it up, a 0 down), through a weak second input pair, until the comparator outputs 1 half the time, which cancels the offset.',
     plot: () => figTrim()},
   slicer: {lvl: 'rx', name: 'chip slicer (digital)', sub: 'majority vote per chip', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
     text: '8 comparator samples per chip, majority vote, at 4 timing offsets in parallel (so the RX needs no clock recovery). Each offset keeps the last 127 chip decisions.',
