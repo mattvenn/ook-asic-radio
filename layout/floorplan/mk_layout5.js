@@ -25,6 +25,13 @@ v.place.xdac.orient = 'MYR90';
 // VAPWR, 215-270 um from the mid strap; x 0-5.5 is clear of blocks (the west decaps keep their
 // MIM out of this column)
 if (!v.straps.some(st => st.net === 'VAPWR' && st.x < 50)) v.straps.push({ net: 'VAPWR', x: 2.5, w: 1.2 });
+// wider straps (2026-10-10, docs/power.md what-if W): the west VAPWR strap carried the TX's VAPWR
+// at 2x the EM limit (via4 / met4); 3 via4 columns per met5 landing at 5 um. West VGND keeps its
+// east edge (15.1: the TT bus drops at x 15.6); 10.8 would short VDPWR. (Keyed by the old x too,
+// so re-running on an already widened floorplan.json is a no-op.)
+const WIDE = { VAPWR: { 2.5: [0.3, 5.0], 0.3: [0.3, 5.0], 488.02: [481.0, 8.22], 481: [481.0, 8.22] },
+  VDPWR: { 9.3: [5.8, 4.7], 5.8: [5.8, 4.7] }, VGND: { 13.9: [12.0, 3.1], 12: [12.0, 3.1] } };
+for (const st of v.straps) { const k = (WIDE[st.net] || {})[st.x]; if (k) [st.x, st.w] = k; }
 if (v.est) delete v.est.xctrim;                       // laid out: 22.435 x 22.435 (layout/gen/ctrim_1p.py)
 // macro: east edge (own frame), met3 slots at 0.34 + 1.36 i (pin_order.cfg)
 const s = i => +(0.34 + 1.36 * i).toFixed(2);

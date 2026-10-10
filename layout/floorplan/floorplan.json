@@ -123,7 +123,7 @@
    "inst": "xtx.xls",
    "cell": "tx_ls",
    "x": 26.5,
-   "y": 141.0,
+   "y": 141,
    "orient": "MYR90",
    "rot": 270,
    "mirror": true,
@@ -133,7 +133,7 @@
    "inst": "xtx.xlse_p",
    "cell": "tx_ls_en",
    "x": 39.5,
-   "y": 124.0,
+   "y": 124,
    "orient": "MYR90",
    "rot": 270,
    "mirror": true,
@@ -142,8 +142,8 @@
   {
    "inst": "xtx.xlse_n",
    "cell": "tx_ls_en",
-   "x": 13.0,
-   "y": 124.0,
+   "x": 13,
+   "y": 124,
    "orient": "R270",
    "rot": 270,
    "mirror": false,
@@ -528,18 +528,18 @@
  "straps": [
   {
    "net": "VGND",
-   "x": 13.9,
-   "w": 1.2
+   "x": 12,
+   "w": 3.1
   },
   {
    "net": "VDPWR",
-   "x": 9.3,
-   "w": 1.2
+   "x": 5.8,
+   "w": 4.7
   },
   {
    "net": "VAPWR",
-   "x": 488.02,
-   "w": 1.2
+   "x": 481,
+   "w": 8.22
   },
   {
    "net": "VGND",
@@ -568,8 +568,8 @@
   },
   {
    "net": "VAPWR",
-   "x": 2.5,
-   "w": 1.2
+   "x": 0.3,
+   "w": 5
   }
  ],
  "transform": "x, y = lower-left of the placed bbox. KLayout: t = DCplxTrans(1, rot, mirror, 0, 0); bb = cell.dbbox().transformed(t); place with DCplxTrans(1, rot, mirror, x - bb.left, y - bb.bottom)."

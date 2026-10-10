@@ -19,9 +19,9 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 | 7. Decap VAPWR | warn | 97 % |
 | 7. Decap VDPWR | warn | 89 % |
 | 8. TX away from the RX input | warn | 39 µm |
-| 9. Overlaps and spacing | warn | 1 tight |
+| 9. Overlaps and spacing | warn | 2 tight |
 | 9. TT pin channel clear | fail | 2.9 µm |
-| P. Power straps | pass | 9 clear |
+| P. Power straps | fail | 1 blocked |
 
 ## macro (radio_digital)
 
@@ -450,7 +450,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xtx.xring (tx_ring)
 
 - Size: 18.32 × 6.96 (GDS)
-- Placement: x 17.50, y 140.50, MXR90 (rot 90, mirror true)
+- Placement: x 17.50, y 140.50, R270 (rot 270, mirror false)
 - Pins moved: none
 
 **N edge** (faces east in the tile; left → right, x):
@@ -484,7 +484,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 | r10 | 14.22 | 1.95 |  |
 | r11 | 15.60 | 1.95 |  |
 
-**W edge** (faces south in the tile; bottom → top, y):
+**W edge** (faces north in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -492,7 +492,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 | r1 | 1.34 | 1.95 |  |
 | en | 0.44 | 4.46 |  |
 
-**E edge** (faces north in the tile; bottom → top, y):
+**E edge** (faces south in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -502,7 +502,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xtx.xls (tx_ls)
 
 - Size: 14.25 × 19.00 (GDS)
-- Placement: x 36.00, y 124.00, MYR90 (rot 270, mirror true)
+- Placement: x 26.50, y 141.00, MYR90 (rot 270, mirror true)
 - Pins moved: none
 
 **N edge** (faces west in the tile; left → right, x):
@@ -536,7 +536,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xtx.xlse_p (tx_ls_en)
 
 - Size: 13.35 × 15.48 (GDS)
-- Placement: x 27.50, y 141.00, MYR90 (rot 270, mirror true)
+- Placement: x 39.50, y 124.00, MYR90 (rot 270, mirror true)
 - Pins moved: none
 
 **N edge** (faces west in the tile; left → right, x):
@@ -675,15 +675,15 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 
 ## Straps and decap
 
-- VGND strap: x 13.90, w 1.20 (met4, full height)
-- VDPWR strap: x 9.30, w 1.20 (met4, full height)
-- VAPWR strap: x 488.02, w 1.20 (met4, full height)
+- VGND strap: x 12.00, w 3.10 (met4, full height)
+- VDPWR strap: x 5.80, w 4.70 (met4, full height)
+- VAPWR strap: x 481.00, w 8.22 (met4, full height)
 - VGND strap: x 489.72, w 1.20 (met4, full height)
 - VDPWR strap: x 491.42, w 1.20 (met4, full height)
 - VAPWR strap: x 276.50, w 1.20 (met4, full height)
 - VGND strap: x 278.20, w 1.20 (met4, full height)
 - VDPWR strap: x 279.90, w 1.20 (met4, full height)
-- VAPWR strap: x 2.50, w 1.20 (met4, full height)
+- VAPWR strap: x 0.30, w 5.00 (met4, full height)
 - xdeca 1: x 242.00, y 2.00, 33.00 × 211.00
 - xdeca 2: x 0.00, y 193.00, 239.00 × 20.00
 - xdeca 3: x 0.00, y 162.00, 50.00 × 28.00
