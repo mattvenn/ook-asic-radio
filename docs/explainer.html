@@ -55,8 +55,8 @@ svg text{font-family:var(--sans)}
 .ro small{display:block; color:var(--muted); font-size:.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .ro b{display:block; font-family:var(--mono); font-size:1.25rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .ro b.good{color:var(--ok)} .ro b.bad{color:var(--bad)}
-.ro-btn{text-align:left; color:inherit; font:inherit; cursor:pointer; min-height:44px}
-.ro-btn:hover{border-color:var(--sig)} .ro-btn[aria-pressed=true]{outline:3px solid var(--sig); outline-offset:1px}
+.striphit{border:1px solid transparent; border-radius:10px; padding:.4rem .5rem; margin:-.4rem -.5rem}
+.striphit:hover, .striphit:focus-visible{border-color:var(--sig)} .striphit[aria-pressed=true]{border-color:var(--sig); border-width:1px}
 .chain{display:flex; flex-direction:column; gap:.9rem}
 .row{display:flex; flex-wrap:wrap; align-items:stretch; gap:.4rem}
 .rowlabel{font-size:.85rem; color:var(--faint); letter-spacing:.03em}
@@ -86,7 +86,7 @@ svg text{font-family:var(--sans)}
 .links a.secondary{border:1px solid var(--line); color:var(--text)}
 .links a:hover{filter:brightness(1.1)}
 .fig{display:flex; flex-direction:column; gap:.3rem}
-.num{display:inline-block; text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+.num{display:inline-block; white-space:nowrap; font-variant-numeric:tabular-nums}
 .fig .ft{font-size:.85rem; color:var(--muted); display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap}
 .fig .src{font-size:.72rem; color:var(--faint); font-family:var(--mono)}
 .legend{display:flex; flex-wrap:wrap; gap:.25rem 1rem; font-size:.8rem; color:var(--muted)}
@@ -281,7 +281,7 @@ function strip(rows, opts = {}) {
   return g + '</svg>';
 }
 /* a number in running text gets a fixed-width slot, so changing it never rewraps the line */
-const N = (t, ch = 8) => `<span class="num" style="min-width:${ch}ch">${t}</span>`;
+const N = (t, ch = 8, align = 'right') => `<span class="num" style="min-width:${ch}ch; text-align:${align}">${t}</span>`;
 const DBM = v => N(`${(+v).toFixed(0)} dBm`);
 function fig(title, body, src) {
   return `<div class="fig"><div class="ft"><span>${title}</span>${src ? `<span class="src">${src}</span>` : ''}</div>${body}</div>`;
@@ -360,7 +360,7 @@ function figCode() {
   const g = GOLD(), r = run();
   return fig(`code 0x${D.code.toString(16).toUpperCase()}: what is sent, and what the receiver decided at ${DBM(prx())}`,
     strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {aria: 'sent and received chips'}),
-    'model/ link model, one burst') + `<p>${N(r.chip_ok + '/127', 7)} chips right: ${N(r.chip_ok < 97 ? 'below 97, not a detection' : '97 or more, a detection', 25).replace('right', 'left')}. Wrong chips are red.</p>`;
+    'model/ link model, one burst') + `<p>${N(r.chip_ok + '/127', 7)} chips right: ${N(r.chip_ok < 97 ? 'below 97, not a detection' : '97 or more, a detection', 25, 'left')}. Wrong chips are red.</p>`;
 }
 function figPath() {
   const p = D.path, fit = {x: [], y: []};
@@ -482,6 +482,7 @@ function linkScene() {
       <text x="${x - 102}" y="93" fill="${color}" font-size="20" text-anchor="middle" font-weight="600">${label}</text>
       <text x="${x - 54}" y="80" fill="#9db0bc" font-size="13">${pin}</text>
       <text x="${x - 54}" y="102" fill="#e8eef2" font-size="14">${sub}</text>
+      <text x="${x + 140}" y="66" fill="var(--sig)" font-size="12" text-anchor="end">open ›</text>
       <path d="M ${x + side * 150} 82 H ${x + side * 168} V 44 M ${x + side * 150} 90 H ${x + side * 168} V 128" fill="none" stroke="#c8d3da" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </g>`;
   let waves = '';
@@ -494,14 +495,17 @@ function linkScene() {
     </g>
     ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'tx', 'ua[3] / ua[4]', 1)}
     ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'rx', 'ua[0] / ua[1]', -1)}
-    <circle id="led" cx="${rx + 128}" cy="34" r="10" fill="#2a3741" stroke="#000"/>
-    <text x="${rx + 112}" y="39" fill="#9db0bc" font-size="12" text-anchor="end">LED</text>
+    <g class="hit" role="button" tabindex="0" data-block="led" aria-label="The LED: 2 of 3 bursts confirm a send">
+      <rect class="hl" x="${rx + 76}" y="20" width="68" height="28" rx="6" fill="#ffffff00"/>
+      <circle id="led" cx="${rx + 128}" cy="34" r="10" fill="#2a3741" stroke="#000"/>
+      <text x="${rx + 112}" y="39" fill="#9db0bc" font-size="12" text-anchor="end">LED</text>
+    </g>
   </svg>`;
 }
 function levelLink() {
   const p = prx(), r = run(), margin = p - SENS;
   return `<h1>Send a 1 by switching the radio on. Send a 0 by switching it off.</h1>
-  <p class="lede">Two boards run the same chip: one transmits, the other receives. Each antenna is two bare wires. Click a board to open its signal chain, or the gap between them for the path loss.</p>
+  <p class="lede">Two boards run the same chip: one transmits, the other receives. Each antenna is two bare wires. Click a board to open its signal chain, the gap for the path loss, the LED for how a send is confirmed, or the chips below for the idea.</p>
   ${linkScene()}
   <div class="readouts">
     <div class="ro"><small>TX power</small><b>+4 dBm</b></div>
@@ -509,15 +513,9 @@ function levelLink() {
     <div class="ro"><small>received</small><b>${p.toFixed(0)} dBm</b></div>
     <div class="ro"><small>margin to −94 dBm</small><b class="${margin >= 0 ? 'good' : 'bad'}">${margin >= 0 ? '+' : ''}${margin.toFixed(0)} dB</b></div>
     <div class="ro"><small>live score</small><b id="live">–</b></div>
-    <button type="button" class="ro ro-btn" data-block="led" aria-pressed="${S.block === 'led'}"><small>LED (2 of 3 bursts) ›</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'missed'}</b></button>
+    <div class="ro"><small>LED (2 of 3 bursts)</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'missed'}</b></div>
   </div>
-  <div id="codestrip">${anim.cs || ''}</div>
-  <div class="row" style="gap:.6rem">
-    <button type="button" class="blk dig" data-block="ook" aria-pressed="${S.block === 'ook'}"><b>on-off keying</b><span>the idea, chip by chip</span></button>
-    <button type="button" class="blk rx" data-block="air" aria-pressed="${S.block === 'air'}"><b>over the air</b><span>measured path loss</span></button>
-    <button type="button" class="blk tx" data-go="tx"><b>transmitter →</b><span>Gold code, ring, drivers</span></button>
-    <button type="button" class="blk rx" data-go="rx"><b>receiver →</b><span>amplifiers, detector, decisions</span></button>
-  </div>`;
+  <div class="hit striphit" role="button" tabindex="0" data-block="ook" aria-pressed="${S.block === 'ook'}" aria-label="On-off keying: the idea, chip by chip"><div id="codestrip">${anim.cs || ''}</div></div>`;
 }
 function blk(id, cls, sub, thumb) {
   return `<button type="button" class="blk ${cls}" data-block="${id}" aria-pressed="${S.block === id}"><b>${B[id].name}</b><span>${sub}</span>${thumb || ''}</button>`;
@@ -668,7 +666,7 @@ const anim = {
     const cs = $('codestrip');
     if (cs && (this._pos !== ib || this._lvl !== r.lvl || !cs.firstChild)) {
       this._pos = ib; this._lvl = r.lvl;
-      cs.innerHTML = this.cs = fig(`burst ${Math.min(b + 1, 3)} of 3 · chip ${N(b < 3 && ib < 127 ? ib + 1 : '–', 3)} · carrier ${N(on ? 'ON' : 'off', 3).replace('right', 'left')}`,
+      cs.innerHTML = this.cs = fig(`burst ${Math.min(b + 1, 3)} of 3 · chip ${N(b < 3 && ib < 127 ? ib + 1 : '–', 3)} · carrier ${N(on ? 'ON' : 'off', 3, 'left')}`,
         strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {ph: b < 3 && ib < 127 ? ib : -1, aria: 'sent and received chips'}),
         `received chips: link model run at ${DBM(r.lvl)}`);
     }
@@ -684,7 +682,7 @@ document.addEventListener('click', e => {
   if (t.dataset.go) { go(t.dataset.go); return; }
   const id = t.dataset.block;
   S.block = S.block === id ? null : id;
-  if (B[id] && B[id].lvl !== 'link' && S.level === 'link' && id !== 'air' && id !== 'ook' && !t.closest('.ro')) S.level = B[id].lvl;
+  if (B[id] && B[id].lvl !== 'link' && S.level === 'link' && !['air', 'ook', 'led'].includes(id)) S.level = B[id].lvl;
   render();
 });
 document.addEventListener('keydown', e => {
