@@ -24,3 +24,24 @@
 
 * the interactive explainer was fun, and uses all the simulation files
 * I need bigger computers!
+
+# timing
+
+Wed 7 Oct: architecture and front-end sims
+- Plan, models, TT analog template; digital RTL bit-exact against the model
+- RX chain, log detector, LPF, comparator and averaging reference designed; end-to-end sim holds −94 dBm
+
+Thu 8 Oct: TX, hardening, block layout
+- TX ring, level shifter and drivers designed; RX corners at 10–50 °C
+- Digital hardened with LibreLane and passes GL 15/15; mixed-signal sim detects −94 dBm
+- Every leaf block laid out clean (DRC/LVS/PEX); floorplan page built
+
+Fri 9 Oct: clean tile
+- Floorplan chosen; blocks repinned and macro re-hardened
+- Top level routed (93 nets): LVS clean, DRC 0, precheck pass; gds/lef exported
+- Power-delivery study; how_it_works and verification docs
+
+Sat 10 Oct: power fixes and explainer
+- EM hotspot found, then fixed over three rounds; power-fix merged and re-exported
+- Interactive explainer built
+- Before the shuttle: TX frequency, extracted-tile runs, final precheck, first submission to ttsky26d
