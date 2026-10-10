@@ -524,7 +524,7 @@ function levelLink() {
     <div class="ro"><small>distance${dist() > 4 ? ' (extrapolated)' : ''}</small><b>${fmtd(dist())}</b></div>
     <div class="ro"><small>received</small><b>${p.toFixed(0)} dBm</b></div>
     <div class="ro"><small>margin to −94 dBm</small><b class="${margin >= 0 ? 'good' : 'bad'}">${margin >= 0 ? '+' : ''}${margin.toFixed(0)} dB</b></div>
-    <div class="ro"><small>live score</small><b id="live">–</b></div>
+    <div class="ro"><small>correlator</small><b id="live">–</b></div>
     <div class="ro"><small>LED (2 of 3 bursts)</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'missed'}</b></div>
   </div>
   <div class="hit striphit" role="button" tabindex="0" data-block="ook" aria-pressed="${S.block === 'ook'}" aria-label="On-off keying: the idea, chip by chip"><div id="codestrip">${anim.cs || ''}</div></div>`;
