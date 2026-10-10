@@ -7,12 +7,12 @@ xschem -n -s -q -o build xschem/tb_logdet.sch
 xschem -n -s -q -o build xschem/tb_rx_bb.sch
 # bench/scope.py imports pyvisa (instrument driver), not needed here: stub it
 mkdir -p build/explainer_stub && touch build/explainer_stub/pyvisa.py
-PYTHONPATH=build/explainer_stub python3 sim/rx/gen_det.py -110 -100 -94 -90 -86 -82 -78 -74 -70
+PYTHONPATH=build/explainer_stub python3 sim/rx/gen_det.py -110 -100 -94 -90 -86 -82 -78 -74 -70 -60 -50 -40 -30 -25
 cd build
 ../sim/rx/rf.sh
-(cd .. && docs/explainer/rf_levels.sh rx_rf_tone -110 -100 -90 -80 -70 -50 -40 -30)   # stage-by-stage tone at more levels
-(cd .. && docs/explainer/rf_levels.sh rx_rf_key -110 -100 -90 -80 -70 -50 -40 -30)    # keyed detector at more levels; ~20 min
-../sim/rx/bb.sh -110 -100 -94 -90 -86 -82 -78 -74 -70
+(cd .. && docs/explainer/rf_levels.sh rx_rf_tone -25 -110 -100 -90 -80 -70 -50 -40 -30)   # stage-by-stage tone at more levels
+(cd .. && docs/explainer/rf_levels.sh rx_rf_key -25 -110 -100 -90 -80 -70 -50 -40 -30)    # keyed detector at more levels; ~20 min
+../sim/rx/bb.sh -110 -100 -94 -90 -86 -82 -78 -74 -70 -60 -50 -40 -30 -25
 # TX chain (ring, level-shifter latch a/b, drivers, dipole): build/tb_tx_ab.raw
 cd ..
 xschem -n -s -q -o build xschem/tb_tx.sch

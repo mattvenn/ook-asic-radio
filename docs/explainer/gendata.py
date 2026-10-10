@@ -146,8 +146,8 @@ def sample_bits(t, comp, n):
     return ts, (np.interp(ts, t, comp) > 0.9).astype(np.uint8)
 
 
-KEY_LEVELS = [-30, -40, -50, -60, -70, -80, -90, -100, -110]   # rf.sh's tone and keyed runs repeated at these (rf_levels.sh)
-BB_LEVELS = [-70, -74, -78, -82, -86, -90, -94, -100, -110]   # sims.sh runs these (sim/rx/gen_det.py + sim/rx/bb.sh)
+KEY_LEVELS = [-25, -30, -40, -50, -60, -70, -80, -90, -100, -110]   # rf.sh's tone and keyed runs repeated at these (rf_levels.sh)
+BB_LEVELS = [-25, -30, -40, -50, -60, -70, -74, -78, -82, -86, -90, -94, -100, -110]   # sims.sh runs these (sim/rx/gen_det.py + sim/rx/bb.sh)
 
 
 def baseband(lvl):

@@ -197,7 +197,7 @@ const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.s
 const GDS = (n, dir = 'layout') => 'https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/' + dir + '/' + n + '.gds';
 const SENS = -94;
 let D = null;                       // decoded payload
-const S = {level: 'link', focus: null, block: null, p: -44, step: 0, playing: true, bbLvl: null};
+const S = {level: 'link', focus: null, block: null, p: -44, step: 0, playing: true};
 
 // ------------------------------------------------------------------ data
 async function load() {
@@ -428,23 +428,37 @@ function figTx(keys) {
   if (keys.includes('dipole')) h += fig('voltage across the dipole', plot({series: [{d: dec(D.tx.dipole), label: TXL.dipole[0], color: TXL.dipole[1], w: 1}], xl: 'time (ns)', yl: 'V', h: 200}));
   return h;
 }
+/* the slider sits between simulated levels: find the two runs either side and how far between them it is, in dB */
+function bracket(runs, p) {
+  const r = [...runs].sort((a, b) => a.lvl - b.lvl), q = Math.max(r[0].lvl, Math.min(r[r.length - 1].lvl, p));
+  let i = 0; while (i < r.length - 2 && r[i + 1].lvl < q) i++;
+  const lo = r[i], hi = r[Math.min(i + 1, r.length - 1)], w = hi.lvl === lo.lvl ? 0 : (q - lo.lvl) / (hi.lvl - lo.lvl);
+  return {lo, hi, w};
+}
+const blend = (a, b, w) => ({x: a.x, y: a.y.map((v, i) => v * (1 - w) + b.y[i] * w)});
+const runsNote = (br, what) => `${what} ${N(br.lo.lvl, 4)} and ${N(br.hi.lvl, 4)} dBm runs, interpolated`;
 function figChain() {
   if (!D.rx_rf) return NODATA('RX RF');
   // the tone transient nearest the slider (rf.sh's -60 dBm run, plus rf_levels.sh's other levels)
   const TL = D.rx_rf.tone_levels && D.rx_rf.tone_levels.length ? D.rx_rf.tone_levels : [{lvl: -60, nodes: D.rx_rf.nodes}];
-  const tl = TL.reduce((a, b) => Math.abs(b.lvl - prx()) < Math.abs(a.lvl - prx()) ? b : a);
-  const n = tl.nodes, x = n.map((_, i) => i), y = n.map(v => v.vpk * 1000);
+  // between two runs: each stage's waveform shape is blended and scaled by the geometric mean of the two amplitudes (a straight
+  // average of a 1 mV and a 10 mV run would give 5.5 mV; in dB the midpoint is 3.2 mV)
+  const br = bracket(TL, prx()), w = br.w;
+  const n = br.lo.nodes.map((a, i) => { const b = br.hi.nodes[i], A = a.vpk, Bv = b.vpk, amp = A > 0 && Bv > 0 ? Math.pow(A, 1 - w) * Math.pow(Bv, w) : A * (1 - w) + Bv * w;
+    const da = dec(a.w, 1000), db = dec(b.w, 1000);
+    return {label: a.label, vpk: amp, d: {x: da.x, y: da.y.map((v, j) => ((1 - w) * v / (A * 1000 || 1) + w * db.y[j] / (Bv * 1000 || 1)) * amp * 1000)}}; });
+  const x = n.map((_, i) => i), y = n.map(v => v.vpk * 1000);
   // at the received power now: each stage's output from the chain's CW sweep (taps o1..o5, out = stages 1..6), log-interpolated
   const L = D.logdet, p = Math.max(L.pin[0], Math.min(L.pin[L.pin.length - 1], prx()));
   const nowY = L.tap_amp.map(a => 1000 * Math.pow(10, interp(p, L.pin, a.map(Math.log10)))), nowX = nowY.map((_, i) => i + 2);
-  let h = fig(`peak signal at each point: at ${DBM(prx())} now, and the ${DBM(tl.lvl)} tone transient`, plot({series: [
+  let h = fig(`peak signal at each point at ${DBM(prx())}: the CW sweep and the tone transient`, plot({series: [
       {d: {x: nowX, y: nowY}, color: 'var(--sig2)', label: 'now (CW sweep)', w: 2.5}, {d: {x: nowX, y: nowY}, color: 'var(--sig2)', pts: true},
-      {d: {x, y}, color: 'var(--rx)', label: 'tone transient (nearest simulated level)', w: 1.5, op: .7}, {d: {x, y}, color: 'var(--rx)', pts: true}],
-    ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), 'sim/logdet/taps.txt + build/rx_rf_tone*.raw, tt');
+      {d: {x, y}, color: 'var(--rx)', label: 'tone transient', w: 1.5, op: .7}, {d: {x, y}, color: 'var(--rx)', pts: true}],
+    ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), runsNote(br, 'taps.txt + rx_rf_tone'));
   h += '<p>Each stage multiplies the signal until the last stages limit at ~1 V: that limiting is what the log detector uses.</p>';
   const cols = ['#4c6b78', '#5d8592', 'var(--rx)', 'var(--rx)', 'var(--rx)', 'var(--sig2)', 'var(--sig2)', 'var(--sig2)'];
   if (!D._tly) { let m = 0; for (const l of TL) for (const v of l.nodes) m = Math.max(m, v.vpk * 1000); D._tly = [-m * 1.05, m * 1.05]; }   // one range over every level
-  h += fig(`the same 10 ns at every stage, ${DBM(tl.lvl)} tone (differential, so it swings both ways)`, plot({series: n.map((v, i) => ({d: dec(v.w, 1000), color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240, ylim: D._tly}));
+  h += fig(`the same 10 ns at every stage, ${DBM(prx())} tone (differential, so it swings both ways)`, plot({series: n.map((v, i) => ({d: v.d, color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240, ylim: D._tly}), runsNote(br, 'rx_rf_tone'));
   return h;
 }
 function figLogdet() {
@@ -457,19 +471,15 @@ function figLogdet() {
     ylog: true, ylim: [1e-4, 3], xl: 'input power (dBm)', yl: 'V peak (log)', h: 240, vl: [{x: Math.max(-110, Math.min(-10, p)), color: '#fff', label: p.toFixed(0) + ' dBm'}]}));
   const KL = D.rx_rf && D.rx_rf.key_levels;
   if (KL && KL.length) {     // the keyed run nearest the slider, on one y range over every level so the step grows and shrinks
-    const k = KL.reduce((a, b) => Math.abs(b.lvl - p) < Math.abs(a.lvl - p) ? b : a);
+    const br = bracket(KL, p), kd = blend(dec(br.lo.det), dec(br.hi.det), br.w);   // the detector is linear in dB: a straight blend
     if (!D._kly) { let lo = Infinity, hi = -Infinity; for (const l of KL) for (const v of dec(l.det).y) { lo = Math.min(lo, v); hi = Math.max(hi, v); } D._kly = [lo - (hi - lo) * .05, hi + (hi - lo) * .05]; }
-    h += fig(`carrier keyed on at 0.5 µs, off at 2.5 µs: ${DBM(k.lvl)}, the simulated level nearest the slider`, plot({series: [{d: dec(k.det), color: 'var(--rx)', label: 'det (V)'}], xl: 'time (µs)', yl: 'det (V)', h: 180, ylim: D._kly}), 'build/rx_rf_key*.raw, tt');
+    h += fig(`carrier keyed on at 0.5 µs, off at 2.5 µs, ${DBM(p)}`, plot({series: [{d: kd, color: 'var(--rx)', label: 'det (V)'}], xl: 'time (µs)', yl: 'det (V)', h: 180, ylim: D._kly}), runsNote(br, 'rx_rf_key'));
   }
   return h;
 }
-function bb() {
+function bb() {   // the run nearest the slider: for sampled bits, which can't be interpolated
   if (!D.bb.length) return null;
-  if (S.bbLvl == null) S.bbLvl = D.bb.reduce((a, b) => Math.abs(b.lvl - prx()) < Math.abs(a.lvl - prx()) ? b : a).lvl;   // nearest simulated level to the slider
-  return D.bb.find(b => b.lvl === S.bbLvl) || D.bb[0];
-}
-function bbPick() {
-  return `<div class="segrow"><span>input level (dBm)</span><div class="seg" role="group" aria-label="Input level, dBm">${D.bb.map(b => `<button type="button" data-bb="${b.lvl}" aria-pressed="${b.lvl === S.bbLvl}">${b.lvl}</button>`).join('')}</div></div>`;
+  return D.bb.reduce((a, b) => Math.abs(b.lvl - prx()) < Math.abs(a.lvl - prx()) ? b : a);
 }
 const BBL = {det: ['det (1 µs blocks)', '#6f8491', 0.8], lpf: ['after lpf_rc', 'var(--sig)', 1.6], avg: ['slow average', 'var(--sig2)', 2.6]};
 /* one y range over every simulated level, so stepping down in power shows the signal shrinking */
@@ -481,21 +491,23 @@ function bbRange(keys, scale = 1000) {
   return BBY[id];
 }
 function figBB(keys) {
-  const b = bb(); if (!b) return NODATA('baseband');
-  const ser = keys.map(k => ({d: dec(b[k]), label: BBL[k][0], color: BBL[k][1], w: BBL[k][2], op: k === 'det' ? 0.7 : 1}));
-  const yl = bbRange(keys, 1);
-  return bbPick() + fig(`${DBM(b.lvl)}, 3 ms of one burst: bits "on" pull the detector down from its ${b.base.toFixed(2)} V no-signal level`,
-    plot({series: ser, xl: 'time (ms)', yl: 'V', h: 280, ylim: yl}), 'build/rx_bb_*.raw, tt');
+  if (!D.bb.length) return NODATA('baseband');
+  // between two runs: a straight blend (the detector is linear in dB). The runs' noise is independent, so mid-way the blend is a bit quieter than either.
+  const br = bracket(D.bb, prx());
+  const ser = keys.map(k => ({d: blend(dec(br.lo[k]), dec(br.hi[k]), br.w), label: BBL[k][0], color: BBL[k][1], w: BBL[k][2], op: k === 'det' ? 0.7 : 1}));
+  return fig(`${DBM(prx())}, 3 ms of one burst: bits "on" pull the detector down from its ${br.lo.base.toFixed(2)} V no-signal level`,
+    plot({series: ser, xl: 'time (ms)', yl: 'V', h: 280, ylim: bbRange(keys, 1)}), runsNote(br, 'rx_bb'));
 }
 function figComp() {
   const b = bb(); if (!b) return NODATA('baseband');
   const bits = unpack(b.bits, b.nbits), truth = unpack(b.truth, b.nbits), n = Math.min(240, b.nbits);
-  return figBB(['lpf', 'avg']) + fig(`sampled comparator vs the bit actually sent (first ${n} samples): right ${N(b.agree + '%', 6)} over the whole burst`,
+  return figBB(['lpf', 'avg']) + fig(`sampled comparator vs the bit actually sent, nearest run (${DBM(b.lvl)}): right ${N(b.agree + '%', 6)} over the whole burst`,
     strip([{bits: truth.slice(0, n), label: 'sent', color: 'var(--tx)'}, {bits: bits.slice(0, n), label: 'comparator', color: 'var(--rx)', cmp: truth.slice(0, n)}], {h: 22}));
 }
 function figTrim() {
-  const b = bb(); if (!b) return NODATA('baseband');
-  return bbPick() + fig(`trim DAC voltage during the burst, ${DBM(b.lvl)} (servo stand-in in this run)`, plot({series: [{d: dec(b.trim), color: 'var(--dac)', label: 'trim (V)', w: 2}], xl: 'time (ms)', yl: 'V', h: 220, ylim: bbRange(['trim'], 1)}), 'build/rx_bb_*.raw') +
+  if (!D.bb.length) return NODATA('baseband');
+  const br = bracket(D.bb, prx());
+  return fig(`trim DAC voltage during the burst, ${DBM(prx())} (servo stand-in in this run)`, plot({series: [{d: blend(dec(br.lo.trim), dec(br.hi.trim), br.w), color: 'var(--dac)', label: 'trim (V)', w: 2}], xl: 'time (ms)', yl: 'V', h: 220, ylim: bbRange(['trim'], 1)}), runsNote(br, 'rx_bb')) +
     '<p>In the chip the digital servo drives this; the mixed-signal run with the real RTL shows the code settling and dithering at −94 dBm (sim/plots/mixed_-94.png).</p>';
 }
 /* the bit slicer in action: real comparator samples from the transistor-level baseband run (8 per 104 µs bit), and the four
@@ -566,7 +578,7 @@ function slicerFig(i) {
 }
 function figSlicer() {
   const b = bb(); if (!b) return NODATA('baseband');
-  return bbPick() + fig(`comparator samples at ${DBM(b.lvl)}, 8 per bit, voted by the four slicers`,
+  return fig(`comparator samples, nearest run (${DBM(b.lvl)}), 8 per bit, voted by the four slicers`,
     `<div id="slfig">${slicerFig(SL_N)}</div>`, 'build/rx_bb_*.raw, tt');
 }
 function figScore() {
@@ -876,7 +888,7 @@ function glideTo(target, ms = 1200) {
     if (id !== glideId) return;
     if (t0 == null) t0 = now;
     const u = Math.max(0, Math.min(1, (now - t0) / ms)), e = u < .5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u);
-    S.p = from + (target - from) * e; S.bbLvl = null; render();
+    S.p = from + (target - from) * e; render();
     if (u < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -884,7 +896,7 @@ function glideTo(target, ms = 1200) {
 function setStep(i, initial = false) {
   S.step = Math.max(0, Math.min(TOUR.length - 1, i));
   const t = TOUR[S.step];
-  S.level = t.level; S.focus = t.focus || null; S.block = t.block; S.bbLvl = null;
+  S.level = t.level; S.focus = t.focus || null; S.block = t.block;
   history.replaceState(null, '', '#step=' + S.step);
   if (t.p != null && initial) { glideId++; S.p = t.p; }
   render();
@@ -962,9 +974,8 @@ const anim = {
 document.addEventListener('click', e => {
   const dip = e.target.closest('[data-dip]');
   if (dip) { const k = S.dip == null ? D.code : S.dip; S.dip = k ^ (1 << +dip.dataset.dip); render(); return; }
-  const t = e.target.closest('[data-go],[data-block],[data-bb]');
+  const t = e.target.closest('[data-go],[data-block]');
   if (!t) return;
-  if (t.dataset.bb) { S.bbLvl = +t.dataset.bb; render(); return; }
   if (t.dataset.go) { go(t.dataset.go); return; }
   const id = t.dataset.block;
   if (!B[id]) return;
@@ -980,11 +991,11 @@ document.addEventListener('keydown', e => {
   else if (k === 'ArrowLeft') { e.preventDefault(); setStep(S.step - 1); }
   else if (k === 'Escape') { if (S.block) S.block = null; else if (S.focus) S.focus = null; else S.level = 'link'; render(); }
   else if (k === '1') go('link'); else if (k === '2') go('chip'); else if (k === '3') go('chip:tx'); else if (k === '4') go('chip:rx');
-  else if ((k === '[' || k === ']') && usesPower()) { glideId++; S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); S.bbLvl = null; render(); }
+  else if ((k === '[' || k === ']') && usesPower()) { glideId++; S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); render(); }
   else if (k === 'p') S.playing = !S.playing;
   else if (k === '?') $('help').hidden = false;
 });
-$('dist').addEventListener('input', e => { glideId++; S.p = -e.target.value; S.bbLvl = null; render(); $('dist').focus(); });
+$('dist').addEventListener('input', e => { glideId++; S.p = -e.target.value; render(); $('dist').focus(); });
 $('dist').addEventListener('pointerdown', () => { S.dragging = true; });
 addEventListener('pointerup', () => { if (S.dragging) { S.dragging = false; anim.reset(); anim._si = null; } });
 $('dist').addEventListener('change', () => { S.dragging = false; anim.reset(); anim._si = null; });   // keyboard or release: start the sweep from chip 1
