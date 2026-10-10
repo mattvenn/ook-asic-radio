@@ -259,30 +259,37 @@ const PLOTS = {};
    and text in CSS pixels (GEO.f), so a wide column doesn't make a tall plot */
 const GEO = {w: 800, ph: 1, f: 14};
 function plot(opts) {
-  const F = GEO.f, W = GEO.w, H = Math.max(Math.round((opts.h || 250) * GEO.ph), Math.min(opts.h || 250, 140)), L = Math.round(F * 4.7), R = 14, T = 12, Bm = Math.round(F * 3);
+  const F = GEO.f, W = GEO.w, H = Math.max(Math.round((opts.h || 250) * GEO.ph), Math.min(opts.h || 250, 140)), L = Math.round(F * 4.7), R = opts.y2lim ? Math.round(F * 4.2) : 14, T = 12, Bm = Math.round(F * 3);   // y2lim: a second axis on the right for series with y2: true
   const id = 'p' + (plotId++);
   const tx = opts.xlog ? Math.log10 : v => v, ty = opts.ylog ? Math.log10 : v => v;
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   opts.series.forEach(s => { if (s.band) { s.band.x.forEach((X, i) => { x0 = Math.min(x0, tx(X)); x1 = Math.max(x1, tx(X)); y0 = Math.min(y0, ty(s.band.lo[i])); y1 = Math.max(y1, ty(s.band.hi[i])); }); return; }
-    if (!s.d) return; for (let i = 0; i < s.d.x.length; i++) {
+    if (!s.d || s.y2) return; for (let i = 0; i < s.d.x.length; i++) {
     const X = tx(s.d.x[i]), Y = ty(s.d.y[i]); if (!isFinite(X) || !isFinite(Y)) continue;
     x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y); } });
   if (opts.xlim) [x0, x1] = opts.xlim.map(tx);
   if (opts.ylim) [y0, y1] = opts.ylim.map(ty); else { const p = (y1 - y0) * 0.08 || 1; y0 -= p; y1 += p; }
   const sx = v => L + (tx(v) - x0) / (x1 - x0) * (W - L - R), sy = v => T + (1 - (ty(v) - y0) / (y1 - y0)) * (H - T - Bm);
+  const sy2 = opts.y2lim ? v => T + (1 - (v - opts.y2lim[0]) / (opts.y2lim[1] - opts.y2lim[0])) * (H - T - Bm) : sy;
   let g = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${opts.aria || opts.yl || 'plot'}" id="${id}">`;
   (opts.bands || []).forEach(b => g += `<rect x="${sx(b.x0)}" y="${T}" width="${sx(b.x1) - sx(b.x0)}" height="${H - T - Bm}" fill="${b.color}"/>`);
   const xt = opts.xlog ? [0.1, 1, 10, 100, 1000].filter(v => tx(v) >= x0 - 1e-9 && tx(v) <= x1 + 1e-9) : ticks(x0, x1, 6);
   const yt = opts.ylog ? [1e-4, 1e-3, 1e-2, 0.1, 1, 10, 100, 1000].filter(v => ty(v) >= y0 && ty(v) <= y1) : ticks(y0, y1, 4);
   xt.forEach(v => g += `<line x1="${sx(v)}" x2="${sx(v)}" y1="${T}" y2="${H - Bm}" stroke="#1f2a32"/><text x="${sx(v)}" y="${H - Bm + F + 4}" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.xfmt ? opts.xfmt(v) : fmt(v)}</text>`);
-  yt.forEach(v => g += `<line x1="${L}" x2="${W - R}" y1="${sy(v)}" y2="${sy(v)}" stroke="#1f2a32"/><text x="${L - 8}" y="${sy(v) + F * .36}" fill="#8a9ca8" font-size="${F}" text-anchor="end">${opts.yfmt ? opts.yfmt(v) : fmt(v)}</text>`);
+  yt.forEach(v => g += `<line x1="${L}" x2="${W - R}" y1="${sy(v)}" y2="${sy(v)}" stroke="#1f2a32"/><text x="${L - 8}" y="${sy(v) + F * .36}" fill="${opts.ycolor || '#8a9ca8'}" font-size="${F}" text-anchor="end">${opts.yfmt ? opts.yfmt(v) : fmt(v)}</text>`);
+  if (opts.y2lim) {
+    ticks(opts.y2lim[0], opts.y2lim[1], 4).forEach(v => g += `<text x="${W - R + 8}" y="${sy2(v) + F * .36}" fill="${opts.y2color || '#8a9ca8'}" font-size="${F}">${fmt(v)}</text>`);
+    if (opts.y2l) g += `<text x="${W - 4}" y="${T + F}" fill="${opts.y2color || '#8a9ca8'}" font-size="${F}" text-anchor="end">${opts.y2l}</text>`;
+  }
   if (opts.xl) g += `<text x="${(L + W - R) / 2}" y="${H - 6}" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.xl}</text>`;
-  if (opts.yl && opts.yl.length <= 3) g += `<text x="4" y="${T + F}" fill="#8a9ca8" font-size="${F}">${opts.yl}</text>`;
+  if (opts.yl && opts.yl.length <= 3) g += `<text x="4" y="${T + F}" fill="${opts.ycolor || '#8a9ca8'}" font-size="${F}">${opts.yl}</text>`;
   else if (opts.yl) g += `<text transform="translate(${F + 2} ${(T + H - Bm) / 2}) rotate(-90)" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.yl}</text>`;
   (opts.hl || []).forEach(h => g += `<line x1="${L}" x2="${W - R}" y1="${sy(h.y)}" y2="${sy(h.y)}" stroke="${h.color}" stroke-dasharray="6 5" stroke-width="1.5"/>` + (h.label ? `<text x="${W - R - 6}" y="${sy(h.y) - 6}" fill="${h.color}" font-size="${F}" text-anchor="end">${h.label}</text>` : ''));
   (opts.vl || []).forEach(h => g += `<line x1="${sx(h.x)}" x2="${sx(h.x)}" y1="${T}" y2="${H - Bm}" stroke="${h.color}" stroke-width="2"/>` + (h.label ? `<text x="${sx(h.x) + (sx(h.x) > W - 90 ? -6 : 6)}" y="${T + F + 2}" fill="${h.color}" font-size="${F}" text-anchor="${sx(h.x) > W - 90 ? 'end' : 'start'}">${h.label}</text>` : ''));
+  const sy1 = sy;
   g += `<clipPath id="${id}c"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - Bm}"/></clipPath><g clip-path="url(#${id}c)">`;
   opts.series.forEach(s => {
+    const sy = s.y2 ? sy2 : sy1;
     if (s.band) { const b = s.band, up = Array.from(b.x, (X, i) => `${sx(X).toFixed(1)},${sy(b.hi[i]).toFixed(1)}`), dn = Array.from(b.x, (X, i) => `${sx(X).toFixed(1)},${sy(b.lo[i]).toFixed(1)}`).reverse();
       g += `<polygon points="${up.concat(dn).join(' ')}" fill="${s.color}" fill-opacity="${s.op || .55}" stroke="${s.color}" stroke-width="0.6"/>`; return; }
     if (!s.d) return;
@@ -490,9 +497,10 @@ function figLogdet() {
     const z = !!S.ldZoom;
     h += `<div class="segrow"><div class="seg" role="group" aria-label="Time span"><button type="button" data-ldzoom="0" aria-pressed="${!z}">whole 3.5 µs (RF drawn as its envelope)</button><button type="button" data-ldzoom="1" aria-pressed="${z}">zoom: 40 ns at switch-on</button></div></div>`;
     h += fig(`the RF going in, and the detector's output, at ${DBM(p)}`,   // same title and legends in both views, so toggling never moves the plots
-      plot({series: [z ? {d: zr, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV)', w: 1.2}
-                       : {band: {x, lo, hi}, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV)'}], yl: 'mV', h: 120, ylim: D._kry}) +
-      plot({series: [{d: z ? bw('det_z') : bw('det'), color: 'var(--rx)', label: 'det (V)', w: 2}], xl: z ? 'time (ns)' : 'time (µs)', yl: 'det (V)', h: 140, ylim: D._kly}), runsNote(br, 'rx_rf_key'));
+      plot({series: [z ? {d: zr, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV, left axis)', w: 1.2, op: .8}
+                       : {band: {x, lo, hi}, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV, left axis)', op: .35},
+                     {d: z ? bw('det_z') : bw('det'), color: 'var(--rx)', label: 'detector output (V, right axis)', w: 2.5, y2: true}],
+        xl: z ? 'time (ns)' : 'time (µs)', yl: 'mV', ycolor: 'var(--sig2)', ylim: D._kry, y2lim: D._kly, y2l: 'V', y2color: 'var(--rx)', h: 240}), runsNote(br, 'rx_rf_key'));
   }
   return h;
 }
