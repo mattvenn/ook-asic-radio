@@ -505,7 +505,7 @@ function levelLink() {
     <div class="ro"><small>live score</small><b id="live">–</b></div>
     <button type="button" class="ro ro-btn" data-block="led" aria-pressed="${S.block === 'led'}"><small>LED (2 of 3 bursts ≥ 97) ›</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'missed'}${marginal() ? ' (marginal)' : ''}</b></button>
   </div>
-  <div id="codestrip"></div>
+  <div id="codestrip">${anim.cs || ''}</div>
   <div class="row" style="gap:.6rem">
     <button type="button" class="blk dig" data-block="ook" aria-pressed="${S.block === 'ook'}"><b>on-off keying</b><span>the idea, chip by chip</span></button>
     <button type="button" class="blk rx" data-block="air" aria-pressed="${S.block === 'air'}"><b>over the air</b><span>measured path loss</span></button>
@@ -660,9 +660,9 @@ const anim = {
     const live = $('live'); if (live) { const sc = b < 3 ? r._s[li] : '–'; live.textContent = sc; live.className = sc >= m.thresh ? 'good' : ''; }
     const led = $('led'); if (led) { const lit = r.toggled && pos >= m.period + 127 + 8; led.setAttribute('fill', lit ? 'var(--ok)' : '#2a3741'); }
     const cs = $('codestrip');
-    if (cs && (this._pos !== ib || this._lvl !== r.lvl)) {
+    if (cs && (this._pos !== ib || this._lvl !== r.lvl || !cs.firstChild)) {
       this._pos = ib; this._lvl = r.lvl;
-      cs.innerHTML = fig(`burst ${Math.min(b + 1, 3)} of 3 · chip ${b < 3 && ib < 127 ? ib + 1 : '–'} · carrier ${on ? 'ON' : 'off'}`,
+      cs.innerHTML = this.cs = fig(`burst ${Math.min(b + 1, 3)} of 3 · chip ${b < 3 && ib < 127 ? ib + 1 : '–'} · carrier ${on ? 'ON' : 'off'}`,
         strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {ph: b < 3 && ib < 127 ? ib : -1, aria: 'sent and received chips'}),
         `received chips: link model at ${r.lvl} dBm${prx() > r.lvl + 1 ? ' (strongest run)' : ''}`);
     }
