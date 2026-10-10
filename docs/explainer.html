@@ -37,8 +37,6 @@ nav.crumbs .sep{color:var(--faint)}
 .navbtns button:hover{border-color:var(--sig)}
 .navbtns span{font-family:var(--mono); color:var(--muted); font-size:.85rem; flex:none; width:7ch; text-align:center}
 main{flex:1; display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; padding:1.25rem; align-items:start}
-main.has-detail{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
-@media (max-width:1000px){ main.has-detail{grid-template-columns:minmax(0,1fr)} }
 .stage{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.1rem; min-width:0}
 .stage > .inner{display:flex; flex-direction:column; gap:1rem}
 .stage h1{margin:0; font-size:1.55rem; line-height:1.2; letter-spacing:-.01em}
@@ -70,6 +68,20 @@ svg text{font-family:var(--sans)}
 .blk:hover{border-color:var(--sig)}
 .blk[aria-pressed=true]{outline:3px solid var(--sig); outline-offset:1px}
 .arrow{align-self:center; color:var(--faint); font-size:1.2rem; flex:0 0 auto}
+.focus{display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:1.5rem; align-items:start}
+.focus .side{display:flex; flex-direction:column; gap:.9rem; min-width:0}
+.focus .side h2{margin:0; font-family:var(--mono); font-weight:500; font-size:1.45rem}
+.focus .side .top{display:flex; justify-content:space-between; gap:1rem; align-items:flex-start}
+.focus .side .sub{color:var(--muted); margin:.15rem 0 0}
+.focus .side p{margin:0}
+.fplots{display:flex; flex-direction:column; gap:.9rem; min-width:0}
+svg.dg{display:block; width:100%; height:auto}
+.dgwrap svg.dg.big{max-height:calc(100dvh - 17rem); margin:0 auto}
+.map{background:#0a0e11; border:1px solid var(--line); border-radius:10px; padding:.4rem}
+.map svg.dg{max-height:34vh}   /* short screens: the map gives way to the text */
+.dgb{cursor:pointer} .dgb:hover .hl, .dgb:focus-visible .hl{stroke:var(--sig); stroke-width:3}
+.hl.on{stroke:var(--sig); stroke-width:3}
+@media (max-width:1000px){ .focus{grid-template-columns:minmax(0,1fr)} }
 .detail{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.1rem; min-width:0}
 .detail > .inner{display:flex; flex-direction:column; gap:.9rem}
 @media (min-width:1001px){
@@ -147,8 +159,8 @@ footer{padding:0 1.25rem 1rem; color:var(--faint); font-size:.78rem; display:fle
     <h2 id="helph">Keys</h2>
     <ul>
       <li><kbd>→</kbd> or <kbd>Space</kbd>: next step of the tour; <kbd>←</kbd>: back</li>
-      <li><kbd>Esc</kbd>: close the detail, then up one level</li>
-      <li><kbd>1</kbd> link, <kbd>2</kbd> transmitter, <kbd>3</kbd> receiver</li>
+      <li><kbd>Esc</kbd>: up one level</li>
+      <li><kbd>1</kbd> link, <kbd>2</kbd> chip, <kbd>3</kbd> transmitter, <kbd>4</kbd> receiver</li>
       <li><kbd>[</kbd> <kbd>]</kbd>: received power 1 dB stronger / weaker</li>
       <li><kbd>p</kbd>: pause or play the animation</li>
       <li><kbd>?</kbd>: this help</li>
@@ -164,7 +176,7 @@ const DOC = REPO + 'docs/how_it_works.md#';
 const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.sch';
 const SENS = -94;
 let D = null;                       // decoded payload
-const S = {level: 'link', block: null, p: -44, step: 0, playing: true, bbLvl: null};
+const S = {level: 'link', focus: null, block: null, p: -44, step: 0, playing: true, bbLvl: null};
 
 // ------------------------------------------------------------------ data
 async function load() {
@@ -276,13 +288,6 @@ function wirePlots(root) {
     svg.addEventListener('pointerleave', () => { cur.setAttribute('visibility', 'hidden'); hov.hidden = true; });
   });
 }
-function spark(d, color, n = 160) {
-  if (!d) return '';
-  let lo = Infinity, hi = -Infinity; d.y.forEach(v => { lo = Math.min(lo, v); hi = Math.max(hi, v); });
-  const step = Math.max(1, Math.floor(d.x.length / n)); let p = '';
-  for (let i = 0; i < d.x.length; i += step) p += `${(i / (d.x.length - 1) * 200).toFixed(1)},${(36 - (d.y[i] - lo) / (hi - lo || 1) * 32).toFixed(1)} `;
-  return `<svg viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><polyline points="${p}" fill="none" stroke="${color}" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>`;
-}
 /* rows of 1-bit cells: rows [{bits, label, color, cmp}] cmp: compare to reference bits -> red if mismatch */
 function strip(rows, opts = {}) {
   const F = GEO.f, n = rows[0].bits.length, W = GEO.w, L = Math.round(F * 6), ch = Math.round((opts.h || 22) * 1.4 * Math.max(.6, GEO.ph)), gap = 6, H = rows.length * (ch + gap) + 4;
@@ -379,7 +384,7 @@ function figCode() {
   const g = GOLD(), r = run();
   return fig(`code 0x${D.code.toString(16).toUpperCase()}: what is sent, and what the receiver decided at ${DBM(prx())}`,
     strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {aria: 'sent and received chips'}),
-    'model/ link model, one burst') + `<p>${N(r.chip_ok + '/127', 7)} chips right: ${N(r.chip_ok < 97 ? 'below 97, not a detection' : '97 or more, a detection', 25, 'left')}. Wrong chips are red.</p>`;
+    'model/ link model, one burst') + `<p>Wrong chips are red. ${N(r.chip_ok + '/127', 7)} right: ${r.chip_ok < 97 ? 'below 97, not a detection.' : '97 or more, a detection.'}</p>`;
 }
 function figPath() {
   const p = D.path, fit = {x: [], y: []}, two = {x: [], y: []};
@@ -492,13 +497,13 @@ function figLed() {
 }
 
 // ------------------------------------------------------------------ levels
-function linkScene() {
+function linkScene(focus = null) {
   const d = dist(), p = prx(), gap = 560 + Math.max(0, Math.min(1, (Math.log10(d) + 1) / 3.1)) * 380, tx = 600 - gap / 2, rx = 600 + gap / 2;
   const strength = Math.max(0.12, Math.min(1, (p + 100) / 60));
   /* vertical, parallel dipoles on the facing sides: the link is broadside to both (a dipole has a null along its own axis) */
   const board = (x, label, sub, color, lvl, pin, side) => `
-    <g class="hit" role="button" tabindex="0" data-go="${lvl}" aria-label="Open the ${label.toLowerCase()} chain">
-      <rect class="hl" x="${x - 150}" y="48" width="300" height="76" rx="10" fill="#123024" stroke="#2f6b4f" stroke-width="2"/>
+    <g class="hit" role="button" tabindex="0" data-go="${lvl}" aria-label="Open the ${label.toLowerCase()}">
+      <rect class="hl${focus === 'ook' && lvl === 'chip:tx' ? ' on' : ''}" x="${x - 150}" y="48" width="300" height="76" rx="10" fill="#123024" stroke="#2f6b4f" stroke-width="2"/>
       <rect x="${x - 138}" y="58" width="72" height="56" rx="5" fill="#0b0f12" stroke="${color}" stroke-width="2"/>
       <text x="${x - 102}" y="93" fill="${color}" font-size="20" text-anchor="middle" font-weight="600">${label}</text>
       <text x="${x - 54}" y="80" fill="#9db0bc" font-size="13">${pin}</text>
@@ -510,12 +515,12 @@ function linkScene() {
   for (let k = 0; k < 6; k++) waves += `<path class="wave" data-k="${k}" d="" fill="none" stroke="var(--sig)" stroke-width="3" stroke-linecap="round"/>`;
   return `<svg class="scene" viewBox="0 0 1200 130" role="img" aria-label="Two boards: the transmitter on the left, the receiver on the right, ${fmtd(d)} apart">
     <g class="hit" role="button" tabindex="0" data-block="air" aria-label="Over the air: received power and estimated distance">
-      <rect class="hl" x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10" fill="#ffffff04" stroke="#ffffff10"/>
+      <rect class="hl${focus === 'air' ? ' on' : ''}" x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10" fill="#ffffff04" stroke="#ffffff10"/>
       <g id="waves" data-x0="${tx + 185}" data-x1="${rx - 185}" data-cy="86" data-r0="10" data-r1="38" data-s="${strength}">${waves}</g>
       <text x="600" y="20" fill="#9db0bc" font-size="16" text-anchor="middle">≈ ${fmtd(d)} apart (${distSrc(d)})</text>
     </g>
-    ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'tx', 'ua[3] / ua[4]', 1)}
-    ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'rx', 'ua[0] / ua[1]', -1)}
+    ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'chip:tx', 'ua[3] / ua[4]', 1)}
+    ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'chip:rx', 'ua[0] / ua[1]', -1)}
     <g class="hit" role="button" tabindex="0" data-block="led" aria-label="The LED: 2 of 3 bursts confirm a send">
       <rect class="hl" x="${rx + 76}" y="20" width="68" height="28" rx="6" fill="#ffffff00"/>
       <circle id="led" cx="${rx + 128}" cy="34" r="10" fill="#2a3741" stroke="#000"/>
@@ -538,43 +543,140 @@ function levelLink() {
   </div>
   <div class="hit striphit" role="button" tabindex="0" data-block="ook" aria-pressed="${S.block === 'ook'}" aria-label="On-off keying: the idea, chip by chip"><div id="codestrip">${codeStrip(anim._b || 0, anim._pos || 0)}</div></div>`;
 }
-function blk(id, cls, sub, thumb) {
-  return `<button type="button" class="blk ${cls}" data-block="${id}" aria-pressed="${S.block === id}"><b>${B[id].name}</b><span>${sub}</span>${thumb || ''}</button>`;
+function chipPage() {
+  const f = S.focus, lede = {
+    tx: 'The transmitter: the digital keys the ring oscillator with the Gold code, the level shifter makes two opposite-phase 3.3 V signals, and one driver feeds each dipole arm.',
+    rx: `The receiver never tunes to the carrier: ~80 dB of gain, a log detector that turns RF power into a DC level, a comparator against its own slow average, then the digital correlates against the expected code. Received now: <b>${DBM(prx())}</b>.`,
+  }[f] || 'One Tiny Tapeout tile: the receiver on top, the transmitter below, the digital macro on the right. Dashed lines are enables from the digital. Click a block.';
+  return `<h1>${f === 'tx' ? 'Inside the chip: the transmitter' : f === 'rx' ? 'Inside the chip: the receiver' : 'Inside the chip'}</h1>
+  <p class="lede">${lede}</p>
+  <div class="dgwrap">${dgSVG({hl: f ? DGHALF[f] : null, cls: 'big'})}</div>`;
 }
-function bitsD(bits) { const x = [], y = []; bits.forEach((c, i) => { x.push(i, i + 1); y.push(c, c); }); return {x, y}; }
-const AR = '<span class="arrow" aria-hidden="true">→</span>';
-function levelTx() {
-  const t = D.tx;
-  const th = k => t ? spark(dec(t[k + '_z']), 'var(--tx)') : '';
-  const gold = {x: [], y: []}; GOLD().forEach((c, i) => { gold.x.push(i); gold.y.push(c); gold.x.push(i + 1); gold.y.push(c); });
-  return `<h1>Transmitter: a ring oscillator, switched on and off by a code</h1>
-  <p class="lede">The digital keys the ring with a Gold code. The level shifter makes two opposite-phase 3.3 V signals, one driver per dipole arm. Click a block.</p>
-  <div class="chain">
-    <div class="rowlabel">TX chain</div>
-    <div class="row">${blk('gold', 'dig', 'tx_en: 127-chip code', spark(gold, 'var(--dig)', 260))}${AR}${blk('tx_ring', 'tx', '~434 MHz ring', th('ring'))}${AR}${blk('tx_ls', 'tx', '1.8 → 3.3 V, A/B', th('a'))}${AR}${blk('tx_drv', 'tx', 'p and n arms', th('drv_p'))}${AR}<div class="blk pin" aria-hidden="true"><b>ua[3]/[4]</b><span>dipole</span>${t ? spark(dec(t.dipole_z), 'var(--sig)') : ''}</div></div>
-  </div>
-  <div class="readouts">
-    <div class="ro"><small>ring (sim, tt)</small><b>${t ? t.f_mhz : '–'} MHz</b></div>
-    <div class="ro"><small>power into dipole</small><b>+3.8 dBm</b></div>
-    <div class="ro"><small>keying on/off</small><b>~30 ns</b></div>
-  </div>
-  ${t ? fig('the whole TX, one keyed burst (transistor level)', plot({series: [{d: dec(t.key), color: '#9db0bc', label: 'enable'}, {d: dec(t.ring), color: 'var(--tx)', label: 'ring', w: 1}, {d: dec(t.dipole), color: 'var(--sig)', label: 'across the dipole', w: 1}], xl: 'time (ns)', yl: 'V', h: 220}), 'build/tb_tx_ab.raw') : ''}`;
-}
-function levelRx() {
-  const rf = D.rx_rf, b = D.bb[0];
-  const node = i => rf ? spark(dec(rf.nodes[i].w), 'var(--rx)') : '';
-  const sc = (() => { const r = run(), x = [], y = []; for (let i = 0; i < r._s.length; i++) { x.push(i); y.push(r._s[i]); } return {x, y}; })();
-  return `<h1>Receiver: amplify, measure the energy, then decide chip by chip</h1>
-  <p class="lede">It never tunes to the carrier. ~80 dB of gain, a log detector that turns RF power into a DC level, a comparator against its own average, then the digital correlates against the expected code. Received now: <b>${DBM(prx())}</b>.</p>
-  <div class="chain">
-    <div class="rowlabel">RF: 433 MHz</div>
-    <div class="row"><div class="blk pin" aria-hidden="true"><b>ua[0]/[1]</b><span>dipole</span>${node(0)}</div>${AR}${blk('lna_chain', 'rx', '6 stages, ~80 dB', node(7))}${AR}${blk('log_det', 'rx', 'RF power → DC', spark({x: D.logdet.pin, y: D.logdet.det}, 'var(--rx)'))}</div>
-    <div class="rowlabel">Baseband: chip rate (104 µs)</div>
-    <div class="row">${blk('lpf_rc', 'rx', '14 kHz', b ? spark(dec(b.lpf), 'var(--sig)') : '')}${AR}${blk('avg_sc', 'rx', 'slow average', b ? spark(dec(b.avg), 'var(--sig2)') : '')}${AR}${blk('comp_ct', 'rx', 'on or off?', b ? spark(bitsD(unpack(b.bits, 120)), 'var(--rx)') : '')}${blk('r2r', 'dac', 'trim servo', b ? spark(dec(b.trim), 'var(--dac)') : '')}</div>
-    <div class="rowlabel">Digital: radio_digital macro</div>
-    <div class="row">${blk('slicer', 'dig', '8 samples/chip', spark(bitsD(run()._c.slice(0, 40)), 'var(--dig)'))}${AR}${blk('corr', 'dig', 'score /127', spark(sc, 'var(--dig)', 200))}${AR}${blk('led', 'dig', '2 of 3 → LED', '')}</div>
-    <div class="row">${blk('bias_gen', 'bias', 'currents for every block', '')}</div>
+/* one block per page: a small map of where it sits (the system diagram, or the link scene for the over-the-air ideas), its story, and its plots */
+function focusPage(id) {
+  const b = B[id], facts = typeof b.facts === 'function' ? b.facts() : b.facts, isLink = b.lvl === 'link';
+  const map = isLink ? linkScene(id) : `<div class="map">${dgSVG({hl: B2DG[id], small: true})}</div>`;
+  useGeo('detail');
+  const plots = b.plot();
+  useGeo('stage');
+  return `${isLink ? map : ''}<div class="focus">
+    <div class="side">${isLink ? '' : map}
+      <div class="top"><div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div><button type="button" class="close" data-close aria-label="Back to the ${isLink ? 'link' : 'chip'}">✕</button></div>
+      <p>${b.text}</p>
+      <div class="facts">${facts.map(f => `<span class="fact">${f[0]} <b>${f[1]}</b></span>`).join('')}</div>
+      <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">Read more in How it works ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a>` : ''}</div>
+    </div>
+    <div class="fplots">${plots || ''}</div>
   </div>`;
+}
+
+
+// ------------------------------------------------------------------ system diagram (from the floorplan tool's "Block diagram" view, layout/floorplan/page/page.html)
+const DGC = {rx: '#3fc1ad', late: '#ef6ab8', rxin: '#5aa9ef', clk: '#fb8a4a', en: '#d9b44a', bias: '#9acd4c', tx: '#f2a23a', trim: '#a78bfa', dig: '#94a3b8', pad: '#e8eef2'};
+const DG = {
+  // [id, name, sub, x, y, w, h, group]
+  blocks: [
+    ['pad:ua[0]', 'ua[0]', 'rx_p', 20, 110, 46, 22, 'pad'], ['pad:ua[1]', 'ua[1]', 'rx_n', 20, 150, 46, 22, 'pad'],
+    ['xchain', 'lna_chain', '', 100, 90, 330, 100, 'rx'],
+    ['xdet', 'log_det', 'successive detection, t1-t6', 100, 240, 330, 56, 'rx'],
+    ['xlpf', 'lpf_rc', '14 kHz RC', 470, 240, 110, 40, 'rx'],
+    ['xdbg', 'dbg_tg', '', 470, 294, 60, 24, 'rx'], ['pad:ua[2]', 'ua[2]', '', 566, 295, 46, 22, 'pad'],
+    ['xavg', 'avg_sc', 'SC average', 640, 250, 120, 44, 'rx'],
+    ['xcomp', 'comp_ct', 'comparator', 800, 150, 120, 80, 'rx'],
+    ['xdac', 'r2r', '8-bit trim DAC', 700, 28, 120, 48, 'trim'],
+    ['xctrim', 'Ctrim', '1 pF est.', 820, 92, 80, 34, 'trim'],
+    ['xbias', 'bias_gen', '', 470, 30, 120, 50, 'bias'],
+    ['macro', 'radio_digital', '', 960, 10, 90, 530, 'dig'],
+    ['pad:ua[3]', 'ua[3]', 'tx_p', 40, 372, 46, 22, 'pad'], ['pad:ua[4]', 'ua[4]', 'tx_n', 40, 462, 46, 22, 'pad'],
+    ['xtx.xdrv_p', 'tx_drv', 'p arm', 140, 360, 110, 46, 'tx'], ['xtx.xdrv_n', 'tx_drv', 'n arm', 140, 450, 110, 46, 'tx'],
+    ['xtx.xls', 'tx_ls', 'level shift', 340, 400, 100, 50, 'tx'],
+    ['xtx.xlse_p', 'tx_ls_en', 'enable p', 340, 334, 100, 36, 'tx'], ['xtx.xlse_n', 'tx_ls_en', 'enable n', 340, 482, 100, 36, 'tx'],
+    ['xtx.xring', 'tx_ring', '~434 MHz ring', 500, 405, 100, 40, 'tx'],
+  ],
+  // the digital macro's parts, drawn inside it so each one can be picked
+  sub: [['macro:slicer', 'chip slicer', 966, 160, 78, 40], ['macro:corr', 'correlator', 966, 210, 78, 40], ['macro:led', '2-of-3 + LED', 966, 260, 78, 40], ['macro:gold', 'Gold code', 966, 400, 78, 50]],
+  // [net, class, from, to, points, label]
+  wires: [
+    ['rx_p', 'rxin', 'pad:ua[0]', 'xchain', [[66, 121], [100, 121]], {name: ''}], ['rx_n', 'rxin', 'pad:ua[1]', 'xchain', [[66, 161], [100, 161]], {name: ''}],
+    ['o1', 'rx', 'xchain', 'xdet', [[157, 150], [157, 240]]], ['o2', 'rx', 'xchain', 'xdet', [[207, 150], [207, 240]]], ['o3', 'rx', 'xchain', 'xdet', [[257, 150], [257, 240]]],
+    ['o4', 'late', 'xchain', 'xdet', [[307, 150], [307, 240]]], ['o5', 'late', 'xchain', 'xdet', [[357, 150], [357, 240]]], ['out', 'late', 'xchain', 'xdet', [[407, 150], [407, 240]]],
+    ['det', 'rx', 'xdet', 'xlpf', [[430, 268], [450, 268], [450, 260], [470, 260]], {pos: [452, 236, 'middle']}],
+    ['det dbg', 'rx', 'xdet', 'xdbg', [[450, 268], [450, 306], [470, 306]], {pos: [454, 290, 'start']}], ['dbg', 'rx', 'xdbg', 'pad:ua[2]', [[530, 306], [566, 306]], {pos: [548, 330, 'middle']}],
+    ['lpf comp', 'rx', 'xlpf', 'xcomp', [[580, 260], [620, 260], [620, 200], [800, 200]]], ['lpf', 'rx', 'xlpf', 'xavg', [[620, 260], [620, 272], [640, 272]], {pos: [584, 290, 'start']}],
+    ['avg', 'rx', 'xavg', 'xcomp', [[760, 272], [780, 272], [780, 178], [800, 178]]],
+    ['comp_in', 'clk', 'xcomp', 'macro:slicer', [[920, 190], [960, 190]]],
+    ['sc_phi1', 'clk', 'macro', 'xavg', [[960, 282], [760, 282]]], ['sc_phi2', 'clk', 'macro', 'xavg', [[960, 290], [760, 290]], {below: true}],
+    ['trim[7]', 'trim', 'macro', 'xdac', [[960, 52], [820, 52]], {name: 'trim_out[7:0]'}], ['dac', 'trim', 'xdac', 'xctrim', [[760, 76], [760, 110], [820, 110]]], ['trim', 'trim', 'xctrim', 'xcomp', [[900, 110], [910, 110], [910, 150]]],
+    ['vcm', 'bias', 'xbias', 'xchain', [[470, 45], [125, 45], [125, 90]]], ['ib_chain', 'bias', 'xbias', 'xchain', [[470, 65], [260, 65], [260, 90]]],
+    ['ib_det', 'bias', 'xbias', 'xdet', [[530, 80], [530, 225], [440, 225], [440, 268], [430, 268]]],
+    ['ib_comp', 'bias', 'xbias', 'xcomp', [[590, 55], [640, 55], [640, 160], [800, 160]]],
+    ['rx_en', 'en', 'macro', 'xbias', [[960, 16], [530, 16], [530, 30]]], ['dbg_en', 'en', 'macro', 'xdbg', [[960, 314], [500, 314], [500, 318]]],
+    ['tx_en key', 'en', 'macro:gold', 'xtx.xring', [[960, 425], [600, 425]]], ['ring', 'tx', 'xtx.xring', 'xtx.xls', [[500, 425], [440, 425]]],
+    ['a', 'tx', 'xtx.xls', 'xtx.xdrv_p', [[340, 412], [300, 412], [300, 383], [250, 383]]], ['b', 'tx', 'xtx.xls', 'xtx.xdrv_n', [[340, 438], [280, 438], [280, 473], [250, 473]]],
+    ['tx_en', 'en', 'macro:gold', 'xtx.xlse_p', [[960, 352], [440, 352]]], ['enh_p', 'tx', 'xtx.xlse_p', 'xtx.xdrv_p', [[340, 352], [195, 352], [195, 360]]],
+    ['tx_en_n', 'en', 'macro:gold', 'xtx.xlse_n', [[960, 506], [440, 506]]], ['enh_n', 'tx', 'xtx.xlse_n', 'xtx.xdrv_n', [[340, 506], [195, 506], [195, 496]]],
+    ['tx_p', 'tx', 'xtx.xdrv_p', 'pad:ua[3]', [[140, 383], [86, 383]]], ['tx_n', 'tx', 'xtx.xdrv_n', 'pad:ua[4]', [[140, 473], [86, 473]]],
+  ],
+};
+// explainer block <-> diagram boxes
+const B2DG = {lna_chain: ['xchain'], log_det: ['xdet'], lpf_rc: ['xlpf'], avg_sc: ['xavg'], comp_ct: ['xcomp'], r2r: ['xdac', 'xctrim'], bias_gen: ['xbias'],
+  tx_ring: ['xtx.xring'], tx_ls: ['xtx.xls', 'xtx.xlse_p', 'xtx.xlse_n'], tx_drv: ['xtx.xdrv_p', 'xtx.xdrv_n'],
+  gold: ['macro:gold'], slicer: ['macro:slicer'], corr: ['macro:corr'], led: ['macro:led']};
+const DG2B = {}; for (const b in B2DG) for (const d of B2DG[b]) DG2B[d] = b;
+const DGHALF = {tx: DG.blocks.filter(b => b[4] > 326 && b[0] !== 'macro').map(b => b[0]).concat('macro:gold'),
+  rx: DG.blocks.filter(b => b[4] < 326 && b[0] !== 'macro').map(b => b[0]).concat('macro:slicer', 'macro:corr', 'macro:led')};
+/* opts: hl (diagram ids to light; everything else dims), small (no net labels), cls */
+function dgSVG(opts = {}) {
+  const hl = opts.hl ? new Set(opts.hl) : null, on = id => !hl || hl.has(id) || (id === 'macro' && [...hl].some(h => h.startsWith('macro:')));
+  const netOn = w => !hl || hl.has(w[2]) || hl.has(w[3]);
+  const padOn = id => !hl || DG.wires.some(w => (w[2] === id || w[3] === id) && netOn(w));
+  const DIM = .2, o = [];
+  o.push(`<svg class="dg ${opts.cls || ''}" viewBox="0 -6 1060 552" role="img" aria-label="System diagram: receiver on top, transmitter below, the digital macro on the right">`);
+  o.push(`<defs>${Object.entries(DGC).map(([k, c]) => `<marker id="dga-${k}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="${c}"/></marker>`).join('')}</defs>`);
+  o.push(`<line x1="8" y1="326" x2="950" y2="326" stroke="#2a3741" stroke-dasharray="4 4"/>`);
+  o.push(`<text x="12" y="12" font-size="13" font-weight="700" fill="${DGC.rx}" letter-spacing="1" opacity="${!hl || DGHALF.rx.some(on) ? 1 : DIM}">RX</text>`);
+  o.push(`<text x="12" y="344" font-size="13" font-weight="700" fill="${DGC.tx}" letter-spacing="1" opacity="${!hl || DGHALF.tx.some(on) ? 1 : DIM}">TX</text>`);
+  for (const w of DG.wires) {
+    const [n, cls, , , pts, opt = {}] = w, col = DGC[cls], lit = netOn(w), P = pts.map(p => p.join(',')).join(' ');
+    o.push(`<polyline points="${P}" fill="none" stroke="${col}" stroke-width="${hl && lit ? 2.6 : 1.6}" ${cls === 'en' ? 'stroke-dasharray="5 3"' : ''} marker-end="url(#dga-${cls})" opacity="${lit ? 1 : DIM}"/>`);
+    if (opts.small) continue;
+    const name = opt.name !== undefined ? opt.name : n; if (!name) continue;
+    let x, y, anchor = 'middle';
+    if (opt.pos) [x, y, anchor] = opt.pos;
+    else {
+      let best = 0, bl = -1;
+      for (let i = 0; i < pts.length - 1; i++) { const l = Math.abs(pts[i + 1][0] - pts[i][0]) + Math.abs(pts[i + 1][1] - pts[i][1]); if (l > bl) { bl = l; best = i; } }
+      const a = pts[best], b = pts[best + 1];
+      if (a[1] === b[1]) { x = (a[0] + b[0]) / 2; y = opt.below ? a[1] + 11 : a[1] - 4; } else { x = a[0] + 4; y = (a[1] + b[1]) / 2; anchor = 'start'; }
+    }
+    o.push(`<text x="${x}" y="${y}" font-size="9" text-anchor="${anchor}" fill="${col}" font-family="var(--mono)" opacity="${lit ? 1 : DIM}">${name}</text>`);
+  }
+  for (const [id, name, sub, x, y, w, h, g] of DG.blocks) {
+    const col = DGC[g], pad = g === 'pad', lit = pad ? padOn(id) : on(id), sel = hl && lit && !pad && id !== 'macro', bid = DG2B[id];
+    o.push(`<g opacity="${lit ? 1 : DIM}"${bid ? ` class="hit dgb" role="button" tabindex="0" data-block="${bid}" aria-label="${B[bid].name}"` : ''}>`);
+    o.push(`<rect class="hl" x="${x}" y="${y}" width="${w}" height="${h}" rx="${pad ? 0 : 3}" fill="${col}" fill-opacity="${pad ? .9 : sel ? .3 : .12}" stroke="${col}" stroke-width="${sel ? 3 : 1.4}"/>`);
+    if (pad) o.push(`<text x="${x + w / 2}" y="${y + 15}" font-size="10" text-anchor="middle" fill="#0a0e11" font-family="var(--mono)">${name}</text>` + (opts.small ? '' : `<text x="${x + w / 2}" y="${y - 4}" font-size="9" text-anchor="middle" fill="#9db0bc" font-family="var(--mono)">${sub}</text>`));
+    else if (id === 'macro') o.push(`<text x="${x + w / 2}" y="${y + 120}" font-size="11" font-weight="600" text-anchor="middle" fill="#e8eef2">radio_digital</text><text x="${x + w / 2}" y="${y + 134}" font-size="9" text-anchor="middle" fill="#9db0bc" font-family="var(--mono)">macro</text>`);
+    else {
+      o.push(`<text x="${x + 8}" y="${y + 16}" font-size="13" font-weight="600" fill="#e8eef2">${name}</text>`);
+      if (sub && h > 26) o.push(`<text x="${x + 8}" y="${y + 30}" font-size="10" fill="#9db0bc" font-family="var(--mono)">${sub}</text>`);
+    }
+    o.push('</g>');
+  }
+  for (const [id, name, x, y, w, h] of DG.sub) {
+    const lit = on(id), sel = hl && lit;
+    o.push(`<g opacity="${lit ? 1 : DIM}" class="hit dgb" role="button" tabindex="0" data-block="${DG2B[id]}" aria-label="${B[DG2B[id]].name}">
+      <rect class="hl" x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${DGC.dig}" fill-opacity="${sel ? .35 : .15}" stroke="${DGC.dig}" stroke-width="${sel ? 3 : 1}"/>
+      <text x="${x + w / 2}" y="${y + h / 2 + 4}" font-size="11" text-anchor="middle" fill="#e8eef2">${name}</text></g>`);
+  }
+  const chainOn = on('xchain') ? 1 : DIM, detOn = on('xdet') ? 1 : DIM;
+  for (let i = 0; i < 6; i++) {
+    const x0 = 115 + i * 50;
+    o.push(`<g opacity="${chainOn}" pointer-events="none"><path d="M${x0} 118 L${x0} 162 L${x0 + 34} 140 Z" fill="#0a0e11" stroke="${DGC.rx}" stroke-width="1.2"/><text x="${x0 + 10}" y="144" font-size="10" fill="#e8eef2" font-family="var(--mono)">${i + 1}</text><line x1="${x0 + 34}" y1="140" x2="${x0 + 50}" y2="140" stroke="${DGC.rx}" stroke-width="1.2"/></g>`);
+    o.push(`<text x="${157 + i * 50 + 3}" y="292" font-size="9" fill="#9db0bc" font-family="var(--mono)" opacity="${detOn}" pointer-events="none">t${i + 1}</text>`);
+  }
+  o.push(`<path d="M100 121 H108 V161 M100 161 H108 M108 140 H115" fill="none" stroke="${DGC.rxin}" opacity="${chainOn}"/>`);
+  return o.join('') + '</svg>';
 }
 
 // ------------------------------------------------------------------ tour
@@ -582,76 +684,66 @@ const TOUR = [
   {level: 'link', block: null, p: -44, cap: 'Two boards, the same chip. The left one transmits, the right one receives, 1 m apart.'},
   {level: 'link', block: 'ook', cap: 'On-off keying: carrier on is a 1, carrier off is a 0. The pattern is a 127-chip Gold code.'},
   {level: 'link', block: 'air', cap: 'At 1 m the receiver sees −44 dBm. It still works around −94 dBm: 50 dB, 100,000× less power.'},
-  {level: 'tx', block: null, cap: 'Inside the transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
-  {level: 'tx', block: 'gold', cap: 'The digital generates the Gold code from two 7-bit LFSRs and sends it three times.'},
-  {level: 'tx', block: 'tx_ring', cap: 'A free-running ring of inverters. No crystal, no PLL: the receiver doesn\'t care about the exact frequency.'},
-  {level: 'tx', block: 'tx_ls', cap: 'The level shifter\'s two latch nodes are opposite in phase: one for each arm of the dipole.'},
-  {level: 'tx', block: 'tx_drv', cap: 'Two 3.3 V drivers in antiphase put about +4 dBm into the wire dipole.'},
-  {level: 'rx', block: null, cap: 'Inside the receiver: amplify, measure energy, compare, then let the digital decide.'},
-  {level: 'rx', block: 'lna_chain', cap: 'Six differential stages, ~80 dB of gain. The last stages limit: that is used by the detector.'},
-  {level: 'rx', block: 'log_det', cap: 'The log detector turns RF power into a voltage that is a straight line in dB: 70 dB in ~1 V.'},
-  {level: 'rx', block: 'lpf_rc', cap: 'A 14 kHz low-pass keeps the chip-rate envelope and removes most of the noise.'},
-  {level: 'rx', block: 'avg_sc', cap: 'The threshold is the signal\'s own slow average: the code is half on, half off, so it sits in the middle.'},
-  {level: 'rx', block: 'comp_ct', cap: 'The comparator decides on or off. Near the limit the difference is ~1 mV, as big as the noise.'},
-  {level: 'rx', block: 'r2r', cap: 'An 8-bit DAC servo cancels the comparator\'s own offset in ~0.07 mV steps.'},
-  {level: 'rx', block: 'slicer', cap: 'Eight samples per chip, majority vote, at four timing offsets at once.'},
-  {level: 'rx', block: 'corr', cap: 'Count matches with the expected code: chance is ~64, 97 is a detection. Lots of wrong chips are fine.'},
-  {level: 'rx', block: 'led', cap: 'Two detections one burst period apart toggle the LED. Noise and other codes don\'t.'},
-  {level: 'link', block: 'corr', p: -94, cap: 'Turn the power down: near −94 dBm the score drops towards 97, and below that the send is missed.'},
+  {level: 'chip', block: null, cap: 'Inside the chip: the receiver on top, the transmitter below, the digital macro on the right.'},
+  {level: 'chip', focus: 'tx', block: null, cap: 'The transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
+  {level: 'chip', block: 'gold', cap: 'The digital generates the Gold code from two 7-bit LFSRs and sends it three times.'},
+  {level: 'chip', block: 'tx_ring', cap: 'A free-running ring of inverters. No crystal, no PLL: the receiver doesn\'t care about the exact frequency.'},
+  {level: 'chip', block: 'tx_ls', cap: 'The level shifter\'s two latch nodes are opposite in phase: one for each arm of the dipole.'},
+  {level: 'chip', block: 'tx_drv', cap: 'Two 3.3 V drivers in antiphase put about +4 dBm into the wire dipole.'},
+  {level: 'chip', focus: 'rx', block: null, cap: 'The receiver: amplify, measure energy, compare, then let the digital decide.'},
+  {level: 'chip', block: 'lna_chain', cap: 'Six differential stages, ~80 dB of gain. The last stages limit: that is used by the detector.'},
+  {level: 'chip', block: 'log_det', cap: 'The log detector turns RF power into a voltage that is a straight line in dB: 70 dB in ~1 V.'},
+  {level: 'chip', block: 'lpf_rc', cap: 'A 14 kHz low-pass keeps the chip-rate envelope and removes most of the noise.'},
+  {level: 'chip', block: 'avg_sc', cap: 'The threshold is the signal\'s own slow average: the code is half on, half off, so it sits in the middle.'},
+  {level: 'chip', block: 'comp_ct', cap: 'The comparator decides on or off. Near the limit the difference is ~1 mV, as big as the noise.'},
+  {level: 'chip', block: 'r2r', cap: 'An 8-bit DAC servo cancels the comparator\'s own offset in ~0.07 mV steps.'},
+  {level: 'chip', block: 'slicer', cap: 'Eight samples per chip, majority vote, at four timing offsets at once.'},
+  {level: 'chip', block: 'corr', cap: 'Count matches with the expected code: chance is ~64, 97 is a detection. Lots of wrong chips are fine.'},
+  {level: 'chip', block: 'led', cap: 'Two detections one burst period apart toggle the LED. Noise and other codes don\'t.'},
+  {level: 'chip', block: 'corr', p: -94, cap: 'Turn the power down: near −94 dBm the score drops towards 97, and below that the send is missed.'},
 ];
 
 // ------------------------------------------------------------------ render
 const $ = id => document.getElementById(id);
-const COL = {stage: {w: 800, ph: 1, z: 1}, detail: {w: 800, ph: 1, z: 1}, key: ''};
-const useGeo = c => { GEO.w = Math.floor(COL[c].w / COL[c].z); GEO.ph = COL[c].ph; GEO.f = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * .82); };
+const COL = {stage: {w: 800, ph: 1}, detail: {w: 800, ph: 1}, z: 1, key: ''};
+const useGeo = c => { GEO.w = Math.floor(COL[c].w / COL.z); GEO.ph = COL[c].ph; GEO.f = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * .82); };
 const fits = () => innerWidth > 1000;   // desktop: the page is fixed to the screen; narrower stacks and scrolls
-/* build, measure each column, and rebuild until it fits the screen: first at the column's real width,
-   then with shorter plots (down to 45 %), and only then by scaling the whole column down */
+const inner = el => el.firstElementChild;
+/* build, measure, and rebuild until the page fits the screen: first at the real column widths,
+   then with shorter plots (down to 45 %), and only then by scaling the whole page down */
 function render() {
-  const key = [S.level, S.block, innerWidth, innerHeight].join('|');
-  if (key !== COL.key) { COL.key = key; for (const c of ['stage', 'detail']) { COL[c].ph = 1; COL[c].z = 1; } }
+  const key = [S.level, S.focus, S.block, innerWidth, innerHeight].join('|');
+  if (key !== COL.key) { COL.key = key; COL.stage.ph = COL.detail.ph = 1; COL.z = 1; }
   for (let pass = 0; pass < 10; pass++) {
     build();
+    const el = document.querySelector('.stage'), cs = getComputedStyle(el), fp = el.querySelector('.fplots');
+    const w = Math.floor((el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) * 1), wp = fp ? Math.floor(fp.getBoundingClientRect().width / COL.z) : COL.detail.w;
     let again = false;
-    for (const c of ['stage', 'detail']) {
-      const el = document.querySelector('.' + c); if (!el) continue;
-      const cs = getComputedStyle(el), inner = el.firstElementChild;
-      const w = Math.floor(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight));
-      if (Math.abs(w - COL[c].w) > 2) { COL[c].w = w; again = true; continue; }
-      if (!fits()) continue;
-      const room = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), h = inner.getBoundingClientRect().height;
-      if (h <= room + 1) continue;
-      const ph = [...el.querySelectorAll('.plot svg, svg.strip')].reduce((a, s) => a + s.getBoundingClientRect().height, 0);
-      if (COL[c].ph > .45 && ph > 0) COL[c].ph = Math.max(.45, COL[c].ph * Math.max(.3, (ph - (h - room)) / ph) - .01);
-      else COL[c].z = Math.floor(COL[c].z * room / h * 1000) / 1000;
-      again = true;
-    }
-    if (!again) break;
+    if (Math.abs(w - COL.stage.w) > 2) { COL.stage.w = w; again = true; }
+    if (Math.abs(wp * COL.z - COL.detail.w) > 2) { COL.detail.w = Math.floor(wp * COL.z); again = true; }
+    if (again) continue;
+    if (!fits()) break;
+    const room = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), h = inner(el).getBoundingClientRect().height;
+    if (h <= room + 1) break;
+    const c = fp ? 'detail' : 'stage', box = fp || el;
+    const ph = [...box.querySelectorAll('.plot svg, svg.strip')].reduce((a, s) => a + s.getBoundingClientRect().height, 0);
+    // plots side by side with the text only help if the plot column is the tall one
+    const tallPlots = !fp || fp.getBoundingClientRect().height >= el.querySelector('.focus').getBoundingClientRect().height - 2;
+    if (COL[c].ph > .45 && ph > 0 && tallPlots) COL[c].ph = Math.max(.45, COL[c].ph * Math.max(.3, (ph - (h - room)) / ph) - .01);
+    else COL.z = Math.floor(COL.z * room / h * 1000) / 1000;
   }
 }
 function build() {
   plotId = 0; for (const k in PLOTS) delete PLOTS[k];
   const main = $('main');
   useGeo('stage');
-  const stage = S.level === 'tx' ? levelTx() : S.level === 'rx' ? levelRx() : levelLink();
-  useGeo('detail');
-  let detail = '';
-  if (S.block && B[S.block]) {
-    const b = B[S.block], facts = typeof b.facts === 'function' ? b.facts() : b.facts;
-    detail = `<aside class="detail" aria-labelledby="dh"><div class="inner"${COL.detail.z < 1 ? ` style="zoom:${COL.detail.z}"` : ''}>
-      <div class="top"><div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div><button type="button" class="close" data-close aria-label="Close detail">✕</button></div>
-      <p>${b.text}</p>
-      <div class="facts">${facts.map(f => `<span class="fact">${f[0]} <b>${f[1]}</b></span>`).join('')}</div>
-      ${b.plot()}
-      <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">Read more in How it works ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a>` : ''}</div>
-    </div></aside>`;
-  }
-  main.className = detail ? 'has-detail' : '';
-  main.innerHTML = `<section class="stage" aria-label="${S.level}"><div class="inner"${COL.stage.z < 1 ? ` style="zoom:${COL.stage.z}"` : ''}>${stage}</div></section>${detail}`;
+  const page = S.block && B[S.block] ? focusPage(S.block) : S.level === 'chip' ? chipPage() : levelLink();
+  main.className = '';
+  main.innerHTML = `<section class="stage" aria-label="${S.block ? B[S.block].name : S.level}"><div class="inner"${COL.z < 1 ? ` style="zoom:${COL.z}"` : ''}>${page}</div></section>`;
   wirePlots(main);
-  const names = {link: 'Link', tx: 'Transmitter', rx: 'Receiver'};
   let cr = `<button type="button" data-go="link"${S.level === 'link' && !S.block ? ' aria-current="page"' : ''}>Link</button>`;
-  if (S.level !== 'link') cr += `<span class="sep">›</span><button type="button" data-go="${S.level}"${!S.block ? ' aria-current="page"' : ''}>${names[S.level]}</button>`;
+  if (S.level === 'chip') cr += `<span class="sep">›</span><button type="button" data-go="chip"${!S.block && !S.focus ? ' aria-current="page"' : ''}>Chip</button>`;
+  if (S.level === 'chip' && S.focus && !S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${S.focus === 'tx' ? 'Transmitter' : 'Receiver'}</button>`;
   if (S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${B[S.block].name}</button>`;
   $('crumbs').innerHTML = cr;
   const p = prx();
@@ -663,7 +755,7 @@ function build() {
   anim.reset();
   useGeo('stage');
 }
-function go(level, block = null) { S.level = level; S.block = block; render(); }
+function go(where, block = null) { const [level, focus] = where.split(':'); S.level = level; S.focus = focus || null; S.block = block; render(); }
 /* tour steps that set a distance glide the slider there, so it never jumps and always matches the caption */
 let glideId = 0;
 function glideTo(target, ms = 1200) {
@@ -681,7 +773,7 @@ function glideTo(target, ms = 1200) {
 function setStep(i, initial = false) {
   S.step = Math.max(0, Math.min(TOUR.length - 1, i));
   const t = TOUR[S.step];
-  S.level = t.level; S.block = t.block; S.bbLvl = null;
+  S.level = t.level; S.focus = t.focus || null; S.block = t.block; S.bbLvl = null;
   history.replaceState(null, '', '#step=' + S.step);
   if (t.p != null && initial) { glideId++; S.p = t.p; }
   render();
@@ -737,8 +829,8 @@ document.addEventListener('click', e => {
   if (t.hasAttribute('data-close')) { S.block = null; render(); return; }
   if (t.dataset.go) { go(t.dataset.go); return; }
   const id = t.dataset.block;
-  S.block = S.block === id ? null : id;
-  if (B[id] && B[id].lvl !== 'link' && S.level === 'link' && !['air', 'ook', 'led'].includes(id)) S.level = B[id].lvl;
+  if (!B[id]) return;
+  S.block = id; S.level = B[id].lvl === 'link' ? 'link' : 'chip'; S.focus = null;
   render();
 });
 document.addEventListener('keydown', e => {
@@ -748,8 +840,8 @@ document.addEventListener('keydown', e => {
   const k = e.key;
   if (k === 'ArrowRight' || (k === ' ' && e.target.tagName !== 'BUTTON')) { e.preventDefault(); setStep(S.step + 1); }
   else if (k === 'ArrowLeft') { e.preventDefault(); setStep(S.step - 1); }
-  else if (k === 'Escape') { if (S.block) S.block = null; else S.level = 'link'; render(); }
-  else if (k === '1') go('link'); else if (k === '2') go('tx'); else if (k === '3') go('rx');
+  else if (k === 'Escape') { if (S.block) S.block = null; else if (S.focus) S.focus = null; else S.level = 'link'; render(); }
+  else if (k === '1') go('link'); else if (k === '2') go('chip'); else if (k === '3') go('chip:tx'); else if (k === '4') go('chip:rx');
   else if (k === '[' || k === ']') { glideId++; S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); S.bbLvl = null; render(); }
   else if (k === 'p') S.playing = !S.playing;
   else if (k === '?') $('help').hidden = false;

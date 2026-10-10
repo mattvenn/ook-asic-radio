@@ -1,6 +1,6 @@
 # Interactive explainer: source
 
-Generates the self-contained [`../explainer.html`](../explainer.html) (one file, no network, ~110 kB) from the simulations, bench data and link model in this repo. Same pattern as [metastability_explorer](https://github.com/mattvenn/metastability_explorer): `template.html` holds the page, and `gendata.py` replaces its `/*__PAYLOAD__*/` token with the data (traces resampled, quantized to 1 byte, gzipped, base64). The browser inflates it with `DecompressionStream('gzip')`.
+Generates the self-contained [`../explainer.html`](../explainer.html) (one file, no network, ~130 kB) from the simulations, bench data and link model in this repo. Same pattern as [metastability_explorer](https://github.com/mattvenn/metastability_explorer): `template.html` holds the page, and `gendata.py` replaces its `/*__PAYLOAD__*/` token with the data (traces resampled, quantized to 1 byte, gzipped, base64). The browser inflates it with `DecompressionStream('gzip')`.
 
 Open it from the repo: <https://raw.githack.com/mattvenn/ook-asic-radio/main/docs/explainer.html> (githack serves the committed file as a page; GitHub Pages on this repo is the TT GDS viewer).
 
@@ -10,6 +10,8 @@ tools/osic-mac docs/explainer/sims.sh     # ~3 min; tools/osic on Linux. Raws la
 python3 docs/explainer/gendata.py         # ~10 s; writes docs/explainer.html
 ```
 `gendata.py` prints each source and marks any missing raw. That view then shows a "no data" note and the page still builds.
+
+The chip page and the per-block maps draw the system diagram from the floorplan tool's "Block diagram" view (`layout/floorplan/page/page.html`, `DG`); its block boxes and wires are copied into `template.html` (`DG`). Move a block there and copy the new coordinates here.
 
 ## Sources
 | View | Source |
