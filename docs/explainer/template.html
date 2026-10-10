@@ -476,16 +476,17 @@ function figChain() {
       {d: {x, y}, color: 'var(--rx)', label: 'tone transient', w: 1.5, op: .7}, {d: {x, y}, color: 'var(--rx)', pts: true}],
     ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), runsNote(br, 'rx_rf_tone'));
   h += '<p>Each stage multiplies the signal until the last stages limit at ~1 V: that limiting is what the log detector uses.</p>';
-  const cols = ['#4c6b78', '#5d8592', 'var(--rx)', 'var(--rx)', 'var(--rx)', 'var(--sig2)', 'var(--sig2)', 'var(--sig2)'];
+  const cols = ['#e8eef2', '#9db0bc'].concat(STAGE_COLS);   // antenna, pad, then stages 1-6 in log_det's colours
   h += fig(`10 ns at every stage, ${DBM(prx())}`, plot({series: n.map((v, i) => ({d: v.d, color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240, ylim: tly()}), runsNote(br, 'rx_rf_tone'));
   return h;
 }
+const STAGE_COLS = ['#4c6b78', '#5d8592', '#3cc4a8', '#8ad6c2', '#ffd166', '#f0954a'];   // stages 1-6 (taps o1..o5, out), shared by lna_chain and log_det
 function figLogdet() {
   const L = D.logdet, p = prx();
   let h = fig('detector output vs input power', plot({series: [{d: {x: L.pin, y: L.det}, color: 'var(--rx)', label: 'det (V)', w: 2.5}],
     xl: 'input power (dBm)', yl: 'det (V)', h: 240, vl: [{x: Math.max(-110, Math.min(-10, p)), color: '#fff', label: p.toFixed(0) + ' dBm'}],
     hl: []}), 'sim/logdet/taps.txt, tt');
-  const cols = ['#4c6b78', '#5d8592', '#3cc4a8', '#8ad6c2', '#ffd166', '#f0954a'];
+  const cols = STAGE_COLS;
   h += fig('amplitude reaching each detector cell: they saturate one after another', plot({series: L.tap_amp.map((a, i) => ({d: {x: L.pin, y: a}, color: cols[i], label: i < 5 ? 'o' + (i + 1) : 'out'})),
     ylog: true, ylim: [1e-4, 3], xl: 'input power (dBm)', yl: 'V peak (log)', h: 240, vl: [{x: Math.max(-110, Math.min(-10, p)), color: '#fff', label: p.toFixed(0) + ' dBm'}]}));
   const KL = D.rx_rf && D.rx_rf.key_levels;
