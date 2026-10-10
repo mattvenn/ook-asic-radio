@@ -1,6 +1,6 @@
 # How it works
 
-A 433 MHz radio link on one Tiny Tapeout tile (sky130). Two demo boards run the same chip: one transmits, the other receives. Each board's antenna is two bare wires, and there are no other external parts.
+A 433 MHz radio link on six Tiny Tapeout tiles (3×2, sky130). Two demo boards run the same chip: one transmits, the other receives. Each board's antenna is two bare wires, and there are no other external parts.
 
 This page covers the idea, the measurements and models that set the specs, each schematic, and the layout. For test instructions see [info.md](info.md).
 

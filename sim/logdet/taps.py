@@ -2,7 +2,7 @@
 0 V probe in series with each det_cell's drain, so each cell's current is seen separately.
 
 For a 434 MHz tone swept over available power, records per level:
-  - each tap's differential amplitude (o1..o5, out), peak, over 500-600 ns;
+  - each tap's differential amplitude (o1..o5, out), peak-to-peak, over 500-600 ns (the plot halves it to peak);
   - each cell's average drain current (into det) over 500-600 ns;
   - det (average).
 Writes sim/logdet/taps.txt and sim/plots/logdet_taps.png.
@@ -69,7 +69,7 @@ def run(corner):
     if len(rows) < len(LEVELS):
         sys.exit(f'only {len(rows)} of {len(LEVELS)} levels; see build/taps/taps.log')
     with open(TXT, 'w') as fh:
-        fh.write(f'# {corner}: Pin_dBm det_V, then per tap (o1..o5, out): amp_pk_V cell_A\n')
+        fh.write(f'# {corner}: Pin_dBm det_V, then per tap (o1..o5, out): amp_pp_V cell_A\n')
         fh.write('\n'.join(rows) + '\n')
 
 

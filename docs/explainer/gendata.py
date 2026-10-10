@@ -159,7 +159,7 @@ def logdet():
     report.append('sim     sim/logdet/taps.txt, transfer_cw.txt')
     cw = np.loadtxt(os.path.join(ROOT, 'sim', 'logdet', 'transfer_cw.txt'), skiprows=1)
     return {'pin': rows[:, 0].tolist(), 'det': rows[:, 1].tolist(),
-            # taps.py measures each tap with ngspice 'meas ... pp' (peak-to-peak) though its header says amp_pk: halve to peak
+            # taps.txt holds each tap's peak-to-peak amplitude (amp_pp_V): halve to peak
             'tap_amp': [(rows[:, 2 + 2 * i] / 2).tolist() for i in range(6)],
             'tap_i': [rows[:, 3 + 2 * i].tolist() for i in range(6)],
             'cw_pin': cw[:, 0].tolist(), 'cw_det': cw[:, 1].tolist()}
