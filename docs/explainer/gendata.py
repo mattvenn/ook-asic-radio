@@ -129,6 +129,9 @@ def sample_bits(t, comp, n):
     return ts, (np.interp(ts, t, comp) > 0.9).astype(np.uint8)
 
 
+BB_LEVELS = [-70, -74, -78, -82, -86, -90, -94]   # sims.sh runs these (sim/rx/gen_det.py + sim/rx/bb.sh)
+
+
 def baseband(lvl):
     import radio
     v = raw(f'rx_bb_{lvl}.raw')
@@ -219,7 +222,7 @@ def gold_chips():
 
 def main():
     payload = {'code': CODE, 'gold': gold_chips(), 'path': path_loss(), 'tx': tx(), 'rx_rf': rx_rf(),
-               'logdet': logdet(), 'bb': [b for b in (baseband(-70), baseband(-94)) if b],
+               'logdet': logdet(), 'bb': [b for b in map(baseband, BB_LEVELS) if b],
                'model': model_sweep()}
     blob = base64.b64encode(gzip.compress(json.dumps(payload, separators=(',', ':')).encode(), 9)).decode()
     html = open(os.path.join(HERE, 'template.html')).read().replace('/*__PAYLOAD__*/', blob)

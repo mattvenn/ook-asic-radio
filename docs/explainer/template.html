@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OOK Radio Explainer</title>
-<meta name="description" content="Interactive explainer for a 433 MHz on-off keyed radio on one Tiny Tapeout tile (sky130): link, transmitter and receiver, with simulated waveforms.">
+<meta name="description" content="Interactive explainer for a 433 MHz on-off keyed radio on six Tiny Tapeout tiles (3×2, sky130): link, transmitter and receiver, with simulated waveforms.">
 <style>
 :root{
   color-scheme: dark;
@@ -37,12 +37,12 @@ nav.crumbs .sep{color:var(--faint)}
 .navbtns button{min-width:44px; min-height:44px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); cursor:pointer}
 .navbtns button:hover{border-color:var(--sig)}
 .navbtns span{font-family:var(--mono); color:var(--muted); font-size:.85rem; flex:none; width:7ch; text-align:center}
-main{flex:1; display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; padding:1.25rem; align-items:start}
+main{flex:1; display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; padding:.6rem 1.25rem; align-items:start}
 .stage{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.1rem; min-width:0}
 .stage > .inner{display:flex; flex-direction:column; gap:1rem}
 .stage h1{margin:0; font-size:1.55rem; line-height:1.2; letter-spacing:-.01em}
 .stage .lede{margin:0; color:var(--muted); max-width:52rem}
-.caption{grid-column:1 / -1; margin:0; font-size:1.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.caption{grid-column:1 / -1; margin:0; font-size:.95rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 svg text{font-family:var(--sans)}
 .scene{width:100%; height:8rem; display:block}  /* about two readout rows */
 .hit{cursor:pointer}
@@ -80,7 +80,13 @@ svg text{font-family:var(--sans)}
   .stage > .inner{min-height:100%} .stage > .inner > .focus{flex:1; align-items:stretch} .focus .side .links{margin-top:auto; padding-top:.5rem}
 }
 svg.dg{display:block; width:100%; height:auto}
-.dgwrap svg.dg.big{max-height:calc(100dvh - 17rem); margin:0 auto}
+.chippage{display:flex; flex-direction:column; gap:1rem}
+.chiphead{display:flex; justify-content:space-between; align-items:flex-start; gap:2rem}
+.chiphead .links{flex:none}
+@media (min-width:1001px){   /* the diagram takes all the height that is left */
+  .stage > .inner:has(.chippage){height:100%} .chippage{flex:1; min-height:0}
+  .dgwrap{flex:1; min-height:0} .dgwrap svg.dg.big{width:100%; height:100%}
+}
 .dgb{cursor:pointer} .dgb:hover .hl, .dgb:focus-visible .hl{stroke:var(--sig); stroke-width:3}
 .hl.on{stroke:var(--sig); stroke-width:3}
 @media (max-width:1000px){ .focus{grid-template-columns:minmax(0,1fr)} }
@@ -130,7 +136,7 @@ svg.strip{max-width:100%; height:auto; display:block}
   .arrow{display:none} .blk, .blk.pin{flex:1 1 calc(50% - .4rem); min-width:0}
   .dist{margin-left:0} .dist input{width:100%} .stage, .detail{padding:.8rem}
 }
-footer{padding:0 1.25rem 1rem; color:var(--faint); font-size:.78rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem}
+footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:flex; justify-content:flex-end; flex-wrap:wrap; gap:.5rem}
 .loading{padding:3rem; color:var(--muted)}
 </style>
 </head>
@@ -153,7 +159,6 @@ footer{padding:0 1.25rem 1rem; color:var(--faint); font-size:.78rem; display:fle
 </header>
 <main id="main"><div class="loading">Loading simulation data…</div></main>
 <footer>
-  <span>Waveforms: transistor-level ngspice runs (tt corner), bench measurements and the Python link model in the repo. Carrier drawn slowed down.</span>
   <span><a href="https://github.com/mattvenn/ook-asic-radio/blob/main/docs/how_it_works.md">How it works</a> · <a href="https://github.com/mattvenn/ook-asic-radio">github.com/mattvenn/ook-asic-radio</a></span>
 </footer>
 <div class="help" id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helph">
@@ -177,7 +182,7 @@ const REPO = 'https://github.com/mattvenn/ook-asic-radio/blob/main/';
 const DOC = REPO + 'docs/how_it_works.md#';
 const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.sch';
 // 3D view of the block's layout, as linked from layout/README.md (the GDS has the same name as the schematic)
-const GDS = n => 'https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/' + n + '.gds';
+const GDS = (n, dir = 'layout') => 'https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/' + dir + '/' + n + '.gds';
 const SENS = -94;
 let D = null;                       // decoded payload
 const S = {level: 'link', focus: null, block: null, p: -44, step: 0, playing: true, bbLvl: null};
@@ -221,6 +226,7 @@ function run() {             // model run nearest the received power
   if (!r._s) { r._s = bytes(r.scores); r._c = unpack(r.chips, 127); }
   return r;
 }
+const interp = (x, xs, ys) => { let i = 1; while (i < xs.length - 1 && xs[i] < x) i++; const u = (x - xs[i - 1]) / (xs[i] - xs[i - 1]); return ys[i - 1] + (ys[i] - ys[i - 1]) * Math.max(0, Math.min(1, u)); };
 const GOLD = () => D._gold || (D._gold = Uint8Array.from(D.gold, c => +c));
 const fmtd = d => d < 1 ? (d * 100).toFixed(0) + ' cm' : d < 10 ? d.toFixed(1) + ' m' : d.toFixed(0) + ' m';
 
@@ -405,8 +411,8 @@ function figPath() {
 function figGold() {
   const g = GOLD(), per = D.model.period, all = new Uint8Array(3 * per);
   for (let b = 0; b < 3; b++) all.set(g, b * per);
-  return fig('one send: three bursts of 127 chips, 64 silent chips between', strip([{bits: all, label: 'carrier', color: 'var(--tx)'}], {h: 34}), 'model/gold.py') +
-    fig('one burst, chip by chip', strip([{bits: g, label: '0x' + D.code.toString(16).toUpperCase(), color: 'var(--tx)'}], {h: 30}));
+  return fig('one burst, chip by chip', strip([{bits: g, label: '0x' + D.code.toString(16).toUpperCase(), color: 'var(--tx)'}], {h: 30}), 'model/gold.py') +
+    fig('one send: three bursts of 127 chips, 64 silent chips between', strip([{bits: all, label: 'carrier', color: 'var(--tx)'}], {h: 34}));
 }
 const TXL = {key: ['enable (key)', '#9db0bc'], ring: ['ring', 'var(--tx)'], a: ['latch A', 'var(--tx)'], b: ['latch B', 'var(--sig2)'],
   drv_p: ['driver p (ua[3])', 'var(--tx)'], drv_n: ['driver n (ua[4])', 'var(--sig2)'], dipole: ['across the dipole', 'var(--sig)']};
@@ -421,8 +427,13 @@ function figTx(keys) {
 function figChain() {
   if (!D.rx_rf) return NODATA('RX RF');
   const n = D.rx_rf.nodes, x = n.map((_, i) => i), y = n.map(v => v.vpk * 1000);
-  let h = fig('peak signal at each point, −60 dBm tone in', plot({series: [{d: {x, y}, color: 'var(--rx)', label: 'mV peak', w: 2.5}, {d: {x, y}, color: 'var(--rx)', pts: true}],
-    ylog: true, ylim: [0.3, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), 'build/rx_rf_tone.raw, tt');
+  // at the received power now: each stage's output from the chain's CW sweep (taps o1..o5, out = stages 1..6), log-interpolated
+  const L = D.logdet, p = Math.max(L.pin[0], Math.min(L.pin[L.pin.length - 1], prx()));
+  const nowY = L.tap_amp.map(a => 1000 * Math.pow(10, interp(p, L.pin, a.map(Math.log10)))), nowX = nowY.map((_, i) => i + 2);
+  let h = fig(`peak signal at each point: at ${DBM(prx())} now, and a −60 dBm tone`, plot({series: [
+      {d: {x: nowX, y: nowY}, color: 'var(--sig2)', label: 'now (CW sweep)', w: 2.5}, {d: {x: nowX, y: nowY}, color: 'var(--sig2)', pts: true},
+      {d: {x, y}, color: 'var(--rx)', label: '−60 dBm tone (transient)', w: 1.5, op: .7}, {d: {x, y}, color: 'var(--rx)', pts: true}],
+    ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), 'sim/logdet/taps.txt + build/rx_rf_tone.raw, tt');
   h += '<p>Each stage multiplies the signal until the last stages limit at ~1 V: that limiting is what the log detector uses.</p>';
   const cols = ['#4c6b78', '#5d8592', 'var(--rx)', 'var(--rx)', 'var(--rx)', 'var(--sig2)', 'var(--sig2)', 'var(--sig2)'];
   h += fig('the same 10 ns at every stage', plot({series: n.map((v, i) => ({d: dec(v.w, 1000), color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240}));
@@ -435,13 +446,13 @@ function figLogdet() {
     hl: []}), 'sim/logdet/taps.txt, tt');
   const cols = ['#4c6b78', '#5d8592', '#3cc4a8', '#8ad6c2', '#ffd166', '#f0954a'];
   h += fig('amplitude reaching each detector cell: they saturate one after another', plot({series: L.tap_amp.map((a, i) => ({d: {x: L.pin, y: a}, color: cols[i], label: i < 5 ? 'o' + (i + 1) : 'out'})),
-    ylog: true, ylim: [1e-4, 3], xl: 'input power (dBm)', yl: 'V peak (log)', h: 240}));
+    ylog: true, ylim: [1e-4, 3], xl: 'input power (dBm)', yl: 'V peak (log)', h: 240, vl: [{x: Math.max(-110, Math.min(-10, p)), color: '#fff', label: p.toFixed(0) + ' dBm'}]}));
   if (D.rx_rf && D.rx_rf.key_det) h += fig('carrier keyed on at 0.5 µs, off at 2.5 µs (−60 dBm)', plot({series: [{d: dec(D.rx_rf.key_det), color: 'var(--rx)', label: 'det (V)'}], xl: 'time (µs)', yl: 'det (V)', h: 180}), 'build/rx_rf_key.raw');
   return h;
 }
 function bb() {
   if (!D.bb.length) return null;
-  if (S.bbLvl == null) S.bbLvl = prx() > -82 ? D.bb[0].lvl : D.bb[D.bb.length - 1].lvl;
+  if (S.bbLvl == null) S.bbLvl = D.bb.reduce((a, b) => Math.abs(b.lvl - prx()) < Math.abs(a.lvl - prx()) ? b : a).lvl;   // nearest simulated level to the slider
   return D.bb.find(b => b.lvl === S.bbLvl) || D.bb[0];
 }
 function bbPick() {
@@ -551,10 +562,12 @@ function chipPage() {
   const f = S.focus, lede = {
     tx: 'The transmitter: the digital keys the ring oscillator with the Gold code, the level shifter makes two opposite-phase 3.3 V signals, and one driver feeds each dipole arm.',
     rx: `The receiver never tunes to the carrier: ~80 dB of gain, a log detector that turns RF power into a DC level, a comparator against its own slow average, then the digital correlates against the expected code. Received now: <b>${DBM(prx())}</b>.`,
-  }[f] || 'One Tiny Tapeout tile: the receiver on top, the transmitter below, the digital macro on the right. Dashed lines are enables from the digital. Click a block.';
-  return `<h1>${f === 'tx' ? 'Inside the chip: the transmitter' : f === 'rx' ? 'Inside the chip: the receiver' : 'Inside the chip'}</h1>
-  <p class="lede">${lede}</p>
-  <div class="dgwrap">${dgSVG({hl: f ? DGHALF[f] : null, cls: 'big'})}</div>`;
+  }[f] || 'Radio functional diagram: the receiver on top, the transmitter below, the digital macro on the right. Dashed lines are enables from the digital. Click a block.';
+  return `<div class="chippage">
+  <div class="chiphead"><p class="lede">${lede}</p>
+    <div class="links"><a class="secondary" href="${GDS('tt_um_mattvenn_radio', 'gds')}" target="_blank" rel="noopener">Whole layout ↗</a></div></div>
+  <div class="dgwrap">${dgSVG({hl: f ? DGHALF[f] : null, cls: 'big'})}</div>
+  </div>`;
 }
 /* one block per page: its story on the left, its plots on the right (the over-the-air ideas put the link scene above their plots) */
 function focusPage(id) {

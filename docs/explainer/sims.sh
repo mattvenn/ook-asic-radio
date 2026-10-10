@@ -7,10 +7,10 @@ xschem -n -s -q -o build xschem/tb_logdet.sch
 xschem -n -s -q -o build xschem/tb_rx_bb.sch
 # bench/scope.py imports pyvisa (instrument driver), not needed here: stub it
 mkdir -p build/explainer_stub && touch build/explainer_stub/pyvisa.py
-PYTHONPATH=build/explainer_stub python3 sim/rx/gen_det.py -94 -70
+PYTHONPATH=build/explainer_stub python3 sim/rx/gen_det.py -94 -90 -86 -82 -78 -74 -70
 cd build
 ../sim/rx/rf.sh
-../sim/rx/bb.sh -94 -70
+../sim/rx/bb.sh -94 -90 -86 -82 -78 -74 -70
 # TX chain (ring, level-shifter latch a/b, drivers, dipole): build/tb_tx_ab.raw
 cd ..
 xschem -n -s -q -o build xschem/tb_tx.sch
