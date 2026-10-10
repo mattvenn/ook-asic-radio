@@ -558,7 +558,7 @@ function focusPage(id) {
   useGeo('stage');
   return `${isLink ? linkScene(id) : ''}<div class="focus">
     <div class="side">
-      <div class="top"><div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div><button type="button" class="close" data-close aria-label="Back to the ${isLink ? 'link' : 'chip'}">✕</button></div>
+      <div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div>
       <p>${b.text}</p>
       <div class="facts">${facts.map(f => `<span class="fact">${f[0]} <b>${f[1]}</b></span>`).join('')}</div>
       <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">Read more in How it works ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a>` : ''}</div>
@@ -818,10 +818,9 @@ const anim = {
 
 // ------------------------------------------------------------------ events
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-go],[data-block],[data-close],[data-bb]');
+  const t = e.target.closest('[data-go],[data-block],[data-bb]');
   if (!t) return;
   if (t.dataset.bb) { S.bbLvl = +t.dataset.bb; render(); return; }
-  if (t.hasAttribute('data-close')) { S.block = null; render(); return; }
   if (t.dataset.go) { go(t.dataset.go); return; }
   const id = t.dataset.block;
   if (!B[id]) return;
