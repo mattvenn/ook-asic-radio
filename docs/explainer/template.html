@@ -562,7 +562,7 @@ function chipPage() {
   const f = S.focus, lede = {
     tx: 'The transmitter: the digital keys the ring oscillator with the Gold code, the level shifter makes two opposite-phase 3.3 V signals, and one driver feeds each dipole arm.',
     rx: `The receiver never tunes to the carrier: ~80 dB of gain, a log detector that turns RF power into a DC level, a comparator against its own slow average, then the digital correlates against the expected code. Received now: <b>${DBM(prx())}</b>.`,
-  }[f] || 'Radio functional diagram: the receiver on top, the transmitter below, the digital macro on the right. Dashed lines are enables from the digital. Click a block.';
+  }[f] || 'Functional diagram';
   return `<div class="chippage">
   <div class="chiphead"><p class="lede">${lede}</p>
     <div class="links"><a class="secondary" href="${GDS('tt_um_mattvenn_radio', 'gds')}" target="_blank" rel="noopener">Whole layout ↗</a></div></div>
@@ -698,7 +698,7 @@ const TOUR = [
   {level: 'link', block: null, p: -44, cap: 'Two boards, the same chip. The left one transmits, the right one receives, 1 m apart.'},
   {level: 'link', block: 'ook', cap: 'On-off keying: carrier on is a 1, carrier off is a 0. The pattern is a 127-chip Gold code.'},
   {level: 'link', block: 'air', cap: 'At 1 m the receiver sees −44 dBm. It still works around −94 dBm: 50 dB, 100,000× less power.'},
-  {level: 'chip', block: null, cap: 'Inside the chip: the receiver on top, the transmitter below, the digital macro on the right.'},
+  {level: 'chip', block: null, cap: 'Functional diagram'},
   {level: 'chip', focus: 'tx', block: null, cap: 'The transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
   {level: 'chip', block: 'gold', cap: 'The digital generates the Gold code from two 7-bit LFSRs and sends it three times.'},
   {level: 'chip', block: 'tx_ring', cap: 'A free-running ring of inverters. No crystal, no PLL: the receiver doesn\'t care about the exact frequency.'},
