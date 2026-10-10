@@ -484,15 +484,15 @@ function figLogdet() {
     const hi = geo('rf_hi'), lo = geo('rf_lo'), x = dec(br.lo.rf_hi).x;   // RF amplitude: geometric between runs, as on lna_chain
     if (!D._kly) { let a = Infinity, z = -Infinity; for (const l of KL) for (const v of dec(l.det).y) { a = Math.min(a, v); z = Math.max(z, v); } D._kly = [a - (z - a) * .05, z + (z - a) * .05]; }
     if (!D._kry) { let m = 0; for (const l of KL) for (const v of dec(l.rf_hi).y) m = Math.max(m, Math.abs(v)); D._kry = [-m * 1.05, m * 1.05]; }
-    h += fig(`carrier keyed on at 0.5 µs and off at 2.5 µs, ${DBM(p)}: the RF going in, and the detector's output`,
-      plot({series: [{band: {x, lo, hi}, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV): ~870 cycles while on, drawn as its envelope'}], yl: 'mV', h: 120, ylim: D._kry}) +
-      plot({series: [{d: bw('det'), color: 'var(--rx)', label: 'det (V)', w: 2}], xl: 'time (µs)', yl: 'det (V)', h: 140, ylim: D._kly}), runsNote(br, 'rx_rf_key'));
-    // zoom on the switch-on: the sine itself, and the detector settling in ~16 ns (its own ~20 MHz low-pass)
+    // the zoom toggle swaps both plots to 40 ns around the switch-on: the sine itself, and the detector settling in ~16 ns
     const zr = (() => { const A = dec(br.lo.rf_z), Bv = dec(br.hi.rf_z), sa = Math.max(...A.y.map(Math.abs)) || 1, sb = Math.max(...Bv.y.map(Math.abs)) || 1, amp = Math.pow(sa, 1 - br.w) * Math.pow(sb, br.w);
       return {x: A.x, y: A.y.map((v, i) => ((1 - br.w) * v / sa + br.w * Bv.y[i] / sb) * amp)}; })();
-    h += fig('zoom, 40 ns around the switch-on: the sine arrives, and the detector settles in ~16 ns',
-      plot({series: [{d: zr, color: 'var(--sig2)', label: 'last amplifier stage (mV)', w: 1.2}], yl: 'mV', h: 110, ylim: D._kry}) +
-      plot({series: [{d: bw('det_z'), color: 'var(--rx)', label: 'det (V)', w: 2}], xl: 'time (ns)', yl: 'det (V)', h: 110, ylim: D._kly}), runsNote(br, 'rx_rf_key'));
+    const z = !!S.ldZoom;
+    h += `<div class="segrow"><div class="seg" role="group" aria-label="Time span"><button type="button" data-ldzoom="0" aria-pressed="${!z}">whole 3.5 µs</button><button type="button" data-ldzoom="1" aria-pressed="${z}">zoom: 40 ns at switch-on</button></div></div>`;
+    h += fig(z ? `the switch-on, 40 ns at ${DBM(p)}: the sine arrives, and the detector settles in ~16 ns` : `carrier keyed on at 0.5 µs and off at 2.5 µs, ${DBM(p)}: the RF going in, and the detector's output`,
+      plot({series: [z ? {d: zr, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV)', w: 1.2}
+                       : {band: {x, lo, hi}, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV): ~870 cycles while on, drawn as its envelope'}], yl: 'mV', h: 120, ylim: D._kry}) +
+      plot({series: [{d: z ? bw('det_z') : bw('det'), color: 'var(--rx)', label: 'det (V)', w: 2}], xl: z ? 'time (ns)' : 'time (µs)', yl: 'det (V)', h: 140, ylim: D._kly}), runsNote(br, 'rx_rf_key'));
   }
   return h;
 }
@@ -986,6 +986,8 @@ const anim = {
 
 // ------------------------------------------------------------------ events
 document.addEventListener('click', e => {
+  const lz = e.target.closest('[data-ldzoom]');
+  if (lz) { S.ldZoom = lz.dataset.ldzoom === '1'; render(); return; }
   const dip = e.target.closest('[data-dip]');
   if (dip) { const k = S.dip == null ? D.code : S.dip; S.dip = k ^ (1 << +dip.dataset.dip); render(); return; }
   const t = e.target.closest('[data-go],[data-block]');
