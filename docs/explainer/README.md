@@ -14,12 +14,12 @@ python3 docs/explainer/gendata.py         # ~10 s; writes docs/explainer.html
 ## Sources
 | View | Source |
 |---|---|
-| path loss | `bench/data/sweep2/ota.csv`, fit −44 dBm at 1 m, 1/d^1.89 |
+| received power → estimated distance | `bench/data/sweep2/ota.csv` fit (−44 dBm at 1 m, 1/d^1.89, measured 10 cm–4 m) up to the ground-reflection breakpoint (5.8 m for both boards 1 m up at 433.92 MHz), then the two-ray model (40 dB/decade). Constants in `template.html` (`HGT`, `DB`) |
 | TX ring, level-shifter A/B, drivers, dipole | `build/tb_tx_ab.raw` from `xschem/tb_tx.sch` (tt, schematic) |
 | RX antenna → 6 stages → det (−60 dBm tone, keyed) | `build/rx_rf_tone.raw`, `rx_rf_key.raw` from `sim/rx/rf.sh` |
 | log detector transfer, per-tap amplitude | `sim/logdet/taps.txt`, `transfer_cw.txt` |
 | baseband det → lpf → avg → comparator, trim (−70 / −94 dBm) | `build/rx_bb_<lvl>.raw` from `sim/rx/gen_det.py` + `sim/rx/bb.sh` |
-| sent vs received chips, score, 2-of-3 (follows the distance slider) | `model/` link model at 2 dB steps, −110 to −60 dBm: one send of code 0x5A, NF 11 dB / 450 MHz noise, 2 mV offset, 0.07 mV trim, 0.3 mV comparator noise at 13 mV/dB, bit-exact `radio.RxDigital` |
+| sent vs received chips, score, 2-of-3 (follows the received-power slider) | `model/` link model at 2 dB steps, −110 to −60 dBm: one send of code 0x5A, NF 11 dB / 450 MHz noise, 2 mV offset, 0.07 mV trim, 0.3 mV comparator noise at 13 mV/dB, bit-exact `radio.RxDigital` |
 
 `sims.sh` stubs `pyvisa` (pulled in through `bench/scope.py`) so `gen_det.py` runs in the osic image.
 

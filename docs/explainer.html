@@ -126,8 +126,8 @@ footer{padding:0 1.25rem 1rem; color:var(--faint); font-size:.78rem; display:fle
   <div class="brand"><b>433 MHz OOK radio</b></div>
   <nav class="crumbs" aria-label="Level" id="crumbs"></nav>
   <div class="dist">
-    <label for="dist">Distance between boards</label>
-    <input id="dist" type="range" min="-1" max="3" step="0.01" value="0" aria-describedby="distout">
+    <label for="dist">Received power</label>
+    <input id="dist" type="range" min="25" max="110" step="0.5" value="44" aria-describedby="distout">
     <output id="distout" for="dist"></output>
   </div>
   <div class="navbtns">
@@ -150,7 +150,7 @@ footer{padding:0 1.25rem 1rem; color:var(--faint); font-size:.78rem; display:fle
       <li><kbd>→</kbd> or <kbd>Space</kbd>: next step of the tour; <kbd>←</kbd>: back</li>
       <li><kbd>Esc</kbd>: close the detail, then up one level</li>
       <li><kbd>1</kbd> link, <kbd>2</kbd> transmitter, <kbd>3</kbd> receiver</li>
-      <li><kbd>[</kbd> <kbd>]</kbd>: boards closer / further apart</li>
+      <li><kbd>[</kbd> <kbd>]</kbd>: received power 1 dB stronger / weaker</li>
       <li><kbd>p</kbd>: pause or play the animation</li>
       <li><kbd>?</kbd>: this help</li>
     </ul>
@@ -165,7 +165,7 @@ const DOC = REPO + 'docs/how_it_works.md#';
 const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.sch';
 const SENS = -94;
 let D = null;                       // decoded payload
-const S = {level: 'link', block: null, logd: 0, step: 0, playing: true, bbLvl: null};
+const S = {level: 'link', block: null, p: -44, step: 0, playing: true, bbLvl: null};
 
 // ------------------------------------------------------------------ data
 async function load() {
@@ -188,8 +188,16 @@ function unpack(b64, n) {
   for (let i = 0; i < n; i++) out[i] = (by[i >> 3] >> (7 - (i & 7))) & 1;
   return out;
 }
-const dist = () => Math.pow(10, S.logd);
-const prx = () => D.path.ref_dbm - 10 * D.path.n * Math.log10(dist());
+/* The slider sets the received power. Distance is only an estimate of it:
+   up to the ground-reflection breakpoint, the bench fit (−44 dBm at 1 m, 1/d^1.89, measured 10 cm–4 m);
+   past it, the two-ray ground-reflection model, 40 dB per decade. Breakpoint d_b = 4·h_tx·h_rx/λ for both boards
+   HGT m above flat ground at 433.92 MHz. */
+const HGT = 1, LAMBDA = 299.792458 / 433.92, DB = 4 * HGT * HGT / LAMBDA;
+const benchP = d => D.path.ref_dbm - 10 * D.path.n * Math.log10(d);
+const pathP = d => d <= DB ? benchP(d) : benchP(DB) - 40 * Math.log10(d / DB);
+const prx = () => S.p;
+const dist = (p = S.p) => p >= benchP(DB) ? Math.pow(10, (D.path.ref_dbm - p) / (10 * D.path.n)) : DB * Math.pow(10, (benchP(DB) - p) / 40);
+const distSrc = (d = dist()) => d <= 4 ? 'bench fit' : d <= DB ? 'bench fit, extrapolated' : 'two-ray model';
 function run() {             // model run nearest the received power
   const m = D.model, p = Math.max(m.levels[0], Math.min(m.levels[m.levels.length - 1], prx()));
   let best = 0;
@@ -306,9 +314,9 @@ const B = {
     text: 'The transmitter switches a 433 MHz carrier on and off, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives. Loud is 1, quiet is 0. So the TX needs no crystal or PLL, just a free-running ring of inverters.',
     facts: [['TX power', '+4 dBm'], ['RX accepts', '330–560 MHz'], ['chip', '104 µs'], ['code', '127 chips']],
     plot: () => figCode()},
-  air: {lvl: 'link', name: 'Over the air', sub: 'path loss between two wire dipoles', anchor: 'bench-measurements-phase-0',
-    text: 'Measured on the bench with an earlier chip\'s ring oscillator, 14.5 cm wire antennas and a scope: close to free space, falling as 1/d^1.89, −44 dBm at 1 m. The receiver can still find a burst near −94 dBm, 50 dB below that.',
-    facts: [['at 1 m', '−44 dBm'], ['exponent', 'n = 1.89'], ['sensitivity', '≈ −94 dBm']],
+  air: {lvl: 'link', name: 'Over the air', sub: 'received power vs distance, two wire dipoles', anchor: 'bench-measurements-phase-0',
+    text: 'Measured on the bench with an earlier chip (ttsky25b, its ring at 518 MHz), 14.5 cm wire dipoles held parallel, 10 cm to 4 m: close to free space, −44 dBm at 1 m, falling as 1/d^1.89. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. Distances past 4 m are that model, not a measurement.',
+    facts: () => [['at 1 m', '−44 dBm (bench)'], ['two-ray past', fmtd(DB)], ['−94 dBm at', '≈ ' + fmtd(dist(-94))]],
     plot: () => figPath()},
   gold: {lvl: 'tx', name: 'Gold code (digital)', sub: 'radio_digital macro, TX side', anchor: 'digital-radio_digital-macro', color: 'dig',
     text: 'The 7-bit DIP code picks one Gold code: two 7-bit LFSRs, one delayed by the code, XORed. 127 noise-like chips, half on, half off. The TX keys the ring with the code three times, with 64 silent chips between bursts.',
@@ -375,14 +383,16 @@ function figCode() {
     'model/ link model, one burst') + `<p>${N(r.chip_ok + '/127', 7)} chips right: ${N(r.chip_ok < 97 ? 'below 97, not a detection' : '97 or more, a detection', 25, 'left')}. Wrong chips are red.</p>`;
 }
 function figPath() {
-  const p = D.path, fit = {x: [], y: []};
-  for (let l = -1; l <= 3.001; l += 0.05) { fit.x.push(Math.pow(10, l)); fit.y.push(p.ref_dbm - 10 * p.n * l); }
+  const p = D.path, fit = {x: [], y: []}, two = {x: [], y: []};
+  for (let l = -1; l <= Math.log10(DB) + 1e-9; l += 0.02) { fit.x.push(Math.pow(10, l)); fit.y.push(benchP(Math.pow(10, l))); }
+  for (let l = Math.log10(DB); l <= 2.3; l += 0.02) { two.x.push(Math.pow(10, l)); two.y.push(pathP(Math.pow(10, l))); }
   return fig('received power vs distance', plot({series: [
-      {d: fit, color: 'var(--sig)', label: 'fit: −44 dBm at 1 m, 1/d^1.89', w: 2},
-      {d: {x: p.d_m, y: p.p_dbm}, color: 'var(--sig2)', label: 'measured', pts: true}],
-    xlog: true, xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
-    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm'}], vl: [{x: dist(), color: '#fff', label: fmtd(dist())}],
-    bands: [{x0: 4, x1: 1000, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + '<p>Measured from 10 cm to 4 m; further out (shaded) is the fit extended, not a measurement.</p>';
+      {d: fit, color: 'var(--sig)', label: 'bench fit: −44 dBm at 1 m, 1/d^1.89', w: 2},
+      {d: two, color: 'var(--sig2)', label: `two-ray, boards ${HGT} m up`, w: 2},
+      {d: {x: p.d_m, y: p.p_dbm}, color: '#e8eef2', label: 'measured', pts: true}],
+    xlog: true, xlim: [0.1, 200], xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
+    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm'}], vl: [{x: Math.max(0.1, Math.min(200, dist())), color: '#fff', label: fmtd(dist())}],
+    bands: [{x0: 4, x1: 200, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + '<p>Measured from 10 cm to 4 m. Further out (shaded) is a model: flat ground, line of sight, no walls or bodies. Real range will vary.</p>';
 }
 function figGold() {
   const g = GOLD(), per = D.model.period, all = new Uint8Array(3 * per);
@@ -484,7 +494,7 @@ function figLed() {
 
 // ------------------------------------------------------------------ levels
 function linkScene() {
-  const d = dist(), p = prx(), gap = 560 + (S.logd + 1) / 4 * 380, tx = 600 - gap / 2, rx = 600 + gap / 2;
+  const d = dist(), p = prx(), gap = 560 + Math.max(0, Math.min(1, (Math.log10(d) + 1) / 3.1)) * 380, tx = 600 - gap / 2, rx = 600 + gap / 2;
   const strength = Math.max(0.12, Math.min(1, (p + 100) / 60));
   /* vertical, parallel dipoles on the facing sides: the link is broadside to both (a dipole has a null along its own axis) */
   const board = (x, label, sub, color, lvl, pin, side) => `
@@ -500,10 +510,10 @@ function linkScene() {
   let waves = '';
   for (let k = 0; k < 6; k++) waves += `<path class="wave" data-k="${k}" d="" fill="none" stroke="var(--sig)" stroke-width="3" stroke-linecap="round"/>`;
   return `<svg class="scene" viewBox="0 0 1200 130" role="img" aria-label="Two boards: the transmitter on the left, the receiver on the right, ${fmtd(d)} apart">
-    <g class="hit" role="button" tabindex="0" data-block="air" aria-label="Over the air: path loss">
+    <g class="hit" role="button" tabindex="0" data-block="air" aria-label="Over the air: received power and estimated distance">
       <rect class="hl" x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10" fill="#ffffff04" stroke="#ffffff10"/>
       <g id="waves" data-x0="${tx + 185}" data-x1="${rx - 185}" data-cy="86" data-r0="10" data-r1="38" data-s="${strength}">${waves}</g>
-      <text x="600" y="20" fill="#9db0bc" font-size="16" text-anchor="middle">${fmtd(d)} · ${(4 - p).toFixed(0)} dB path loss</text>
+      <text x="600" y="20" fill="#9db0bc" font-size="16" text-anchor="middle">≈ ${fmtd(d)} apart (${distSrc(d)})</text>
     </g>
     ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'tx', 'ua[3] / ua[4]', 1)}
     ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'rx', 'ua[0] / ua[1]', -1)}
@@ -517,17 +527,17 @@ function linkScene() {
 function levelLink() {
   const p = prx(), r = run(), margin = p - SENS;
   return `<h1>Send a 1 by switching the radio on. Send a 0 by switching it off.</h1>
-  <p class="lede">Two boards run the same chip: one transmits, the other receives. Each antenna is two bare wires. Click a board to open its signal chain, the gap for the path loss, the LED for how a send is confirmed, or the chips below for the idea.</p>
+  <p class="lede">Two boards run the same chip: one transmits, the other receives. Each antenna is two bare wires. Click a board to open its signal chain, the gap for how power relates to distance, the LED for how a send is confirmed, or the chips below for the idea.</p>
   ${linkScene()}
   <div class="readouts">
     <div class="ro"><small>TX power</small><b>+4 dBm</b></div>
-    <div class="ro"><small>distance${dist() > 4 ? ' (extrapolated)' : ''}</small><b>${fmtd(dist())}</b></div>
+    <div class="ro"><small>≈ distance (${dist() > DB ? 'two-ray' : dist() > 4 ? 'extrapolated' : 'bench'})</small><b>${fmtd(dist())}</b></div>
     <div class="ro"><small>received</small><b>${p.toFixed(0)} dBm</b></div>
     <div class="ro"><small>margin to −94 dBm</small><b class="${margin >= 0 ? 'good' : 'bad'}">${margin >= 0 ? '+' : ''}${margin.toFixed(0)} dB</b></div>
     <div class="ro"><small>correlator</small><b id="live">–</b></div>
     <div class="ro"><small>LED (2 of 3 bursts)</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'missed'}</b></div>
   </div>
-  <div class="hit striphit" role="button" tabindex="0" data-block="ook" aria-pressed="${S.block === 'ook'}" aria-label="On-off keying: the idea, chip by chip"><div id="codestrip">${anim.cs || ''}</div></div>`;
+  <div class="hit striphit" role="button" tabindex="0" data-block="ook" aria-pressed="${S.block === 'ook'}" aria-label="On-off keying: the idea, chip by chip"><div id="codestrip">${codeStrip(anim._b || 0, anim._pos || 0)}</div></div>`;
 }
 function blk(id, cls, sub, thumb) {
   return `<button type="button" class="blk ${cls}" data-block="${id}" aria-pressed="${S.block === id}"><b>${B[id].name}</b><span>${sub}</span>${thumb || ''}</button>`;
@@ -570,7 +580,7 @@ function levelRx() {
 
 // ------------------------------------------------------------------ tour
 const TOUR = [
-  {level: 'link', block: null, logd: 0, cap: 'Two boards, the same chip. The left one transmits, the right one receives, 1 m apart.'},
+  {level: 'link', block: null, p: -44, cap: 'Two boards, the same chip. The left one transmits, the right one receives, 1 m apart.'},
   {level: 'link', block: 'ook', cap: 'On-off keying: carrier on is a 1, carrier off is a 0. The pattern is a 127-chip Gold code.'},
   {level: 'link', block: 'air', cap: 'At 1 m the receiver sees −44 dBm. It still works around −94 dBm: 50 dB, 100,000× less power.'},
   {level: 'tx', block: null, cap: 'Inside the transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
@@ -588,7 +598,7 @@ const TOUR = [
   {level: 'rx', block: 'slicer', cap: 'Eight samples per chip, majority vote, at four timing offsets at once.'},
   {level: 'rx', block: 'corr', cap: 'Count matches with the expected code: chance is ~64, 97 is a detection. Lots of wrong chips are fine.'},
   {level: 'rx', block: 'led', cap: 'Two detections one burst period apart toggle the LED. Noise and other codes don\'t.'},
-  {level: 'link', block: 'corr', logd: 2.62, cap: 'Pull the boards apart: near −94 dBm the score drops towards 97, and below that the send is missed.'},
+  {level: 'link', block: 'corr', p: -94, cap: 'Turn the power down: near −94 dBm the score drops towards 97, and below that the send is missed.'},
 ];
 
 // ------------------------------------------------------------------ render
@@ -646,9 +656,9 @@ function build() {
   if (S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${B[S.block].name}</button>`;
   $('crumbs').innerHTML = cr;
   const p = prx();
-  $('distout').textContent = `${fmtd(dist())} → ${p.toFixed(0)} dBm`;
-  $('dist').value = S.logd;
-  $('dist').setAttribute('aria-valuetext', `${fmtd(dist())}, ${p.toFixed(0)} dBm received`);
+  $('distout').textContent = `${p.toFixed(0)} dBm ≈ ${fmtd(dist())}`;
+  $('dist').value = -S.p;   // slider runs strong (left) to weak (right), like moving the boards apart
+  $('dist').setAttribute('aria-valuetext', `${p.toFixed(0)} dBm received, about ${fmtd(dist())} (${distSrc()})`);
   $('stepno').textContent = `${S.step + 1} / ${TOUR.length}`;
   $('caption').innerHTML = `<span class="n">${S.step + 1}/${TOUR.length}</span><span>${TOUR[S.step].cap}</span>`;
   anim.reset();
@@ -658,13 +668,13 @@ function go(level, block = null) { S.level = level; S.block = block; render(); }
 /* tour steps that set a distance glide the slider there, so it never jumps and always matches the caption */
 let glideId = 0;
 function glideTo(target, ms = 1200) {
-  const id = ++glideId, from = S.logd;
+  const id = ++glideId, from = S.p;
   let t0 = null;
   const tick = now => {
     if (id !== glideId) return;
     if (t0 == null) t0 = now;
     const u = Math.max(0, Math.min(1, (now - t0) / ms)), e = u < .5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u);
-    S.logd = from + (target - from) * e; S.bbLvl = null; render();
+    S.p = from + (target - from) * e; S.bbLvl = null; render();
     if (u < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -674,12 +684,19 @@ function setStep(i, initial = false) {
   const t = TOUR[S.step];
   S.level = t.level; S.block = t.block; S.bbLvl = null;
   history.replaceState(null, '', '#step=' + S.step);
-  if (t.logd != null && initial) { glideId++; S.logd = t.logd; }
+  if (t.p != null && initial) { glideId++; S.p = t.p; }
   render();
-  if (t.logd != null && !initial && Math.abs(S.logd - t.logd) > .005) glideTo(t.logd);
+  if (t.p != null && !initial && Math.abs(S.p - t.p) > .05) glideTo(t.p);
 }
 
 // ------------------------------------------------------------------ animation (link level)
+/* the sent / received chip strip at burst b, chip ib: built with the page too, so the fit measures its real height */
+function codeStrip(b = 0, ib = 0) {
+  const g = GOLD(), r = run(), on = b < 3 && ib < 127 ? g[ib] : 0;
+  return fig(`burst ${Math.min(b + 1, 3)} of 3 · chip ${N(b < 3 && ib < 127 ? ib + 1 : '–', 3)} · carrier ${N(on ? 'ON' : 'off', 3, 'left')}`,
+    strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {ph: b < 3 && ib < 127 ? ib : -1, aria: 'sent and received chips'}),
+    `received chips: link model run at ${DBM(r.lvl)}`);
+}
 const anim = {
   t0: 0, reset() { this.t0 = performance.now(); },
   frame(now) {
@@ -707,10 +724,8 @@ const anim = {
     const led = $('led'); if (led) { const lit = r.toggled && pos >= m.period + 127 + 8; led.setAttribute('fill', lit ? 'var(--ok)' : '#2a3741'); }
     const cs = $('codestrip');
     if (cs && (this._pos !== ib || this._lvl !== r.lvl || !cs.firstChild)) {
-      this._pos = ib; this._lvl = r.lvl;
-      cs.innerHTML = this.cs = fig(`burst ${Math.min(b + 1, 3)} of 3 · chip ${N(b < 3 && ib < 127 ? ib + 1 : '–', 3)} · carrier ${N(on ? 'ON' : 'off', 3, 'left')}`,
-        strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {ph: b < 3 && ib < 127 ? ib : -1, aria: 'sent and received chips'}),
-        `received chips: link model run at ${DBM(r.lvl)}`);
+      this._pos = ib; this._lvl = r.lvl; this._b = b;
+      cs.innerHTML = codeStrip(b, ib);
     }
   }
 };
@@ -736,11 +751,11 @@ document.addEventListener('keydown', e => {
   else if (k === 'ArrowLeft') { e.preventDefault(); setStep(S.step - 1); }
   else if (k === 'Escape') { if (S.block) S.block = null; else S.level = 'link'; render(); }
   else if (k === '1') go('link'); else if (k === '2') go('tx'); else if (k === '3') go('rx');
-  else if (k === '[' || k === ']') { glideId++; S.logd = Math.max(-1, Math.min(3, +(S.logd + (k === ']' ? 0.1 : -0.1)).toFixed(2))); S.bbLvl = null; render(); }
+  else if (k === '[' || k === ']') { glideId++; S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); S.bbLvl = null; render(); }
   else if (k === 'p') S.playing = !S.playing;
   else if (k === '?') $('help').hidden = false;
 });
-$('dist').addEventListener('input', e => { glideId++; S.logd = +e.target.value; S.bbLvl = null; render(); $('dist').focus(); });
+$('dist').addEventListener('input', e => { glideId++; S.p = -e.target.value; S.bbLvl = null; render(); $('dist').focus(); });
 $('prev').onclick = () => setStep(S.step - 1);
 $('next').onclick = () => setStep(S.step + 1);
 let resizeT; addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (D) render(); }, 100); });
