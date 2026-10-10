@@ -75,6 +75,11 @@ def main(case):
         for k, (frac, val, lim, x, y) in sorted(worst.items(), key=lambda kv: -kv[1][0]):
             unit = 'mA/um' if k in LIM_W else 'mA/cut'
             flag = '  <-- under 2x margin' if frac > 0.5 else ''
+            if k in ('mcon', 'via1') and frac > 0.5:
+                # each device terminal's current goes in at one mesh point, so the cuts next to it
+                # read high: in the cell the current spreads along the finger (tx_drv stage 5:
+                # 22 mcon per source strip, ~0.034 mA/cut at the average current, ~9 %)
+                flag += ' (point injection: reads high, see docs/power.md)'
             print(f'  {k:5s} worst {val:7.3f} {unit} (limit {lim}, {frac * 100:5.1f} %) at ({x:.1f}, {y:.1f}){flag}')
 
 

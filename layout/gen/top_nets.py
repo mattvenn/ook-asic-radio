@@ -15,8 +15,9 @@ ANALOG = ['det', 'lpf', 'avg', 'xcomp.inp', 'xcomp.inn', 'xavg.in', 'xavg.out', 
 TRIM = ['trim', 'xcomp.trim', 'xctrim.trim', 'xdac.out']
 # RX supply trunks from the mid straps, in routing order: (name, block supply pin)
 TRUNK_VGND = [('avg', 'xavg.VSS'), ('comp', 'xcomp.VSS'), ('lpf', 'xlpf.VSS'), ('det', 'xdet.VSS'),
-              ('bias', 'xbias.VSS'), ('ctrim', 'xctrim.VGND'), ('dac', 'xdac.VGND')]
-TRUNK_VDPWR = [('avg', 'xavg.VDD'), ('comp', 'xcomp.VDD'), ('det', 'xdet.VDD'), ('bias', 'xbias.VDD')]
+              ('bias', 'xbias.VSS'), ('ctrim', 'xctrim.VGND'), ('dac', 'xdac.VGND'), ('dbg', 'xdbg.VSS', 'w')]
+TRUNK_VDPWR = [('avg', 'xavg.VDD'), ('comp', 'xcomp.VDD'), ('det', 'xdet.VDD'), ('bias', 'xbias.VDD'),
+               ('dbg', 'xdbg.VDD', 'w')]       # (dbg_tg: from the west straps, ~45 um away)
 
 
 def N(name, *terms, **kw):
@@ -33,6 +34,7 @@ def nets():
     out = tt_bus()          # fixed geometry first: every routed net then keeps clear of it
     out.append(tx_feed())
     out.append(vgnd_landing())
+    out.append(tx_gnd_feed())
     # ---------------- RX analog path ----------------
     # antenna inputs: straight up from the pads, as a pair, nothing else near
     out.append(N('rx_p', 'ua[0]', 'xchain.inp', w=2.0, layers=['m3', 'm4']))
@@ -67,8 +69,8 @@ def nets():
     # ---------------- TX ----------------
     # (TX-internal wires and the TX supply wiring go into the tx_top cell: LVS against tx_top.sch)
     # TX: VAPWR from the west strap, its own ground run (joins the RX ground only at the straps)
-    tx_vss = ['xtx.xring.VSS', 'xtx.xls.VSS', 'xtx.xlse_p.VSS', 'xtx.xlse_n.VSS', 'xtx.xdrv_p.VSS',
-              'xtx.xdrv_n.VSS']
+    # (the drivers' VSS: tx_gnd_feed; this joins the ring and the level shifters to it inside tx_top)
+    tx_vss = ['VGND_TXF', 'xtx.xring.VSS', 'xtx.xls.VSS', 'xtx.xlse_p.VSS', 'xtx.xlse_n.VSS']
     # (the drivers are fed by tx_feed; this joins the level shifters to it inside tx_top)
     out.append(N('VAPWR_TX', 'VAPWR@w', 'VAPWR_TXF', 'xtx.xls.VAPWR',
                  'xtx.xlse_n.VAPWR', 'xtx.xlse_p.VAPWR', w=2.5, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top', late=['VAPWR@w']))
@@ -123,20 +125,25 @@ def nets():
     # another block. The biggest R first (avg_sc / comp_ct VGND 57-67 ohm).
     for net, blocks in (('VGND', TRUNK_VGND), ('VDPWR', TRUNK_VDPWR)):
         prev = []
-        for b, pins in blocks:
+        for b, pins, *side in blocks:
             nm = f'{net}_RX_{b}'
-            land = [f'{net}@m'] + (['VGND_RXL'] if net == 'VGND' else [])
-            out.append(N(nm, land + prev, pins, anchors=land + prev, own=prev, w_try=[4.0, 3.0, 2.0, 1.0],
+            if side:                      # its own trunk from that strap set (not joined to the others)
+                land, own = [f'{net}@{side[0]}'], []
+            else:
+                land, own = [f'{net}@m'] + (['VGND_RXL'] if net == 'VGND' else []) + prev, prev
+            # (dbg_tg: <= 2 um, so its small pin doesn't become > 3 um metal next to the det wire)
+            out.append(N(nm, land, pins, anchors=land, own=own, w_try=[2.0, 1.0] if side else [4.0, 3.0, 2.0, 1.0],
                          layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 3, 'm3': 1, 'm4': 1}, margin=30,
                          zones=[blk(0, 192.6, 300, 226), blk(236.5, 162, 243, 192.6)], wide=True))
-            prev.append(nm)
+            if not side:
+                prev.append(nm)
     # the rest (chain, decaps, dbg_tg): both the west and the mid straps (this also joins them
     # inside the tile)
     out.append(N('VDPWR_RX', STRAPS['VDPWR'], 'xchain.VDD', 'xdecd1.VDPWR', 'xdecd2.VDPWR', 'xdecd3.VDPWR',
-                 'xdbg.VDD', w=1.0, layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1},
+                 w=1.0, layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1},
                  margin=30, anchors=STRAPS['VDPWR'], zones=[blk(0, 192.6, 300, 226)], wide=True))
     out.append(N('VGND_RX', STRAPS['VGND'], 'xchain.VSS', 'xdecd1.VGND', 'xdecd2.VGND', 'xdecd3.VGND',
-                 'xdbg.VSS', w=1.0, anchors=STRAPS['VGND'],
+                 w=1.0, anchors=STRAPS['VGND'],
                  layers=['m1', 'm2', 'm3', 'm4'], layer_cost={'m1': 6, 'm2': 2, 'm3': 1, 'm4': 1}, margin=30,
                  zones=[blk(0, 192.6, 300, 226)], wide=True))
 
@@ -170,6 +177,23 @@ def tx_feed():
     f += [('via', 'm3', 'm4', 62.68, round(Y0 + 1.5 + 2.5 * k, 2), 3.0) for k in range(15)] + [('via', 'm3', 'm4', 62.68, Y1 - 1.5, 3.0)]
     return dict(name='VAPWR_TXF', fixed=f, w=3.0, cell='tx_top',
                 own=['VAPWR@w', 'xtx.xdrv_n.VAPWR', 'xtx.xdrv_p.VAPWR'])
+
+
+def tx_gnd_feed():
+    """The TX drivers' VGND feed (fixed, in tx_top), 2026-10-10: VGND_TX landed on xdrv_n's VSS rail
+    at its top end (via3 62 %, met3 54 % of the EM limit; ~50 mV rise at the TX peak). A met4 bus
+    straight off the west VGND strap's met4 (x 12.0-15.1) east across both drivers' VSS rails
+    (met3, x 29.18-32.18 / 37.5-40.5), 0.6 clear of the VAPWR_TXF bus below it, via3 onto each rail,
+    and a met4 strip over each rail's upper half with via3 along it."""
+    Y1 = 120.65
+    BY0, BY1 = 106.8, 112.8
+    f = [('box', 'm4', 12.0, BY0, 40.5, BY1)]
+    for x0 in (29.18, 37.5):
+        xc = round(x0 + 1.5, 2)
+        f += [('box', 'm4', x0, BY0, x0 + 3.0, Y1)]
+        f += [('via', 'm3', 'm4', xc, round(BY0 + 1.5 + 2.5 * k, 2), 3.0) for k in range(5)] + [('via', 'm3', 'm4', xc, Y1 - 1.5, 3.0)]
+    return dict(name='VGND_TXF', fixed=f, w=3.0, cell='tx_top',
+                own=['VGND@w', 'xtx.xdrv_n.VSS', 'xtx.xdrv_p.VSS'])
 
 
 def vgnd_landing():

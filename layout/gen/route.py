@@ -563,7 +563,7 @@ class Router:
                 if t2 != tag and t2 in self.S.r[L]:
                     ref += self.S.r[L][t2].interacting(mine.sized(int(round(0.35 / DBU))))
             ref.merge()
-            d = int(round(SPACE[L] / 2 / DBU)) + 1
+            d = int(round(getattr(self, 'cur_sp', SPACE)[L] / 2 / DBU)) + 1   # (wide nets: gaps under 0.4 too)
             self.safe_add(L, ref.sized(d).sized(-d) - ref, tag, own)
 
     def safe_add(self, L, reg, tag, own):
