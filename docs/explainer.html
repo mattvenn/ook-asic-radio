@@ -39,7 +39,8 @@ nav.crumbs .sep{color:var(--faint)}
 main{flex:1; display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; padding:1.25rem; align-items:start}
 main.has-detail{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
 @media (max-width:1000px){ main.has-detail{grid-template-columns:minmax(0,1fr)} }
-.stage{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.1rem; display:flex; flex-direction:column; gap:1rem; min-width:0}
+.stage{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.1rem; min-width:0}
+.stage > .inner{display:flex; flex-direction:column; gap:1rem}
 .stage h1{margin:0; font-size:1.55rem; line-height:1.2; letter-spacing:-.01em}
 .stage .lede{margin:0; color:var(--muted); max-width:52rem}
 .caption{margin:0 1.25rem 1.25rem; padding:.85rem 1.1rem; border-radius:12px; background:var(--panel2); border:1px solid var(--line); font-size:1.15rem; min-height:3.2rem; display:flex; gap:1rem; align-items:center}
@@ -70,7 +71,13 @@ svg text{font-family:var(--sans)}
 .blk:hover{border-color:var(--sig)}
 .blk[aria-pressed=true]{outline:3px solid var(--sig); outline-offset:1px}
 .arrow{align-self:center; color:var(--faint); font-size:1.2rem; flex:0 0 auto}
-.detail{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.1rem; display:flex; flex-direction:column; gap:.9rem; min-width:0; position:sticky; top:1rem}
+.detail{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.1rem; min-width:0}
+.detail > .inner{display:flex; flex-direction:column; gap:.9rem}
+@media (min-width:1001px){
+  body{height:100vh; height:100dvh; overflow:hidden}
+  main{min-height:0; grid-template-rows:minmax(0,1fr); align-items:stretch}
+  .stage, .detail{min-height:0; overflow:hidden}
+}
 .detail[hidden]{display:none}
 .detail .top{display:flex; justify-content:space-between; gap:1rem; align-items:flex-start}
 .detail h2{margin:0; font-family:var(--mono); font-weight:500; font-size:1.45rem}
@@ -92,7 +99,8 @@ svg text{font-family:var(--sans)}
 .legend{display:flex; flex-wrap:wrap; gap:.25rem 1rem; font-size:.8rem; color:var(--muted)}
 .legend i{display:inline-block; width:.9rem; height:.2rem; border-radius:2px; vertical-align:middle; margin-right:.35rem}
 .plot{position:relative}
-.plot svg{width:100%; height:auto; display:block; background:#0a0e11; border-radius:8px}
+.plot svg{max-width:100%; height:auto; display:block; background:#0a0e11; border-radius:8px}
+svg.strip{max-width:100%; height:auto; display:block}
 .plot .hov{position:absolute; top:.4rem; right:.5rem; font-family:var(--mono); font-size:.72rem; color:var(--text); background:rgba(13,18,22,.85); padding:.15rem .4rem; border-radius:4px; pointer-events:none; white-space:pre; text-align:right}
 .seg{align-self:flex-start; display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
 .seg button{background:var(--panel2); border:0; padding:.35rem .8rem; cursor:pointer; min-height:44px}
@@ -205,8 +213,11 @@ const fmt = v => Math.abs(v) >= 1000 ? v.toFixed(0) : Math.abs(v) >= 10 ? +v.toF
 let plotId = 0;
 const PLOTS = {};
 /* opts: series [{d:{x,y}, color, label, w, pts}], xl, yl, h, ylim, xlim, xlog, ylog, hl [{y,color,label}], vl [{x,color,label}], bands [{x0,x1,color}] */
+/* plots are drawn at the real pixel width of their column (GEO.w), with heights scaled by GEO.ph to fit the screen
+   and text in CSS pixels (GEO.f), so a wide column doesn't make a tall plot */
+const GEO = {w: 800, ph: 1, f: 14};
 function plot(opts) {
-  const W = 800, H = opts.h || 250, L = 66, R = 14, T = 12, Bm = 42;
+  const F = GEO.f, W = GEO.w, H = Math.max(Math.round((opts.h || 250) * GEO.ph), Math.min(opts.h || 250, 140)), L = Math.round(F * 4.7), R = 14, T = 12, Bm = Math.round(F * 3);
   const id = 'p' + (plotId++);
   const tx = opts.xlog ? Math.log10 : v => v, ty = opts.ylog ? Math.log10 : v => v;
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
@@ -216,16 +227,17 @@ function plot(opts) {
   if (opts.xlim) [x0, x1] = opts.xlim.map(tx);
   if (opts.ylim) [y0, y1] = opts.ylim.map(ty); else { const p = (y1 - y0) * 0.08 || 1; y0 -= p; y1 += p; }
   const sx = v => L + (tx(v) - x0) / (x1 - x0) * (W - L - R), sy = v => T + (1 - (ty(v) - y0) / (y1 - y0)) * (H - T - Bm);
-  let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opts.aria || opts.yl || 'plot'}" id="${id}">`;
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${opts.aria || opts.yl || 'plot'}" id="${id}">`;
   (opts.bands || []).forEach(b => g += `<rect x="${sx(b.x0)}" y="${T}" width="${sx(b.x1) - sx(b.x0)}" height="${H - T - Bm}" fill="${b.color}"/>`);
   const xt = opts.xlog ? [0.1, 1, 10, 100, 1000].filter(v => tx(v) >= x0 - 1e-9 && tx(v) <= x1 + 1e-9) : ticks(x0, x1, 6);
   const yt = opts.ylog ? [1e-4, 1e-3, 1e-2, 0.1, 1, 10, 100, 1000].filter(v => ty(v) >= y0 && ty(v) <= y1) : ticks(y0, y1, 4);
-  xt.forEach(v => g += `<line x1="${sx(v)}" x2="${sx(v)}" y1="${T}" y2="${H - Bm}" stroke="#1f2a32"/><text x="${sx(v)}" y="${H - Bm + 18}" fill="#8a9ca8" font-size="14" text-anchor="middle">${opts.xfmt ? opts.xfmt(v) : fmt(v)}</text>`);
-  yt.forEach(v => g += `<line x1="${L}" x2="${W - R}" y1="${sy(v)}" y2="${sy(v)}" stroke="#1f2a32"/><text x="${L - 8}" y="${sy(v) + 5}" fill="#8a9ca8" font-size="14" text-anchor="end">${opts.yfmt ? opts.yfmt(v) : fmt(v)}</text>`);
-  if (opts.xl) g += `<text x="${(L + W - R) / 2}" y="${H - 6}" fill="#8a9ca8" font-size="14" text-anchor="middle">${opts.xl}</text>`;
-  if (opts.yl) g += `<text transform="translate(16 ${(T + H - Bm) / 2}) rotate(-90)" fill="#8a9ca8" font-size="14" text-anchor="middle">${opts.yl}</text>`;
-  (opts.hl || []).forEach(h => g += `<line x1="${L}" x2="${W - R}" y1="${sy(h.y)}" y2="${sy(h.y)}" stroke="${h.color}" stroke-dasharray="6 5" stroke-width="1.5"/>` + (h.label ? `<text x="${W - R - 6}" y="${sy(h.y) - 6}" fill="${h.color}" font-size="14" text-anchor="end">${h.label}</text>` : ''));
-  (opts.vl || []).forEach(h => g += `<line x1="${sx(h.x)}" x2="${sx(h.x)}" y1="${T}" y2="${H - Bm}" stroke="${h.color}" stroke-width="2"/>` + (h.label ? `<text x="${sx(h.x) + (sx(h.x) > W - 90 ? -6 : 6)}" y="${T + 16}" fill="${h.color}" font-size="14" text-anchor="${sx(h.x) > W - 90 ? 'end' : 'start'}">${h.label}</text>` : ''));
+  xt.forEach(v => g += `<line x1="${sx(v)}" x2="${sx(v)}" y1="${T}" y2="${H - Bm}" stroke="#1f2a32"/><text x="${sx(v)}" y="${H - Bm + F + 4}" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.xfmt ? opts.xfmt(v) : fmt(v)}</text>`);
+  yt.forEach(v => g += `<line x1="${L}" x2="${W - R}" y1="${sy(v)}" y2="${sy(v)}" stroke="#1f2a32"/><text x="${L - 8}" y="${sy(v) + F * .36}" fill="#8a9ca8" font-size="${F}" text-anchor="end">${opts.yfmt ? opts.yfmt(v) : fmt(v)}</text>`);
+  if (opts.xl) g += `<text x="${(L + W - R) / 2}" y="${H - 6}" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.xl}</text>`;
+  if (opts.yl && opts.yl.length <= 3) g += `<text x="4" y="${T + F}" fill="#8a9ca8" font-size="${F}">${opts.yl}</text>`;
+  else if (opts.yl) g += `<text transform="translate(${F + 2} ${(T + H - Bm) / 2}) rotate(-90)" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.yl}</text>`;
+  (opts.hl || []).forEach(h => g += `<line x1="${L}" x2="${W - R}" y1="${sy(h.y)}" y2="${sy(h.y)}" stroke="${h.color}" stroke-dasharray="6 5" stroke-width="1.5"/>` + (h.label ? `<text x="${W - R - 6}" y="${sy(h.y) - 6}" fill="${h.color}" font-size="${F}" text-anchor="end">${h.label}</text>` : ''));
+  (opts.vl || []).forEach(h => g += `<line x1="${sx(h.x)}" x2="${sx(h.x)}" y1="${T}" y2="${H - Bm}" stroke="${h.color}" stroke-width="2"/>` + (h.label ? `<text x="${sx(h.x) + (sx(h.x) > W - 90 ? -6 : 6)}" y="${T + F + 2}" fill="${h.color}" font-size="${F}" text-anchor="${sx(h.x) > W - 90 ? 'end' : 'start'}">${h.label}</text>` : ''));
   g += `<clipPath id="${id}c"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - Bm}"/></clipPath><g clip-path="url(#${id}c)">`;
   opts.series.forEach(s => {
     if (!s.d) return;
@@ -266,12 +278,12 @@ function spark(d, color, n = 160) {
 }
 /* rows of 1-bit cells: rows [{bits, label, color, cmp}] cmp: compare to reference bits -> red if mismatch */
 function strip(rows, opts = {}) {
-  const n = rows[0].bits.length, W = 800, L = 120, ch = opts.h || 22, gap = 6, H = rows.length * (ch + gap) + 4;
+  const F = GEO.f, n = rows[0].bits.length, W = GEO.w, L = Math.round(F * 6), ch = Math.round((opts.h || 22) * 1.4 * Math.max(.6, GEO.ph)), gap = 6, H = rows.length * (ch + gap) + 4;
   const cw = (W - L - 4) / n;
-  let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opts.aria || 'bit strip'}">`;
+  let g = `<svg class="strip" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${opts.aria || 'bit strip'}">`;
   rows.forEach((r, k) => {
     const y = 2 + k * (ch + gap);
-    g += `<text x="${L - 8}" y="${y + ch * 0.72}" fill="#9db0bc" font-size="14" text-anchor="end">${r.label}</text>`;
+    g += `<text x="${L - 8}" y="${y + ch / 2 + F * .36}" fill="#9db0bc" font-size="${F}" text-anchor="end">${r.label}</text>`;
     for (let i = 0; i < n; i++) {
       const bad = r.cmp && r.cmp[i] !== r.bits[i];
       const fill = bad ? 'var(--bad)' : r.bits[i] ? r.color : '#1c262e';
@@ -581,23 +593,52 @@ const TOUR = [
 
 // ------------------------------------------------------------------ render
 const $ = id => document.getElementById(id);
+const COL = {stage: {w: 800, ph: 1, z: 1}, detail: {w: 800, ph: 1, z: 1}, key: ''};
+const useGeo = c => { GEO.w = Math.floor(COL[c].w / COL[c].z); GEO.ph = COL[c].ph; GEO.f = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * .82); };
+const fits = () => innerWidth > 1000;   // desktop: the page is fixed to the screen; narrower stacks and scrolls
+/* build, measure each column, and rebuild until it fits the screen: first at the column's real width,
+   then with shorter plots (down to 45 %), and only then by scaling the whole column down */
 function render() {
+  const key = [S.level, S.block, innerWidth, innerHeight].join('|');
+  if (key !== COL.key) { COL.key = key; for (const c of ['stage', 'detail']) { COL[c].ph = 1; COL[c].z = 1; } }
+  for (let pass = 0; pass < 10; pass++) {
+    build();
+    let again = false;
+    for (const c of ['stage', 'detail']) {
+      const el = document.querySelector('.' + c); if (!el) continue;
+      const cs = getComputedStyle(el), inner = el.firstElementChild;
+      const w = Math.floor(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight));
+      if (Math.abs(w - COL[c].w) > 2) { COL[c].w = w; again = true; continue; }
+      if (!fits()) continue;
+      const room = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), h = inner.getBoundingClientRect().height;
+      if (h <= room + 1) continue;
+      const ph = [...el.querySelectorAll('.plot svg, svg.strip')].reduce((a, s) => a + s.getBoundingClientRect().height, 0);
+      if (COL[c].ph > .45 && ph > 0) COL[c].ph = Math.max(.45, COL[c].ph * Math.max(.3, (ph - (h - room)) / ph) - .01);
+      else COL[c].z = Math.floor(COL[c].z * room / h * 1000) / 1000;
+      again = true;
+    }
+    if (!again) break;
+  }
+}
+function build() {
   plotId = 0; for (const k in PLOTS) delete PLOTS[k];
   const main = $('main');
+  useGeo('stage');
   const stage = S.level === 'tx' ? levelTx() : S.level === 'rx' ? levelRx() : levelLink();
+  useGeo('detail');
   let detail = '';
   if (S.block && B[S.block]) {
     const b = B[S.block], facts = typeof b.facts === 'function' ? b.facts() : b.facts;
-    detail = `<aside class="detail" aria-labelledby="dh">
+    detail = `<aside class="detail" aria-labelledby="dh"><div class="inner"${COL.detail.z < 1 ? ` style="zoom:${COL.detail.z}"` : ''}>
       <div class="top"><div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div><button type="button" class="close" data-close aria-label="Close detail">✕</button></div>
       <p>${b.text}</p>
       <div class="facts">${facts.map(f => `<span class="fact">${f[0]} <b>${f[1]}</b></span>`).join('')}</div>
       ${b.plot()}
       <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">Read more in How it works ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a>` : ''}</div>
-    </aside>`;
+    </div></aside>`;
   }
   main.className = detail ? 'has-detail' : '';
-  main.innerHTML = `<section class="stage" aria-label="${S.level}">${stage}</section>${detail}`;
+  main.innerHTML = `<section class="stage" aria-label="${S.level}"><div class="inner"${COL.stage.z < 1 ? ` style="zoom:${COL.stage.z}"` : ''}>${stage}</div></section>${detail}`;
   wirePlots(main);
   const names = {link: 'Link', tx: 'Transmitter', rx: 'Receiver'};
   let cr = `<button type="button" data-go="link"${S.level === 'link' && !S.block ? ' aria-current="page"' : ''}>Link</button>`;
@@ -611,6 +652,7 @@ function render() {
   $('stepno').textContent = `${S.step + 1} / ${TOUR.length}`;
   $('caption').innerHTML = `<span class="n">${S.step + 1}/${TOUR.length}</span><span>${TOUR[S.step].cap}</span>`;
   anim.reset();
+  useGeo('stage');
 }
 function go(level, block = null) { S.level = level; S.block = block; render(); }
 /* tour steps that set a distance glide the slider there, so it never jumps and always matches the caption */
@@ -701,6 +743,7 @@ document.addEventListener('keydown', e => {
 $('dist').addEventListener('input', e => { glideId++; S.logd = +e.target.value; S.bbLvl = null; render(); $('dist').focus(); });
 $('prev').onclick = () => setStep(S.step - 1);
 $('next').onclick = () => setStep(S.step + 1);
+let resizeT; addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (D) render(); }, 100); });
 $('helpbtn').onclick = () => { $('help').hidden = false; $('helpclose').focus(); };
 $('helpclose').onclick = () => { $('help').hidden = true; };
 
@@ -708,6 +751,7 @@ load().then(d => {
   D = d; D.bb = D.bb || [];
   const m = location.hash.match(/step=(\d+)/);
   setStep(m ? +m[1] : 0, true);
+  if (document.fonts) document.fonts.ready.then(() => { COL.key = ''; render(); });   // re-fit once the web fonts have their real size
   requestAnimationFrame(t => anim.frame(t));
 }).catch(err => { $('main').innerHTML = `<div class="nodata">Could not load the embedded data (${err}). This page needs a browser with DecompressionStream (Chrome 80+, Firefox 113+, Safari 16.4+).</div>`; });
 </script>
