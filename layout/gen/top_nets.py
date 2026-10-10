@@ -86,11 +86,13 @@ def nets():
     # TX outputs: >= 5 um, met3/met4 (may cross the chain: TX is off while RX is on)
     # The chain's top stage row (y 55-77) is solid met4 / MIM except 2.6 um gaps between the
     # stages, and one ~5.4 um column at its west end (x 15.1-20.8). tx_n takes the column, then
-    # the gap under the chain; tx_p necks to 2 um through the gap at x ~52 for ~22 um
-    # (EM: 9.8 mA RMS -> 4.9 mA/um, limit 14.9), then widens again (open point for Matt).
+    # the gap under the chain; tx_p necks through the gap at x ~52 for ~22 um, then widens again.
+    # That gap is 6.4 um wide but pinched on alternate sides (right edge 53.38 near y 59, left edge
+    # 50.78 near y 69.5): straight it fits 2 um, with a jog ~3.8 um (w_try lets the router find it).
+    # (EM at 2 um: 9.8 mA RMS -> 4.9 mA/um, limit 14.9.)
     out.append(N('tx_n', 'xtx.xdrv_n.out', 'ua[4]', w=4.6, layers=['m3', 'm4'], margin=10,
                  via=[(17.9, 40.0, 'm4')]))
-    out.append(N('tx_p_neck', 'xtx.xdrv_p.out', w=2.0, layers=['m3', 'm4'], margin=10,
+    out.append(N('tx_p_neck', 'xtx.xdrv_p.out', w_try=[3.8, 3.6, 3.4, 3.2, 3.0, 2.5, 2.0], layers=['m3', 'm4'], margin=10,
                  via=[(52.1, 52.0, 'm4')]))
     out.append(N('tx_p', 'tx_p_neck', 'ua[3]', w=5.0, layers=['m3', 'm4'], margin=10))
 
