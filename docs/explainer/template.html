@@ -610,14 +610,14 @@ function figSlicer() {
   return fig(`comparator samples, ${DBM(b.lvl)} run, 8 per bit`,
     `<div id="slfig">${slicerFig(SL_N)}</div>`, 'build/rx_bb_*.raw, tt');
 }
-function figScore() {
+function figScore(withSweep = true) {
   const r = run(), m = D.model, x = [], y = [];
   for (let i = 0; i < r._s.length; i++) { x.push(i - m.lead_chips); y.push(r._s[i]); }
   const bands = [0, 1, 2].map(k => ({x0: k * m.period, x1: k * m.period + 127, color: '#f0954a14'}));
   let h = fig(`score after every bit, ${DBM(prx())}: peaks at the end of each burst`, plot({series: [{d: {x, y}, color: 'var(--dig)', label: 'score', w: 1.5}],
     ylim: [40, 130], xl: 'bits since the send started', yl: 'score /127', h: 260, bands,
     hl: [{y: m.thresh, color: 'var(--thr)', label: 'detect ≥ 97'}, {y: 63.5, color: '#6f8491', label: 'chance'}]}), 'model/ link model');
-  h += figSweep();
+  if (withSweep) h += figSweep();
   return h;
 }
 function figSweep() {
@@ -635,7 +635,7 @@ function figLed() {
     <div class="ro"><small>detection 2 (score)</small><b>${ev(1)}</b></div>
     <div class="ro"><small>detection 3 (score)</small><b>${ev(2)}</b></div>
     <div class="ro"><small>LED</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'stays'}</b></div>
-  </div>` + figScore().split('<div class="fig"><div class="ft"><span>best')[0];
+  </div>` + figScore(false);
 }
 
 // ------------------------------------------------------------------ levels
