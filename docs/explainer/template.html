@@ -553,20 +553,20 @@ function chipPage() {
   <p class="lede">${lede}</p>
   <div class="dgwrap">${dgSVG({hl: f ? DGHALF[f] : null, cls: 'big'})}</div>`;
 }
-/* one block per page: its story and its plots (the over-the-air ideas keep the link scene on top) */
+/* one block per page: its story on the left, its plots on the right (the over-the-air ideas put the link scene above their plots) */
 function focusPage(id) {
   const b = B[id], facts = typeof b.facts === 'function' ? b.facts() : b.facts, isLink = b.lvl === 'link';
   useGeo('detail');
   const plots = b.plot();
   useGeo('stage');
-  return `${isLink ? linkScene(id) : ''}<div class="focus">
+  return `<div class="focus">
     <div class="side">
       <div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div>
       <p>${b.text}</p>
       <div class="facts">${facts.map(f => `<span class="fact">${f[0]} <b>${f[1]}</b></span>`).join('')}</div>
       <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">Read more in How it works ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}</div>
     </div>
-    <div class="fplots">${plots || ''}</div>
+    <div class="fplots"${COL.pz < 1 ? ` style="zoom:${COL.pz}"` : ''}>${isLink ? linkScene(id) : ''}${plots || ''}</div>
   </div>`;
 }
 
@@ -703,15 +703,15 @@ const TOUR = [
 
 // ------------------------------------------------------------------ render
 const $ = id => document.getElementById(id);
-const COL = {stage: {w: 800, ph: 1}, detail: {w: 800, ph: 1}, z: 1, key: ''};
-const useGeo = c => { GEO.w = Math.floor(COL[c].w / COL.z); GEO.ph = COL[c].ph; GEO.f = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * .82); };
+const COL = {stage: {w: 800, ph: 1}, detail: {w: 800, ph: 1}, z: 1, pz: 1, key: ''};   // z scales the whole page, pz only the plot column
+const useGeo = c => { GEO.w = Math.floor(COL[c].w / COL.z / (c === 'detail' ? COL.pz : 1)); GEO.ph = COL[c].ph; GEO.f = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * .82); };
 const fits = () => innerWidth > 1000;   // desktop: the page is fixed to the screen; narrower stacks and scrolls
 const inner = el => el.firstElementChild;
 /* build, measure, and rebuild until the page fits the screen: first at the real column widths,
    then with shorter plots (down to 45 %), and only then by scaling the whole page down */
 function render() {
   const key = [S.level, S.focus, S.block, innerWidth, innerHeight].join('|');
-  if (key !== COL.key) { COL.key = key; COL.stage.ph = COL.detail.ph = 1; COL.z = 1; }
+  if (key !== COL.key) { COL.key = key; COL.stage.ph = COL.detail.ph = 1; COL.z = COL.pz = 1; }
   for (let pass = 0; pass < 10; pass++) {
     build();
     const el = document.querySelector('.stage'), cs = getComputedStyle(el), fp = el.querySelector('.fplots');
@@ -723,11 +723,16 @@ function render() {
     if (!fits()) break;
     const room = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), h = inner(el).getBoundingClientRect().height;
     if (h <= room + 1) break;
-    const c = fp ? 'detail' : 'stage', box = fp || el;
+    const box = fp || el, over = h - room;
     const ph = [...box.querySelectorAll('.plot svg, svg.strip')].reduce((a, s) => a + s.getBoundingClientRect().height, 0);
-    // plots side by side with the text only help if the plot column is the tall one
-    const tallPlots = !fp || fp.getBoundingClientRect().height >= el.querySelector('.focus').getBoundingClientRect().height - 2;
-    if (COL[c].ph > .45 && ph > 0 && tallPlots) COL[c].ph = Math.max(.45, COL[c].ph * Math.max(.3, (ph - (h - room)) / ph) - .01);
+    if (fp) {
+      // a block page: the text column keeps its size on every page; only the plots give way
+      const side = el.querySelector('.focus .side').getBoundingClientRect().height, fh = fp.getBoundingClientRect().height;
+      const above = el.querySelector('.focus').getBoundingClientRect().top - inner(el).getBoundingClientRect().top;
+      if (above + side > room + 1) { COL.z = Math.floor(COL.z * room / h * 1000) / 1000; continue; }   // only when the text itself can't fit
+      if (COL.detail.ph > .45 && ph > 0) COL.detail.ph = Math.max(.45, COL.detail.ph * Math.max(.3, (ph - over) / ph) - .01);
+      else COL.pz = Math.floor(COL.pz * (fh - over) / fh * 1000) / 1000;
+    } else if (COL.stage.ph > .45 && ph > 0) COL.stage.ph = Math.max(.45, COL.stage.ph * Math.max(.3, (ph - over) / ph) - .01);
     else COL.z = Math.floor(COL.z * room / h * 1000) / 1000;
   }
 }
