@@ -46,7 +46,7 @@ main.has-detail{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
 .caption{margin:0 1.25rem 1.25rem; padding:.85rem 1.1rem; border-radius:12px; background:var(--panel2); border:1px solid var(--line); font-size:1.15rem; min-height:3.2rem; display:flex; gap:1rem; align-items:center}
 .caption .n{font-family:var(--mono); color:var(--sig); font-size:.9rem; white-space:nowrap}
 svg text{font-family:var(--sans)}
-.scene{width:100%; height:auto; display:block}
+.scene{width:100%; height:8rem; display:block}  /* about two readout rows */
 .hit{cursor:pointer}
 .hit:hover .hl, .hit:focus-visible .hl{stroke:var(--sig); stroke-width:3}
 .hit:focus{outline:none}
@@ -461,30 +461,30 @@ function figLed() {
 
 // ------------------------------------------------------------------ levels
 function linkScene() {
-  const d = dist(), p = prx(), gap = 480 + (S.logd + 1) / 4 * 420, tx = 600 - gap / 2, rx = 600 + gap / 2;
+  const d = dist(), p = prx(), gap = 560 + (S.logd + 1) / 4 * 380, tx = 600 - gap / 2, rx = 600 + gap / 2;
   const strength = Math.max(0.12, Math.min(1, (p + 100) / 60));
-  const board = (x, label, sub, color, lvl, pin) => `
+  /* vertical, parallel dipoles on the facing sides: the link is broadside to both (a dipole has a null along its own axis) */
+  const board = (x, label, sub, color, lvl, pin, side) => `
     <g class="hit" role="button" tabindex="0" data-go="${lvl}" aria-label="Open the ${label.toLowerCase()} chain">
-      <rect class="hl" x="${x - 110}" y="150" width="220" height="170" rx="14" fill="#123024" stroke="#2f6b4f" stroke-width="2"/>
-      <rect x="${x - 45}" y="200" width="90" height="90" rx="6" fill="#0b0f12" stroke="${color}" stroke-width="2"/>
-      <text x="${x}" y="240" fill="${color}" font-size="18" text-anchor="middle" font-weight="600">${label}</text>
-      <text x="${x}" y="264" fill="#9db0bc" font-size="13" text-anchor="middle">${pin}</text>
-      <line x1="${x - 20}" y1="150" x2="${x - 80}" y2="40" stroke="#c8d3da" stroke-width="3" stroke-linecap="round"/>
-      <line x1="${x + 20}" y1="150" x2="${x + 80}" y2="40" stroke="#c8d3da" stroke-width="3" stroke-linecap="round"/>
-      <text x="${x}" y="345" fill="#e8eef2" font-size="16" text-anchor="middle">${sub}</text>
+      <rect class="hl" x="${x - 150}" y="48" width="300" height="76" rx="10" fill="#123024" stroke="#2f6b4f" stroke-width="2"/>
+      <rect x="${x - 138}" y="58" width="72" height="56" rx="5" fill="#0b0f12" stroke="${color}" stroke-width="2"/>
+      <text x="${x - 102}" y="93" fill="${color}" font-size="20" text-anchor="middle" font-weight="600">${label}</text>
+      <text x="${x - 54}" y="80" fill="#9db0bc" font-size="13">${pin}</text>
+      <text x="${x - 54}" y="102" fill="#e8eef2" font-size="14">${sub}</text>
+      <path d="M ${x + side * 150} 82 H ${x + side * 168} V 26 M ${x + side * 150} 90 H ${x + side * 168} V 124" fill="none" stroke="#c8d3da" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </g>`;
   let waves = '';
   for (let k = 0; k < 6; k++) waves += `<path class="wave" data-k="${k}" d="" fill="none" stroke="var(--sig)" stroke-width="3" stroke-linecap="round"/>`;
-  return `<svg class="scene" viewBox="0 0 1200 380" role="img" aria-label="Two boards: the transmitter on the left, the receiver on the right, ${fmtd(d)} apart">
+  return `<svg class="scene" viewBox="0 0 1200 130" role="img" aria-label="Two boards: the transmitter on the left, the receiver on the right, ${fmtd(d)} apart">
     <g class="hit" role="button" tabindex="0" data-block="air" aria-label="Over the air: path loss">
-      <rect class="hl" x="${tx + 120}" y="60" width="${rx - tx - 240}" height="260" rx="12" fill="#ffffff04" stroke="#ffffff10"/>
-      <g id="waves" data-x0="${tx + 90}" data-x1="${rx - 90}" data-s="${strength}">${waves}</g>
-      <text x="600" y="40" fill="#9db0bc" font-size="18" text-anchor="middle">${fmtd(d)} · ${(4 - p).toFixed(0)} dB path loss</text>
+      <rect class="hl" x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10" fill="#ffffff04" stroke="#ffffff10"/>
+      <g id="waves" data-x0="${tx + 185}" data-x1="${rx - 185}" data-cy="86" data-r0="10" data-r1="38" data-s="${strength}">${waves}</g>
+      <text x="600" y="20" fill="#9db0bc" font-size="16" text-anchor="middle">${fmtd(d)} · ${(4 - p).toFixed(0)} dB path loss</text>
     </g>
-    ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'tx', 'ua[3] / ua[4]')}
-    ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'rx', 'ua[0] / ua[1]')}
-    <circle id="led" cx="${rx + 80}" cy="180" r="12" fill="#2a3741" stroke="#000"/>
-    <text x="${rx + 80}" y="212" fill="#9db0bc" font-size="12" text-anchor="middle">LED</text>
+    ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'tx', 'ua[3] / ua[4]', 1)}
+    ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'rx', 'ua[0] / ua[1]', -1)}
+    <circle id="led" cx="${rx + 128}" cy="34" r="10" fill="#2a3741" stroke="#000"/>
+    <text x="${rx + 112}" y="39" fill="#9db0bc" font-size="12" text-anchor="end">LED</text>
   </svg>`;
 }
 function levelLink() {
@@ -604,13 +604,28 @@ function render() {
   anim.reset();
 }
 function go(level, block = null) { S.level = level; S.block = block; render(); }
-function setStep(i) {
+/* tour steps that set a distance glide the slider there, so it never jumps and always matches the caption */
+let glideId = 0;
+function glideTo(target, ms = 1200) {
+  const id = ++glideId, from = S.logd;
+  let t0 = null;
+  const tick = now => {
+    if (id !== glideId) return;
+    if (t0 == null) t0 = now;
+    const u = Math.max(0, Math.min(1, (now - t0) / ms)), e = u < .5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u);
+    S.logd = from + (target - from) * e; S.bbLvl = null; render();
+    if (u < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+function setStep(i, initial = false) {
   S.step = Math.max(0, Math.min(TOUR.length - 1, i));
   const t = TOUR[S.step];
-  if (t.logd != null) S.logd = t.logd;
   S.level = t.level; S.block = t.block; S.bbLvl = null;
   history.replaceState(null, '', '#step=' + S.step);
+  if (t.logd != null && initial) { glideId++; S.logd = t.logd; }
   render();
+  if (t.logd != null && !initial && Math.abs(S.logd - t.logd) > .005) glideTo(t.logd);
 }
 
 // ------------------------------------------------------------------ animation (link level)
@@ -629,9 +644,10 @@ const anim = {
     const w = $('waves');
     if (w) {
       const x0 = +w.dataset.x0, x1 = +w.dataset.x1, s = +w.dataset.s, ph = ((now - this.t0) / 1000 * 0.9) % 1;
+      const cy = +w.dataset.cy, r0 = +w.dataset.r0, r1 = +w.dataset.r1;
       w.querySelectorAll('.wave').forEach((el, k) => {
-        const f = ((k / 6) + ph) % 1, x = x0 + (x1 - x0) * f, rr = 30 + 90 * f;
-        el.setAttribute('d', `M ${x} ${170 - rr} Q ${x + rr * 0.45} 170 ${x} ${170 + rr}`);
+        const f = ((k / 6) + ph) % 1, x = x0 + (x1 - x0) * f, rr = r0 + (r1 - r0) * f;
+        el.setAttribute('d', `M ${x} ${cy - rr} Q ${x + rr * 0.45} ${cy} ${x} ${cy + rr}`);
         el.setAttribute('opacity', on ? (s * (1 - f * 0.85)).toFixed(2) : 0.04);
       });
     }
@@ -669,11 +685,11 @@ document.addEventListener('keydown', e => {
   else if (k === 'ArrowLeft') { e.preventDefault(); setStep(S.step - 1); }
   else if (k === 'Escape') { if (S.block) S.block = null; else S.level = 'link'; render(); }
   else if (k === '1') go('link'); else if (k === '2') go('tx'); else if (k === '3') go('rx');
-  else if (k === '[' || k === ']') { S.logd = Math.max(-1, Math.min(3, +(S.logd + (k === ']' ? 0.1 : -0.1)).toFixed(2))); S.bbLvl = null; render(); }
+  else if (k === '[' || k === ']') { glideId++; S.logd = Math.max(-1, Math.min(3, +(S.logd + (k === ']' ? 0.1 : -0.1)).toFixed(2))); S.bbLvl = null; render(); }
   else if (k === 'p') S.playing = !S.playing;
   else if (k === '?') $('help').hidden = false;
 });
-$('dist').addEventListener('input', e => { S.logd = +e.target.value; S.bbLvl = null; render(); $('dist').focus(); });
+$('dist').addEventListener('input', e => { glideId++; S.logd = +e.target.value; S.bbLvl = null; render(); $('dist').focus(); });
 $('prev').onclick = () => setStep(S.step - 1);
 $('next').onclick = () => setStep(S.step + 1);
 $('helpbtn').onclick = () => { $('help').hidden = false; $('helpclose').focus(); };
@@ -682,7 +698,7 @@ $('helpclose').onclick = () => { $('help').hidden = true; };
 load().then(d => {
   D = d; D.bb = D.bb || [];
   const m = location.hash.match(/step=(\d+)/);
-  setStep(m ? +m[1] : 0);
+  setStep(m ? +m[1] : 0, true);
   requestAnimationFrame(t => anim.frame(t));
 }).catch(err => { $('main').innerHTML = `<div class="nodata">Could not load the embedded data (${err}). This page needs a browser with DecompressionStream (Chrome 80+, Firefox 113+, Safari 16.4+).</div>`; });
 </script>
