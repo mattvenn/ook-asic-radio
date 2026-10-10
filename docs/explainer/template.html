@@ -139,6 +139,7 @@ svg.strip{max-width:100%; height:auto; display:block}
 .segrow{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap} .segrow > span{color:var(--muted); font-size:.85rem}
 .seg{align-self:flex-start; display:inline-flex; flex-wrap:wrap; border:1px solid var(--line); border-radius:8px; overflow:hidden}
 .seg button{background:var(--panel2); border:0; padding:.35rem .8rem; cursor:pointer; min-height:44px}
+.seg.small button{min-height:28px; padding:.1rem .6rem; font-size:.8rem}
 .seg button[aria-pressed=true]{background:var(--sig); color:#05181c}
 .nodata{color:var(--faint); font-style:italic; padding:1rem; border:1px dashed var(--line); border-radius:8px}
 .help{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:1rem; z-index:5}
@@ -498,7 +499,7 @@ function figLogdet() {
     const zr = (() => { const A = dec(br.lo.rf_z), Bv = dec(br.hi.rf_z), sa = Math.max(...A.y.map(Math.abs)) || 1, sb = Math.max(...Bv.y.map(Math.abs)) || 1, amp = Math.pow(sa, 1 - br.w) * Math.pow(sb, br.w);
       return {x: A.x, y: A.y.map((v, i) => ((1 - br.w) * v / sa + br.w * Bv.y[i] / sb) * amp)}; })();
     const z = !!S.ldZoom;
-    h += `<div class="segrow"><div class="seg" role="group" aria-label="Time span"><button type="button" data-ldzoom="0" aria-pressed="${!z}">whole 3.5 µs (RF drawn as its envelope)</button><button type="button" data-ldzoom="1" aria-pressed="${z}">zoom: 40 ns at switch-on</button></div></div>`;
+    h += `<div class="segrow"><div class="seg small" role="group" aria-label="Time span"><button type="button" data-ldzoom="0" aria-pressed="${!z}">whole 3.5 µs (RF drawn as its envelope)</button><button type="button" data-ldzoom="1" aria-pressed="${z}">zoom: 40 ns at switch-on</button></div></div>`;
     h += fig(`RF in and detector out, ${DBM(p)}`,   // same title and legends in both views, so toggling never moves the plots
       plot({series: [z ? {d: zr, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV, left axis)', w: 1.2, op: .8}
                        : {band: {x, lo, hi}, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV, left axis)', op: .35},
