@@ -12,6 +12,7 @@ bare-wire dipole antennas and no external components.
 
 Docs:
 - [docs/how_it_works.md](docs/how_it_works.md): **start here**: theory, specs, schematics and layout.
+- [Interactive explainer](https://raw.githack.com/mattvenn/ook-asic-radio/main/docs/explainer.html): click through the link, TX and RX chains with simulated waveforms ([source](docs/explainer)).
 - [docs/verification.md](docs/verification.md): testing and verification, with links to every test.
 - [PLAN.md](PLAN.md): the design plan and the measurements behind each decision.
 - [docs/slicer.md](docs/slicer.md): how the receiver's comparator and trim servo work.

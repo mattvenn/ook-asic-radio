@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OOK Radio Explainer</title>
+<meta name="description" content="Interactive explainer for a 433 MHz on-off keyed radio on one Tiny Tapeout tile (sky130): link, transmitter and receiver, with simulated waveforms.">
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0d1216; --panel:#151c22; --panel2:#1b242c; --line:#2a3741; --text:#e8eef2; --muted:#9db0bc; --faint:#6f8491;
+  --rx:#3cc4a8; --rx-bg:#10251f; --tx:#f0954a; --tx-bg:#2a1a0e; --bias:#9cc65c; --dac:#b48cff; --dig:#b9c3cb; --dig-bg:#1e252b;
+  --sig:#5ad1e6; --sig2:#ffd166; --ok:#7be0a4; --bad:#ff7b6b; --thr:#ff7b6b;
+  --sans:"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box}
+html{font-size:clamp(14px, 0.62vw + 8px, 21px)}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); line-height:1.45; min-height:100vh; display:flex; flex-direction:column}
+a{color:var(--sig)}
+button{font:inherit; color:inherit}
+:focus-visible{outline:3px solid var(--sig); outline-offset:2px}
+header{display:flex; flex-wrap:wrap; align-items:center; gap:.75rem 1.5rem; padding:.8rem 1.25rem; border-bottom:1px solid var(--line); background:var(--panel)}
+.brand{display:flex; flex-direction:column; gap:.1rem; min-width:0}
+.brand b{font-size:1.15rem; letter-spacing:-.01em}
+.brand span{color:var(--muted); font-size:.8rem}
+nav.crumbs{display:flex; align-items:center; gap:.35rem; flex-wrap:wrap; font-size:1rem}
+nav.crumbs button{background:none; border:0; padding:.35rem .5rem; border-radius:6px; color:var(--muted); cursor:pointer; min-height:44px}
+nav.crumbs button[aria-current]{color:var(--text); font-weight:600}
+nav.crumbs button:hover{background:var(--panel2)}
+nav.crumbs .sep{color:var(--faint)}
+.dist{display:flex; align-items:center; gap:.75rem; margin-left:auto; flex-wrap:wrap}
+.dist label{color:var(--muted); font-size:.85rem}
+.dist input{width:min(22rem, 60vw); accent-color:var(--sig)}
+.dist output{font-family:var(--mono); font-size:.95rem; min-width:13.5rem}
+.navbtns{display:flex; gap:.4rem; align-items:center}
+.navbtns button{min-width:44px; min-height:44px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); cursor:pointer}
+.navbtns button:hover{border-color:var(--sig)}
+.navbtns span{font-family:var(--mono); color:var(--muted); font-size:.85rem; min-width:4.5rem; text-align:center}
+main{flex:1; display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; padding:1.25rem; align-items:start}
+main.has-detail{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+@media (max-width:1000px){ main.has-detail{grid-template-columns:minmax(0,1fr)} }
+.stage{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.1rem; display:flex; flex-direction:column; gap:1rem; min-width:0}
+.stage h1{margin:0; font-size:1.55rem; line-height:1.2; letter-spacing:-.01em}
+.stage .lede{margin:0; color:var(--muted); max-width:52rem}
+.caption{margin:0 1.25rem 1.25rem; padding:.85rem 1.1rem; border-radius:12px; background:var(--panel2); border:1px solid var(--line); font-size:1.15rem; min-height:3.2rem; display:flex; gap:1rem; align-items:center}
+.caption .n{font-family:var(--mono); color:var(--sig); font-size:.9rem; white-space:nowrap}
+svg text{font-family:var(--sans)}
+.scene{width:100%; height:auto; display:block}
+.hit{cursor:pointer}
+.hit:hover .hl, .hit:focus-visible .hl{stroke:var(--sig); stroke-width:3}
+.hit:focus{outline:none}
+.hit:focus-visible .hl{stroke-width:4}
+.readouts{display:grid; grid-template-columns:repeat(auto-fit, minmax(10rem,1fr)); gap:.75rem}
+.ro{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:.6rem .8rem}
+.ro small{display:block; color:var(--muted); font-size:.78rem}
+.ro b{font-family:var(--mono); font-size:1.25rem; font-weight:500}
+.ro b.good{color:var(--ok)} .ro b.bad{color:var(--bad)}
+.chain{display:flex; flex-direction:column; gap:.9rem}
+.row{display:flex; flex-wrap:wrap; align-items:stretch; gap:.4rem}
+.rowlabel{font-size:.85rem; color:var(--faint); letter-spacing:.03em}
+.blk{flex:1 1 8rem; min-width:7.5rem; text-align:left; border-radius:10px; padding:.6rem .7rem; cursor:pointer; display:flex; flex-direction:column; gap:.3rem; border:1px solid; min-height:44px}
+.blk b{font-family:var(--mono); font-size:1rem; font-weight:500}
+.blk span{font-size:.78rem; color:var(--muted)}
+.blk svg{width:100%; height:2.6rem; display:block}
+.blk.tx{background:var(--tx-bg); border-color:#6a4426} .blk.rx{background:var(--rx-bg); border-color:#24594d}
+.blk.dig{background:var(--dig-bg); border-color:#3a4650} .blk.dac{background:#1d1630; border-color:#4b3a78} .blk.bias{background:#18210f; border-color:#46602a}
+.blk.pin{background:#0b0f12; border-color:#3a4650; flex:0 1 7rem; min-width:6.5rem}
+.blk:hover{border-color:var(--sig)}
+.blk[aria-pressed=true]{outline:3px solid var(--sig); outline-offset:1px}
+.arrow{align-self:center; color:var(--faint); font-size:1.2rem; flex:0 0 auto}
+.detail{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.1rem; display:flex; flex-direction:column; gap:.9rem; min-width:0; position:sticky; top:1rem}
+.detail[hidden]{display:none}
+.detail .top{display:flex; justify-content:space-between; gap:1rem; align-items:flex-start}
+.detail h2{margin:0; font-family:var(--mono); font-weight:500; font-size:1.45rem}
+.detail .sub{color:var(--muted); margin:.15rem 0 0}
+.detail p{margin:0}
+.close{min-width:44px; min-height:44px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); cursor:pointer}
+.facts{display:flex; flex-wrap:wrap; gap:.5rem}
+.fact{background:var(--panel2); border:1px solid var(--line); border-radius:999px; padding:.25rem .75rem; font-size:.85rem}
+.fact b{font-family:var(--mono); font-weight:500}
+.links{display:flex; flex-wrap:wrap; gap:.6rem}
+.links a{display:inline-flex; align-items:center; gap:.4rem; min-height:44px; padding:0 1rem; border-radius:8px; text-decoration:none; font-weight:600}
+.links a.primary{background:var(--sig); color:#05181c}
+.links a.secondary{border:1px solid var(--line); color:var(--text)}
+.links a:hover{filter:brightness(1.1)}
+.fig{display:flex; flex-direction:column; gap:.3rem}
+.fig .ft{font-size:.85rem; color:var(--muted); display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap}
+.fig .src{font-size:.72rem; color:var(--faint); font-family:var(--mono)}
+.legend{display:flex; flex-wrap:wrap; gap:.25rem 1rem; font-size:.8rem; color:var(--muted)}
+.legend i{display:inline-block; width:.9rem; height:.2rem; border-radius:2px; vertical-align:middle; margin-right:.35rem}
+.plot{position:relative}
+.plot svg{width:100%; height:auto; display:block; background:#0a0e11; border-radius:8px}
+.plot .hov{position:absolute; top:.4rem; right:.5rem; font-family:var(--mono); font-size:.72rem; color:var(--text); background:rgba(13,18,22,.85); padding:.15rem .4rem; border-radius:4px; pointer-events:none; white-space:pre; text-align:right}
+.seg{align-self:flex-start; display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.seg button{background:var(--panel2); border:0; padding:.35rem .8rem; cursor:pointer; min-height:44px}
+.seg button[aria-pressed=true]{background:var(--sig); color:#05181c; font-weight:600}
+.nodata{color:var(--faint); font-style:italic; padding:1rem; border:1px dashed var(--line); border-radius:8px}
+.help{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:1rem; z-index:5}
+.help[hidden]{display:none}
+.help div{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.25rem 1.5rem; max-width:34rem}
+.help h2{margin:0 0 .5rem}
+.help kbd{font-family:var(--mono); background:var(--panel2); border:1px solid var(--line); border-radius:4px; padding:0 .35rem}
+.help ul{padding-left:1.1rem; margin:.5rem 0}
+@media (max-width:640px){
+  main{padding:.75rem} header{padding:.6rem .75rem} .caption{margin:0 .75rem .75rem; font-size:1rem}
+  .arrow{display:none} .blk, .blk.pin{flex:1 1 calc(50% - .4rem); min-width:0}
+  .dist{margin-left:0} .dist input{width:100%} .stage, .detail{padding:.8rem}
+}
+footer{padding:0 1.25rem 1rem; color:var(--faint); font-size:.78rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem}
+.loading{padding:3rem; color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b>433 MHz OOK radio</b><span>one Tiny Tapeout tile, sky130</span></div>
+  <nav class="crumbs" aria-label="Level" id="crumbs"></nav>
+  <div class="dist">
+    <label for="dist">Distance between boards</label>
+    <input id="dist" type="range" min="-1" max="3" step="0.01" value="0" aria-describedby="distout">
+    <output id="distout" for="dist"></output>
+  </div>
+  <div class="navbtns">
+    <button type="button" id="prev" aria-label="Previous step">&#8592;</button>
+    <span id="stepno" aria-live="polite"></span>
+    <button type="button" id="next" aria-label="Next step">&#8594;</button>
+    <button type="button" id="helpbtn" aria-label="Keyboard shortcuts">?</button>
+  </div>
+</header>
+<main id="main"><div class="loading">Loading simulation data…</div></main>
+<div class="caption" id="caption" aria-live="polite"></div>
+<footer>
+  <span>Waveforms: transistor-level ngspice runs (tt corner), bench measurements and the Python link model in the repo. Carrier drawn slowed down.</span>
+  <span><a href="https://github.com/mattvenn/ook-asic-radio/blob/main/docs/how_it_works.md">How it works</a> · <a href="https://github.com/mattvenn/ook-asic-radio">github.com/mattvenn/ook-asic-radio</a></span>
+</footer>
+<div class="help" id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helph">
+  <div>
+    <h2 id="helph">Keys</h2>
+    <ul>
+      <li><kbd>→</kbd> or <kbd>Space</kbd>: next step of the tour; <kbd>←</kbd>: back</li>
+      <li><kbd>Esc</kbd>: close the detail, then up one level</li>
+      <li><kbd>1</kbd> link, <kbd>2</kbd> transmitter, <kbd>3</kbd> receiver</li>
+      <li><kbd>[</kbd> <kbd>]</kbd>: boards closer / further apart</li>
+      <li><kbd>p</kbd>: pause or play the animation</li>
+      <li><kbd>?</kbd>: this help</li>
+    </ul>
+    <p>The URL keeps the step (<code>#step=7</code>) so a take can restart at the same place.</p>
+    <button type="button" class="close" id="helpclose">Close</button>
+  </div>
+</div>
+<script>
+const PAYLOAD = "/*__PAYLOAD__*/";
+const REPO = 'https://github.com/mattvenn/ook-asic-radio/blob/main/';
+const DOC = REPO + 'docs/how_it_works.md#';
+const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.sch';
+const SENS = -94;
+let D = null;                       // decoded payload
+const S = {level: 'link', block: null, logd: 0, step: 0, playing: true, bbLvl: null};
+
+// ------------------------------------------------------------------ data
+async function load() {
+  const bin = Uint8Array.from(atob(PAYLOAD), c => c.charCodeAt(0));
+  const txt = await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  return JSON.parse(txt);
+}
+function dec(tr, scale = 1) {
+  if (!tr) return null;
+  const r = atob(tr.b), n = r.length, x = new Float32Array(n), y = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    x[i] = tr.t0 + (tr.t1 - tr.t0) * i / (n - 1);
+    y[i] = (tr.lo + (tr.hi - tr.lo) * r.charCodeAt(i) / 255) * scale;
+  }
+  return {x, y};
+}
+function bytes(b64) { return Uint8Array.from(atob(b64), c => c.charCodeAt(0)); }
+function unpack(b64, n) {
+  const by = bytes(b64), out = new Uint8Array(n);
+  for (let i = 0; i < n; i++) out[i] = (by[i >> 3] >> (7 - (i & 7))) & 1;
+  return out;
+}
+const dist = () => Math.pow(10, S.logd);
+const prx = () => D.path.ref_dbm - 10 * D.path.n * Math.log10(dist());
+function run() {             // model run nearest the received power
+  const m = D.model, p = Math.max(m.levels[0], Math.min(m.levels[m.levels.length - 1], prx()));
+  let best = 0;
+  m.levels.forEach((l, i) => { if (Math.abs(l - p) < Math.abs(m.levels[best] - p)) best = i; });
+  const r = m.runs[best];
+  if (!r._s) { r._s = bytes(r.scores); r._c = unpack(r.chips, 127); }
+  return r;
+}
+const GOLD = () => D._gold || (D._gold = Uint8Array.from(D.gold, c => +c));
+const fmtd = d => d < 1 ? (d * 100).toFixed(0) + ' cm' : d < 10 ? d.toFixed(1) + ' m' : d.toFixed(0) + ' m';
+
+// ------------------------------------------------------------------ plotting
+function ticks(lo, hi, n = 5) {
+  const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(s => span / s <= n) || 10 * mag;
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-6; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+const fmt = v => Math.abs(v) >= 1000 ? v.toFixed(0) : Math.abs(v) >= 10 ? +v.toFixed(1) + '' : +v.toPrecision(3) + '';
+let plotId = 0;
+const PLOTS = {};
+/* opts: series [{d:{x,y}, color, label, w, pts}], xl, yl, h, ylim, xlim, xlog, ylog, hl [{y,color,label}], vl [{x,color,label}], bands [{x0,x1,color}] */
+function plot(opts) {
+  const W = 800, H = opts.h || 250, L = 66, R = 14, T = 12, Bm = 42;
+  const id = 'p' + (plotId++);
+  const tx = opts.xlog ? Math.log10 : v => v, ty = opts.ylog ? Math.log10 : v => v;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  opts.series.forEach(s => { if (!s.d) return; for (let i = 0; i < s.d.x.length; i++) {
+    const X = tx(s.d.x[i]), Y = ty(s.d.y[i]); if (!isFinite(X) || !isFinite(Y)) continue;
+    x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y); } });
+  if (opts.xlim) [x0, x1] = opts.xlim.map(tx);
+  if (opts.ylim) [y0, y1] = opts.ylim.map(ty); else { const p = (y1 - y0) * 0.08 || 1; y0 -= p; y1 += p; }
+  const sx = v => L + (tx(v) - x0) / (x1 - x0) * (W - L - R), sy = v => T + (1 - (ty(v) - y0) / (y1 - y0)) * (H - T - Bm);
+  let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opts.aria || opts.yl || 'plot'}" id="${id}">`;
+  (opts.bands || []).forEach(b => g += `<rect x="${sx(b.x0)}" y="${T}" width="${sx(b.x1) - sx(b.x0)}" height="${H - T - Bm}" fill="${b.color}"/>`);
+  const xt = opts.xlog ? [0.1, 1, 10, 100, 1000].filter(v => tx(v) >= x0 - 1e-9 && tx(v) <= x1 + 1e-9) : ticks(x0, x1, 6);
+  const yt = opts.ylog ? [1e-4, 1e-3, 1e-2, 0.1, 1, 10, 100, 1000].filter(v => ty(v) >= y0 && ty(v) <= y1) : ticks(y0, y1, 4);
+  xt.forEach(v => g += `<line x1="${sx(v)}" x2="${sx(v)}" y1="${T}" y2="${H - Bm}" stroke="#1f2a32"/><text x="${sx(v)}" y="${H - Bm + 18}" fill="#8a9ca8" font-size="14" text-anchor="middle">${opts.xfmt ? opts.xfmt(v) : fmt(v)}</text>`);
+  yt.forEach(v => g += `<line x1="${L}" x2="${W - R}" y1="${sy(v)}" y2="${sy(v)}" stroke="#1f2a32"/><text x="${L - 8}" y="${sy(v) + 5}" fill="#8a9ca8" font-size="14" text-anchor="end">${opts.yfmt ? opts.yfmt(v) : fmt(v)}</text>`);
+  if (opts.xl) g += `<text x="${(L + W - R) / 2}" y="${H - 6}" fill="#8a9ca8" font-size="14" text-anchor="middle">${opts.xl}</text>`;
+  if (opts.yl) g += `<text transform="translate(16 ${(T + H - Bm) / 2}) rotate(-90)" fill="#8a9ca8" font-size="14" text-anchor="middle">${opts.yl}</text>`;
+  (opts.hl || []).forEach(h => g += `<line x1="${L}" x2="${W - R}" y1="${sy(h.y)}" y2="${sy(h.y)}" stroke="${h.color}" stroke-dasharray="6 5" stroke-width="1.5"/>` + (h.label ? `<text x="${W - R - 6}" y="${sy(h.y) - 6}" fill="${h.color}" font-size="14" text-anchor="end">${h.label}</text>` : ''));
+  (opts.vl || []).forEach(h => g += `<line x1="${sx(h.x)}" x2="${sx(h.x)}" y1="${T}" y2="${H - Bm}" stroke="${h.color}" stroke-width="2"/>` + (h.label ? `<text x="${sx(h.x) + (sx(h.x) > W - 90 ? -6 : 6)}" y="${T + 16}" fill="${h.color}" font-size="14" text-anchor="${sx(h.x) > W - 90 ? 'end' : 'start'}">${h.label}</text>` : ''));
+  g += `<clipPath id="${id}c"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - Bm}"/></clipPath><g clip-path="url(#${id}c)">`;
+  opts.series.forEach(s => {
+    if (!s.d) return;
+    if (s.pts) { for (let i = 0; i < s.d.x.length; i++) g += `<circle cx="${sx(s.d.x[i])}" cy="${sy(s.d.y[i])}" r="5" fill="${s.color}"/>`; return; }
+    let p = '';
+    for (let i = 0; i < s.d.x.length; i++) { const Y = s.d.y[i]; if (!isFinite(ty(Y))) continue; p += (s.step && i ? `${sx(s.d.x[i]).toFixed(1)},${sy(s.d.y[i - 1]).toFixed(1)} ` : '') + `${sx(s.d.x[i]).toFixed(1)},${sy(Y).toFixed(1)} `; }
+    g += `<polyline points="${p}" fill="none" stroke="${s.color}" stroke-width="${s.w || 1.6}" stroke-linejoin="round" opacity="${s.op || 1}"/>`;
+  });
+  g += `</g><line class="cur" x1="0" x2="0" y1="${T}" y2="${H - Bm}" stroke="#ffffff55" visibility="hidden"/></svg>`;
+  PLOTS[id] = {opts, sx, x0, x1, L, W, R, tx};
+  const leg = opts.series.filter(s => s.label).map(s => `<span><i style="background:${s.color}"></i>${s.label}</span>`).join('');
+  return `<div class="plot" data-plot="${id}">${leg ? `<div class="legend">${leg}</div>` : ''}${g}<div class="hov" hidden></div></div>`;
+}
+function wirePlots(root) {
+  root.querySelectorAll('.plot').forEach(el => {
+    const P = PLOTS[el.dataset.plot]; if (!P) return;
+    const svg = el.querySelector('svg'), cur = svg.querySelector('.cur'), hov = el.querySelector('.hov');
+    svg.addEventListener('pointermove', e => {
+      const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) / r.width * P.W;
+      if (vx < P.L || vx > P.W - P.R) return;
+      const X = P.x0 + (vx - P.L) / (P.W - P.L - P.R) * (P.x1 - P.x0), xv = P.opts.xlog ? Math.pow(10, X) : X;
+      cur.setAttribute('x1', vx); cur.setAttribute('x2', vx); cur.setAttribute('visibility', 'visible');
+      const lines = [`${P.opts.xl ? P.opts.xl.split(' (')[0] : 'x'} ${fmt(xv)}`];
+      P.opts.series.forEach(s => { if (!s.d || !s.label || s.pts) return;
+        let i = 0, n = s.d.x.length; while (i < n - 1 && s.d.x[i] < xv) i++;
+        lines.push(`${s.label.split(':')[0]} ${fmt(s.d.y[i])}`); });
+      hov.textContent = lines.join('\n'); hov.hidden = false;
+    });
+    svg.addEventListener('pointerleave', () => { cur.setAttribute('visibility', 'hidden'); hov.hidden = true; });
+  });
+}
+function spark(d, color, n = 160) {
+  if (!d) return '';
+  let lo = Infinity, hi = -Infinity; d.y.forEach(v => { lo = Math.min(lo, v); hi = Math.max(hi, v); });
+  const step = Math.max(1, Math.floor(d.x.length / n)); let p = '';
+  for (let i = 0; i < d.x.length; i += step) p += `${(i / (d.x.length - 1) * 200).toFixed(1)},${(36 - (d.y[i] - lo) / (hi - lo || 1) * 32).toFixed(1)} `;
+  return `<svg viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><polyline points="${p}" fill="none" stroke="${color}" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>`;
+}
+/* rows of 1-bit cells: rows [{bits, label, color, cmp}] cmp: compare to reference bits -> red if mismatch */
+function strip(rows, opts = {}) {
+  const n = rows[0].bits.length, W = 800, L = 120, ch = opts.h || 22, gap = 6, H = rows.length * (ch + gap) + 4;
+  const cw = (W - L - 4) / n;
+  let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opts.aria || 'bit strip'}">`;
+  rows.forEach((r, k) => {
+    const y = 2 + k * (ch + gap);
+    g += `<text x="${L - 8}" y="${y + ch * 0.72}" fill="#9db0bc" font-size="14" text-anchor="end">${r.label}</text>`;
+    for (let i = 0; i < n; i++) {
+      const bad = r.cmp && r.cmp[i] !== r.bits[i];
+      const fill = bad ? 'var(--bad)' : r.bits[i] ? r.color : '#1c262e';
+      g += `<rect x="${(L + i * cw).toFixed(2)}" y="${y}" width="${Math.max(cw - (n > 200 ? 0 : 1), 0.6).toFixed(2)}" height="${ch}" fill="${fill}"${opts.ph === i ? ' stroke="#fff" stroke-width="2"' : ''}/>`;
+    }
+  });
+  return g + '</svg>';
+}
+function fig(title, body, src) {
+  return `<div class="fig"><div class="ft"><span>${title}</span>${src ? `<span class="src">${src}</span>` : ''}</div>${body}</div>`;
+}
+const NODATA = what => `<div class="nodata">No ${what} data in this build: run docs/explainer/sims.sh, then gendata.py.</div>`;
+
+// ------------------------------------------------------------------ blocks
+const B = {
+  ook: {lvl: 'link', name: 'On-off keying', sub: 'the whole idea', anchor: 'on-off-keying-ook',
+    text: 'The transmitter switches a 433 MHz carrier on and off, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives. Loud is 1, quiet is 0. So the TX needs no crystal or PLL, just a free-running ring of inverters.',
+    facts: [['TX power', '+4 dBm'], ['RX accepts', '330–560 MHz'], ['chip', '104 µs'], ['code', '127 chips']],
+    plot: () => figCode()},
+  air: {lvl: 'link', name: 'Over the air', sub: 'path loss between two wire dipoles', anchor: 'bench-measurements-phase-0',
+    text: 'Measured on the bench with an earlier chip\'s ring oscillator, 14.5 cm wire antennas and a scope: close to free space, falling as 1/d^1.89, −44 dBm at 1 m. The receiver can still find a burst near −94 dBm, 50 dB below that.',
+    facts: [['at 1 m', '−44 dBm'], ['exponent', 'n = 1.89'], ['sensitivity', '≈ −94 dBm']],
+    plot: () => figPath()},
+  gold: {lvl: 'tx', name: 'Gold code (digital)', sub: 'radio_digital macro, TX side', anchor: 'digital-radio_digital-macro', color: 'dig',
+    text: 'The 7-bit DIP code picks one Gold code: two 7-bit LFSRs, one delayed by the code, XORed. 127 noise-like chips, half on, half off. The TX keys the ring with the code three times, with 64 silent chips between bursts.',
+    facts: [['chips', '127'], ['chip', '104 µs'], ['burst', '13.2 ms'], ['bursts', '3']],
+    plot: () => figGold()},
+  tx_ring: {lvl: 'tx', name: 'tx_ring', sub: 'free-running ring oscillator', anchor: 'transmitter', sch: 'tx_ring', color: 'tx',
+    text: 'A NAND gate (the on/off enable) plus a ring of standard-cell inverters. No crystal: wherever it lands in 330–560 MHz the receiver still works. Silicon ran at ×0.87 of simulation on the bench chip.',
+    facts: () => [['sim', (D.tx ? D.tx.f_mhz : '–') + ' MHz'], ['on silicon', '~×0.87'], ['on/off', '~30–40 ns']],
+    plot: () => figTx(['key', 'ring'])},
+  tx_ls: {lvl: 'tx', name: 'tx_ls', sub: 'level shifter 1.8 V → 3.3 V', anchor: 'transmitter', sch: 'tx_ls', color: 'tx',
+    text: 'Turns the 1.8 V ring into 3.3 V swings. Its two latch nodes are naturally opposite in phase, which gives the dipole\'s two arms for free.',
+    facts: [['in', '1.8 V'], ['out', '3.3 V, antiphase']],
+    plot: () => figTx(['a', 'b'])},
+  tx_drv: {lvl: 'tx', name: 'tx_drv ×2', sub: 'output drivers, one per dipole arm', anchor: 'transmitter', sch: 'tx_drv', color: 'tx',
+    text: 'Thick-oxide buffer tapers into the 3.3 V output drivers on ua[3] and ua[4]. Driving the two arms in antiphase puts the full swing across the dipole. Per-arm enables allow a monopole fallback.',
+    facts: () => [['into dipole', '+3.7 to +3.9 dBm'], ['dipole', (D.tx ? '±' + D.tx.dipole_vpk + ' V' : '–')], ['pins', 'ua[3], ua[4]']],
+    plot: () => figTx(['drv_p', 'drv_n', 'dipole'])},
+  lna_chain: {lvl: 'rx', name: 'lna_chain', sub: '6 differential amplifier stages', anchor: 'receiver-amplifier-chain', sch: 'lna_chain', color: 'rx',
+    text: 'Six differential stages, ~80 dB of gain in total. Differential means each stage amplifies the difference between two wires and ignores noise common to both, like the chip\'s own 10 MHz clock. Stage 1 is the low-noise amplifier; coupling capacitors between stages stop DC offsets building up.',
+    facts: [['gain', '~80 dB'], ['noise figure', '≈ 11 dB'], ['stages', '6']],
+    plot: () => figChain()},
+  log_det: {lvl: 'rx', name: 'log_det', sub: 'successive-detection log detector', anchor: 'receiver-detector-filter-threshold', sch: 'log_det', color: 'rx',
+    text: 'One rectifier cell per chain stage. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V. Note it goes down as the signal goes up.',
+    facts: [['slope', '~13 mV/dB'], ['range', '~70 dB'], ['cells', '6']],
+    plot: () => figLogdet()},
+  lpf_rc: {lvl: 'rx', name: 'lpf_rc', sub: '14 kHz RC low-pass', anchor: 'receiver-detector-filter-threshold', sch: 'lpf_rc', color: 'rx',
+    text: 'Keeps the chip-rate envelope (one chip is 104 µs) and removes most of the noise from the detector output.',
+    facts: [['corner', '14 kHz']],
+    plot: () => figBB(['det', 'lpf'])},
+  avg_sc: {lvl: 'rx', name: 'avg_sc', sub: 'switched-capacitor slow average', anchor: 'where-the-threshold-goes', sch: 'avg_sc', color: 'rx',
+    text: 'The threshold. A Gold code is half on and half off, so the slow average of the signal sits in the middle of it at any range. A small capacitor clocked by the digital acts as a very large resistor.',
+    facts: [['τ', '≈ 0.45 ms'], ['clocks', 'sc_phi1/2 from digital']],
+    plot: () => figBB(['lpf', 'avg'])},
+  comp_ct: {lvl: 'rx', name: 'comp_ct', sub: 'continuous-time comparator', anchor: 'receiver-detector-filter-threshold', sch: 'comp_ct', color: 'rx',
+    text: 'Filtered signal on one input, slow average on the other: is this chip on or off? Near the sensitivity limit the difference is ~1 mV and the noise is about as big, so many decisions are wrong. That is fine: the correlator only needs most of them right.',
+    facts: [['window', '~1 mV'], ['sampled every', '13 µs']],
+    plot: () => figComp()},
+  r2r: {lvl: 'rx', name: 'r2r + trim servo', sub: '8-bit DAC, offset trim', anchor: 'where-the-threshold-goes', sch: 'r2r', color: 'dac',
+    text: 'The comparator\'s own offset (a few mV) is bigger than the signal. The digital moves an 8-bit DAC one step per sample so the comparator outputs 1 half the time, cancelling the offset in ~0.07 mV steps through a weak second input pair.',
+    facts: [['bits', '8'], ['step', '~0.07 mV'], ['rule', '1 → up, 0 → down']],
+    plot: () => figTrim()},
+  slicer: {lvl: 'rx', name: 'chip slicer (digital)', sub: 'majority vote per chip', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
+    text: '8 comparator samples per chip, majority vote, at 4 timing offsets in parallel (so the RX needs no clock recovery). Each offset keeps the last 127 chip decisions.',
+    facts: [['samples/chip', '8'], ['phases', '4']],
+    plot: () => figSlicer()},
+  corr: {lvl: 'rx', name: 'correlator (digital)', sub: 'score the last 127 chips', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
+    text: 'After every chip, count how many of the last 127 decisions match this board\'s own code. Chance gives ~64. 97 or more is a detection: 6σ above chance. Even when a quarter of the samples are wrong the score still clears 97.',
+    facts: [['chance', '~64'], ['threshold', '97'], ['max', '127']],
+    plot: () => figScore()},
+  led: {lvl: 'rx', name: '2-of-3 + LED', sub: 'burst check', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
+    text: 'The TX sends the burst three times. The LED toggles only if two detections arrive exactly one or two burst periods apart, then the code is ignored for ~1 s. Other codes, garage remotes and noise don\'t toggle it.',
+    facts: [['period', '191 chips'], ['tolerance', '±2 chips'], ['hold-off', '~1 s']],
+    plot: () => figLed()},
+  bias_gen: {lvl: 'rx', name: 'bias_gen', sub: 'support', anchor: 'support', sch: 'bias_gen', color: 'bias',
+    text: 'Makes the reference currents and the mid-rail voltage for every analog block. On-chip decoupling capacitors supply the TX\'s 433 MHz current spikes locally so they don\'t disturb the receiver.',
+    facts: [['feeds', 'every analog block']], plot: () => ''},
+};
+
+// ------------------------------------------------------------------ figures
+function figCode() {
+  const g = GOLD(), r = run();
+  return fig(`code 0x${D.code.toString(16).toUpperCase()}: what is sent, and what the receiver decided at ${prx().toFixed(0)} dBm`,
+    strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {aria: 'sent and received chips'}),
+    'model/ link model, one burst') + `<p>${r.chip_ok}/127 chips right${r.chip_ok < 97 ? ': below 97, not a detection' : ': a detection'}. Wrong chips are red.</p>`;
+}
+function figPath() {
+  const p = D.path, fit = {x: [], y: []};
+  for (let l = -1; l <= 3.001; l += 0.05) { fit.x.push(Math.pow(10, l)); fit.y.push(p.ref_dbm - 10 * p.n * l); }
+  return fig('received power vs distance', plot({series: [
+      {d: fit, color: 'var(--sig)', label: 'fit: −44 dBm at 1 m, 1/d^1.89', w: 2},
+      {d: {x: p.d_m, y: p.p_dbm}, color: 'var(--sig2)', label: 'measured', pts: true}],
+    xlog: true, xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
+    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm'}], vl: [{x: dist(), color: '#fff', label: fmtd(dist())}],
+    bands: [{x0: 4, x1: 1000, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + '<p>Measured from 10 cm to 4 m; further out (shaded) is the fit extended, not a measurement.</p>';
+}
+function figGold() {
+  const g = GOLD(), per = D.model.period, all = new Uint8Array(3 * per);
+  for (let b = 0; b < 3; b++) all.set(g, b * per);
+  return fig('one send: three bursts of 127 chips, 64 silent chips between', strip([{bits: all, label: 'carrier', color: 'var(--tx)'}], {h: 34}), 'model/gold.py') +
+    fig('one burst, chip by chip', strip([{bits: g, label: '0x' + D.code.toString(16).toUpperCase(), color: 'var(--tx)'}], {h: 30}));
+}
+const TXL = {key: ['enable (key)', '#9db0bc'], ring: ['ring', 'var(--tx)'], a: ['latch A', 'var(--tx)'], b: ['latch B', 'var(--sig2)'],
+  drv_p: ['driver p (ua[3])', 'var(--tx)'], drv_n: ['driver n (ua[4])', 'var(--sig2)'], dipole: ['across the dipole', 'var(--sig)']};
+function figTx(keys) {
+  if (!D.tx) return NODATA('TX');
+  const sr = z => keys.filter(k => k !== 'dipole').map(k => ({d: dec(D.tx[k + z]), label: TXL[k][0], color: TXL[k][1]}));
+  let h = fig('whole keyed burst: enable on at 5 ns, off at 60 ns', plot({series: sr(''), xl: 'time (ns)', yl: 'V', h: 200}), 'build/tb_tx_ab.raw, tt');
+  h += fig('zoom 40–46 ns', plot({series: sr('_z'), xl: 'time (ns)', yl: 'V', h: 200}));
+  if (keys.includes('dipole')) h += fig('voltage across the dipole', plot({series: [{d: dec(D.tx.dipole), label: TXL.dipole[0], color: TXL.dipole[1], w: 1}], xl: 'time (ns)', yl: 'V', h: 200}));
+  return h;
+}
+function figChain() {
+  if (!D.rx_rf) return NODATA('RX RF');
+  const n = D.rx_rf.nodes, x = n.map((_, i) => i), y = n.map(v => v.vpk * 1000);
+  let h = fig('peak signal at each point, −60 dBm tone in', plot({series: [{d: {x, y}, color: 'var(--rx)', label: 'mV peak', w: 2.5}, {d: {x, y}, color: 'var(--rx)', pts: true}],
+    ylog: true, ylim: [0.3, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), 'build/rx_rf_tone.raw, tt');
+  h += '<p>Each stage multiplies the signal until the last stages limit at ~1 V: that limiting is what the log detector uses.</p>';
+  const cols = ['#4c6b78', '#5d8592', 'var(--rx)', 'var(--rx)', 'var(--rx)', 'var(--sig2)', 'var(--sig2)', 'var(--sig2)'];
+  h += fig('the same 10 ns at every stage', plot({series: n.map((v, i) => ({d: dec(v.w, 1000), color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240}));
+  return h;
+}
+function figLogdet() {
+  const L = D.logdet, p = prx();
+  let h = fig('detector output vs input power', plot({series: [{d: {x: L.pin, y: L.det}, color: 'var(--rx)', label: 'det (V)', w: 2.5}],
+    xl: 'input power (dBm)', yl: 'det (V)', h: 240, vl: [{x: Math.max(-110, Math.min(-10, p)), color: '#fff', label: p.toFixed(0) + ' dBm'}],
+    hl: []}), 'sim/logdet/taps.txt, tt');
+  const cols = ['#4c6b78', '#5d8592', '#3cc4a8', '#8ad6c2', '#ffd166', '#f0954a'];
+  h += fig('amplitude reaching each detector cell: they saturate one after another', plot({series: L.tap_amp.map((a, i) => ({d: {x: L.pin, y: a}, color: cols[i], label: i < 5 ? 'o' + (i + 1) : 'out'})),
+    ylog: true, ylim: [1e-4, 3], xl: 'input power (dBm)', yl: 'V peak (log)', h: 240}));
+  if (D.rx_rf && D.rx_rf.key_det) h += fig('carrier keyed on at 0.5 µs, off at 2.5 µs (−60 dBm)', plot({series: [{d: dec(D.rx_rf.key_det), color: 'var(--rx)', label: 'det (V)'}], xl: 'time (µs)', yl: 'det (V)', h: 180}), 'build/rx_rf_key.raw');
+  return h;
+}
+function bb() {
+  if (!D.bb.length) return null;
+  if (S.bbLvl == null) S.bbLvl = prx() > -82 ? D.bb[0].lvl : D.bb[D.bb.length - 1].lvl;
+  return D.bb.find(b => b.lvl === S.bbLvl) || D.bb[0];
+}
+function bbPick() {
+  return `<div class="seg" role="group" aria-label="Input level">${D.bb.map(b => `<button type="button" data-bb="${b.lvl}" aria-pressed="${b.lvl === S.bbLvl}">${b.lvl} dBm</button>`).join('')}</div>`;
+}
+const BBL = {det: ['det (1 µs blocks)', '#6f8491', 0.8], lpf: ['after lpf_rc', 'var(--sig)', 1.6], avg: ['slow average', 'var(--sig2)', 2.6]};
+function figBB(keys) {
+  const b = bb(); if (!b) return NODATA('baseband');
+  const ser = keys.map(k => ({d: dec(b[k], 1000), label: BBL[k][0], color: BBL[k][1], w: BBL[k][2], op: k === 'det' ? 0.7 : 1}));
+  let yl = null;
+  if (b.lvl < -85) { let m = 0; const d = dec(b.lpf, 1000); d.y.forEach(v => m = Math.max(m, Math.abs(v))); yl = [-m * 1.6, m * 1.6]; }
+  return bbPick() + fig(`${b.lvl} dBm, 3 ms of one burst (mV, relative to the no-signal level): chips "on" pull the level down`,
+    plot({series: ser, xl: 'time (ms)', yl: 'mV', h: 280, ylim: yl}), `build/rx_bb_${b.lvl}.raw, tt`);
+}
+function figComp() {
+  const b = bb(); if (!b) return NODATA('baseband');
+  const bits = unpack(b.bits, b.nbits), truth = unpack(b.truth, b.nbits), n = Math.min(240, b.nbits);
+  return figBB(['lpf', 'avg']) + fig(`sampled comparator vs the chip actually sent (first ${n} samples): right ${b.agree}% over the whole burst`,
+    strip([{bits: truth.slice(0, n), label: 'sent', color: 'var(--tx)'}, {bits: bits.slice(0, n), label: 'comparator', color: 'var(--rx)', cmp: truth.slice(0, n)}], {h: 22}));
+}
+function figTrim() {
+  const b = bb(); if (!b) return NODATA('baseband');
+  return bbPick() + fig(`trim DAC voltage during the burst, ${b.lvl} dBm (servo stand-in in this run)`, plot({series: [{d: dec(b.trim), color: 'var(--dac)', label: 'trim (V)', w: 2}], xl: 'time (ms)', yl: 'V', h: 220}), `build/rx_bb_${b.lvl}.raw`) +
+    '<p>In the chip the digital servo drives this; the mixed-signal run with the real RTL shows the code settling and dithering at −94 dBm (sim/plots/mixed_-94.png).</p>';
+}
+function figSlicer() {
+  const g = GOLD(), r = run();
+  return fig(`chip decisions at ${prx().toFixed(0)} dBm (best timing phase): ${r.chip_ok}/127 right`,
+    strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'decided', color: 'var(--rx)', cmp: g}]), 'model/ link model');
+}
+function figScore() {
+  const r = run(), m = D.model, x = [], y = [];
+  for (let i = 0; i < r._s.length; i++) { x.push(i - m.lead_chips); y.push(r._s[i]); }
+  const bands = [0, 1, 2].map(k => ({x0: k * m.period, x1: k * m.period + 127, color: '#f0954a14'}));
+  let h = fig(`score after every chip, ${prx().toFixed(0)} dBm: peaks at the end of each burst`, plot({series: [{d: {x, y}, color: 'var(--dig)', label: 'score', w: 1.5}],
+    ylim: [40, 130], xl: 'chips since the send started', yl: 'score /127', h: 260, bands,
+    hl: [{y: m.thresh, color: 'var(--thr)', label: 'detect ≥ 97'}, {y: 63.5, color: '#6f8491', label: 'chance'}]}), 'model/ link model');
+  h += figSweep();
+  return h;
+}
+function figSweep() {
+  const m = D.model, x = m.levels, y = m.runs.map(r => r.events.length ? Math.max(...r.events) : Math.max(...bytes(r.scores)));
+  return fig('best score vs received power (one send per level)', plot({series: [{d: {x, y}, color: 'var(--dig)', label: 'peak score', w: 2}, {d: {x, y}, color: 'var(--dig)', pts: true}],
+    xl: 'received power (dBm)', yl: 'peak score', ylim: [50, 130], h: 220, hl: [{y: m.thresh, color: 'var(--thr)', label: '97'}],
+    vl: [{x: Math.max(-110, Math.min(-60, prx())), color: '#fff', label: 'now'}]}), 'model/ link model');
+}
+function figLed() {
+  const r = run(), m = D.model;
+  const ev = r.events.length ? r.events.map((s, i) => `burst ${i + 1}: score ${s}`).join(' · ') : 'no detections';
+  return `<p><b>${prx().toFixed(0)} dBm:</b> ${ev}. ${r.toggled ? 'Two arrived one period apart: <b style="color:var(--ok)">LED toggles</b>.' : '<b style="color:var(--bad)">LED stays as it is.</b>'}</p>` + figScore().split('<div class="fig"><div class="ft"><span>best')[0];
+}
+
+// ------------------------------------------------------------------ levels
+function linkScene() {
+  const d = dist(), p = prx(), gap = 480 + (S.logd + 1) / 4 * 420, tx = 600 - gap / 2, rx = 600 + gap / 2;
+  const strength = Math.max(0.12, Math.min(1, (p + 100) / 60));
+  const board = (x, label, sub, color, lvl, pin) => `
+    <g class="hit" role="button" tabindex="0" data-go="${lvl}" aria-label="Open the ${label.toLowerCase()} chain">
+      <rect class="hl" x="${x - 110}" y="150" width="220" height="170" rx="14" fill="#123024" stroke="#2f6b4f" stroke-width="2"/>
+      <rect x="${x - 45}" y="200" width="90" height="90" rx="6" fill="#0b0f12" stroke="${color}" stroke-width="2"/>
+      <text x="${x}" y="240" fill="${color}" font-size="18" text-anchor="middle" font-weight="600">${label}</text>
+      <text x="${x}" y="264" fill="#9db0bc" font-size="13" text-anchor="middle">${pin}</text>
+      <line x1="${x - 20}" y1="150" x2="${x - 80}" y2="40" stroke="#c8d3da" stroke-width="3" stroke-linecap="round"/>
+      <line x1="${x + 20}" y1="150" x2="${x + 80}" y2="40" stroke="#c8d3da" stroke-width="3" stroke-linecap="round"/>
+      <text x="${x}" y="345" fill="#e8eef2" font-size="16" text-anchor="middle">${sub}</text>
+    </g>`;
+  let waves = '';
+  for (let k = 0; k < 6; k++) waves += `<path class="wave" data-k="${k}" d="" fill="none" stroke="var(--sig)" stroke-width="3" stroke-linecap="round"/>`;
+  return `<svg class="scene" viewBox="0 0 1200 380" role="img" aria-label="Two boards: the transmitter on the left, the receiver on the right, ${fmtd(d)} apart">
+    <g class="hit" role="button" tabindex="0" data-block="air" aria-label="Over the air: path loss">
+      <rect class="hl" x="${tx + 120}" y="60" width="${rx - tx - 240}" height="260" rx="12" fill="#ffffff04" stroke="#ffffff10"/>
+      <g id="waves" data-x0="${tx + 90}" data-x1="${rx - 90}" data-s="${strength}">${waves}</g>
+      <text x="600" y="40" fill="#9db0bc" font-size="18" text-anchor="middle">${fmtd(d)} · ${(4 - p).toFixed(0)} dB path loss</text>
+    </g>
+    ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'tx', 'ua[3] / ua[4]')}
+    ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'rx', 'ua[0] / ua[1]')}
+    <circle id="led" cx="${rx + 80}" cy="180" r="12" fill="#2a3741" stroke="#000"/>
+    <text x="${rx + 80}" y="212" fill="#9db0bc" font-size="12" text-anchor="middle">LED</text>
+  </svg>`;
+}
+function levelLink() {
+  const p = prx(), r = run(), margin = p - SENS;
+  return `<h1>Send a 1 by switching the radio on. Send a 0 by switching it off.</h1>
+  <p class="lede">Two boards run the same chip: one transmits, the other receives. Each antenna is two bare wires. Click a board to open its signal chain, or the gap between them for the path loss.</p>
+  ${linkScene()}
+  <div class="readouts">
+    <div class="ro"><small>TX power</small><b>+4 dBm</b></div>
+    <div class="ro"><small>distance${dist() > 4 ? ' (fit extended past 4 m)' : ''}</small><b>${fmtd(dist())}</b></div>
+    <div class="ro"><small>received</small><b>${p.toFixed(0)} dBm</b></div>
+    <div class="ro"><small>margin to −94 dBm</small><b class="${margin >= 0 ? 'good' : 'bad'}">${margin >= 0 ? '+' : ''}${margin.toFixed(0)} dB</b></div>
+    <div class="ro"><small>live score</small><b id="live">–</b></div>
+    <div class="ro"><small>this send</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'LED toggles' : 'missed'}</b></div>
+  </div>
+  <div id="codestrip"></div>
+  <div class="row" style="gap:.6rem">
+    <button type="button" class="blk dig" data-block="ook" aria-pressed="${S.block === 'ook'}"><b>on-off keying</b><span>the idea, chip by chip</span></button>
+    <button type="button" class="blk rx" data-block="air" aria-pressed="${S.block === 'air'}"><b>over the air</b><span>measured path loss</span></button>
+    <button type="button" class="blk tx" data-go="tx"><b>transmitter →</b><span>Gold code, ring, drivers</span></button>
+    <button type="button" class="blk rx" data-go="rx"><b>receiver →</b><span>amplifiers, detector, decisions</span></button>
+  </div>`;
+}
+function blk(id, cls, sub, thumb) {
+  return `<button type="button" class="blk ${cls}" data-block="${id}" aria-pressed="${S.block === id}"><b>${B[id].name}</b><span>${sub}</span>${thumb || ''}</button>`;
+}
+function bitsD(bits) { const x = [], y = []; bits.forEach((c, i) => { x.push(i, i + 1); y.push(c, c); }); return {x, y}; }
+const AR = '<span class="arrow" aria-hidden="true">→</span>';
+function levelTx() {
+  const t = D.tx;
+  const th = k => t ? spark(dec(t[k + '_z']), 'var(--tx)') : '';
+  const gold = {x: [], y: []}; GOLD().forEach((c, i) => { gold.x.push(i); gold.y.push(c); gold.x.push(i + 1); gold.y.push(c); });
+  return `<h1>Transmitter: a ring oscillator, switched on and off by a code</h1>
+  <p class="lede">The digital keys the ring with a Gold code. The level shifter makes two opposite-phase 3.3 V signals, one driver per dipole arm. Click a block.</p>
+  <div class="chain">
+    <div class="rowlabel">TX chain</div>
+    <div class="row">${blk('gold', 'dig', 'tx_en: 127-chip code', spark(gold, 'var(--dig)', 260))}${AR}${blk('tx_ring', 'tx', '~434 MHz ring', th('ring'))}${AR}${blk('tx_ls', 'tx', '1.8 → 3.3 V, A/B', th('a'))}${AR}${blk('tx_drv', 'tx', 'p and n arms', th('drv_p'))}${AR}<div class="blk pin" aria-hidden="true"><b>ua[3]/[4]</b><span>dipole</span>${t ? spark(dec(t.dipole_z), 'var(--sig)') : ''}</div></div>
+  </div>
+  <div class="readouts">
+    <div class="ro"><small>ring (sim, tt)</small><b>${t ? t.f_mhz : '–'} MHz</b></div>
+    <div class="ro"><small>power into dipole</small><b>+3.8 dBm</b></div>
+    <div class="ro"><small>keying</small><b>on/off ~30 ns</b></div>
+  </div>
+  ${t ? fig('the whole TX, one keyed burst (transistor level)', plot({series: [{d: dec(t.key), color: '#9db0bc', label: 'enable'}, {d: dec(t.ring), color: 'var(--tx)', label: 'ring', w: 1}, {d: dec(t.dipole), color: 'var(--sig)', label: 'across the dipole', w: 1}], xl: 'time (ns)', yl: 'V', h: 220}), 'build/tb_tx_ab.raw') : ''}`;
+}
+function levelRx() {
+  const rf = D.rx_rf, b = D.bb[0];
+  const node = i => rf ? spark(dec(rf.nodes[i].w), 'var(--rx)') : '';
+  const sc = (() => { const r = run(), x = [], y = []; for (let i = 0; i < r._s.length; i++) { x.push(i); y.push(r._s[i]); } return {x, y}; })();
+  return `<h1>Receiver: amplify, measure the energy, then decide chip by chip</h1>
+  <p class="lede">It never tunes to the carrier. ~80 dB of gain, a log detector that turns RF power into a DC level, a comparator against its own average, then the digital correlates against the expected code. Received now: <b>${prx().toFixed(0)} dBm</b>.</p>
+  <div class="chain">
+    <div class="rowlabel">RF: 433 MHz</div>
+    <div class="row"><div class="blk pin" aria-hidden="true"><b>ua[0]/[1]</b><span>dipole</span>${node(0)}</div>${AR}${blk('lna_chain', 'rx', '6 stages, ~80 dB', node(7))}${AR}${blk('log_det', 'rx', 'RF power → DC', spark({x: D.logdet.pin, y: D.logdet.det}, 'var(--rx)'))}</div>
+    <div class="rowlabel">Baseband: chip rate (104 µs)</div>
+    <div class="row">${blk('lpf_rc', 'rx', '14 kHz', b ? spark(dec(b.lpf), 'var(--sig)') : '')}${AR}${blk('avg_sc', 'rx', 'slow average', b ? spark(dec(b.avg), 'var(--sig2)') : '')}${AR}${blk('comp_ct', 'rx', 'on or off?', b ? spark(bitsD(unpack(b.bits, 120)), 'var(--rx)') : '')}${blk('r2r', 'dac', 'trim servo', b ? spark(dec(b.trim), 'var(--dac)') : '')}</div>
+    <div class="rowlabel">Digital: radio_digital macro</div>
+    <div class="row">${blk('slicer', 'dig', '8 samples/chip', spark(bitsD(run()._c.slice(0, 40)), 'var(--dig)'))}${AR}${blk('corr', 'dig', 'score /127', spark(sc, 'var(--dig)', 200))}${AR}${blk('led', 'dig', '2 of 3 → LED', '')}</div>
+    <div class="row">${blk('bias_gen', 'bias', 'currents for every block', '')}</div>
+  </div>`;
+}
+
+// ------------------------------------------------------------------ tour
+const TOUR = [
+  {level: 'link', block: null, logd: 0, cap: 'Two boards, the same chip. The left one transmits, the right one receives, 1 m apart.'},
+  {level: 'link', block: 'ook', cap: 'On-off keying: carrier on is a 1, carrier off is a 0. The pattern is a 127-chip Gold code.'},
+  {level: 'link', block: 'air', cap: 'At 1 m the receiver sees −44 dBm. It still works around −94 dBm: 50 dB, 100,000× less power.'},
+  {level: 'tx', block: null, cap: 'Inside the transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
+  {level: 'tx', block: 'gold', cap: 'The digital generates the Gold code from two 7-bit LFSRs and sends it three times.'},
+  {level: 'tx', block: 'tx_ring', cap: 'A free-running ring of inverters. No crystal, no PLL: the receiver doesn\'t care about the exact frequency.'},
+  {level: 'tx', block: 'tx_ls', cap: 'The level shifter\'s two latch nodes are opposite in phase: one for each arm of the dipole.'},
+  {level: 'tx', block: 'tx_drv', cap: 'Two 3.3 V drivers in antiphase put about +4 dBm into the wire dipole.'},
+  {level: 'rx', block: null, cap: 'Inside the receiver: amplify, measure energy, compare, then let the digital decide.'},
+  {level: 'rx', block: 'lna_chain', cap: 'Six differential stages, ~80 dB of gain. The last stages limit: that is used by the detector.'},
+  {level: 'rx', block: 'log_det', cap: 'The log detector turns RF power into a voltage that is a straight line in dB: 70 dB in ~1 V.'},
+  {level: 'rx', block: 'lpf_rc', cap: 'A 14 kHz low-pass keeps the chip-rate envelope and removes most of the noise.'},
+  {level: 'rx', block: 'avg_sc', cap: 'The threshold is the signal\'s own slow average: the code is half on, half off, so it sits in the middle.'},
+  {level: 'rx', block: 'comp_ct', cap: 'The comparator decides on or off. Near the limit the difference is ~1 mV, as big as the noise.'},
+  {level: 'rx', block: 'r2r', cap: 'An 8-bit DAC servo cancels the comparator\'s own offset in ~0.07 mV steps.'},
+  {level: 'rx', block: 'slicer', cap: 'Eight samples per chip, majority vote, at four timing offsets at once.'},
+  {level: 'rx', block: 'corr', cap: 'Count matches with the expected code: chance is ~64, 97 is a detection. Lots of wrong chips are fine.'},
+  {level: 'rx', block: 'led', cap: 'Two detections one burst period apart toggle the LED. Noise and other codes don\'t.'},
+  {level: 'link', block: 'corr', logd: 2.62, cap: 'Pull the boards apart: near −94 dBm the score drops towards 97, and below that the send is missed.'},
+];
+
+// ------------------------------------------------------------------ render
+const $ = id => document.getElementById(id);
+function render() {
+  plotId = 0; for (const k in PLOTS) delete PLOTS[k];
+  const main = $('main');
+  const stage = S.level === 'tx' ? levelTx() : S.level === 'rx' ? levelRx() : levelLink();
+  let detail = '';
+  if (S.block && B[S.block]) {
+    const b = B[S.block], facts = typeof b.facts === 'function' ? b.facts() : b.facts;
+    detail = `<aside class="detail" aria-labelledby="dh">
+      <div class="top"><div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div><button type="button" class="close" data-close aria-label="Close detail">✕</button></div>
+      <p>${b.text}</p>
+      <div class="facts">${facts.map(f => `<span class="fact">${f[0]} <b>${f[1]}</b></span>`).join('')}</div>
+      ${b.plot()}
+      <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">Read more in How it works ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a>` : ''}</div>
+    </aside>`;
+  }
+  main.className = detail ? 'has-detail' : '';
+  main.innerHTML = `<section class="stage" aria-label="${S.level}">${stage}</section>${detail}`;
+  wirePlots(main);
+  const names = {link: 'Link', tx: 'Transmitter', rx: 'Receiver'};
+  let cr = `<button type="button" data-go="link"${S.level === 'link' && !S.block ? ' aria-current="page"' : ''}>Link</button>`;
+  if (S.level !== 'link') cr += `<span class="sep">›</span><button type="button" data-go="${S.level}"${!S.block ? ' aria-current="page"' : ''}>${names[S.level]}</button>`;
+  if (S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${B[S.block].name}</button>`;
+  $('crumbs').innerHTML = cr;
+  const p = prx();
+  $('distout').textContent = `${fmtd(dist())} → ${p.toFixed(0)} dBm`;
+  $('dist').value = S.logd;
+  $('dist').setAttribute('aria-valuetext', `${fmtd(dist())}, ${p.toFixed(0)} dBm received`);
+  $('stepno').textContent = `${S.step + 1} / ${TOUR.length}`;
+  $('caption').innerHTML = `<span class="n">${S.step + 1}/${TOUR.length}</span><span>${TOUR[S.step].cap}</span>`;
+  anim.reset();
+}
+function go(level, block = null) { S.level = level; S.block = block; render(); }
+function setStep(i) {
+  S.step = Math.max(0, Math.min(TOUR.length - 1, i));
+  const t = TOUR[S.step];
+  if (t.logd != null) S.logd = t.logd;
+  S.level = t.level; S.block = t.block; S.bbLvl = null;
+  history.replaceState(null, '', '#step=' + S.step);
+  render();
+}
+
+// ------------------------------------------------------------------ animation (link level)
+const anim = {
+  t0: 0, reset() { this.t0 = performance.now(); },
+  frame(now) {
+    requestAnimationFrame(t => anim.frame(t));
+    if (!D || S.level !== 'link') return;
+    const rate = 30, m = D.model, total = 3 * m.period + 40;
+    if (!S.playing) { this.t0 += now - (this._last || now); }
+    this._last = now;
+    const pos = Math.floor((now - this.t0) / 1000 * rate) % total;
+    const b = Math.floor(pos / m.period), ib = pos % m.period, g = GOLD();
+    const on = b < 3 && ib < 127 ? g[ib] : 0;
+    const r = run();
+    const w = $('waves');
+    if (w) {
+      const x0 = +w.dataset.x0, x1 = +w.dataset.x1, s = +w.dataset.s, ph = ((now - this.t0) / 1000 * 0.9) % 1;
+      w.querySelectorAll('.wave').forEach((el, k) => {
+        const f = ((k / 6) + ph) % 1, x = x0 + (x1 - x0) * f, rr = 30 + 90 * f;
+        el.setAttribute('d', `M ${x} ${170 - rr} Q ${x + rr * 0.45} 170 ${x} ${170 + rr}`);
+        el.setAttribute('opacity', on ? (s * (1 - f * 0.85)).toFixed(2) : 0.04);
+      });
+    }
+    const li = Math.min(r._s.length - 1, m.lead_chips + pos);
+    const live = $('live'); if (live) { const sc = b < 3 ? r._s[li] : '–'; live.textContent = sc; live.className = sc >= m.thresh ? 'good' : ''; }
+    const led = $('led'); if (led) { const lit = r.toggled && pos >= m.period + 127 + 8; led.setAttribute('fill', lit ? 'var(--ok)' : '#2a3741'); }
+    const cs = $('codestrip');
+    if (cs && (this._pos !== ib || this._lvl !== r.lvl)) {
+      this._pos = ib; this._lvl = r.lvl;
+      cs.innerHTML = fig(`burst ${Math.min(b + 1, 3)} of 3 · chip ${b < 3 && ib < 127 ? ib + 1 : '–'} · carrier ${on ? 'ON' : 'off'}`,
+        strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {ph: b < 3 && ib < 127 ? ib : -1, aria: 'sent and received chips'}),
+        `received chips: link model at ${r.lvl} dBm${prx() > r.lvl + 1 ? ' (strongest run)' : ''}`);
+    }
+  }
+};
+
+// ------------------------------------------------------------------ events
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-go],[data-block],[data-close],[data-bb]');
+  if (!t) return;
+  if (t.dataset.bb) { S.bbLvl = +t.dataset.bb; render(); return; }
+  if (t.hasAttribute('data-close')) { S.block = null; render(); return; }
+  if (t.dataset.go) { go(t.dataset.go); return; }
+  const id = t.dataset.block;
+  S.block = S.block === id ? null : id;
+  if (B[id] && B[id].lvl !== 'link' && S.level === 'link' && id !== 'air' && id !== 'ook') S.level = B[id].lvl;
+  render();
+});
+document.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('.hit') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.target.closest('.hit').dispatchEvent(new MouseEvent('click', {bubbles: true})); return; }
+  if (e.target.tagName === 'INPUT' || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (!$('help').hidden) { if (e.key === 'Escape' || e.key === '?') { $('help').hidden = true; } return; }
+  const k = e.key;
+  if (k === 'ArrowRight' || (k === ' ' && e.target.tagName !== 'BUTTON')) { e.preventDefault(); setStep(S.step + 1); }
+  else if (k === 'ArrowLeft') { e.preventDefault(); setStep(S.step - 1); }
+  else if (k === 'Escape') { if (S.block) S.block = null; else S.level = 'link'; render(); }
+  else if (k === '1') go('link'); else if (k === '2') go('tx'); else if (k === '3') go('rx');
+  else if (k === '[' || k === ']') { S.logd = Math.max(-1, Math.min(3, +(S.logd + (k === ']' ? 0.1 : -0.1)).toFixed(2))); S.bbLvl = null; render(); }
+  else if (k === 'p') S.playing = !S.playing;
+  else if (k === '?') $('help').hidden = false;
+});
+$('dist').addEventListener('input', e => { S.logd = +e.target.value; S.bbLvl = null; render(); $('dist').focus(); });
+$('prev').onclick = () => setStep(S.step - 1);
+$('next').onclick = () => setStep(S.step + 1);
+$('helpbtn').onclick = () => { $('help').hidden = false; $('helpclose').focus(); };
+$('helpclose').onclick = () => { $('help').hidden = true; };
+
+load().then(d => {
+  D = d; D.bb = D.bb || [];
+  const m = location.hash.match(/step=(\d+)/);
+  setStep(m ? +m[1] : 0);
+  requestAnimationFrame(t => anim.frame(t));
+}).catch(err => { $('main').innerHTML = `<div class="nodata">Could not load the embedded data (${err}). This page needs a browser with DecompressionStream (Chrome 80+, Firefox 113+, Safari 16.4+).</div>`; });
+</script>
+</body>
+</html>
