@@ -263,7 +263,8 @@ function plot(opts) {
   const id = 'p' + (plotId++);
   const tx = opts.xlog ? Math.log10 : v => v, ty = opts.ylog ? Math.log10 : v => v;
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-  opts.series.forEach(s => { if (!s.d) return; for (let i = 0; i < s.d.x.length; i++) {
+  opts.series.forEach(s => { if (s.band) { s.band.x.forEach((X, i) => { x0 = Math.min(x0, tx(X)); x1 = Math.max(x1, tx(X)); y0 = Math.min(y0, ty(s.band.lo[i])); y1 = Math.max(y1, ty(s.band.hi[i])); }); return; }
+    if (!s.d) return; for (let i = 0; i < s.d.x.length; i++) {
     const X = tx(s.d.x[i]), Y = ty(s.d.y[i]); if (!isFinite(X) || !isFinite(Y)) continue;
     x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y); } });
   if (opts.xlim) [x0, x1] = opts.xlim.map(tx);
@@ -282,6 +283,8 @@ function plot(opts) {
   (opts.vl || []).forEach(h => g += `<line x1="${sx(h.x)}" x2="${sx(h.x)}" y1="${T}" y2="${H - Bm}" stroke="${h.color}" stroke-width="2"/>` + (h.label ? `<text x="${sx(h.x) + (sx(h.x) > W - 90 ? -6 : 6)}" y="${T + F + 2}" fill="${h.color}" font-size="${F}" text-anchor="${sx(h.x) > W - 90 ? 'end' : 'start'}">${h.label}</text>` : ''));
   g += `<clipPath id="${id}c"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - Bm}"/></clipPath><g clip-path="url(#${id}c)">`;
   opts.series.forEach(s => {
+    if (s.band) { const b = s.band, up = Array.from(b.x, (X, i) => `${sx(X).toFixed(1)},${sy(b.hi[i]).toFixed(1)}`), dn = Array.from(b.x, (X, i) => `${sx(X).toFixed(1)},${sy(b.lo[i]).toFixed(1)}`).reverse();
+      g += `<polygon points="${up.concat(dn).join(' ')}" fill="${s.color}" fill-opacity="${s.op || .55}" stroke="${s.color}" stroke-width="0.6"/>`; return; }
     if (!s.d) return;
     if (s.pts) { for (let i = 0; i < s.d.x.length; i++) g += `<circle cx="${sx(s.d.x[i])}" cy="${sy(s.d.y[i])}" r="5" fill="${s.color}"/>`; return; }
     let p = '';
@@ -359,10 +362,10 @@ const B = {
     text: 'Six differential stages, ~80 dB of gain in total. Differential means each stage amplifies the difference between two wires and ignores noise common to both, like the chip\'s own 10 MHz clock. Stage 1 is the low-noise amplifier, and the chain\'s noise figure is about 11 dB. Coupling capacitors between stages stop DC offsets building up.',
     plot: () => figChain()},
   log_det: {lvl: 'rx', name: 'log_det', sub: 'successive-detection log detector', anchor: 'receiver-detector-filter-threshold', sch: 'log_det', color: 'rx',
-    text: 'One rectifier cell per chain stage. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V, about 13 mV per dB. Note it goes down as the signal goes up.',
+    text: 'One rectifier cell per chain stage. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V, about 13 mV per dB. Note it goes down as the signal goes up. The cells rectify the 434 MHz carrier, and the detector\'s output node smooths it with its own ~20 MHz low-pass: the output follows the carrier\'s strength, settling in ~16 ns, and only a few mV of ripple are left of the carrier.',
     plot: () => figLogdet()},
   lpf_rc: {lvl: 'rx', name: 'lpf_rc', sub: '14 kHz RC low-pass', anchor: 'receiver-detector-filter-threshold', sch: 'lpf_rc', color: 'rx',
-    text: 'Up to the amplifiers the signal is the 434 MHz carrier itself (1). The log detector rectifies it, so its output just follows how strong the carrier is: the carrier is gone, leaving a few mV of ripple at twice its frequency (2). But that output is noisy, because the amplifiers pass 450 MHz of noise. This 14 kHz RC low-pass smooths away everything faster than a 104 µs bit, the noise and the ripple, leaving the on/off envelope (3).',
+    text: 'Up to the amplifiers the signal is the 434 MHz carrier itself (1). The log detector rectifies it, and its own ~20 MHz low-pass removes the carrier: its output just follows how strong the carrier is, with a few mV of ripple at twice its frequency left (2). But that output is noisy, because the amplifiers pass 450 MHz of noise. This 14 kHz RC low-pass, about 1,500 times slower, smooths away the noise, everything faster than a 104 µs bit, leaving the on/off envelope (3).',
     plot: () => figLpf()},
   avg_sc: {lvl: 'rx', name: 'avg_sc', sub: 'switched-capacitor slow average', anchor: 'where-the-threshold-goes', sch: 'avg_sc', color: 'rx',
     text: 'The threshold. A Gold code is half on and half off, so the slow average of the signal sits in the middle of it at any range. A small capacitor clocked by the digital (sc_phi1/2) acts as a very large resistor, giving a time constant of about 0.45 ms.',
@@ -474,10 +477,22 @@ function figLogdet() {
   h += fig('amplitude reaching each detector cell: they saturate one after another', plot({series: L.tap_amp.map((a, i) => ({d: {x: L.pin, y: a}, color: cols[i], label: i < 5 ? 'o' + (i + 1) : 'out'})),
     ylog: true, ylim: [1e-4, 3], xl: 'input power (dBm)', yl: 'V peak (log)', h: 240, vl: [{x: Math.max(-110, Math.min(-10, p)), color: '#fff', label: p.toFixed(0) + ' dBm'}]}));
   const KL = D.rx_rf && D.rx_rf.key_levels;
-  if (KL && KL.length) {     // the keyed run nearest the slider, on one y range over every level so the step grows and shrinks
-    const br = bracket(KL, p), kd = blend(dec(br.lo.det), dec(br.hi.det), br.w);   // the detector is linear in dB: a straight blend
-    if (!D._kly) { let lo = Infinity, hi = -Infinity; for (const l of KL) for (const v of dec(l.det).y) { lo = Math.min(lo, v); hi = Math.max(hi, v); } D._kly = [lo - (hi - lo) * .05, hi + (hi - lo) * .05]; }
-    h += fig(`carrier keyed on at 0.5 µs, off at 2.5 µs, ${DBM(p)}`, plot({series: [{d: kd, color: 'var(--rx)', label: 'det (V)'}], xl: 'time (µs)', yl: 'det (V)', h: 180, ylim: D._kly}), runsNote(br, 'rx_rf_key'));
+  if (KL && KL.length && KL[0].rf_hi) {
+    // the keyed runs at the slider's power: the RF going in (drawn as its envelope: ~870 cycles while on) and the detector's step
+    const br = bracket(KL, p), bw = (k, sc) => blend(dec(br.lo[k], sc), dec(br.hi[k], sc), br.w);
+    const geo = (k) => { const A = dec(br.lo[k]), Bv = dec(br.hi[k]); return A.y.map((v, i) => Math.sign(v || Bv.y[i]) * Math.pow(Math.abs(v) + 1e-6, 1 - br.w) * Math.pow(Math.abs(Bv.y[i]) + 1e-6, br.w)); };
+    const hi = geo('rf_hi'), lo = geo('rf_lo'), x = dec(br.lo.rf_hi).x;   // RF amplitude: geometric between runs, as on lna_chain
+    if (!D._kly) { let a = Infinity, z = -Infinity; for (const l of KL) for (const v of dec(l.det).y) { a = Math.min(a, v); z = Math.max(z, v); } D._kly = [a - (z - a) * .05, z + (z - a) * .05]; }
+    if (!D._kry) { let m = 0; for (const l of KL) for (const v of dec(l.rf_hi).y) m = Math.max(m, Math.abs(v)); D._kry = [-m * 1.05, m * 1.05]; }
+    h += fig(`carrier keyed on at 0.5 µs and off at 2.5 µs, ${DBM(p)}: the RF going in, and the detector's output`,
+      plot({series: [{band: {x, lo, hi}, color: 'var(--sig2)', label: '434 MHz at the last amplifier stage (mV): ~870 cycles while on, drawn as its envelope'}], yl: 'mV', h: 120, ylim: D._kry}) +
+      plot({series: [{d: bw('det'), color: 'var(--rx)', label: 'det (V)', w: 2}], xl: 'time (µs)', yl: 'det (V)', h: 140, ylim: D._kly}), runsNote(br, 'rx_rf_key'));
+    // zoom on the switch-on: the sine itself, and the detector settling in ~16 ns (its own ~20 MHz low-pass)
+    const zr = (() => { const A = dec(br.lo.rf_z), Bv = dec(br.hi.rf_z), sa = Math.max(...A.y.map(Math.abs)) || 1, sb = Math.max(...Bv.y.map(Math.abs)) || 1, amp = Math.pow(sa, 1 - br.w) * Math.pow(sb, br.w);
+      return {x: A.x, y: A.y.map((v, i) => ((1 - br.w) * v / sa + br.w * Bv.y[i] / sb) * amp)}; })();
+    h += fig('zoom, 40 ns around the switch-on: the sine arrives, and the detector settles in ~16 ns',
+      plot({series: [{d: zr, color: 'var(--sig2)', label: 'last amplifier stage (mV)', w: 1.2}], yl: 'mV', h: 110, ylim: D._kry}) +
+      plot({series: [{d: bw('det_z'), color: 'var(--rx)', label: 'det (V)', w: 2}], xl: 'time (ns)', yl: 'det (V)', h: 110, ylim: D._kly}), runsNote(br, 'rx_rf_key'));
   }
   return h;
 }

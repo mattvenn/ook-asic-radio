@@ -140,7 +140,17 @@ def rx_rf():
     for lvl in KEY_LEVELS:
         kl = k if lvl == -60 else raw(f'rx_rf_key_{lvl}.raw')
         if kl is not None:
-            out['key_levels'].append({'lvl': lvl, 'det': trace(kl['time'] * 1e6, kl['v(det)'], 0.0, 3.5, 700)})
+            tk = kl['time'] * 1e6
+            rf = (kl['v(out_p)'] - kl['v(out_n)']) * 1000          # last amplifier stage, differential, mV
+            # 434 MHz is ~870 cycles while on: too fast to draw over 3.5 us, so keep its envelope (max and min per 5 ns)
+            edges = np.searchsorted(tk, np.linspace(0.0, 3.5, 701))
+            edges = np.clip(edges[:-1], 0, len(tk) - 1)
+            hi, lo = np.maximum.reduceat(rf, edges), np.minimum.reduceat(rf, edges)
+            tg = np.linspace(0.0, 3.5, 700, endpoint=False) + 0.0025
+            out['key_levels'].append({'lvl': lvl, 'det': trace(tk, kl['v(det)'], 0.0, 3.5, 700),
+                                      'rf_hi': trace(tg, hi, 0.0, 3.5, 700), 'rf_lo': trace(tg, lo, 0.0, 3.5, 700),
+                                      # 40 ns around the switch-on (key rises at 0.5 us): the sine itself, and det settling
+                                      'rf_z': trace(tk * 1e3, rf, 495.0, 535.0, 800), 'det_z': trace(tk * 1e3, kl['v(det)'], 495.0, 535.0, 400)})
     return out
 
 
