@@ -548,28 +548,28 @@ function linkScene(focus = null) {
   /* vertical, parallel dipoles on the facing sides: the link is broadside to both (a dipole has a null along its own axis) */
   const board = (x, label, sub, color, lvl, pin, side) => `
     <g class="hit" role="button" tabindex="0" data-go="${lvl}" aria-label="Open the ${label.toLowerCase()}">
-      <rect class="hl${focus === 'ook' && lvl === 'chip:tx' ? ' on' : ''}" x="${x - 150}" y="48" width="300" height="76" rx="10" fill="#123024" stroke="#2f6b4f" stroke-width="2"/>
-      <rect x="${x - 138}" y="58" width="72" height="56" rx="5" fill="#0b0f12" stroke="${color}" stroke-width="2"/>
-      <text x="${x - 102}" y="93" fill="${color}" font-size="20" text-anchor="middle" font-weight="600">${label}</text>
-      <text x="${x - 54}" y="80" fill="#9db0bc" font-size="13">${pin}</text>
-      <text x="${x - 54}" y="102" fill="#e8eef2" font-size="14">${sub}</text>
-      <text x="${x + 140}" y="66" fill="var(--sig)" font-size="12" text-anchor="end">open ›</text>
-      <path d="M ${x + side * 150} 82 H ${x + side * 168} V 44 M ${x + side * 150} 90 H ${x + side * 168} V 128" fill="none" stroke="#c8d3da" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect class="hl${focus === 'ook' && lvl === 'chip:tx' ? ' on' : ''}" x="${x - 150}" y="38" width="300" height="76" rx="10" fill="#123024" stroke="#2f6b4f" stroke-width="2"/>
+      <rect x="${x - 138}" y="48" width="72" height="56" rx="5" fill="#0b0f12" stroke="${color}" stroke-width="2"/>
+      <text x="${x - 102}" y="83" fill="${color}" font-size="20" text-anchor="middle" font-weight="600">${label}</text>
+      <text x="${x - 54}" y="70" fill="#9db0bc" font-size="13">${pin}</text>
+      <text x="${x - 54}" y="92" fill="#e8eef2" font-size="14">${sub}</text>
+      <text x="${x + 140}" y="56" fill="var(--sig)" font-size="12" text-anchor="end">open ›</text>
+      <path d="M ${x + side * 150} 72 H ${x + side * 168} V 34 M ${x + side * 150} 80 H ${x + side * 168} V 118" fill="none" stroke="#c8d3da" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </g>`;
   let waves = '';
   for (let k = 0; k < 6; k++) waves += `<path class="wave" data-k="${k}" d="" fill="none" stroke="var(--sig)" stroke-width="3" stroke-linecap="round"/>`;
   return `<svg class="scene" viewBox="0 0 1200 130" role="img" aria-label="Two boards: the transmitter on the left, the receiver on the right, ${fmtd(d)} apart">
     <g class="hit" role="button" tabindex="0" data-block="air" aria-label="Over the air: received power and estimated distance">
       <rect class="hl${focus === 'air' ? ' on' : ''}" x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10" fill="#ffffff04" stroke="#ffffff10"/>
-      <g id="waves" data-x0="${tx + 185}" data-x1="${rx - 185}" data-cy="86" data-r0="10" data-r1="38" data-s="${strength}">${waves}</g>
+      <g id="waves" data-x0="${tx + 185}" data-x1="${rx - 185}" data-cy="76" data-r0="10" data-r1="38" data-s="${strength}">${waves}</g>
       <text x="600" y="20" fill="#9db0bc" font-size="16" text-anchor="middle">≈ ${fmtd(d)} apart (${distSrc(d)})</text>
     </g>
     ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'chip:tx', 'ua[3] / ua[4]', 1)}
     ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'chip:rx', 'ua[0] / ua[1]', -1)}
     <g class="hit" role="button" tabindex="0" data-block="led" aria-label="The LED: 2 of 3 bursts confirm a send">
-      <rect class="hl" x="${rx + 76}" y="20" width="68" height="28" rx="6" fill="#ffffff00"/>
-      <circle id="led" cx="${rx + 128}" cy="34" r="10" fill="#2a3741" stroke="#000"/>
-      <text x="${rx + 112}" y="39" fill="#9db0bc" font-size="12" text-anchor="end">LED</text>
+      <rect class="hl" x="${rx + 76}" y="10" width="68" height="28" rx="6" fill="#ffffff00"/>
+      <circle id="led" cx="${rx + 128}" cy="24" r="10" fill="#2a3741" stroke="#000"/>
+      <text x="${rx + 112}" y="29" fill="#9db0bc" font-size="12" text-anchor="end">LED</text>
     </g>
   </svg>`;
 }
