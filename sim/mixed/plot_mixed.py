@@ -10,7 +10,7 @@ Checks (pin order of the d_cosim .so, end to end):
 Prints the servo's convergence and dither statistics, the comparator's duty
 cycle and the event / LED pins; plots det, lpf / avg, trim (code), comp.
 
-    python sim/mixed/plot_mixed.py <level>
+    python sim/mixed/plot_mixed.py <level>[_pex]
 """
 import os
 import sys
@@ -97,4 +97,4 @@ def main(level):
 
 
 if __name__ == '__main__':
-    main(int(sys.argv[1]))
+    main(sys.argv[1])
