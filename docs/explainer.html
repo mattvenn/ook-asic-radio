@@ -20,10 +20,9 @@ body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
 a{color:var(--sig)}
 button{font:inherit; color:inherit}
 :focus-visible{outline:3px solid var(--sig); outline-offset:2px}
-header{display:grid; grid-template-columns:auto minmax(8rem,1fr) minmax(0,40rem) auto; align-items:center; gap:.75rem 1.5rem; padding:.8rem 1.25rem; border-bottom:1px solid var(--line); background:var(--panel)}
+header{display:grid; grid-template-columns:auto minmax(8rem,1fr) minmax(0,30rem) auto; align-items:center; gap:.75rem 1.5rem; padding:.8rem 1.25rem; border-bottom:1px solid var(--line); background:var(--panel)}
 .brand{display:flex; flex-direction:column; gap:.1rem; min-width:0}
 .brand b{font-size:1.15rem; letter-spacing:-.01em}
-.brand span{color:var(--muted); font-size:.8rem}
 nav.crumbs{display:flex; align-items:center; gap:.35rem; flex-wrap:nowrap; white-space:nowrap; overflow:hidden; min-width:0; font-size:1rem}
 nav.crumbs button{background:none; border:0; padding:.35rem .5rem; border-radius:6px; color:var(--muted); cursor:pointer; min-height:44px}
 nav.crumbs button[aria-current]{color:var(--text); font-weight:600}
@@ -56,6 +55,8 @@ svg text{font-family:var(--sans)}
 .ro small{display:block; color:var(--muted); font-size:.78rem}
 .ro b{font-family:var(--mono); font-size:1.25rem; font-weight:500}
 .ro b.good{color:var(--ok)} .ro b.bad{color:var(--bad)}
+.ro-btn{text-align:left; color:inherit; font:inherit; cursor:pointer; min-height:44px}
+.ro-btn:hover{border-color:var(--sig)} .ro-btn[aria-pressed=true]{outline:3px solid var(--sig); outline-offset:1px}
 .chain{display:flex; flex-direction:column; gap:.9rem}
 .row{display:flex; flex-wrap:wrap; align-items:stretch; gap:.4rem}
 .rowlabel{font-size:.85rem; color:var(--faint); letter-spacing:.03em}
@@ -113,7 +114,7 @@ footer{padding:0 1.25rem 1rem; color:var(--faint); font-size:.78rem; display:fle
 </head>
 <body>
 <header>
-  <div class="brand"><b>433 MHz OOK radio</b><span>one Tiny Tapeout tile, sky130</span></div>
+  <div class="brand"><b>433 MHz OOK radio</b></div>
   <nav class="crumbs" aria-label="Level" id="crumbs"></nav>
   <div class="dist">
     <label for="dist">Distance between boards</label>
@@ -187,6 +188,10 @@ function run() {             // model run nearest the received power
   const r = m.runs[best];
   if (!r._s) { r._s = bytes(r.scores); r._c = unpack(r.chips, 127); }
   return r;
+}
+function marginal() {          // one noise run per 2 dB level: near the edge the neighbouring levels disagree
+  const m = D.model, r = run(), i = m.runs.indexOf(r);
+  return [i - 1, i + 1].some(j => m.runs[j] && m.runs[j].toggled !== r.toggled);
 }
 const GOLD = () => D._gold || (D._gold = Uint8Array.from(D.gold, c => +c));
 const fmtd = d => d < 1 ? (d * 100).toFixed(0) + ' cm' : d < 10 ? d.toFixed(1) + ' m' : d.toFixed(0) + ' m';
@@ -498,7 +503,7 @@ function levelLink() {
     <div class="ro"><small>received</small><b>${p.toFixed(0)} dBm</b></div>
     <div class="ro"><small>margin to −94 dBm</small><b class="${margin >= 0 ? 'good' : 'bad'}">${margin >= 0 ? '+' : ''}${margin.toFixed(0)} dB</b></div>
     <div class="ro"><small>live score</small><b id="live">–</b></div>
-    <div class="ro"><small>this send</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'LED toggles' : 'missed'}</b></div>
+    <button type="button" class="ro ro-btn" data-block="led" aria-pressed="${S.block === 'led'}"><small>LED (2 of 3 bursts ≥ 97) ›</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'missed'}${marginal() ? ' (marginal)' : ''}</b></button>
   </div>
   <div id="codestrip"></div>
   <div class="row" style="gap:.6rem">
@@ -673,7 +678,7 @@ document.addEventListener('click', e => {
   if (t.dataset.go) { go(t.dataset.go); return; }
   const id = t.dataset.block;
   S.block = S.block === id ? null : id;
-  if (B[id] && B[id].lvl !== 'link' && S.level === 'link' && id !== 'air' && id !== 'ook') S.level = B[id].lvl;
+  if (B[id] && B[id].lvl !== 'link' && S.level === 'link' && id !== 'air' && id !== 'ook' && !t.closest('.ro')) S.level = B[id].lvl;
   render();
 });
 document.addEventListener('keydown', e => {
