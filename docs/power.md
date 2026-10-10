@@ -239,8 +239,8 @@ at a driver):**
 | tx_drv_p / _n | 12.0 / 10.2 → 11.6 / 11.4 | 10.8 / 8.9 → 10.3 / 10.1 | |
 
 (\*) `z_ac.py` probes one terminal per block (the one nearest the middle of its terminals). For log_det
-that pick moved between runs (a met3 node at (111, 45.5), then a device node at (110, 50.5) on the 2 µm
-grid of the 1 µm mesh): 22.7 Ω in the previous run, 33.8 now, with its DC R unchanged (17.9 / 10.7 Ω).
+that pick moved between runs (VDD probe `pD_m3_222_91`, then `pD_m0_220_101`, after the re-route): 22.7 Ω
+in the previous run, 33.8 now, with its DC R unchanged (17.9 / 10.7 Ω).
 Read log_det's |Z| as 23–34 Ω.
 
 - RX |Z| is 2–3× lower; the TX → RX coupling into log_det (the worst path, ~5.5 mV per arm before the
