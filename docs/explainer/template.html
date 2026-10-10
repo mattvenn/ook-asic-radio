@@ -219,6 +219,7 @@ function unpack(b64, n) {
    past it, the two-ray ground-reflection model, 40 dB per decade. Breakpoint d_b = 4·h_tx·h_rx/λ for both boards
    HGT m above flat ground at 433.92 MHz. */
 const HGT = 1, LAMBDA = 299.792458 / 433.92, DB = 4 * HGT * HGT / LAMBDA;
+const WAVE_S = 22, WAVE_N = 32;   // link scene: wavefront spacing on screen (scene units) and how many can be in flight
 const benchP = d => D.path.ref_dbm - 10 * D.path.n * Math.log10(d);
 const pathP = d => d <= DB ? benchP(d) : benchP(DB) - 40 * Math.log10(d / DB);
 const prx = () => S.p;
@@ -432,17 +433,21 @@ function figTx(keys) {
 }
 function figChain() {
   if (!D.rx_rf) return NODATA('RX RF');
-  const n = D.rx_rf.nodes, x = n.map((_, i) => i), y = n.map(v => v.vpk * 1000);
+  // the tone transient nearest the slider (rf.sh's -60 dBm run, plus rf_levels.sh's other levels)
+  const TL = D.rx_rf.tone_levels && D.rx_rf.tone_levels.length ? D.rx_rf.tone_levels : [{lvl: -60, nodes: D.rx_rf.nodes}];
+  const tl = TL.reduce((a, b) => Math.abs(b.lvl - prx()) < Math.abs(a.lvl - prx()) ? b : a);
+  const n = tl.nodes, x = n.map((_, i) => i), y = n.map(v => v.vpk * 1000);
   // at the received power now: each stage's output from the chain's CW sweep (taps o1..o5, out = stages 1..6), log-interpolated
   const L = D.logdet, p = Math.max(L.pin[0], Math.min(L.pin[L.pin.length - 1], prx()));
   const nowY = L.tap_amp.map(a => 1000 * Math.pow(10, interp(p, L.pin, a.map(Math.log10)))), nowX = nowY.map((_, i) => i + 2);
-  let h = fig(`peak signal at each point: at ${DBM(prx())} now, and a −60 dBm tone`, plot({series: [
+  let h = fig(`peak signal at each point: at ${DBM(prx())} now, and the ${DBM(tl.lvl)} tone transient`, plot({series: [
       {d: {x: nowX, y: nowY}, color: 'var(--sig2)', label: 'now (CW sweep)', w: 2.5}, {d: {x: nowX, y: nowY}, color: 'var(--sig2)', pts: true},
-      {d: {x, y}, color: 'var(--rx)', label: '−60 dBm tone (transient)', w: 1.5, op: .7}, {d: {x, y}, color: 'var(--rx)', pts: true}],
-    ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), 'sim/logdet/taps.txt + build/rx_rf_tone.raw, tt');
+      {d: {x, y}, color: 'var(--rx)', label: 'tone transient (nearest simulated level)', w: 1.5, op: .7}, {d: {x, y}, color: 'var(--rx)', pts: true}],
+    ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), 'sim/logdet/taps.txt + build/rx_rf_tone*.raw, tt');
   h += '<p>Each stage multiplies the signal until the last stages limit at ~1 V: that limiting is what the log detector uses.</p>';
   const cols = ['#4c6b78', '#5d8592', 'var(--rx)', 'var(--rx)', 'var(--rx)', 'var(--sig2)', 'var(--sig2)', 'var(--sig2)'];
-  h += fig('the same 10 ns at every stage', plot({series: n.map((v, i) => ({d: dec(v.w, 1000), color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240}));
+  if (!D._tly) { let m = 0; for (const l of TL) for (const v of l.nodes) m = Math.max(m, v.vpk * 1000); D._tly = [-m * 1.05, m * 1.05]; }   // one range over every level
+  h += fig(`the same 10 ns at every stage, ${DBM(tl.lvl)} tone (differential, so it swings both ways)`, plot({series: n.map((v, i) => ({d: dec(v.w, 1000), color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240, ylim: D._tly}));
   return h;
 }
 function figLogdet() {
@@ -457,7 +462,7 @@ function figLogdet() {
   if (KL && KL.length) {     // the keyed run nearest the slider, on one y range over every level so the step grows and shrinks
     const k = KL.reduce((a, b) => Math.abs(b.lvl - p) < Math.abs(a.lvl - p) ? b : a);
     if (!D._kly) { let lo = Infinity, hi = -Infinity; for (const l of KL) for (const v of dec(l.det).y) { lo = Math.min(lo, v); hi = Math.max(hi, v); } D._kly = [lo - (hi - lo) * .05, hi + (hi - lo) * .05]; }
-    h += fig(`carrier keyed on at 0.5 µs, off at 2.5 µs: ${DBM(k.lvl)}, the simulated level nearest the slider`, plot({series: [{d: dec(k.det), color: 'var(--rx)', label: 'det (V)'}], xl: 'time (µs)', yl: 'det (V)', h: 180, ylim: D._kly}), k.lvl === -60 ? 'build/rx_rf_key.raw' : `build/rx_rf_key_${k.lvl}.raw`);
+    h += fig(`carrier keyed on at 0.5 µs, off at 2.5 µs: ${DBM(k.lvl)}, the simulated level nearest the slider`, plot({series: [{d: dec(k.det), color: 'var(--rx)', label: 'det (V)'}], xl: 'time (µs)', yl: 'det (V)', h: 180, ylim: D._kly}), 'build/rx_rf_key*.raw, tt');
   }
   return h;
 }
@@ -545,25 +550,24 @@ function figLed() {
 // ------------------------------------------------------------------ levels
 function linkScene(focus = null) {
   const d = dist(), p = prx(), gap = 400 + Math.max(0, Math.min(1, (Math.log10(d) + 1) / 3.1)) * 490, tx = 600 - gap / 2, rx = 600 + gap / 2;
-  const strength = Math.max(0.12, Math.min(1, (p + 100) / 60));
   /* vertical, parallel dipoles on the facing sides: the link is broadside to both (a dipole has a null along its own axis) */
   const board = (x, label, sub, color, lvl, pin, side) => `
     <g class="hit" role="button" tabindex="0" data-go="${lvl}" aria-label="Open the ${label.toLowerCase()}">
       <rect class="hl${focus === 'ook' && lvl === 'chip:tx' ? ' on' : ''}" x="${x - 150}" y="38" width="300" height="76" rx="10" fill="#123024" stroke="#2f6b4f" stroke-width="2"/>
       <rect x="${x - 138}" y="48" width="72" height="56" rx="5" fill="#0b0f12" stroke="${color}" stroke-width="2"/>
       <text x="${x - 102}" y="83" fill="${color}" font-size="20" text-anchor="middle" font-weight="600">${label}</text>
-      <text x="${x - 54}" y="70" fill="#9db0bc" font-size="13">${pin}</text>
-      <text x="${x - 54}" y="92" fill="#e8eef2" font-size="14">${sub}</text>
-      <text x="${x + 140}" y="56" fill="var(--sig)" font-size="12" text-anchor="end">open ›</text>
+      <text x="${x - 54}" y="81" fill="#e8eef2" font-size="14">${sub}</text>
       <path d="M ${x + side * 150} 72 H ${x + side * 168} V 34 M ${x + side * 150} 80 H ${x + side * 168} V 118" fill="none" stroke="#c8d3da" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </g>`;
   let waves = '';
-  for (let k = 0; k < 6; k++) waves += `<path class="wave" data-k="${k}" d="" fill="none" stroke="var(--sig)" stroke-width="3" stroke-linecap="round"/>`;
+  for (let k = 0; k < WAVE_N; k++) waves += `<path class="wave" d="" fill="none" stroke="var(--sig)" stroke-width="2.5" stroke-linecap="round" opacity="0"/>`;
+  const nl = d / LAMBDA, nlt = nl < 10 ? nl.toFixed(1) : nl.toFixed(0);
   return `<svg class="scene" viewBox="0 0 1200 130" role="img" aria-label="Two boards: the transmitter on the left, the receiver on the right, ${fmtd(d)} apart">
     <g class="hit" role="button" tabindex="0" data-block="air" aria-label="Over the air: received power and estimated distance">
       <rect class="hl${focus === 'air' ? ' on' : ''}" x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10" fill="#ffffff04" stroke="#ffffff10"/>
-      <g id="waves" data-x0="${tx + 185}" data-x1="${rx - 185}" data-cy="76" data-r0="10" data-r1="38" data-s="${strength}">${waves}</g>
-      <text x="600" y="20" fill="#9db0bc" font-size="16" text-anchor="middle">≈ ${fmtd(d)} apart (${distSrc(d)})</text>
+      <clipPath id="gapclip"><rect x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10"/></clipPath>
+      <g id="waves" clip-path="url(#gapclip)" data-x0="${tx + 168}" data-x1="${rx - 168}" data-cy="76" data-d="${d}">${waves}</g>
+      <text x="600" y="20" fill="#9db0bc" font-size="16" text-anchor="middle">≈ ${fmtd(d)} apart (${distSrc(d)}) · ${nlt} wavelength${nlt === '1.0' ? '' : 's'}</text>
     </g>
     ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'chip:tx', 'ua[3] / ua[4]', 1)}
     ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'chip:rx', 'ua[0] / ua[1]', -1)}
@@ -879,12 +883,20 @@ const anim = {
     const r = run();
     const w = $('waves');
     if (w) {
-      const x0 = +w.dataset.x0, x1 = +w.dataset.x1, s = +w.dataset.s, ph = ((now - this.t0) / 1000 * 0.9) % 1;
-      const cy = +w.dataset.cy, r0 = +w.dataset.r0, r1 = +w.dataset.r1;
+      // one wavefront leaves the TX dipole per chip, only while the carrier is on, WAVE_S apart on screen (slowed ~10^6x):
+      // an arc centred on the TX (spherical spreading), as bright as the path model says at the real distance it has reached
+      const x0 = +w.dataset.x0, x1 = +w.dataset.x1, cy = +w.dataset.cy, d = +w.dataset.d, frac = ((now - this.t0) / 1000 * rate) % 1;
+      const p0 = pathP(0.1), bright = r => Math.max(0, Math.min(1, (pathP(Math.max(0.1, r)) - (-110)) / (p0 - (-110))));
       w.querySelectorAll('.wave').forEach((el, k) => {
-        const f = ((k / 6) + ph) % 1, x = x0 + (x1 - x0) * f, rr = r0 + (r1 - r0) * f;
-        el.setAttribute('d', `M ${x} ${cy - rr} Q ${x + rr * 0.45} ${cy} ${x} ${cy + rr}`);
-        el.setAttribute('opacity', on ? (s * (1 - f * 0.85)).toFixed(2) : 0.04);
+        const rad = (k + frac) * WAVE_S, pj = pos - k;
+        const bj = Math.floor(((pj % total) + total) % total / m.period), ibj = ((pj % total) + total) % total % m.period;
+        const onj = pj >= 0 && bj < 3 && ibj < 127 ? g[ibj] : 0;
+        if (!onj || x0 + rad > x1 || rad < 2) { el.setAttribute('opacity', 0); return; }
+        const h = Math.min(rad * .95, 46), dx = Math.sqrt(rad * rad - h * h);
+        el.setAttribute('d', `M ${(x0 + dx).toFixed(1)} ${(cy - h).toFixed(1)} A ${rad.toFixed(1)} ${rad.toFixed(1)} 0 0 1 ${(x0 + dx).toFixed(1)} ${(cy + h).toFixed(1)}`);
+        // the scene's distance axis is logarithmic, so the gap runs from 10 cm at the TX to d at the RX on a log scale too
+        const u = rad / (x1 - x0), rm = d <= 0.1 ? d : Math.pow(10, -1 + u * (Math.log10(d) + 1));
+        el.setAttribute('opacity', bright(rm).toFixed(2));
       });
     }
     const li = Math.min(r._s.length - 1, m.lead_chips + pos);

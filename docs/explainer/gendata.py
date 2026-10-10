@@ -100,18 +100,28 @@ def rx_rf():
     t = v['time'] * 1e9
     nodes = [('antenna', 'emf_'), ('pad', 'pad_'), ('stage 1', 'o1'), ('stage 2', 'o2'), ('stage 3', 'o3'),
              ('stage 4', 'o4'), ('stage 5', 'o5'), ('stage 6', 'out_')]
-    out = {'nodes': [], 'det': trace(t, v['v(det)'], 300.0, 400.0, 400)}
-    for label, n in nodes:
-        y = v[f'v({n}p)'] - v[f'v({n}n)']
-        w = t > 300
-        out['nodes'].append({'label': label, 'vpk': float(np.max(np.abs(y[w]))),
-                             'w': trace(t, y, 380.0, 390.0, 300)})
+    def stages(v):
+        t = v['time'] * 1e9
+        res = []
+        for label, n in nodes:
+            y = v[f'v({n}p)'] - v[f'v({n}n)']
+            w = t > 300
+            res.append({'label': label, 'vpk': float(np.ptp(y[w]) / 2),   # AC amplitude: a DC offset would swamp tiny signals
+                        'w': trace(t, y, 380.0, 390.0, 300)})
+        return res
+    out = {'nodes': stages(v), 'det': trace(t, v['v(det)'], 300.0, 400.0, 400)}
+    # the same tone at more levels (docs/explainer/rf_levels.sh rx_rf_tone); -60 dBm is rf.sh's own run
+    out['tone_levels'] = []
+    for lvl in KEY_LEVELS:
+        tv = v if lvl == -60 else raw(f'rx_rf_tone_{lvl}.raw')
+        if tv is not None:
+            out['tone_levels'].append({'lvl': lvl, 'nodes': stages(tv)})
     k = raw('rx_rf_key.raw')
     if k is not None:
         tk = k['time'] * 1e6
         out['key'] = trace(tk, k['v(key)'], 0.0, 3.5, 700)
         out['key_det'] = trace(tk, k['v(det)'], 0.0, 3.5, 700)
-    # the same keyed run at more levels (docs/explainer/rf_key_levels.sh); -60 dBm is rf.sh's own run
+    # the same keyed run at more levels (docs/explainer/rf_levels.sh rx_rf_key); -60 dBm is rf.sh's own run
     out['key_levels'] = []
     for lvl in KEY_LEVELS:
         kl = k if lvl == -60 else raw(f'rx_rf_key_{lvl}.raw')
@@ -125,7 +135,8 @@ def logdet():
     report.append('sim     sim/logdet/taps.txt, transfer_cw.txt')
     cw = np.loadtxt(os.path.join(ROOT, 'sim', 'logdet', 'transfer_cw.txt'), skiprows=1)
     return {'pin': rows[:, 0].tolist(), 'det': rows[:, 1].tolist(),
-            'tap_amp': [rows[:, 2 + 2 * i].tolist() for i in range(6)],
+            # taps.py measures each tap with ngspice 'meas ... pp' (peak-to-peak) though its header says amp_pk: halve to peak
+            'tap_amp': [(rows[:, 2 + 2 * i] / 2).tolist() for i in range(6)],
             'tap_i': [rows[:, 3 + 2 * i].tolist() for i in range(6)],
             'cw_pin': cw[:, 0].tolist(), 'cw_det': cw[:, 1].tolist()}
 
@@ -135,7 +146,7 @@ def sample_bits(t, comp, n):
     return ts, (np.interp(ts, t, comp) > 0.9).astype(np.uint8)
 
 
-KEY_LEVELS = [-30, -40, -50, -60, -70, -80, -90, -100]   # keyed-carrier detector runs (rf_key_levels.sh)
+KEY_LEVELS = [-30, -40, -50, -60, -70, -80, -90, -100]   # rf.sh's tone and keyed runs repeated at these (rf_levels.sh)
 BB_LEVELS = [-70, -74, -78, -82, -86, -90, -94]   # sims.sh runs these (sim/rx/gen_det.py + sim/rx/bb.sh)
 
 
