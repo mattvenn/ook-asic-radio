@@ -382,7 +382,7 @@ const B = {
     plot: () => figLpf()},
   avg_sc: {lvl: 'rx', name: 'avg_sc', sub: 'switched-capacitor slow average', anchor: 'where-the-threshold-goes', sch: 'avg_sc', color: 'rx',
     text: 'The threshold for the [[comp_ct|comparator]]. A Gold code is half on and half off, so the slow average of the signal sits in the middle of it at any range. A small capacitor clocked by the digital (sc_phi1/2) acts as a very large resistor, giving a time constant of about 0.45 ms.',
-    plot: () => figBB(['lpf', 'avg'], '', '', 196)},
+    plot: () => figBB(['lpf', 'avg'])},
   comp_ct: {lvl: 'rx', name: 'comp_ct', sub: 'continuous-time comparator', anchor: 'receiver-detector-filter-threshold', sch: 'comp_ct', color: 'rx',
     text: '[[lpf_rc|Filtered signal]] on one input, [[avg_sc|slow average]] on the other: is this bit on or off? Near the sensitivity limit the difference is ~1 mV and the noise is about as big, so many decisions are wrong. That is fine: the [[corr|correlator]] only needs most of them right. The digital [[slicer|samples it]] every 13 µs, 8 times per bit.',
     plot: () => figComp()},
