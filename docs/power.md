@@ -183,19 +183,22 @@ is far from 2× margin). Also via3 at the west strap 107 %.
 3. A strap in decap part 1 (x ~251–273, 6 µm): only if 2 can't reach the mid straps.
 
 ## After the fix (2026-10-10, branch power-fix, case A, 0.5 µm mesh)
-The routed tile with the fixes from `docs/handoff_power_fix.md` (steps 1 and 2). Picture of the new power routing: `docs/images/power_fix_routing.png`
-(`tools/power_routing_draw.py`). DRC 0, LVS match, precheck
-pass; magic reported no shorts in the extraction copy. Raw results: `sim/power/results/2026-10-10/*_A_fix*`.
+The routed tile with the fixes from `docs/handoff_power_fix.md` (steps 1 and 2), branch `power-fix`
+at 3ae64ca. Picture of the new power routing: `docs/images/power_fix_routing.png`
+(`tools/power_routing_draw.py`). DRC 0, LVS match, precheck pass; magic reported no shorts in the
+extraction copy. Raw results: `sim/power/results/2026-10-10/*_A_fix*`.
 - **Straps:** west VAPWR 0.3–5.3, VDPWR 5.8–10.5, VGND 12.0–15.1, east VAPWR 481.0–489.22.
-- **TX feed (`VAPWR_TXF`, fixed geometry in tx_top):** before, xdrv_p's current ran up xdrv_n's 3 µm
-  rail and into xdrv_p's rail at its top corner (the met3 hot spot). Now each driver's rail is fed
-  along its whole length: xdrv_n from a met3 sheet with via3 into the 5 µm strap; xdrv_p from a
-  met3 bar under the west straps, a met4 bus (y 99.4–106.2) and a met4 strip over its rail.
-- **RX trunks:** one net per block from the mid straps (`VGND_RX_<block>`, `VDPWR_RX_<block>`),
-  3–4 µm (Ctrim VGND and bias VDPWR 2 µm); another block's rail is foreign to each, so no block's
-  current runs through another block. The VGND trunks start from `VGND_RXL`, a met4 bar off the
-  mid VGND strap's top end and a 6 µm met4 column down xdeca part 1's MOS-only top (a wide via
-  doesn't fit on the 1.2 µm mid strap). No decap removed.
+- **TX feeds (fixed geometry in tx_top):** before, xdrv_p's current ran up xdrv_n's 3 µm rail and into
+  xdrv_p's rail at its top corner (the met3 hot spot), and `VGND_TX` landed on xdrv_n's VSS rail at
+  one end. Now each driver's rails are fed along their length. `VAPWR_TXF`: xdrv_n from a met3 sheet
+  with via3 into the 5 µm strap; xdrv_p from a met3 bar under the west straps, a met4 bus (y
+  99.4–106.2) and a met4 strip over its rail. `VGND_TXF`: a met4 bus straight off the west VGND
+  strap (y 106.8–112.8) across both VSS rails, via3 onto them, met4 strips over their upper halves.
+- **RX trunks:** one net per block (`VGND_RX_<block>`, `VDPWR_RX_<block>`), 3–4 µm (Ctrim VGND and bias
+  VDPWR 2 µm) from the mid straps; dbg_tg's (2 µm) from the west straps. Another block's rail is
+  foreign to each, so no block's current runs through another block. The mid VGND trunks start from
+  `VGND_RXL`, a met4 bar off the mid VGND strap's top end and a 6 µm met4 column down xdeca part 1's
+  MOS-only top (a wide via doesn't fit on the 1.2 µm mid strap). No decap removed.
 
 | block | R VDD (Ω) base → fix | R VSS (Ω) base → fix | RX IR VDD / VSS (mV) base → fix |
 |---|---|---|---|
@@ -205,20 +208,42 @@ pass; magic reported no shorts in the extraction copy. Raw results: `sim/power/r
 | comp_ct | 26.6 → **8.9** | 56.8 → **8.2** | 2.1 / 3.5 → 0.8 / 1.3 |
 | bias | 13.6 → 5.2 | 30.9 → 23.6 | 2.5 / 3.1 → 0.9 / 2.5 |
 | r2r | – | 35.2 → 24.1 | – / 6.2 → – / 6.4 |
-| dbg_tg | 31.7 → **42.3** | 26.2 → **37.1** | 14.4 / 0.4 → 13.7 / 0.0 |
-| tx_drv_p | 3.0 → **0.77** (VAPWR) | 2.5 → 2.5 | |
-| tx_drv_n | 1.6 → **0.36** (VAPWR) | 2.1 → 2.1 | |
+| dbg_tg | 31.7 → 15.4 | 26.2 → 19.1 | |
+| tx_drv_p | 3.0 → **0.77** (VAPWR) | 2.5 → **0.85** | |
+| tx_drv_n | 1.6 → **0.36** (VAPWR) | 2.1 → **0.89** | |
+| **tx_ring** | 7.3 → **12.8** | 1.9 → 2.5 | |
+| tx_ls | 16.7 → 21.2 | 2.7 → 2.0 | |
 | VAPWR decap | 10.9 → 8.5 | 7.5 → 3.8 | |
 
-- **TX IR (both arms):** VAPWR drop at tx_drv_p 29 → 5.6 mV average, 79 → 16 mV peak; tx_drv_n
-  19 → 2.8 / 53 → 7.9 mV. The VGND rise is unchanged (9.7 / 50 mV at tx_drv_p): `VGND_TX` was not
-  touched and is now the larger TX supply drop.
-- **dbg_tg got worse:** it is the one RX block left on the old 1 µm `VDPWR_RX` / `VGND_RX` nets
-  (with the chain and the VDPWR decaps). A trunk of its own would fix it.
-- bias VGND, r2r and log_det VDPWR improved less: their trunks are short, so most of what is left
-  is in the blocks' own rails.
+- **TX IR (both arms):** VAPWR drop at tx_drv_p 29 → 5.6 mV average, 79 → 16 mV peak (tx_drv_n 19 →
+  2.8 / 53 → 7.9); VGND rise 9.5 → 2.9 mV average, 49 → 15 mV peak.
+- **Worse: tx_ring and tx_ls VDPWR** (7.3 → 12.8, 16.7 → 21.2 Ω). They hang off `VDPWR_TX` (0.8 µm,
+  untouched); in the first fix round dbg_tg's VDPWR shared the old 1 µm `VDPWR_RX` net near the TX
+  cluster, which gave them a parallel path. Widening `VDPWR_TX` is the fix (open).
+- bias VGND, r2r and log_det VDPWR improved less: their trunks are short, so most of what is left is
+  in the blocks' own rails.
 
-**EM (both arms at their average current):** the fail is gone.
+**|Z| (`z_ac.py`, 1 µm mesh, Ω between the block's local VDD and VSS) and TX → RX at 434 MHz (Ω per A
+at a driver):**
+
+| block | \|Z\| 77 kHz base → fix | \|Z\| 434 MHz base → fix | TX→RX base → fix |
+|---|---|---|---|
+| chain | 22.6 → 21.7 | 20.8 → 20.0 | 0.025 → 0.015 |
+| log_det | 52.2 → **22.7** | 50.9 → **21.5** | 0.59 → **0.069** |
+| avg_sc | 74.5 → **24.9** | 64.7 → **23.7** | 0.038 → 0.069 |
+| comp_ct | 81.0 → **24.3** | 71.1 → **23.1** | 0.037 → 0.069 |
+| bias | 56.2 → 26.8 | 46.9 → 25.6 | 0.034 → 0.069 |
+| dbg_tg | 63.7 → 35.5 | 62.6 → 34.5 | 0.58 → 0.33 |
+| tx_ring | 17.9 → **25.9** | 16.9 → **24.9** | |
+| tx_drv_p / _n | 12.0 / 10.2 → 11.6 / 11.4 | 10.8 / 8.9 → 10.4 / 10.1 | |
+
+- RX |Z| is 2–3× lower; the TX → RX coupling into log_det (the worst path, ~5.5 mV per arm before the
+  arms' cancellation) is 8.5× lower (~0.65 mV). avg_sc / comp_ct / bias went 0.04 → 0.069 Ω (they
+  share the trunk tree now): still < 0.7 mV without cancellation.
+- Still flat to 500 MHz (|Z| ≈ R VDD + R VSS): the decaps sit behind the mesh. Proposal 5 (decap
+  at the load) was not part of this fix.
+
+**EM (both arms at their average current):** every line under 50 % except the VAPWR mcon.
 
 | path | base | fix |
 |---|---|---|
@@ -226,15 +251,18 @@ pass; magic reported no shorts in the extraction copy. Raw results: `sim/power/r
 | VAPWR met4 (west strap) | 202 % | 29 % |
 | VAPWR met3 (at the drivers) | 155 % | 30 % |
 | VAPWR via3 | 110 % | 15 % |
-| VAPWR mcon (inside tx_drv, at (56, 111)) | 67 % | 71 % |
-| VGND via3 (`VGND_TX` onto xdrv_n's VSS rail, (30.5, 120)) | 62 % | 62 % |
-| VGND met3 ((20, 139), near the ring) | 40 % | 54 % |
+| VGND via3 | 62 % | 7 % |
+| VGND met3 | 40 % | 11 % |
+| VAPWR mcon (inside tx_drv, (56, 111)) | 67 % | 71 % (real ~9 %) |
 
-Three lines are under the limit but above 50 % (the 2× margin): the mcon is inside the driver cell
-(device level, not top-level wiring); the VGND ones are `VGND_TX`, which still lands on a driver's
-rail at one end (the same series feed VAPWR had). Open: give `VGND_TX` an along-the-rail feed like
-`VAPWR_TXF`, a trunk for dbg_tg, and (to replace `VGND_RXL`) a wider mid VGND strap (~3 µm fits:
-the mid gap is 8.1 µm below y 162, 6.9 µm above).
+The mcon line is a modelling artefact: `em.py` injects each device terminal's current at one mesh
+point (here 36 terminals per driver, two in the worst 0.5 µm cell, ~1.5 cuts). In the cell the source
+current spreads along the finger: tx_drv's stage-5 PMOS has 22 mcon per source strip, so all 6.65 mA
+through its 18 fingers is 0.74 mA per inner strip, ~0.034 mA per cut (~9 %, ~13 % at the RMS).
+`em.py` now flags mcon / via1 lines over 50 % as point injection.
+
+**Open:** widen `VDPWR_TX` (tx_ring / tx_ls); optionally a wider mid VGND strap (~3 µm fits: the mid
+gap is 8.1 µm below y 162, 6.9 µm above) to replace `VGND_RXL`; decap at the load (proposal 5).
 
 ## Re-running
 ```

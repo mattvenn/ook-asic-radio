@@ -1,0 +1,16 @@
+local nodes: {'chain': ('pD_m0_148_70', 'pG_m1_154_24'), 'log_det': ('pD_m3_222_91', 'pG_m0_182_100'), 'avg_sc': ('pD_m0_198_179', 'pG_m3_180_166'), 'comp_ct': ('pD_m0_221_172', 'pG_m0_233_149'), 'bias': ('pD_m0_258_36', 'pG_m0_283_24'), 'dbg_tg': ('pD_m0_139_134', 'pG_m0_139_128'), 'tx_ring': ('pD_m0_101_149', 'pG_m0_98_149'), 'tx_drv_p': ('pA_m0_136_101', 'pG_m0_123_104'), 'tx_drv_n': ('pA_m0_93_101', 'pG_m0_106_104')}
+case A_fix: |Z| between each block's local VDD and VSS (ohm), and |V(vss)| per A to board ground
+block         Zdd 77k   Zdd 434M   Zdd 500M   Zgnd 77k  Zgnd 434M  Zgnd 500M
+chain           21.73      20.01      19.99       7.94       7.07       7.06
+log_det         22.74      21.51      21.48      15.52      14.88      14.87
+avg_sc          24.90      23.69      23.67       9.19       8.57       8.56
+comp_ct         24.29      23.05      23.02      13.01      12.37      12.36
+bias            26.79      25.56      25.54      13.78      13.14      13.13
+dbg_tg          35.54      34.52      34.52      20.84      20.34      20.34
+tx_ring         25.88      24.85      24.85       5.24       4.73       4.73
+tx_drv_p        11.61      10.36      10.34       5.11       4.60       4.60
+tx_drv_n        11.38      10.13      10.12       5.21       4.70       4.70
+TX -> RX at 434 MHz, per A at tx_drv_p (ohm; x 9.45 mA RMS -> mV x 9.45):
+   chain: 0.015  log_det: 0.069  avg_sc: 0.069  comp_ct: 0.069  bias: 0.069  dbg_tg: 0.333  tx_ring: 0.134  tx_drv_n: 2.297  det: 0.105  lpf: 0.186  avg: 0.186  trim: 0.127  vcm: 0.186
+TX -> RX at 434 MHz, per A at tx_drv_n (ohm; x 9.45 mA RMS -> mV x 9.45):
+   chain: 0.015  log_det: 0.069  avg_sc: 0.069  comp_ct: 0.069  bias: 0.069  dbg_tg: 0.298  tx_ring: 0.133  tx_drv_p: 2.297  det: 0.105  lpf: 0.186  avg: 0.186  trim: 0.126  vcm: 0.185

@@ -1,5 +1,5 @@
 case A_fix VAPWR, TX both arms at their average current (13.3 mA):
-  mcon  worst   0.256 mA/cut (limit 0.36,  71.2 %) at (56.0, 111.0)  <-- under 2x margin
+  mcon  worst   0.256 mA/cut (limit 0.36,  71.2 %) at (56.0, 111.0)  <-- under 2x margin (point injection: reads high, see docs/power.md)
   via4  worst   1.056 mA/cut (limit 2.49,  42.4 %) at (0.5, 103.5)
   m1    worst   1.011 mA/um (limit 2.8,  36.1 %) at (8.0, 106.5)
   m3    worst   2.013 mA/um (limit 6.8,  29.6 %) at (8.0, 106.0)
@@ -10,13 +10,13 @@ case A_fix VAPWR, TX both arms at their average current (13.3 mA):
   via1  worst   0.016 mA/cut (limit 0.29,   5.5 %) at (61.0, 104.5)
   via2  worst   0.019 mA/cut (limit 0.48,   3.9 %) at (5.5, 108.5)
 case A_fix VGND, TX both arms at their average current (4.6 mA):
-  via3  worst   0.296 mA/cut (limit 0.48,  61.7 %) at (30.5, 120.0)  <-- under 2x margin
-  m3    worst   3.656 mA/um (limit 6.8,  53.8 %) at (20.0, 139.0)  <-- under 2x margin
   mcon  worst   0.145 mA/cut (limit 0.36,  40.1 %) at (26.0, 87.5)
   m1    worst   1.115 mA/um (limit 2.8,  39.8 %) at (24.0, 116.5)
-  m4    worst   2.409 mA/um (limit 6.8,  35.4 %) at (30.0, 120.0)
-  via4  worst   0.474 mA/cut (limit 2.49,  19.0 %) at (14.5, 140.0)
-  m2    worst   0.289 mA/um (limit 2.8,  10.3 %) at (29.0, 113.0)
-  via2  worst   0.037 mA/cut (limit 0.48,   7.6 %) at (30.0, 120.0)
-  via1  worst   0.011 mA/cut (limit 0.29,   3.8 %) at (29.0, 120.0)
-  m5    worst   0.339 mA/um (limit 10.17,   3.3 %) at (11.5, 139.5)
+  m4    worst   1.614 mA/um (limit 6.8,  23.7 %) at (15.0, 106.0)
+  via4  worst   0.378 mA/cut (limit 2.49,  15.2 %) at (12.0, 87.5)
+  m3    worst   0.730 mA/um (limit 6.8,  10.7 %) at (49.5, 142.0)
+  via3  worst   0.034 mA/cut (limit 0.48,   7.1 %) at (29.5, 107.0)
+  m2    worst   0.087 mA/um (limit 2.8,   3.1 %) at (29.0, 95.0)
+  m5    worst   0.255 mA/um (limit 10.17,   2.5 %) at (11.5, 87.5)
+  via1  worst   0.007 mA/cut (limit 0.29,   2.5 %) at (29.0, 106.0)
+  via2  worst   0.008 mA/cut (limit 0.48,   1.7 %) at (30.0, 108.5)
