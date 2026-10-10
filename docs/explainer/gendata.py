@@ -239,7 +239,8 @@ def gold_chips():
 
 
 def main():
-    payload = {'code': CODE, 'gold': gold_chips(), 'path': path_loss(), 'tx': tx(), 'rx_rf': rx_rf(),
+    import gold as G   # the two LFSR sequences: code k = M1 xor M2 shifted by k (k = 127: M1 alone), as in model/gold.py
+    payload = {'code': CODE, 'gold': gold_chips(), 'm1': ''.join(map(str, G.M1)), 'm2': ''.join(map(str, G.M2)), 'path': path_loss(), 'tx': tx(), 'rx_rf': rx_rf(),
                'logdet': logdet(), 'bb': [b for b in map(baseband, BB_LEVELS) if b],
                'model': model_sweep()}
     blob = base64.b64encode(gzip.compress(json.dumps(payload, separators=(',', ':')).encode(), 9)).decode()

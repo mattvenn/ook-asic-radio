@@ -110,6 +110,12 @@ svg.dg{display:block; width:100%; height:auto}
 .links a.secondary{border:1px solid var(--line); color:var(--text)}
 .links a:hover{filter:brightness(1.1)}
 .fig{display:flex; flex-direction:column; gap:.3rem}
+.diprow{display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap}
+.dips{display:inline-flex; gap:.35rem; padding:.45rem .6rem; background:#b5302a; border-radius:6px}
+.dip{width:2rem; height:3.6rem; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:.25rem 0; background:#f2f2f2; border:0; border-radius:3px; cursor:pointer}
+.dip i{display:block; flex:none; width:1.1rem; height:1.1rem; background:#2a2a2a; border-radius:2px; transform:translateY(1.1rem)}   /* the lever moves; the switch keeps its size */
+.dip.on i{transform:none} .dip span{font-size:.7rem; color:#333; font-family:var(--mono)}
+.dipval{font-family:var(--mono); font-size:1.1rem}
 .mbar{position:relative; height:1.1rem; background:#0a0e11; border:1px solid var(--line); border-radius:6px}
 .mfill{position:absolute; inset:0 auto 0 0; border-radius:5px; background:var(--muted)} .mfill.ok{background:var(--ok)} .mfill.bad{background:var(--bad)}
 .mthr{position:absolute; top:-.35rem; bottom:-.35rem; border-left:2px dashed var(--thr)} .mthr span{position:absolute; top:-1.15rem; left:-.7rem; font-size:.75rem; color:var(--thr)}
@@ -338,7 +344,7 @@ const B = {
     text: 'Measured on the bench with an earlier chip (ttsky25b, its ring at 518 MHz), 14.5 cm wire dipoles held parallel, 10 cm to 4 m: close to free space, −44 dBm at 1 m, falling as 1/d^1.89. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. On that model the −94 dBm sensitivity is reached at about 45 m. Distances past 4 m are that model, not a measurement.',
     plot: () => figPath()},
   gold: {lvl: 'tx', name: 'Gold code (digital)', sub: 'radio_digital macro, TX side', anchor: 'digital-radio_digital-macro', color: 'dig',
-    text: 'The 7-bit DIP code picks one Gold code: two 7-bit LFSRs, one delayed by the code, XORed. 127 noise-like bits, half on, half off. Each bit lasts 104 µs, so one burst takes 13.2 ms. The TX keys the ring with the code three times, with 64 silent bits between bursts.',
+    text: 'The 7 DIP switches pick one of 128 Gold codes: two 7-bit LFSRs, the second started later by the switch value, XORed together. Flip the switches below. 127 noise-like bits, half on, half off. Each bit lasts 104 µs, so one burst takes 13.2 ms. The TX keys the ring with the code three times, with 64 silent bits between bursts.',
     plot: () => figGold()},
   tx_ring: {lvl: 'tx', name: 'tx_ring', sub: 'free-running ring oscillator', anchor: 'transmitter', sch: 'tx_ring', color: 'tx',
     text: () => `A NAND gate (the on/off enable) plus a ring of standard-cell inverters. No crystal: wherever it lands in 330–560 MHz the receiver still works. It runs at ${D.tx ? D.tx.f_mhz : '~485'} MHz in simulation (tt), and silicon ran at ×0.87 of simulation on the bench chip. It switches on or off in ~30–40 ns.`,
@@ -400,11 +406,17 @@ function figPath() {
     hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm'}], vl: [{x: Math.max(0.1, Math.min(200, dist())), color: '#fff', label: fmtd(dist())}],
     bands: [{x0: 4, x1: 200, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + '<p>Measured from 10 cm to 4 m. Further out (shaded) is a model: flat ground, line of sight, no walls or bodies. Real range will vary.</p>';
 }
+/* the Gold code page: seven DIP switches pick the code; code k = M1 xor M2 shifted by k bits (model/gold.py, as the RTL makes it) */
+const goldCode = k => { const m1 = D.m1, m2 = D.m2; return Uint8Array.from({length: 127}, (_, i) => k === 127 ? +m1[i] : +m1[i] ^ +m2[(i + k) % 127]); };
 function figGold() {
-  const g = GOLD(), per = D.model.period, all = new Uint8Array(3 * per);
-  for (let b = 0; b < 3; b++) all.set(g, b * per);
-  return fig('one burst, bit by bit', strip([{bits: g, label: '0x' + D.code.toString(16).toUpperCase(), color: 'var(--tx)'}], {h: 30}), 'model/gold.py') +
-    fig('one send: three bursts of 127 bits, 64 silent bits between', strip([{bits: all, label: 'carrier', color: 'var(--tx)'}], {h: 34}));
+  if (!D.m1) return NODATA('Gold code');
+  const k = S.dip == null ? D.code : S.dip, hx = v => '0x' + v.toString(16).toUpperCase().padStart(2, '0');
+  const m1 = Uint8Array.from(D.m1, c => +c), m2s = Uint8Array.from({length: 127}, (_, i) => +D.m2[(i + k) % 127]), code = goldCode(k);
+  const sw = [6, 5, 4, 3, 2, 1, 0].map(b => `<button type="button" class="dip${(k >> b) & 1 ? ' on' : ''}" data-dip="${b}" aria-pressed="${!!((k >> b) & 1)}" aria-label="DIP switch ${b}"><i></i><span>${b}</span></button>`).join('');
+  const same = k === D.code;
+  return `<div class="diprow"><div class="dips" role="group" aria-label="DIP switches">${sw}</div><span class="dipval">code ${N(hx(k), 4, 'left')} = ${N(k, 3, 'left')}${same ? ' (this board)' : ''}</span></div>` +
+    fig(k === 127 ? 'code 127 is LFSR 1 alone' : `the Gold code is LFSR 1 xor LFSR 2, with LFSR 2 started ${N(k, 3, 'left')} bits later`,
+      strip([{bits: m1, label: 'LFSR 1', color: 'var(--dig)'}, {bits: k === 127 ? new Uint8Array(127) : m2s, label: 'LFSR 2', color: 'var(--dig)'}, {bits: code, label: 'code', color: 'var(--tx)'}], {h: 26}), 'model/gold.py');
 }
 const TXL = {key: ['enable (key)', '#9db0bc'], ring: ['ring', 'var(--tx)'], a: ['latch A', 'var(--tx)'], b: ['latch B', 'var(--sig2)'],
   drv_p: ['driver p (ua[3])', 'var(--tx)'], drv_n: ['driver n (ua[4])', 'var(--sig2)'], dipole: ['across the dipole', 'var(--sig)']};
@@ -500,7 +512,11 @@ function slicerData() {
 function slicerFig(i) {
   const d = slicerData(); if (!d) return NODATA('baseband');
   const F = GEO.f, W = GEO.w, L = Math.round(F * 6.5), Rr = Math.round(F * 5.5), cw = (W - L - Rr) / SL_N, x = k => L + k * cw;
-  const rowH = Math.round(F * 1.5), phH = Math.round(F * 2.3), H = 2 * rowH + 4 * phH + 16;
+  const rowH = Math.round(F * 1.5), phH = Math.round(F * 2.3), voteH = Math.round(F * 3.2), H = 2 * rowH + 4 * phH + voteH + 24;
+  // the close-up follows the best-lined-up slicer: the one whose votes most often match what was sent
+  if (d.best == null) { let bs = -1; for (const ph of [0, 2, 4, 6]) { let r = 0; for (let st = ph; st + 8 <= SL_N; st += 8) { let c = 0, t = 0; for (let k = st; k < st + 8; k++) { c += d.smp[k]; t += d.tru[k]; } if (t !== 4 && (c > 4 || (c === 4 && d.smp[st + 7]) ? 1 : 0) === (t > 4 ? 1 : 0)) r++; } if (r > bs) { bs = r; d.best = ph; } } }
+  const bp = d.best, wc = i >= bp ? bp + 8 * Math.floor((Math.min(i, SL_N - 1) - bp) / 8) : -1;
+  const ws = wc - 8 >= bp && i - wc < 4 ? wc - 8 : wc;   // a finished vote stays in the close-up for 4 more samples so its result can be read
   let g = `<svg class="strip" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="comparator samples and the four slicers' votes">`;
   const lab = (y, t, col = '#9db0bc', w = 400) => `<text x="${L - 8}" y="${y}" fill="${col}" font-size="${F}" text-anchor="end" font-weight="${w}">${t}</text>`;
   // sent bits, then the samples (red outline: the sample disagrees with what was sent)
@@ -512,12 +528,13 @@ function slicerFig(i) {
     const seen = k <= i, bad = d.smp[k] !== d.tru[k];
     g += `<rect x="${(x(k) + 1).toFixed(1)}" y="${y1}" width="${Math.max(1, cw - 2).toFixed(1)}" height="${rowH - 6}" fill="${!seen ? '#11181d' : d.smp[k] ? 'var(--rx)' : '#1c262e'}" ${seen && bad ? 'stroke="var(--bad)" stroke-width="1.5"' : ''}/>`;
   }
+  if (ws >= 0 && ws + 8 <= SL_N) g += `<rect x="${x(ws).toFixed(1)}" y="${y1 - 2}" width="${(8 * cw).toFixed(1)}" height="${rowH - 2}" fill="none" stroke="var(--sig)" stroke-width="2" rx="2"/>`;
   if (i >= 0 && i < SL_N) g += `<rect x="${x(i).toFixed(1)}" y="0" width="${cw.toFixed(1)}" height="${2 * rowH}" fill="none" stroke="#fff" stroke-width="1.5"/>`;
   // the four slicers: an 8-sample window each, voted when its 8th sample is in
   const score = [];
   [0, 2, 4, 6].forEach((ph, r) => {
     const y = 2 * rowH + 8 + r * phH; let right = 0, n = 0;
-    g += lab(y + phH * .55, `phase ${ph}`);
+    g += lab(y + phH * .55, `phase ${ph}`, ph === bp ? 'var(--sig)' : '#9db0bc', ph === bp ? 700 : 400);
     for (let st = ph; st + 8 <= SL_N; st += 8) {
       const xa = x(st) + 2, xb = x(st + 8) - 2, done = st + 7 <= i;
       g += `<path d="M ${xa} ${y + 4} V ${y} H ${xb} V ${y + 4}" fill="none" stroke="#4a5a66" stroke-width="1.2"/>`;
@@ -531,6 +548,20 @@ function slicerFig(i) {
     score.push([right, n]);
     g += `<text x="${W - Rr + 8}" y="${y + phH * .55}" font-size="${F}" fill="#9db0bc">${n ? right + '/' + n + ' right' : ''}</text>`;
   });
+  // the vote, close up: the current window of the best slicer filling sample by sample, then the rule and the result
+  const yv = 2 * rowH + 8 + 4 * phH + 8;
+  g += lab(yv + voteH * .55, 'vote', 'var(--sig)', 700);
+  if (ws >= 0 && ws + 8 <= SL_N) {
+    const sz = Math.min(voteH - 8, F * 2.2), gx = L;
+    let c = 0, n = 0;
+    for (let k = 0; k < 8; k++) {
+      const seen = ws + k <= i, v = d.smp[ws + k]; if (seen) { n++; c += v; }
+      g += `<rect x="${gx + k * (sz + 6)}" y="${yv + 4}" width="${sz}" height="${sz}" rx="3" fill="${!seen ? '#11181d' : v ? 'var(--rx)' : '#1c262e'}" stroke="#4a5a66"/>` + (seen ? `<text x="${gx + k * (sz + 6) + sz / 2}" y="${yv + 4 + sz / 2 + F * .35}" font-size="${F}" text-anchor="middle" fill="${v ? '#05181c' : '#9db0bc'}">${v}</text>` : '');
+    }
+    const done = n === 8, v = c > 4 || (c === 4 && d.smp[ws + 7]) ? 1 : 0;
+    const msg = !done ? `${c} of ${n} are 1 so far` : c === 4 ? `4 of 8 are 1, a tie: the last sample decides → ${v ? 'on (1)' : 'off (0)'}` : `${c} of 8 are 1 → ${c > 4 ? '5 or more: on (1)' : '4 or fewer: off (0)'}`;
+    g += `<text x="${gx + 8 * (sz + 6) + 12}" y="${yv + 4 + sz / 2 + F * .35}" font-size="${Math.round(F * 1.1)}" fill="${done ? 'var(--text)' : '#9db0bc'}" font-weight="${done ? 600 : 400}">${msg}</text>`;
+  }
   return g + '</svg>';
 }
 function figSlicer() {
@@ -881,9 +912,9 @@ const anim = {
   t0: 0, reset() { this.t0 = performance.now(); },
   frame(now) {
     requestAnimationFrame(t => anim.frame(t));
-    if (D && S.block === 'slicer') {               // slicer page: sweep the samples, 12 per second, then hold for 2 s
-      if (S.dragging) { this.t0 = now - SL_N / 12 * 1000; }   // while the slider is held: show the finished votes, sweep again on release
-      const i = Math.floor((now - this.t0) / 1000 * 12) % (SL_N + 24);
+    if (D && S.block === 'slicer') {               // slicer page: sweep the samples, 10 per second, then hold for 2 s
+      if (S.dragging) { this.t0 = now - SL_N / 10 * 1000; }   // while the slider is held: show the finished votes, sweep again on release
+      const i = Math.floor((now - this.t0) / 1000 * 10) % (SL_N + 20);
       if (i !== this._si) {
         this._si = i; const el = $('slfig');
         if (el) { useGeo('detail'); el.innerHTML = slicerFig(i); useGeo('stage'); }
@@ -929,6 +960,8 @@ const anim = {
 
 // ------------------------------------------------------------------ events
 document.addEventListener('click', e => {
+  const dip = e.target.closest('[data-dip]');
+  if (dip) { const k = S.dip == null ? D.code : S.dip; S.dip = k ^ (1 << +dip.dataset.dip); render(); return; }
   const t = e.target.closest('[data-go],[data-block],[data-bb]');
   if (!t) return;
   if (t.dataset.bb) { S.bbLvl = +t.dataset.bb; render(); return; }
