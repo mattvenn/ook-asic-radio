@@ -75,8 +75,9 @@ def nets():
     out.append(N('VAPWR_TX', 'VAPWR@w', 'VAPWR_TXF', 'xtx.xls.VAPWR',
                  'xtx.xlse_n.VAPWR', 'xtx.xlse_p.VAPWR', w=2.5, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top', late=['VAPWR@w']))
     out.append(N('VGND_TX', 'VGND@w', *tx_vss, w=2.0, layers=['m3', 'm4'], margin=8, wide=True, cell='tx_top', late=['VGND@w']))
+    # (2026-10-10: 0.8 -> up to 2 um: tx_ring / tx_ls VDPWR 13 / 21 ohm on the 0.8 um route)
     out.append(N('VDPWR_TX', 'VDPWR@w', 'xtx.xring.VDD', 'xtx.xls.VDD', 'xtx.xlse_p.VDD',
-                 'xtx.xlse_n.VDD', w=0.8, layers=['m2', 'm3', 'm4'], margin=8, wide=True, cell='tx_top', late=['VDPWR@w']))
+                 'xtx.xlse_n.VDD', w_try=[2.0, 1.5, 1.0, 0.8], layers=['m2', 'm3', 'm4'], margin=8, wide=True, cell='tx_top', late=['VDPWR@w']))
     out.append(N('ring', 'xtx.xring.out', 'xtx.xls.in', margin=8, label='ring', cell='tx_top'))
     out.append(N('tx_a', 'xtx.xls.A', 'xtx.xdrv_p.in', margin=6, label='a', cell='tx_top'))
     out.append(N('tx_b', 'xtx.xls.B', 'xtx.xdrv_n.in', margin=6, label='b', cell='tx_top'))

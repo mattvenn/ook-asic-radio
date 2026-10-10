@@ -184,7 +184,7 @@ is far from 2× margin). Also via3 at the west strap 107 %.
 
 ## After the fix (2026-10-10, branch power-fix, case A, 0.5 µm mesh)
 The routed tile with the fixes from `docs/handoff_power_fix.md` (steps 1 and 2), branch `power-fix`
-at 3ae64ca. Picture of the new power routing: `docs/images/power_fix_routing.png`
+(final: `VDPWR_TX` widened, see below). Picture of the new power routing: `docs/images/power_fix_routing.png`
 (`tools/power_routing_draw.py`). DRC 0, LVS match, precheck pass; magic reported no shorts in the
 extraction copy. Raw results: `sim/power/results/2026-10-10/*_A_fix*`.
 - **Straps:** west VAPWR 0.3–5.3, VDPWR 5.8–10.5, VGND 12.0–15.1, east VAPWR 481.0–489.22.
@@ -209,17 +209,18 @@ extraction copy. Raw results: `sim/power/results/2026-10-10/*_A_fix*`.
 | bias | 13.6 → 5.2 | 30.9 → 23.6 | 2.5 / 3.1 → 0.9 / 2.5 |
 | r2r | – | 35.2 → 24.1 | – / 6.2 → – / 6.4 |
 | dbg_tg | 31.7 → 15.4 | 26.2 → 19.1 | |
-| tx_drv_p | 3.0 → **0.77** (VAPWR) | 2.5 → **0.85** | |
-| tx_drv_n | 1.6 → **0.36** (VAPWR) | 2.1 → **0.89** | |
-| **tx_ring** | 7.3 → **12.8** | 1.9 → 2.5 | |
-| tx_ls | 16.7 → 21.2 | 2.7 → 2.0 | |
+| tx_drv_p | 3.0 → **0.77** (VAPWR) | 2.5 → **0.81** | |
+| tx_drv_n | 1.6 → **0.36** (VAPWR) | 2.1 → **0.86** | |
+| tx_ring | 7.3 → **1.8** | 1.9 → 2.5 | |
+| tx_ls | 16.7 → **3.5** | 2.7 → 1.8 | |
+| tx_lse_n / _p | 16.1 / 15.5 → 3.2 / 3.4 | 3.0 / 3.9 → 2.9 / 3.9 | |
 | VAPWR decap | 10.9 → 8.5 | 7.5 → 3.8 | |
 
 - **TX IR (both arms):** VAPWR drop at tx_drv_p 29 → 5.6 mV average, 79 → 16 mV peak (tx_drv_n 19 →
   2.8 / 53 → 7.9); VGND rise 9.5 → 2.9 mV average, 49 → 15 mV peak.
-- **Worse: tx_ring and tx_ls VDPWR** (7.3 → 12.8, 16.7 → 21.2 Ω). They hang off `VDPWR_TX` (0.8 µm,
-  untouched); in the first fix round dbg_tg's VDPWR shared the old 1 µm `VDPWR_RX` net near the TX
-  cluster, which gave them a parallel path. Widening `VDPWR_TX` is the fix (open).
+- **tx_ring / tx_ls VDPWR:** moving dbg_tg to its own trunk took away a parallel path they had through
+  the old 1 µm `VDPWR_RX` net (tx_ring 7.3 → 12.8 Ω in between); `VDPWR_TX` widened 0.8 → 2 µm fixes it
+  and more (tx_ring 1.8 Ω, tx_ls 3.5 Ω).
 - bias VGND, r2r and log_det VDPWR improved less: their trunks are short, so most of what is left is
   in the blocks' own rails.
 
@@ -229,13 +230,18 @@ at a driver):**
 | block | \|Z\| 77 kHz base → fix | \|Z\| 434 MHz base → fix | TX→RX base → fix |
 |---|---|---|---|
 | chain | 22.6 → 21.7 | 20.8 → 20.0 | 0.025 → 0.015 |
-| log_det | 52.2 → **22.7** | 50.9 → **21.5** | 0.59 → **0.069** |
+| log_det | 52.2 → **33.8** (\*) | 50.9 → **32.6** (\*) | 0.59 → **0.068** |
 | avg_sc | 74.5 → **24.9** | 64.7 → **23.7** | 0.038 → 0.069 |
 | comp_ct | 81.0 → **24.3** | 71.1 → **23.1** | 0.037 → 0.069 |
 | bias | 56.2 → 26.8 | 46.9 → 25.6 | 0.034 → 0.069 |
-| dbg_tg | 63.7 → 35.5 | 62.6 → 34.5 | 0.58 → 0.33 |
-| tx_ring | 17.9 → **25.9** | 16.9 → **24.9** | |
-| tx_drv_p / _n | 12.0 / 10.2 → 11.6 / 11.4 | 10.8 / 8.9 → 10.4 / 10.1 | |
+| dbg_tg | 63.7 → 34.7 | 62.6 → 33.7 | 0.58 → 0.27 |
+| tx_ring | 17.9 → **14.8** | 16.9 → **13.8** | |
+| tx_drv_p / _n | 12.0 / 10.2 → 11.6 / 11.4 | 10.8 / 8.9 → 10.3 / 10.1 | |
+
+(\*) `z_ac.py` probes one terminal per block (the one nearest the middle of its terminals). For log_det
+that pick moved between runs (a met3 node at (111, 45.5), then a device node at (110, 50.5) on the 2 µm
+grid of the 1 µm mesh): 22.7 Ω in the previous run, 33.8 now, with its DC R unchanged (17.9 / 10.7 Ω).
+Read log_det's |Z| as 23–34 Ω.
 
 - RX |Z| is 2–3× lower; the TX → RX coupling into log_det (the worst path, ~5.5 mV per arm before the
   arms' cancellation) is 8.5× lower (~0.65 mV). avg_sc / comp_ct / bias went 0.04 → 0.069 Ω (they
@@ -261,7 +267,12 @@ current spreads along the finger: tx_drv's stage-5 PMOS has 22 mcon per source s
 through its 18 fingers is 0.74 mA per inner strip, ~0.034 mA per cut (~9 %, ~13 % at the RMS).
 `em.py` now flags mcon / via1 lines over 50 % as point injection.
 
-**Open:** widen `VDPWR_TX` (tx_ring / tx_ls); optionally a wider mid VGND strap (~3 µm fits: the mid
+**End-to-end deck** (`tb_tile.py sch lvs`, connectivity only, on the final layout): RX 2.99 mA, all off
+0.910 µA, det idle 1.49 V, det at −60 dBm 1.097 V, TX 680 MHz / +3.07 dBm: the same as the pre-fix
+layout in this mode (1.097 V, 679 MHz; no wiring C, so the ring runs fast and det reads low; with C
+they were 1.202 V and 532 MHz). The c / rc runs on the final layout are still to do.
+
+**Open:** optionally a wider mid VGND strap (~3 µm fits: the mid
 gap is 8.1 µm below y 162, 6.9 µm above) to replace `VGND_RXL`; decap at the load (proposal 5).
 
 ## Re-running
