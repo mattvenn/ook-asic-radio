@@ -413,8 +413,7 @@ function figGold() {
   const k = S.dip == null ? D.code : S.dip, hx = v => '0x' + v.toString(16).toUpperCase().padStart(2, '0');
   const m1 = Uint8Array.from(D.m1, c => +c), m2s = Uint8Array.from({length: 127}, (_, i) => +D.m2[(i + k) % 127]), code = goldCode(k);
   const sw = [6, 5, 4, 3, 2, 1, 0].map(b => `<button type="button" class="dip${(k >> b) & 1 ? ' on' : ''}" data-dip="${b}" aria-pressed="${!!((k >> b) & 1)}" aria-label="DIP switch ${b}"><i></i><span>${b}</span></button>`).join('');
-  const same = k === D.code;
-  return `<div class="diprow"><div class="dips" role="group" aria-label="DIP switches">${sw}</div><span class="dipval">code ${N(hx(k), 4, 'left')} = ${N(k, 3, 'left')}${same ? ' (this board)' : ''}</span></div>` +
+  return `<div class="diprow"><div class="dips" role="group" aria-label="DIP switches">${sw}</div><span class="dipval">code ${N(hx(k), 4, 'left')} = ${N(k, 3, 'left')}</span></div>` +
     fig(k === 127 ? 'code 127 is LFSR 1 alone' : `the Gold code is LFSR 1 xor LFSR 2, with LFSR 2 started ${N(k, 3, 'left')} bits later`,
       strip([{bits: m1, label: 'LFSR 1', color: 'var(--dig)'}, {bits: k === 127 ? new Uint8Array(127) : m2s, label: 'LFSR 2', color: 'var(--dig)'}, {bits: code, label: 'code', color: 'var(--tx)'}], {h: 26}), 'model/gold.py');
 }
