@@ -568,7 +568,7 @@ function focusPage(id) {
 }
 
 
-// ------------------------------------------------------------------ system diagram (from the floorplan tool's "Block diagram" view, layout/floorplan/page/page.html)
+// ------------------------------------------------------------------ system diagram (from the floorplan tool's "Block diagram" view, layout/floorplan/page/page.html; the debug tap dbg_tg / ua[2] left out)
 const DGC = {rx: '#3fc1ad', late: '#ef6ab8', rxin: '#5aa9ef', clk: '#fb8a4a', en: '#d9b44a', bias: '#9acd4c', tx: '#f2a23a', trim: '#a78bfa', dig: '#94a3b8', pad: '#e8eef2'};
 const DG = {
   // [id, name, sub, x, y, w, h, group]
@@ -577,7 +577,6 @@ const DG = {
     ['xchain', 'lna_chain', '', 100, 90, 330, 100, 'rx'],
     ['xdet', 'log_det', 'successive detection, t1-t6', 100, 240, 330, 56, 'rx'],
     ['xlpf', 'lpf_rc', '14 kHz RC', 470, 240, 110, 40, 'rx'],
-    ['xdbg', 'dbg_tg', '', 470, 294, 60, 24, 'rx'], ['pad:ua[2]', 'ua[2]', '', 566, 295, 46, 22, 'pad'],
     ['xavg', 'avg_sc', 'SC average', 640, 250, 120, 44, 'rx'],
     ['xcomp', 'comp_ct', 'comparator', 800, 150, 120, 80, 'rx'],
     ['xdac', 'r2r', '8-bit trim DAC', 700, 28, 120, 48, 'trim'],
@@ -598,7 +597,6 @@ const DG = {
     ['o1', 'rx', 'xchain', 'xdet', [[157, 150], [157, 240]]], ['o2', 'rx', 'xchain', 'xdet', [[207, 150], [207, 240]]], ['o3', 'rx', 'xchain', 'xdet', [[257, 150], [257, 240]]],
     ['o4', 'late', 'xchain', 'xdet', [[307, 150], [307, 240]]], ['o5', 'late', 'xchain', 'xdet', [[357, 150], [357, 240]]], ['out', 'late', 'xchain', 'xdet', [[407, 150], [407, 240]]],
     ['det', 'rx', 'xdet', 'xlpf', [[430, 268], [450, 268], [450, 260], [470, 260]], {pos: [452, 236, 'middle']}],
-    ['det dbg', 'rx', 'xdet', 'xdbg', [[450, 268], [450, 306], [470, 306]], {pos: [454, 290, 'start']}], ['dbg', 'rx', 'xdbg', 'pad:ua[2]', [[530, 306], [566, 306]], {pos: [548, 330, 'middle']}],
     ['lpf comp', 'rx', 'xlpf', 'xcomp', [[580, 260], [620, 260], [620, 200], [800, 200]]], ['lpf', 'rx', 'xlpf', 'xavg', [[620, 260], [620, 272], [640, 272]], {pos: [584, 290, 'start']}],
     ['avg', 'rx', 'xavg', 'xcomp', [[760, 272], [780, 272], [780, 178], [800, 178]]],
     ['comp_in', 'clk', 'xcomp', 'macro:slicer', [[920, 190], [960, 190]]],
@@ -607,7 +605,7 @@ const DG = {
     ['vcm', 'bias', 'xbias', 'xchain', [[470, 45], [125, 45], [125, 90]]], ['ib_chain', 'bias', 'xbias', 'xchain', [[470, 65], [260, 65], [260, 90]]],
     ['ib_det', 'bias', 'xbias', 'xdet', [[530, 80], [530, 225], [440, 225], [440, 268], [430, 268]]],
     ['ib_comp', 'bias', 'xbias', 'xcomp', [[590, 55], [640, 55], [640, 160], [800, 160]]],
-    ['rx_en', 'en', 'macro', 'xbias', [[960, 16], [530, 16], [530, 30]]], ['dbg_en', 'en', 'macro', 'xdbg', [[960, 314], [500, 314], [500, 318]]],
+    ['rx_en', 'en', 'macro', 'xbias', [[960, 16], [530, 16], [530, 30]]],
     ['tx_en key', 'en', 'macro:gold', 'xtx.xring', [[960, 425], [600, 425]]], ['ring', 'tx', 'xtx.xring', 'xtx.xls', [[500, 425], [440, 425]]],
     ['a', 'tx', 'xtx.xls', 'xtx.xdrv_p', [[340, 412], [300, 412], [300, 383], [250, 383]]], ['b', 'tx', 'xtx.xls', 'xtx.xdrv_n', [[340, 438], [280, 438], [280, 473], [250, 473]]],
     ['tx_en', 'en', 'macro:gold', 'xtx.xlse_p', [[960, 352], [440, 352]]], ['enh_p', 'tx', 'xtx.xlse_p', 'xtx.xdrv_p', [[340, 352], [195, 352], [195, 360]]],
