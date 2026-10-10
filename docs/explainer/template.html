@@ -172,6 +172,8 @@ const PAYLOAD = "/*__PAYLOAD__*/";
 const REPO = 'https://github.com/mattvenn/ook-asic-radio/blob/main/';
 const DOC = REPO + 'docs/how_it_works.md#';
 const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.sch';
+// 3D view of the block's layout, as linked from layout/README.md (the GDS has the same name as the schematic)
+const GDS = n => 'https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/' + n + '.gds';
 const SENS = -94;
 let D = null;                       // decoded payload
 const S = {level: 'link', focus: null, block: null, p: -44, step: 0, playing: true, bbLvl: null};
@@ -561,7 +563,7 @@ function focusPage(id) {
       <div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div>
       <p>${b.text}</p>
       <div class="facts">${facts.map(f => `<span class="fact">${f[0]} <b>${f[1]}</b></span>`).join('')}</div>
-      <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">Read more in How it works ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a>` : ''}</div>
+      <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">Read more in How it works ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}</div>
     </div>
     <div class="fplots">${plots || ''}</div>
   </div>`;
@@ -745,8 +747,14 @@ function build() {
   $('distout').textContent = `${p.toFixed(0)} dBm ≈ ${fmtd(dist())}`;
   $('dist').value = -S.p;   // slider runs strong (left) to weak (right), like moving the boards apart
   $('dist').setAttribute('aria-valuetext', `${p.toFixed(0)} dBm received, about ${fmtd(dist())} (${distSrc()})`);
-  $('stepno').textContent = `${S.step + 1} / ${TOUR.length}`;
-  $('caption').textContent = TOUR[S.step].cap; $('caption').title = TOUR[S.step].cap;
+  // the step follows the page however you got there (tour, a click in the diagram, a key, the breadcrumb)
+  const at = t => t.level === S.level && (t.focus || null) === S.focus && (t.block || null) === S.block;
+  let onTour = at(TOUR[S.step]);
+  if (!onTour) { const i = TOUR.findIndex(at); if (i >= 0) { S.step = i; onTour = true; } }
+  if (onTour) history.replaceState(null, '', '#step=' + S.step);
+  const cap = onTour ? TOUR[S.step].cap : S.block ? `${B[S.block].name}: ${B[S.block].sub} (not part of the tour)` : '';
+  $('stepno').textContent = `${onTour ? S.step + 1 : '–'} / ${TOUR.length}`;
+  $('caption').textContent = cap; $('caption').title = cap;
   anim.reset();
   useGeo('stage');
 }
