@@ -772,12 +772,14 @@ function dgSVG(opts = {}) {
   const padOn = id => !hl || DG.wires.some(w => (w[2] === id || w[3] === id) && netOn(w));
   const DIM = .2, o = [];
   o.push(`<svg class="dg ${opts.cls || ''}" viewBox="0 -6 1060 552" role="img" aria-label="System diagram: receiver on top, transmitter below, the digital macro on the right">`);
-  o.push(`<defs>${Object.entries(DGC).map(([k, c]) => `<marker id="dga-${k}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="${c}"/></marker>`).join('')}</defs>`);
+  const cols = Object.assign({}, DGC); STAGE_COLS.forEach((c, i) => cols['s' + i] = c);   // the chain's taps in the stage colours used on lna_chain and log_det
+  o.push(`<defs>${Object.entries(cols).map(([k, c]) => `<marker id="dga-${k}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="${c}"/></marker>`).join('')}</defs>`);
+  const TAPS = ['o1', 'o2', 'o3', 'o4', 'o5', 'out'];
   o.push(`<line x1="8" y1="326" x2="950" y2="326" stroke="#2a3741" stroke-dasharray="4 4"/>`);
   o.push(`<text x="12" y="12" font-size="13" font-weight="700" fill="${DGC.rx}" letter-spacing="1" opacity="${!hl || DGHALF.rx.some(on) ? 1 : DIM}">RX</text>`);
   o.push(`<text x="12" y="344" font-size="13" font-weight="700" fill="${DGC.tx}" letter-spacing="1" opacity="${!hl || DGHALF.tx.some(on) ? 1 : DIM}">TX</text>`);
   for (const w of DG.wires) {
-    const [n, cls, , , pts, opt = {}] = w, col = DGC[cls], lit = netOn(w), P = pts.map(p => p.join(',')).join(' ');
+    const [n, cls0, , , pts, opt = {}] = w, ti = TAPS.indexOf(n), cls = ti >= 0 ? 's' + ti : cls0, col = cols[cls], lit = netOn(w), P = pts.map(p => p.join(',')).join(' ');
     o.push(`<polyline points="${P}" fill="none" stroke="${col}" stroke-width="${hl && lit ? 2.6 : 1.6}" ${cls === 'en' ? 'stroke-dasharray="5 3"' : ''} marker-end="url(#dga-${cls})" opacity="${lit ? 1 : DIM}"/>`);
     if (opts.small) continue;
     const name = opt.name !== undefined ? opt.name : n; if (!name) continue;
@@ -812,8 +814,8 @@ function dgSVG(opts = {}) {
   const chainOn = on('xchain') ? 1 : DIM, detOn = on('xdet') ? 1 : DIM;
   for (let i = 0; i < 6; i++) {
     const x0 = 115 + i * 50;
-    o.push(`<g opacity="${chainOn}" pointer-events="none"><path d="M${x0} 118 L${x0} 162 L${x0 + 34} 140 Z" fill="#0a0e11" stroke="${DGC.rx}" stroke-width="1.2"/><text x="${x0 + 10}" y="144" font-size="10" fill="#e8eef2" font-family="var(--mono)">${i + 1}</text><line x1="${x0 + 34}" y1="140" x2="${x0 + 50}" y2="140" stroke="${DGC.rx}" stroke-width="1.2"/></g>`);
-    o.push(`<text x="${157 + i * 50 + 3}" y="292" font-size="9" fill="#9db0bc" font-family="var(--mono)" opacity="${detOn}" pointer-events="none">t${i + 1}</text>`);
+    o.push(`<g opacity="${chainOn}" pointer-events="none"><path d="M${x0} 118 L${x0} 162 L${x0 + 34} 140 Z" fill="#0a0e11" stroke="${STAGE_COLS[i]}" stroke-width="1.6"/><text x="${x0 + 10}" y="144" font-size="10" fill="#e8eef2" font-family="var(--mono)">${i + 1}</text><line x1="${x0 + 34}" y1="140" x2="${x0 + 50}" y2="140" stroke="${DGC.rx}" stroke-width="1.2"/></g>`);
+    o.push(`<text x="${157 + i * 50 + 3}" y="292" font-size="9" fill="${STAGE_COLS[i]}" font-family="var(--mono)" opacity="${detOn}" pointer-events="none">t${i + 1}</text>`);
   }
   o.push(`<path d="M100 121 H108 V161 M100 161 H108 M108 140 H115" fill="none" stroke="${DGC.rxin}" opacity="${chainOn}"/>`);
   return o.join('') + '</svg>';
