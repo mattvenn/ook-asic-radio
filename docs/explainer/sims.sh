@@ -10,6 +10,7 @@ mkdir -p build/explainer_stub && touch build/explainer_stub/pyvisa.py
 PYTHONPATH=build/explainer_stub python3 sim/rx/gen_det.py -94 -90 -86 -82 -78 -74 -70
 cd build
 ../sim/rx/rf.sh
+(cd .. && docs/explainer/rf_key_levels.sh -100 -90 -80 -70 -50 -40 -30)   # keyed detector at more levels; ~20 min
 ../sim/rx/bb.sh -94 -90 -86 -82 -78 -74 -70
 # TX chain (ring, level-shifter latch a/b, drivers, dipole): build/tb_tx_ab.raw
 cd ..

@@ -111,6 +111,12 @@ def rx_rf():
         tk = k['time'] * 1e6
         out['key'] = trace(tk, k['v(key)'], 0.0, 3.5, 700)
         out['key_det'] = trace(tk, k['v(det)'], 0.0, 3.5, 700)
+    # the same keyed run at more levels (docs/explainer/rf_key_levels.sh); -60 dBm is rf.sh's own run
+    out['key_levels'] = []
+    for lvl in KEY_LEVELS:
+        kl = k if lvl == -60 else raw(f'rx_rf_key_{lvl}.raw')
+        if kl is not None:
+            out['key_levels'].append({'lvl': lvl, 'det': trace(kl['time'] * 1e6, kl['v(det)'], 0.0, 3.5, 700)})
     return out
 
 
@@ -129,6 +135,7 @@ def sample_bits(t, comp, n):
     return ts, (np.interp(ts, t, comp) > 0.9).astype(np.uint8)
 
 
+KEY_LEVELS = [-30, -40, -50, -60, -70, -80, -90, -100]   # keyed-carrier detector runs (rf_key_levels.sh)
 BB_LEVELS = [-70, -74, -78, -82, -86, -90, -94]   # sims.sh runs these (sim/rx/gen_det.py + sim/rx/bb.sh)
 
 
