@@ -85,6 +85,7 @@ def tx():
                     ('dipole', dip)):
         out[name] = trace(t, y, 0.0, 80.0, 2400)            # whole keyed burst, ns
         out[name + '_z'] = trace(t, y, 40.0, 46.0, 400)      # zoom: ~2.6 carrier cycles
+        out[name + '_on'] = trace(t, y, 3.0, 12.0, 500)      # zoom on the turn-on: enable rises at 5 ns
     on = (t > 20) & (t < 55)
     zc = np.where(np.diff(np.sign(v['v(xtx.ring)'][on] - 0.9)) > 0)[0]
     f = (len(zc) - 1) / (t[on][zc[-1]] - t[on][zc[0]]) * 1e3

@@ -347,13 +347,13 @@ const B = {
     text: 'The 7 DIP switches pick one of 128 Gold codes: two 7-bit LFSRs, the second started later by the switch value, XORed together. Flip the switches below. 127 noise-like bits, half on, half off. Each bit lasts 104 µs, so one burst takes 13.2 ms. The TX keys the ring with the code three times, with 64 silent bits between bursts.',
     plot: () => figGold()},
   tx_ring: {lvl: 'tx', name: 'tx_ring', sub: 'free-running ring oscillator', anchor: 'transmitter', sch: 'tx_ring', color: 'tx',
-    text: () => `A NAND gate (the on/off enable) plus a ring of standard-cell inverters. No crystal: wherever it lands in 330–560 MHz the receiver still works. It runs at ${D.tx ? D.tx.f_mhz : '~485'} MHz in simulation (tt), and silicon ran at ×0.87 of simulation on the bench chip. It switches on or off in ~30–40 ns.`,
-    plot: () => figTx(['key', 'ring'])},
+    text: () => `A NAND gate (the on/off enable) plus a ring of standard-cell inverters. No crystal: wherever it lands in 330–560 MHz the receiver still works. It runs at ${D.tx ? D.tx.f_mhz : '~485'} MHz in simulation (tt), and silicon ran at ×0.87 of simulation on the bench chip. In simulation it starts on the first edge after the enable (zoom below); the bench chip measured ~30–40 ns on/off, through its board and the scope.`,
+    plot: () => figTx(['key', 'ring'], '_on')},
   tx_ls: {lvl: 'tx', name: 'tx_ls', sub: 'level shifter 1.8 V → 3.3 V', anchor: 'transmitter', sch: 'tx_ls', color: 'tx',
     text: 'Turns the 1.8 V ring into 3.3 V swings. Its two latch nodes are naturally opposite in phase, which gives the dipole\'s two arms for free.',
     plot: () => figTx(['a', 'b'])},
   tx_drv: {lvl: 'tx', name: 'tx_drv ×2', sub: 'output drivers, one per dipole arm', anchor: 'transmitter', sch: 'tx_drv', color: 'tx',
-    text: () => `Thick-oxide buffer tapers into the 3.3 V output drivers on ua[3] and ua[4]. Driving the two arms in antiphase puts the full swing across the dipole: ${D.tx ? '±' + D.tx.dipole_vpk + ' V' : 'the full swing'} in simulation, and +3.7 to +3.9 dBm into it across the process corners. Per-arm enables allow a monopole fallback.`,
+    text: () => `A tapered buffer: four thick-oxide 3.3 V inverters, each about 4× wider than the one before (PMOS 1.3 → 5 → 20 → 81 µm). The last one is big enough to drive the pin and antenna, but far too big for the small level shifter to switch quickly; stepping up 4× per stage gets the edge through fastest. One drives ua[3], the other ua[4]. Driving the two arms in antiphase puts the full swing across the dipole: ${D.tx ? '±' + D.tx.dipole_vpk + ' V' : 'the full swing'} in simulation, and +3.7 to +3.9 dBm into it across the process corners. Per-arm enables allow a monopole fallback.`,
     plot: () => figTx(['drv_p', 'drv_n', 'dipole'])},
   lna_chain: {lvl: 'rx', name: 'lna_chain', sub: '6 differential amplifier stages', anchor: 'receiver-amplifier-chain', sch: 'lna_chain', color: 'rx',
     text: 'Six differential stages, ~80 dB of gain in total. Differential means each stage amplifies the difference between two wires and ignores noise common to both, like the chip\'s own 10 MHz clock. Stage 1 is the low-noise amplifier, and the chain\'s noise figure is about 11 dB. Coupling capacitors between stages stop DC offsets building up.',
@@ -419,11 +419,11 @@ function figGold() {
 }
 const TXL = {key: ['enable (key)', '#9db0bc'], ring: ['ring', 'var(--tx)'], a: ['latch A', 'var(--tx)'], b: ['latch B', 'var(--sig2)'],
   drv_p: ['driver p (ua[3])', 'var(--tx)'], drv_n: ['driver n (ua[4])', 'var(--sig2)'], dipole: ['across the dipole', 'var(--sig)']};
-function figTx(keys) {
+function figTx(keys, zoom = '_z') {
   if (!D.tx) return NODATA('TX');
   const sr = z => keys.filter(k => k !== 'dipole').map(k => ({d: dec(D.tx[k + z]), label: TXL[k][0], color: TXL[k][1]}));
   let h = fig('whole keyed burst: enable on at 5 ns, off at 60 ns', plot({series: sr(''), xl: 'time (ns)', yl: 'V', h: 200}), 'build/tb_tx_ab.raw, tt');
-  h += fig('zoom 40–46 ns', plot({series: sr('_z'), xl: 'time (ns)', yl: 'V', h: 200}));
+  h += fig(zoom === '_on' ? 'zoom 3–12 ns: the enable goes high and the ring starts' : 'zoom 40–46 ns', plot({series: sr(zoom), xl: 'time (ns)', yl: 'V', h: 200}));
   if (keys.includes('dipole')) h += fig('voltage across the dipole', plot({series: [{d: dec(D.tx.dipole), label: TXL.dipole[0], color: TXL.dipole[1], w: 1}], xl: 'time (ns)', yl: 'V', h: 200}));
   return h;
 }
