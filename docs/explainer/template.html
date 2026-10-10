@@ -479,10 +479,10 @@ function bbRange(keys, scale = 1000) {
 }
 function figBB(keys) {
   const b = bb(); if (!b) return NODATA('baseband');
-  const ser = keys.map(k => ({d: dec(b[k], 1000), label: BBL[k][0], color: BBL[k][1], w: BBL[k][2], op: k === 'det' ? 0.7 : 1}));
-  const yl = bbRange(keys);
-  return bbPick() + fig(`${DBM(b.lvl)}, 3 ms of one burst (mV, relative to the no-signal level): chips "on" pull the level down`,
-    plot({series: ser, xl: 'time (ms)', yl: 'mV', h: 280, ylim: yl}), `build/rx_bb_${b.lvl}.raw, tt`);
+  const ser = keys.map(k => ({d: dec(b[k]), label: BBL[k][0], color: BBL[k][1], w: BBL[k][2], op: k === 'det' ? 0.7 : 1}));
+  const yl = bbRange(keys, 1);
+  return bbPick() + fig(`${DBM(b.lvl)}, 3 ms of one burst: chips "on" pull the detector down from its ${b.base.toFixed(2)} V no-signal level`,
+    plot({series: ser, xl: 'time (ms)', yl: 'V', h: 280, ylim: yl}), `build/rx_bb_${b.lvl}.raw, tt`);
 }
 function figComp() {
   const b = bb(); if (!b) return NODATA('baseband');

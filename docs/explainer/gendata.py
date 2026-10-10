@@ -163,9 +163,9 @@ def baseband(lvl):
     w = (ts > t0) & (ts < t1)
     return {
         'lvl': lvl, 'base': base,
-        'det': trace(tm, v['v(det)'] - base, 3.0, 6.0, 1500),
-        'lpf': trace(tm, v['v(lpf)'] - base, 3.0, 6.0, 1500),
-        'avg': trace(tm, v['v(avg)'] - base, 3.0, 6.0, 1500),
+        'det': trace(tm, v['v(det)'], 3.0, 6.0, 1500),          # absolute volts; base = the no-signal level
+        'lpf': trace(tm, v['v(lpf)'], 3.0, 6.0, 1500),
+        'avg': trace(tm, v['v(avg)'], 3.0, 6.0, 1500),
         'trim': trace(tm, v['v(trim)'], 3.0, 6.0, 600),
         'bits': base64.b64encode(np.packbits(bits[w]).tobytes()).decode(),
         'truth': base64.b64encode(np.packbits(truth[w].astype(np.uint8)).tobytes()).decode(),
