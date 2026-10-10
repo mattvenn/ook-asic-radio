@@ -6,3 +6,5 @@ Raw outputs of the runs summarised in docs/power.md (copied from build/power/).
 - `em_*.txt`, `tran_tx_A.txt`: the EM and TX-keyed transient printouts.
 Variants: `A` / `B` = the TT stripe cases (sim/power/pdn.py); `A_W` widened west + east VAPWR straps,
 `A_Wideal` the same with ideal straps, `A_Wtrunk` with the top-level routing x3 (docs/power.md "What-ifs").
+`A_fix`: the power-fix layout (branch power-fix, 08c44d1: wider straps, the TX driver VAPWR feed, the
+RX supply trunks; docs/power.md "After the fix").
