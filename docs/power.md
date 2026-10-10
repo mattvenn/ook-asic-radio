@@ -83,8 +83,59 @@ at a TX driver at 434 MHz.
   The arms are in anti-phase, so the 434 MHz supply current partly cancels: the keyed transient
   will give the real figure.
 
-To do: case B, the TX-keyed transient (RX supply / ground bounce), EM per via / µm on the TX paths,
-the proposals with estimates.
+**Case B** (the stripe pairs swapped) changes little: VGND identical; RX VDPWR R +0.7 Ω (chain 6.0
+→ 7.9 Ω), RX VDPWR IR drop 2 → 5 mV (chain 15.6 → 21.3 mV); the TX drivers' VAPWR R 3.0 / 1.6 →
+2.5 / 1.1 Ω, TX average drop 29 / 19 → 22 / 13 mV. The benchmark uses case A (worse for the TX).
+
+### TX keyed (transient, `tran_tx.py`)
+tx_en keyed at 5 ns, RX biased on as well, 30 ns, last 10 ns, case A:
+
+| block | local VDD−VSS p-p (mV) | of which 434 MHz (mV) |
+|---|---|---|
+| tx_drv_p | 63.2 | 6.3 |
+| tx_drv_n | 37.3 | 1.8 |
+| log_det | 11.6 | 0.50 |
+| dbg_tg | 11.9 | 0.47 |
+| tx_ring | 8.9 | 0.29 |
+| chain / avg_sc / comp_ct / bias | 6.6–7.2 | 0.19–0.26 |
+
+- The arms' anti-phase currents cancel most of the 434 MHz on the shared supply: the RX blocks see
+  0.2–0.5 mV at 434 MHz (the AC run's per-arm estimate, 5.5 mV at log_det, is the no-cancellation
+  bound). The p-p is mostly the keying step ringing.
+- The whole chip rings ~355 mV p-p against the board ground (vdpwr, vapwr and VGND together): the
+  assumed 2 nH package with 1 nF of chip grid C, undamped; common mode, not across any block.
+  Depends on the package assumptions, not on our layout.
+
+### EM (`em.py`, both arms at their average current, 0.5 µm mesh, case A)
+| path | worst | limit | |
+|---|---|---|---|
+| **via4, west VAPWR strap (x 2.5) at the y 107 stripe** | **5.2 mA/cut** | 2.49 | **2.1× over** |
+| **met4, west VAPWR strap (1.2 µm)** | **13.8 mA/µm** | 6.8 | **2.0× over** |
+| **met3, VAPWR_TX at the drivers (54, 120)** | 10.5 mA/µm | 6.8 | 1.5× over |
+| via3 at the west VAPWR strap | 0.53 mA/cut | 0.48 | 1.1× over |
+| mcon (VAPWR) | 0.24 mA/cut | 0.36 | 67 % |
+| VGND worst: via3 at (30.5, 120) | 0.30 mA/cut | 0.48 | 62 % |
+
+Most of the TX's VAPWR current enters through the west strap's single via4 column under one met5
+stripe and runs along the 1.2 µm met4 strap. These are average currents: the RMS (9.45 mA per arm)
+is higher. (Partly covered mesh cells at a 1.2 µm strap's edges read high; the strap as a whole
+carries ~13 mA, ~11 mA/µm, so the overstress is real.)
+
+## Proposals (for Matt to pick; estimates, not yet simulated)
+The weak spots, in order: **(1) TX VAPWR EM at the west strap (a reliability fail), (2) RX ground
+57–67 Ω and RX VDPWR 27–32 Ω (flat to 500 MHz), (3) the decaps doing nothing at the blocks.**
+
+| # | change | effect (estimate) |
+|---|---|---|
+| 1 | **West VAPWR strap 1.2 → ≥ 4 µm** (2 via4 columns per landing), VAPWR_TX met3 at the drivers ≥ 3 µm, more via3 there | EM: via4 2.6 mA/cut → still over; with the strap ≥ 6 µm (3 columns) ~1.7 mA/cut (68 %); met4 ~2.8 mA/µm. TX VAPWR R −1 Ω (~−13 mV avg). **Needed.** |
+| 2 | **Wider RX trunks** (VDPWR_RX / VGND_RX 1 → 4 µm, met3 + met4 stacked where free) | The trunks are most of the RX R: avg_sc / comp_ct VGND 57–67 → ~15–20 Ω, VDPWR 27 → ~8–10 Ω; chain IR 36 → ~12 mV. |
+| 3 | **Extra met4 VDPWR / VGND strap pair in the middle of the analog** (a met4-free column, e.g. x ~150, between log_det and Ctrim) | Halves the trunk length for log_det / comp_ct / avg_sc / bias: ~−50 % on their R (with 2: ~−75 %). Needs the met5 stripes to land on it (they cross the whole tile: free). |
+| 4 | **Join the RX side to the mid straps** across decap parts 1 / 3 below the macro-pin band | comp_ct / bias / r2r get a second, short path: their R ~−40 %. |
+| 5 | **Decap at the load**: wire each decap part straight to the block it serves (TX: the VAPWR decap rails onto VAPWR_TX at the drivers; RX: VDPWR decap onto the chain / det rails) | Today \|Z\| at the blocks is the mesh R (flat). A 20 pF part within ~1 Ω of tx_drv: \|Z\| at 434 MHz 11 → ~6 Ω at the driver. For RX, only useful with 2 or 3 (otherwise the decap sits behind the same R). |
+| 6 | **More via cuts** on the RX trunks' layer changes | Small (vias are a few Ω of the 30–60); do with 2. |
+
+Suggested set: **1 (must) + 2 + 3**, then 5 for the TX. Each can be checked on this flow before the
+top-level session commits it (the mesh run takes ~30 min per supply set).
 
 ## Re-running
 ```

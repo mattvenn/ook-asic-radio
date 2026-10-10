@@ -20,6 +20,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - Signoff clean (DRC, LVS, antenna 0; timing met at all corners).
   - **RTL suite 15/15 and gate-level suite 15/15** on the hardened netlist (`make GL=1`).
 - **Top level:** `radio_analog` (all analog blocks + bias + decap) and the `tt_um_mattvenn_radio` schematic; ua[0]/[1] RX, ua[2] debug (det via a debug-only TG), ua[3]/[4] TX (reassigned 2026-10-09; was TX 0/1, RX 2/3, debug 4).
+- **Power delivery benchmark** (2026-10-10, `docs/power.md`, `sim/power/`): the TT PDN modelled from tt-multiplexer (switched VDPWR / VAPWR on two met5 stripes each from gates west of the tile). RX R to the supply: VGND 57–67 Ω (avg_sc, comp_ct), VDPWR 27–32 Ω, flat to 500 MHz (decaps sit behind the mesh); chain IR ~36 mV. **EM fail: the west VAPWR strap (1.2 µm met4, one via4 column) carries the TX current at 2× the limit.** Proposals there for Matt.
 - **Area** (`sim/area/area_netlist.py`): the analog needs ~49k µm² of the ~57k left beside the macro in the 3x2 (493 × 226 µm): **85 %**, 93 % of the tile. The VAPWR decap (~18k µm²) is the biggest block.
 - **Operating range 10–50 °C only.**
 - **Layout flow (KLayout pcells → DRC/LVS → PEX → block test) works end to end on `tx_drv`.** See `docs/layout.md` for the steps, power/PDN rules, EM table and lessons.
