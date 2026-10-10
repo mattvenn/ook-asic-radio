@@ -110,7 +110,6 @@ svg.dg{display:block; width:100%; height:auto}
 .links a.secondary{border:1px solid var(--line); color:var(--text)}
 .links a:hover{filter:brightness(1.1)}
 .fig{display:flex; flex-direction:column; gap:.3rem}
-.matchbar{display:grid; grid-template-columns:auto minmax(8rem,1fr) 19rem; align-items:center; gap:1rem; margin:.3rem 0 .6rem; font-size:.9rem}
 .mbar{position:relative; height:1.1rem; background:#0a0e11; border:1px solid var(--line); border-radius:6px}
 .mfill{position:absolute; inset:0 auto 0 0; border-radius:5px; background:var(--muted)} .mfill.ok{background:var(--ok)} .mfill.bad{background:var(--bad)}
 .mthr{position:absolute; top:-.35rem; bottom:-.35rem; border-left:2px dashed var(--thr)} .mthr span{position:absolute; top:-1.15rem; left:-.7rem; font-size:.75rem; color:var(--thr)}
@@ -333,7 +332,7 @@ const NODATA = what => `<div class="nodata">No ${what} data in this build: run d
 // ------------------------------------------------------------------ blocks
 const B = {
   ook: {lvl: 'link', name: 'On-off keying', sub: 'the whole idea', anchor: 'on-off-keying-ook',
-    text: 'The transmitter switches a 433 MHz carrier on and off, at about +4 dBm, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. Each on/off bit lasts 104 µs (the docs and code call these bits chips), and the pattern is a 127-bit code. So the TX needs no crystal or PLL, just a free-running ring of inverters.',
+    text: 'The transmitter switches a 433 MHz carrier on and off, at about +4 dBm, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. Each on/off bit lasts 104 µs, about 45,000 cycles of the 433 MHz carrier (the docs and code call these bits chips), and the pattern is a 127-bit code. So the TX needs no crystal or PLL, just a free-running ring of inverters.',
     plot: () => figCode()},
   air: {lvl: 'link', name: 'Over the air', sub: 'received power vs distance, two wire dipoles', anchor: 'bench-measurements-phase-0',
     text: 'Measured on the bench with an earlier chip (ttsky25b, its ring at 518 MHz), 14.5 cm wire dipoles held parallel, 10 cm to 4 m: close to free space, −44 dBm at 1 m, falling as 1/d^1.89. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. On that model the −94 dBm sensitivity is reached at about 45 m. Distances past 4 m are that model, not a measurement.',
@@ -369,7 +368,7 @@ const B = {
     text: 'Every comparator has a small built-in error from imperfectly matched transistors, its offset: it might only flip when one input is 2 mV above the other. Near the sensitivity limit the signal is only ~1 mV, so without correction the comparator would always say 1 (or always 0). The digital nudges an 8-bit DAC one ~0.07 mV step per sample (a 1 steps it up, a 0 down), through a weak second input pair, until the comparator outputs 1 half the time, which cancels the offset.',
     plot: () => figTrim()},
   slicer: {lvl: 'rx', name: 'bit slicer (digital)', sub: 'majority vote per bit', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
-    text: 'The comparator is read every 13 µs: 8 samples per 104 µs bit. Many samples are wrong near the limit, so the 8 are combined by majority vote (5 or more 1s means on). The receiver doesn\'t know where each bit starts, so instead of recovering the transmitter\'s timing it runs four slicers at once, their windows offset by 2 samples; one of them is always nearly lined up. Each keeps its last 127 bit decisions for the correlator.',
+    text: 'The comparator is read every 13 µs: 8 samples per 104 µs bit. Many samples are wrong near the limit, so the 8 are combined by majority vote (5 or more 1s means on). The receiver doesn\'t know where each bit starts, so instead of recovering the transmitter\'s timing it runs four slicers at once, their windows offset by 2 samples; one of them is always nearly lined up. Each keeps its last 127 bit decisions for the correlator. Below: green votes are right, red wrong, grey a window split half and half.',
     plot: () => figSlicer()},
   corr: {lvl: 'rx', name: 'correlator (digital)', sub: 'score the last 127 bits', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
     text: 'After every bit, count how many of the last 127 decisions match this board\'s own code. Chance gives ~64. 97 or more is a detection: 6σ above chance. Even when a quarter of the samples are wrong the score still clears 97.',
@@ -487,23 +486,57 @@ function figTrim() {
   return bbPick() + fig(`trim DAC voltage during the burst, ${DBM(b.lvl)} (servo stand-in in this run)`, plot({series: [{d: dec(b.trim), color: 'var(--dac)', label: 'trim (V)', w: 2}], xl: 'time (ms)', yl: 'V', h: 220, ylim: bbRange(['trim'], 1)}), 'build/rx_bb_*.raw') +
     '<p>In the chip the digital servo drives this; the mixed-signal run with the real RTL shows the code settling and dithering at −94 dBm (sim/plots/mixed_-94.png).</p>';
 }
-/* the slicer page sweeps along one burst, counting the chips that match the code; the box goes green at 97 (anim.frame drives it) */
-function slicerMatch(i) {
-  const g = GOLD(), r = run(), th = D.model.thresh, end = i >= 126;
-  let n = 0; for (let j = 0; j <= Math.min(i, 126); j++) if (r._c[j] === g[j]) n++;
-  const st = n >= th ? ['ok', `${th} reached: enough for a detection`] : end ? ['bad', `${n} < ${th}: not a detection`] : ['wait', `need ${th}`];
-  return `<div class="matchbar"><span class="mcount">matching bits ${N(n, 3)} of ${N(Math.min(i, 126) + 1, 3, 'left')}</span>
-    <div class="mbar"><div class="mfill ${st[0]}" style="width:${(100 * n / 127).toFixed(1)}%"></div><div class="mthr" style="left:${(100 * th / 127).toFixed(1)}%"><span>${th}</span></div></div>
-    <span class="mstate ${st[0]}">${st[1]}</span></div>`;
+/* the bit slicer in action: real comparator samples from the transistor-level baseband run (8 per 104 µs bit), and the four
+   slicers voting over 8-sample windows offset by 0, 2, 4, 6 samples. anim.frame sweeps the cursor sample by sample. */
+const SL_N = 96, SL_S0 = 16;                       // samples shown (12 bits) and where in the run they start
+function slicerData() {
+  const b = bb(); if (!b) return null;
+  if (!b._sl) {
+    const smp = unpack(b.bits, b.nbits), tru = unpack(b.truth, b.nbits);
+    b._sl = {smp: smp.slice(SL_S0, SL_S0 + SL_N), tru: tru.slice(SL_S0, SL_S0 + SL_N)};
+  }
+  return b._sl;
 }
-function slicerStrip(i) {
-  const g = GOLD(), r = run();
-  return strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'decided', color: 'var(--rx)', cmp: g}], {ph: i});
+function slicerFig(i) {
+  const d = slicerData(); if (!d) return NODATA('baseband');
+  const F = GEO.f, W = GEO.w, L = Math.round(F * 6.5), Rr = Math.round(F * 5.5), cw = (W - L - Rr) / SL_N, x = k => L + k * cw;
+  const rowH = Math.round(F * 1.5), phH = Math.round(F * 2.3), H = 2 * rowH + 4 * phH + 16;
+  let g = `<svg class="strip" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="comparator samples and the four slicers' votes">`;
+  const lab = (y, t, col = '#9db0bc', w = 400) => `<text x="${L - 8}" y="${y}" fill="${col}" font-size="${F}" text-anchor="end" font-weight="${w}">${t}</text>`;
+  // sent bits, then the samples (red outline: the sample disagrees with what was sent)
+  g += lab(rowH * .72, 'sent');
+  for (let k = 0; k < SL_N; k++) g += `<rect x="${x(k).toFixed(1)}" y="2" width="${(cw + .3).toFixed(1)}" height="${rowH - 6}" fill="${d.tru[k] ? 'var(--tx)' : '#1c262e'}"/>`;
+  const y1 = rowH + 2;
+  g += lab(y1 + rowH * .72, 'samples');
+  for (let k = 0; k < SL_N; k++) {
+    const seen = k <= i, bad = d.smp[k] !== d.tru[k];
+    g += `<rect x="${(x(k) + 1).toFixed(1)}" y="${y1}" width="${Math.max(1, cw - 2).toFixed(1)}" height="${rowH - 6}" fill="${!seen ? '#11181d' : d.smp[k] ? 'var(--rx)' : '#1c262e'}" ${seen && bad ? 'stroke="var(--bad)" stroke-width="1.5"' : ''}/>`;
+  }
+  if (i >= 0 && i < SL_N) g += `<rect x="${x(i).toFixed(1)}" y="0" width="${cw.toFixed(1)}" height="${2 * rowH}" fill="none" stroke="#fff" stroke-width="1.5"/>`;
+  // the four slicers: an 8-sample window each, voted when its 8th sample is in
+  const score = [];
+  [0, 2, 4, 6].forEach((ph, r) => {
+    const y = 2 * rowH + 8 + r * phH; let right = 0, n = 0;
+    g += lab(y + phH * .55, `phase ${ph}`);
+    for (let st = ph; st + 8 <= SL_N; st += 8) {
+      const xa = x(st) + 2, xb = x(st + 8) - 2, done = st + 7 <= i;
+      g += `<path d="M ${xa} ${y + 4} V ${y} H ${xb} V ${y + 4}" fill="none" stroke="#4a5a66" stroke-width="1.2"/>`;
+      if (!done) continue;
+      let c = 0, t = 0; for (let k = st; k < st + 8; k++) { c += d.smp[k]; t += d.tru[k]; }
+      const v = c > 4 || (c === 4 && d.smp[st + 7]) ? 1 : 0, straddle = t === 4, ok = !straddle && v === (t > 4 ? 1 : 0);   // judged against the bit that fills most of the window
+      n++; if (ok) right++;
+      g += `<rect x="${xa}" y="${y + 6}" width="${xb - xa}" height="${phH - 12}" rx="3" fill="${v ? 'var(--rx)' : '#1c262e'}" stroke="${straddle ? '#6f8491' : ok ? 'var(--ok)' : 'var(--bad)'}" stroke-width="1.5"/>`;
+      if (xb - xa > F * 3) g += `<text x="${(xa + xb) / 2}" y="${y + 6 + (phH - 12) / 2 + F * .35}" font-size="${Math.round(F * .8)}" text-anchor="middle" fill="${v ? '#05181c' : '#9db0bc'}">${c}/8 → ${v}</text>`;
+    }
+    score.push([right, n]);
+    g += `<text x="${W - Rr + 8}" y="${y + phH * .55}" font-size="${F}" fill="#9db0bc">${n ? right + '/' + n + ' right' : ''}</text>`;
+  });
+  return g + '</svg>';
 }
 function figSlicer() {
-  const r = run();
-  return fig(`bit decisions at ${DBM(prx())} (best timing phase): ${N(r.chip_ok + '/127', 7)} right`,
-    `<div id="slmatch">${slicerMatch(126)}</div><div id="slstrip">${slicerStrip(-1)}</div>`, 'model/ link model');
+  const b = bb(); if (!b) return NODATA('baseband');
+  return bbPick() + fig(`comparator samples at ${DBM(b.lvl)}, 8 per bit, voted by the four slicers`,
+    `<div id="slfig">${slicerFig(SL_N)}</div>`, 'build/rx_bb_*.raw, tt');
 }
 function figScore() {
   const r = run(), m = D.model, x = [], y = [];
@@ -848,13 +881,12 @@ const anim = {
   t0: 0, reset() { this.t0 = performance.now(); },
   frame(now) {
     requestAnimationFrame(t => anim.frame(t));
-    if (D && S.block === 'slicer') {               // slicer page: sweep one burst, 30 chips/s, then hold for 1.5 s
-      if (S.dragging) { this.t0 = now - 127 / 30 * 1000; }   // while the slider is held: show the finished count, sweep again on release
-      const i = Math.floor((now - this.t0) / 1000 * 30) % (127 + 45);
+    if (D && S.block === 'slicer') {               // slicer page: sweep the samples, 12 per second, then hold for 2 s
+      if (S.dragging) { this.t0 = now - SL_N / 12 * 1000; }   // while the slider is held: show the finished votes, sweep again on release
+      const i = Math.floor((now - this.t0) / 1000 * 12) % (SL_N + 24);
       if (i !== this._si) {
-        this._si = i; const k = Math.min(i, 126), m = $('slmatch'), st = $('slstrip');
-        if (m) m.innerHTML = slicerMatch(k);
-        if (st) { useGeo('detail'); st.innerHTML = slicerStrip(i < 127 ? i : -1); useGeo('stage'); }
+        this._si = i; const el = $('slfig');
+        if (el) { useGeo('detail'); el.innerHTML = slicerFig(i); useGeo('stage'); }
       }
       return;
     }
