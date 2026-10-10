@@ -290,7 +290,7 @@ function plot(opts) {
   if (opts.xl) g += `<text x="${(L + W - R) / 2}" y="${H - 6}" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.xl}</text>`;
   if (opts.yl && opts.yl.length <= 3) g += `<text x="4" y="${T + F}" fill="${opts.ycolor || '#8a9ca8'}" font-size="${F}">${opts.yl}</text>`;
   else if (opts.yl) g += `<text transform="translate(${F + 2} ${(T + H - Bm) / 2}) rotate(-90)" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.yl}</text>`;
-  (opts.hl || []).forEach(h => g += `<line x1="${L}" x2="${W - R}" y1="${sy(h.y)}" y2="${sy(h.y)}" stroke="${h.color}" stroke-dasharray="6 5" stroke-width="1.5"/>` + (h.label ? `<text x="${W - R - 6}" y="${sy(h.y) - 6}" fill="${h.color}" font-size="${F}" text-anchor="end">${h.label}</text>` : ''));
+  (opts.hl || []).forEach(h => g += `<line x1="${L}" x2="${W - R}" y1="${sy(h.y)}" y2="${sy(h.y)}" stroke="${h.color}" stroke-dasharray="6 5" stroke-width="1.5"/>` + (h.label ? `<text x="${h.left ? L + 6 : W - R - 6}" y="${sy(h.y) - 6}" fill="${h.color}" font-size="${F}" text-anchor="${h.left ? 'start' : 'end'}">${h.label}</text>` : ''));
   (opts.vl || []).forEach(h => g += `<line x1="${sx(h.x)}" x2="${sx(h.x)}" y1="${T}" y2="${H - Bm}" stroke="${h.color}" stroke-width="2"/>` + (h.label ? `<text x="${sx(h.x) + (sx(h.x) > W - 90 ? -6 : 6)}" y="${h.bottom ? H - Bm - 6 : T + F + 2}" fill="${h.color}" font-size="${F}" text-anchor="${sx(h.x) > W - 90 ? 'end' : 'start'}">${h.label}</text>` : ''));
   const sy1 = sy;
   g += `<clipPath id="${id}c"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - Bm}"/></clipPath><g clip-path="url(#${id}c)">`;
@@ -420,7 +420,7 @@ function figPath() {
       {d: two, color: 'var(--sig2)', label: `two-ray, boards ${HGT} m up`, w: 2},
       {d: {x: p.d_m, y: p.p_dbm}, color: '#e8eef2', label: 'measured', pts: true}],
     xlog: true, xlim: [0.1, 200], xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
-    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm'}], vl: [{x: Math.max(0.1, Math.min(200, dist())), color: '#fff', label: fmtd(dist())}],
+    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm', left: true}], vl: [{x: Math.max(0.1, Math.min(200, dist())), color: '#fff', label: fmtd(dist())}],
     bands: [{x0: 4, x1: 200, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + '<p>Measured from 10 cm to 4 m. Further out (shaded) is a model: flat ground, line of sight, no walls or bodies. Real range will vary.</p>';
 }
 /* the Gold code page: seven DIP switches pick the code; code k = M1 xor M2 shifted by k bits (model/gold.py, as the RTL makes it) */
