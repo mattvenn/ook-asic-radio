@@ -1,0 +1,22 @@
+case A VAPWR, TX both arms at their average current (13.3 mA):
+  via4  worst   5.235 mA/cut (limit 2.49, 210.3 %) at (2.5, 103.4)  <-- under 2x margin
+  m4    worst  13.767 mA/um (limit 6.8, 202.5 %) at (3.5, 83.4)  <-- under 2x margin
+  m3    worst  10.543 mA/um (limit 6.8, 155.0 %) at (54.0, 120.4)  <-- under 2x margin
+  via3  worst   0.528 mA/cut (limit 0.48, 109.9 %) at (4.5, 82.9)  <-- under 2x margin
+  mcon  worst   0.242 mA/cut (limit 0.36,  67.2 %) at (12.5, 89.4)  <-- under 2x margin
+  m1    worst   1.390 mA/um (limit 2.8,  49.6 %) at (8.0, 92.4)
+  m2    worst   0.855 mA/um (limit 2.8,  30.6 %) at (6.5, 88.4)
+  via2  worst   0.118 mA/cut (limit 0.48,  24.5 %) at (5.5, 80.9)
+  m5    worst   2.142 mA/um (limit 10.17,  21.1 %) at (2.0, 103.9)
+  via1  worst   0.025 mA/cut (limit 0.29,   8.6 %) at (5.5, 80.4)
+case A VGND, TX both arms at their average current (4.6 mA):
+  via3  worst   0.296 mA/cut (limit 0.48,  61.7 %) at (30.5, 119.9)  <-- under 2x margin
+  via4  worst   1.124 mA/cut (limit 2.49,  45.1 %) at (14.5, 137.4)
+  mcon  worst   0.145 mA/cut (limit 0.36,  40.1 %) at (26.0, 85.9)
+  m3    worst   2.719 mA/um (limit 6.8,  40.0 %) at (15.5, 137.4)
+  m4    worst   2.413 mA/um (limit 6.8,  35.5 %) at (30.0, 119.9)
+  m1    worst   0.662 mA/um (limit 2.8,  23.7 %) at (28.5, 90.9)
+  m2    worst   0.288 mA/um (limit 2.8,  10.3 %) at (29.0, 112.9)
+  via2  worst   0.036 mA/cut (limit 0.48,   7.5 %) at (30.0, 119.9)
+  m5    worst   0.504 mA/um (limit 10.17,   5.0 %) at (13.5, 137.9)
+  via1  worst   0.012 mA/cut (limit 0.29,   4.2 %) at (29.0, 120.4)

@@ -1,0 +1,16 @@
+case A: TX keyed (RX on), last 10 ns: local VDD-VSS and VSS (to board ground) at each block, mV
+block        dd p-p  dd 434M   ss p-p  ss 434M  dd mean
+chain          6.98     0.19   353.14     3.01   1.7548
+log_det       11.64     0.50   357.52     3.20   1.7793
+avg_sc         7.19     0.26   351.93     3.03   1.7839
+comp_ct        6.95     0.26   352.01     3.03   1.7839
+bias           6.61     0.26   352.36     3.03   1.7840
+dbg_tg        11.92     0.47   357.22     3.18   1.7679
+tx_ring        8.85     0.29   356.20     3.10   1.7847
+tx_drv_p      63.19     6.27   356.36     4.14   3.2253
+tx_drv_n      37.33     1.81   358.23     3.34   3.2349
+det        p-p   390.24 mV, 434 MHz     4.89 mV, mean 1.3282 V
+lpf        p-p   356.82 mV, 434 MHz     3.17 mV, mean 1.4828 V
+avg        p-p   351.89 mV, 434 MHz     3.03 mV, mean 1.0128 V
+trim       p-p   352.21 mV, 434 MHz     3.08 mV, mean 0.9509 V
+vcm        p-p   353.80 mV, 434 MHz     2.95 mV, mean 1.2103 V

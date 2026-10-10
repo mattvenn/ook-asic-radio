@@ -1,0 +1,132 @@
+case A_W VAPWR, TX both arms at their average current (13.3 mA):
+  m3    worst  18.696 mA/um (limit 6.8, 274.9 %) at (56.5, 120.5)  <-- under 2x margin
+  via3  worst   0.513 mA/cut (limit 0.48, 106.9 %) at (4.5, 82.5)  <-- under 2x margin
+  mcon  worst   0.256 mA/cut (limit 0.36,  71.2 %) at (56.0, 111.5)  <-- under 2x margin
+  via4  worst   1.574 mA/cut (limit 2.49,  63.2 %) at (0.5, 103.5)  <-- under 2x margin
+  m4    worst   3.480 mA/um (limit 6.8,  51.2 %) at (4.0, 82.5)  <-- under 2x margin
+  m1    worst   1.398 mA/um (limit 2.8,  49.9 %) at (8.0, 86.0)
+  m2    worst   0.864 mA/um (limit 2.8,  30.8 %) at (8.0, 87.5)
+  via2  worst   0.118 mA/cut (limit 0.48,  24.5 %) at (5.5, 81.0)
+  m5    worst   1.604 mA/um (limit 10.17,  15.8 %) at (0.0, 104.0)
+  via1  worst   0.025 mA/cut (limit 0.29,   8.5 %) at (5.5, 80.5)
+case A_W VGND, TX both arms at their average current (4.6 mA):
+  via3  worst   0.296 mA/cut (limit 0.48,  61.7 %) at (30.5, 120.0)  <-- under 2x margin
+  mcon  worst   0.145 mA/cut (limit 0.36,  40.1 %) at (26.0, 87.5)
+  m1    worst   1.115 mA/um (limit 2.8,  39.8 %) at (24.0, 116.5)
+  m3    worst   2.620 mA/um (limit 6.8,  38.5 %) at (15.5, 137.5)
+  m4    worst   2.409 mA/um (limit 6.8,  35.4 %) at (30.0, 120.0)
+  via4  worst   0.528 mA/cut (limit 2.49,  21.2 %) at (14.5, 137.5)
+  m2    worst   0.289 mA/um (limit 2.8,  10.3 %) at (29.0, 113.0)
+  via2  worst   0.037 mA/cut (limit 0.48,   7.6 %) at (30.0, 120.0)
+  via1  worst   0.011 mA/cut (limit 0.29,   3.8 %) at (29.0, 120.0)
+  m5    worst   0.358 mA/um (limit 10.17,   3.5 %) at (11.5, 138.0)
+case A_Wideal: R (ohm) from each block's device terminals to the port (mesh), mean / worst
+block                 VDPWR          VAPWR           VGND
+avg_sc        28.03 / 28.39                 65.97 / 66.47
+bias          12.83 / 13.41                 29.64 / 30.43
+chain          5.54 /  6.43                  6.66 /  7.81
+comp_ct       25.13 / 37.32                 55.07 / 61.43
+dbg_tg        27.70 / 27.70                 26.01 / 26.01
+decap_a                       9.16 / 13.85   7.22 / 11.78
+decap_d       19.36 / 19.36                  9.44 / 16.16
+log_det       27.40 / 27.40                 13.34 / 13.55
+r2r                                         34.23 / 44.13
+tx_drv_n                      0.56 /  0.75   1.76 /  2.08
+tx_drv_p                      2.08 /  2.23   2.18 /  2.47
+tx_ls         14.82 / 15.87   4.44 /  4.63   2.37 /  2.76
+tx_lse_n      14.52 / 15.26   5.81 /  6.10   2.49 /  2.97
+tx_lse_p      13.91 / 14.72   6.34 /  6.64   3.35 /  3.87
+tx_ring        5.68 /  6.92                  1.95 /  4.12
+RX op: current into the supply metal from the devices (A): {'VDPWR': '-2.993e-03', 'VAPWR': '-7.887e-10', 'VGND': '3.042e-03'}
+case A_Wideal, RX op: drop from the port at each block (mV, mean / worst; VGND: rise)
+avg_sc        -1.35 /   -1.35                        2.99 /    2.99
+bias          -1.83 /   -1.91                        2.62 /    3.64
+chain        -14.43 /  -15.76                       19.08 /   22.34
+comp_ct       -1.40 /   -1.52                        3.01 /    3.14
+dbg_tg       -13.26 /  -13.26                        0.32 /    0.32
+decap_a                                              0.00 /    0.00
+decap_d                                              1.06 /    1.99
+log_det       -1.62 /   -1.62                        0.49 /    0.49
+r2r                                                  6.01 /    6.01
+tx_drv_n                         -0.00 /   -0.00     0.01 /    0.01
+tx_drv_p                         -0.00 /   -0.00     0.01 /    0.01
+tx_ls         -0.00 /   -0.00    -0.00 /   -0.00     0.03 /    0.03
+tx_lse_n      -0.00 /   -0.00    -0.00 /   -0.00     0.00 /    0.00
+tx_lse_p      -0.00 /   -0.00    -0.00 /   -0.00     0.02 /    0.02
+tx_ring       -0.00 /   -0.00                        0.00 /    0.00
+TX avg (both arms): drop at each driver, mV mean / worst
+  VAPWR  tx_drv_p    -16.0 /   -17.0
+  VAPWR  tx_drv_n     -5.9 /    -7.8
+  VGND   tx_drv_p      8.2 /     8.9
+  VGND   tx_drv_n      7.3 /     8.2
+TX peak (both arms): drop at each driver, mV mean / worst
+  VAPWR  tx_drv_p    -44.3 /   -47.1
+  VAPWR  tx_drv_n    -16.2 /   -21.5
+  VGND   tx_drv_p     42.7 /    46.2
+  VGND   tx_drv_n     37.7 /    42.8
+case A_Wtrunk: R (ohm) from each block's device terminals to the port (mesh), mean / worst
+block                 VDPWR          VAPWR           VGND
+avg_sc        21.56 / 21.92                 64.74 / 65.24
+bias          10.99 / 11.56                 29.34 / 30.12
+chain          5.63 /  6.53                  6.96 /  8.11
+comp_ct       18.61 / 30.81                 54.04 / 60.40
+dbg_tg        27.64 / 27.64                 25.42 / 25.42
+decap_a                       9.74 / 14.47   7.40 / 11.96
+decap_d       18.61 / 18.61                  9.46 / 16.09
+log_det       23.19 / 23.19                 11.72 / 11.93
+r2r                                         34.91 / 44.82
+tx_drv_n                      0.82 /  1.01   1.46 /  1.78
+tx_drv_p                      1.92 /  2.07   1.78 /  2.07
+tx_ls         14.63 / 15.67   4.49 /  4.68   2.06 /  2.44
+tx_lse_n      14.60 / 15.33   5.96 /  6.26   2.69 /  3.16
+tx_lse_p      13.99 / 14.80   6.42 /  6.72   3.17 /  3.69
+tx_ring        5.85 /  7.10                  2.11 /  4.28
+RX op: current into the supply metal from the devices (A): {'VDPWR': '-2.993e-03', 'VAPWR': '-7.887e-10', 'VGND': '3.042e-03'}
+case A_Wtrunk, RX op: drop from the port at each block (mV, mean / worst; VGND: rise)
+avg_sc        -1.14 /   -1.14                        3.27 /    3.27
+bias          -1.73 /   -1.81                        2.91 /    3.93
+chain        -14.71 /  -16.04                       19.95 /   23.21
+comp_ct       -1.18 /   -1.30                        3.28 /    3.41
+dbg_tg       -13.54 /  -13.54                        0.36 /    0.36
+decap_a                                              0.17 /    0.33
+decap_d                                              1.49 /    2.29
+log_det       -1.45 /   -1.45                        0.49 /    0.49
+r2r                                                  6.17 /    6.17
+tx_drv_n                         -0.00 /   -0.00     0.07 /    0.07
+tx_drv_p                         -0.00 /   -0.00     0.07 /    0.07
+tx_ls         -0.03 /   -0.03    -0.00 /   -0.00     0.08 /    0.08
+tx_lse_n      -0.03 /   -0.03    -0.00 /   -0.00     0.07 /    0.07
+tx_lse_p      -0.03 /   -0.03    -0.00 /   -0.00     0.08 /    0.08
+tx_ring       -0.03 /   -0.03                        0.06 /    0.06
+TX avg (both arms): drop at each driver, mV mean / worst
+  VAPWR  tx_drv_p    -16.7 /   -17.7
+  VAPWR  tx_drv_n     -9.4 /   -11.3
+  VGND   tx_drv_p      6.6 /     7.3
+  VGND   tx_drv_n      5.9 /     6.8
+TX peak (both arms): drop at each driver, mV mean / worst
+  VAPWR  tx_drv_p    -46.2 /   -48.9
+  VAPWR  tx_drv_n    -25.9 /   -31.2
+  VGND   tx_drv_p     34.3 /    37.8
+  VGND   tx_drv_n     30.6 /    35.5
+case A_Wtrunk VAPWR, TX both arms at their average current (13.3 mA):
+  m3    worst  19.407 mA/um (limit 6.8, 285.4 %) at (56.5, 120.5)  <-- under 2x margin
+  via3  worst   0.511 mA/cut (limit 0.48, 106.5 %) at (4.5, 82.5)  <-- under 2x margin
+  mcon  worst   0.256 mA/cut (limit 0.36,  71.2 %) at (56.0, 111.5)  <-- under 2x margin
+  via4  worst   1.544 mA/cut (limit 2.49,  62.0 %) at (0.5, 103.5)  <-- under 2x margin
+  m1    worst   1.398 mA/um (limit 2.8,  49.9 %) at (8.0, 86.0)
+  m4    worst   3.357 mA/um (limit 6.8,  49.4 %) at (4.0, 82.5)
+  m2    worst   0.864 mA/um (limit 2.8,  30.8 %) at (8.0, 87.5)
+  via2  worst   0.118 mA/cut (limit 0.48,  24.5 %) at (5.5, 81.0)
+  m5    worst   1.588 mA/um (limit 10.17,  15.6 %) at (0.0, 104.0)
+  via1  worst   0.025 mA/cut (limit 0.29,   8.5 %) at (5.5, 80.5)
+case A_Wtrunk VGND, TX both arms at their average current (4.6 mA):
+  via3  worst   0.297 mA/cut (limit 0.48,  61.8 %) at (30.5, 120.0)  <-- under 2x margin
+  mcon  worst   0.145 mA/cut (limit 0.36,  40.1 %) at (26.0, 87.5)
+  m1    worst   1.115 mA/um (limit 2.8,  39.8 %) at (24.0, 116.5)
+  m4    worst   2.410 mA/um (limit 6.8,  35.4 %) at (30.0, 120.0)
+  m3    worst   1.612 mA/um (limit 6.8,  23.7 %) at (15.5, 137.0)
+  via4  worst   0.477 mA/cut (limit 2.49,  19.1 %) at (14.5, 137.5)
+  m2    worst   0.259 mA/um (limit 2.8,   9.2 %) at (29.0, 113.0)
+  via2  worst   0.036 mA/cut (limit 0.48,   7.5 %) at (30.0, 120.0)
+  via1  worst   0.011 mA/cut (limit 0.29,   3.7 %) at (29.0, 120.0)
+  m5    worst   0.348 mA/um (limit 10.17,   3.4 %) at (11.5, 138.0)
