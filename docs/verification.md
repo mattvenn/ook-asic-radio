@@ -12,7 +12,7 @@ schematic blocks ──► per-block tests (schematic vs layout) ┘──► sy
 
 ## Running the checks
 - Everything runs from the repo root in the IIC-OSIC-TOOLS image: `tools/osic <cmd>` on the Linux host, `tools/osic-mac <cmd>` on the Mac. The Python runners call it themselves: set `OSIC=$PWD/tools/osic` (Linux) or `OSIC=$PWD/tools/osic-mac` (the default in most). Host-side analysis needs Python with numpy.
-- Already inside the image (e.g. the sim-0 pod, no docker): `tools/osic` runs the command directly through `tools/osic-inimage`. sim-0 has an 8-CPU quota, so run at most 3 ngspice at once there. **Extract with magic 8.3.642**: the 2026.09 image's 8.3.684 drops node-to-substrate C from `ext2spice` (`OSIC_MAGIC=<bin dir of 8.3.642>`).
+- Already inside the image (e.g. the sim-0 pod, no docker): `tools/osic` runs the command directly through `tools/osic-inimage`. sim-0 has 28 CPUs (2026-10-12): keep the threads of all running ngspice at ≤ 28 (check `/sys/fs/cgroup/cpu.max` on a new pod). **Extract with magic 8.3.642**: the 2026.09 image's 8.3.684 drops node-to-substrate C from `ext2spice` (`OSIC_MAGIC=<bin dir of 8.3.642>`).
 - **One ngspice at a time** (each uses 8 threads), and keep the machine awake for the long runs (`systemd-inhibit` / `tools/longrun` on Linux, `caffeinate -i` on the Mac). Outputs go to `build/`.
 - Before the extracted-tile runs, build and extract the tile (a few minutes):
   ```

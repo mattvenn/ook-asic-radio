@@ -2,15 +2,16 @@
 
 Where these come from: a review of [verify_2026-10-11.md](verify_2026-10-11.md) against
 [verification.md](verification.md). Every check the plan lists passes. This plan adds the checks the plan
-doesn't have yet. The tunable TX ring is out of scope; it has its own plan, [plan_ring_tune.md](plan_ring_tune.md).
+doesn't have yet. The tunable TX ring was dropped on 2026-10-12 ([plan_ring_tune.md](plan_ring_tune.md)); the TX
+frequency is set by `NINV` (STATUS.md next step 1).
 
 The work is in four phases, ordered by what they depend on, not only by severity. Each phase ends at a
 **gate where Matt reviews the results**. A failing check opens a design change and is not patched over in this plan.
 
-**Interaction with the ring work:** phases 1 and 2 don't depend on the ring and can start now. The TX parts
-of 2.1 and all of phase 3 run on the tile. If the ring changes, run them after the ring lands, or run them
-now and repeat them as part of that rerun. Item 4.1 (decap flatten) is a layout change, so do it in the same
-tile rebuild as the ring.
+**Interaction with the `NINV` change:** setting `NINV` changes `tx_ring` and re-opens the tile build. Phase 1 and
+the RX parts of phase 2 don't depend on it and can start now. The TX parts of 2.1 and all of phase 3 run on the
+tile, so run them after `NINV` is set and the tile is rebuilt. Anything run before that has to be repeated. Item 4.1
+(decap flatten) is a layout change, so do it in that same tile rebuild.
 
 ## Gaps, ranked
 
@@ -66,8 +67,8 @@ TT supply tolerances first; use them if they're wider.)
 - **RX:** chain gain at 434 MHz, NF, det idle and slope, comparator offset and trim step at the DAC operating point.
   Run at tt and the two worst corners (ss 10 °C for gain and stability, fs 50 °C for sensitivity) × 3 supplies.
   Rerun `sim/chain/stability.sh` at 1.89 V, ss 10 °C, the highest-gain point.
-- **TX:** ring frequency, power and arm duty, at 5 corners × 3 VDPWR × 3 VAPWR, schematic, and
-  `--pex` at tt.
+- **TX** (on the final `NINV` ring): ring frequency, power and arm duty, at 5 corners × 3 VDPWR × 3 VAPWR,
+  schematic, and `--pex` at tt.
 - Feed the worst RX gain / slope / trim into `model/e2e.py` (as for the corners): −92 dBm at the worst supply ×
   fs 50 °C.
 
@@ -94,7 +95,9 @@ supports (`mc_mm_switch=1` / the `_mm` corner sections) and record it in sim_lea
 
 ## Phase 3: system level on the extracted chip (G3, G5, G6, G8, G9)
 
-Run on sim-0 with at most 3 ngspice at once, extracting with magic 8.3.642.
+Run on sim-0, extracting with magic 8.3.642. The threads of all running ngspice add up to ≤ 28 (28-CPU pod):
+big tile-pex decks up to 3 at once at 8 threads each, small decks single-threaded up to ~24 at once. Check
+`/sys/fs/cgroup/cpu.max` on a new pod.
 
 **3.1 Extracted chain sensitivity, noise-free (G3).** The CW det-drop table from verify_2026-10-11 (−100 /
 −90 / −80 / −70 dBm, no noise), on the extracted `lna_chain` + `log_det`. Also on the extracted tile (c and rc), with
@@ -148,9 +151,9 @@ of reset, and no TX output before `tx_en`.
 
 **4.1 Decap hvi.5 (G11).** `lay.py` `write(flatten=True)` for `decap_vapwr_p1`–`p4`, as for the TX blocks in
 13c28aa. Then `layout/check.sh` on each part, and drop the caveat from verification.md. Do this in the same tile
-rebuild as the ring change, followed by `check_top.sh`, `export_tt.sh` and the GitHub precheck.
+rebuild as the `NINV` change, followed by `check_top.sh`, `export_tt.sh` and the GitHub precheck.
 
-**4.2 Full rerun.** After the ring lands (or if it doesn't), rerun verification.md end to end, including
+**4.2 Full rerun.** After the `NINV` change and tile rebuild, rerun verification.md end to end, including
 every check added here, and write `docs/verify_<date>.md` as before.
 
 > **Gate 4 (Matt):** tapeout sign-off on verification.
