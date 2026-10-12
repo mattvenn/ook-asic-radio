@@ -42,6 +42,7 @@ main{flex:1; display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; pad
 .stage{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.1rem; min-width:0}
 .stage > .inner{display:flex; flex-direction:column; gap:1rem}
 .stage h1{margin:0; font-size:1.55rem; line-height:1.2; letter-spacing:-.01em}
+.layoutimg{display:block; width:100%; height:auto; aspect-ratio:4932/2258; border-radius:6px}
 .stage .lede{margin:0; color:var(--muted); max-width:52rem}
 svg text{font-family:var(--sans)}
 .scene{width:100%; height:8rem; display:block}  /* about two readout rows */
@@ -353,12 +354,18 @@ const NODATA = what => `<div class="nodata">No ${what} data in this build: run d
 
 // ------------------------------------------------------------------ blocks
 const B = {
-  ook: {lvl: 'link', name: 'On-off keying', sub: 'the whole idea', anchor: 'on-off-keying-ook',
-    text: 'The transmitter switches a 433 MHz carrier on and off, at about +4 dBm, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. Each on/off bit lasts 104 µs, about 45,000 cycles of the 433 MHz carrier (the docs and code call these bits chips), and the pattern is a [[gold|127-bit code]]. So the TX needs no crystal or PLL, just a [[tx_ring|free-running ring of inverters]].',
-    plot: () => figCode()},
-  air: {lvl: 'link', name: 'Over the air', sub: 'received power vs distance, two wire dipoles', anchor: 'bench-measurements-phase-0',
-    text: 'Measured on the bench with an earlier chip (ttsky25b, its ring at 518 MHz), 14.5 cm wire dipoles held parallel, 10 cm to 4 m: close to free space, −44 dBm at 1 m, falling as 1/d^1.89. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. On that model the −94 dBm sensitivity is reached at about 45 m. Distances past 4 m are that model, not a measurement.',
+  intro: {lvl: 'link', name: 'A radio on a tiny open-source chip', short: 'The idea', sub: 'my first semiconductor radio', anchor: 'how-it-works',
+    text: 'My first semiconductor radio, and one of the first radios on a Tiny Tapeout shuttle. The transmitter and the receiver share six tiles, about 0.1 mm² of silicon. The 433 MHz carrier comes from a [[tx_ring|ring of inverters]], with no crystal and no PLL. The antenna is two bare wires, with no parts on the board around the chip. The only thing it borrows from the board is a 10 MHz clock for timing. Two boards run the same chip: one sends a code, and the other toggles an [[led|LED]] when it hears it.',
+    plot: () => figLayout()},
+  air: {lvl: 'link', name: 'How weak does the signal get?', short: 'Over the air', sub: 'received power vs distance, two wire dipoles', anchor: 'bench-measurements-phase-0',
+    text: 'A normal radio uses crystals, filters and tuned circuits. This one has none of them, so how much signal is there to work with? On the bench, with an earlier chip (ttsky25b, its ring at 518 MHz) and 14.5 cm wire dipoles held parallel, the receiver got −44 dBm at 1 m, falling as 1/d^1.89 out to 4 m. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. On that model the −94 dBm sensitivity is reached at about 45 m: 100,000× weaker than at 1 m, and below the receiver\'s own noise. Distances past 4 m are that model, not a measurement.',
     plot: () => figPath()},
+  ook: {lvl: 'link', name: 'Trick 1: keep the radio simple', short: 'On-off keying', sub: 'on-off keying (OOK)', anchor: 'on-off-keying-ook',
+    text: 'The transmitter switches a 433 MHz carrier on and off, at about +4 dBm, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. That is why the carrier can be sloppy, and a [[tx_ring|free-running ring of inverters]] is good enough. Each on/off bit lasts 104 µs, about 45,000 carrier cycles (the docs and code call these bits chips). Near the limit, though, a 1 hardly stands out from the noise and many bits come out wrong (red): move the boards closer and they clear.',
+    plot: () => figCode()},
+  code: {lvl: 'link', name: 'Trick 2: send a pattern, not a bit', short: 'The code', sub: 'a 127-chip Gold code, checked by correlation', anchor: 'finding-a-signal-weaker-than-the-noise',
+    text: 'The transmitter sends a fixed pattern of 127 chips, a [[gold|Gold code]] picked by the DIP switches, three times. The receiver doesn\'t need every chip right. After each chip it [[corr|counts how many of the last 127 match]] the pattern it expects. Noise matches about half, ~64. 97 or more is a detection, 6σ above chance, so a quarter of the chips can be wrong and the code still gets through. The [[led|LED]] toggles when two of the three bursts are detected. This is what lets the receiver work where the bits on their own are lost in the noise.',
+    plot: () => figScore()},
   gold: {lvl: 'tx', rtl: 'rd_gold', name: 'Gold code (digital)', sub: 'radio_digital macro, TX side', anchor: 'digital-radio_digital-macro', color: 'dig',
     text: 'The 7 DIP switches pick one of 128 Gold codes: two 7-bit LFSRs, the second started later by the switch value, XORed together. Flip the switches below. 127 noise-like bits, half on, half off. Each bit lasts 104 µs, so one burst takes 13.2 ms. The TX keys the [[tx_ring|ring]] with the code three times, with 64 silent bits between bursts.',
     plot: () => figGold()},
@@ -405,6 +412,12 @@ const B = {
 };
 
 // ------------------------------------------------------------------ figures
+function figLayout() {
+  if (!D.layout_jpg) return NODATA('layout image');
+  return fig('the whole design: 3 × 2 Tiny Tapeout tiles, 493 × 226 µm',
+    `<img class="layoutimg" src="data:image/jpeg;base64,${D.layout_jpg}" alt="The chip layout: analog blocks on the left, the digital block on the right">`, 'GitHub gds action render') +
+    '<p>Left: the analog, the transmitter and receiver blocks and their decoupling capacitors. Right: the digital, which makes the code, scores what the receiver hears and trims the comparator.</p>';
+}
 function figCode() {
   const g = GOLD(), r = run();
   return fig(`code 0x${D.code.toString(16).toUpperCase()}: sent, and decided at ${DBM(prx())}`,
@@ -674,8 +687,8 @@ function linkScene(focus = null) {
 }
 function levelLink() {
   const p = prx(), r = run(), margin = p - SENS;
-  return `<h1>Send a 1 by switching the radio on. Send a 0 by switching it off.</h1>
-  <p class="lede">Two boards run the same chip: one transmits, the other receives. Each antenna is two bare wires. Click a board to open its signal chain, the gap for how power relates to distance, the LED for how a send is confirmed, or the bits below for the idea.</p>
+  return `<h1>Does it get through?</h1>
+  <p class="lede">Two boards run the same chip: the left one sends its code three times, the right one toggles its LED when it hears two of them. Each antenna is two bare wires. Move the received-power slider to move the boards apart. Click a board to open its signal chain, the gap for how power relates to distance, the LED for how a send is confirmed, or the bits below for the idea.</p>
   ${linkScene()}
   <div class="readouts">
     <div class="ro"><small>TX power</small><b>+4 dBm</b></div>
@@ -827,10 +840,11 @@ function dgSVG(opts = {}) {
 
 // ------------------------------------------------------------------ tour
 const TOUR = [
-  {level: 'link', block: null, p: -44, cap: 'Two boards, the same chip. The left one transmits, the right one receives, 1 m apart.'},
-  {level: 'link', block: 'ook', cap: 'On-off keying: carrier on is a 1, carrier off is a 0. The pattern is a 127-bit Gold code.'},
-  {level: 'link', block: 'air', cap: 'At 1 m the receiver sees −44 dBm. It still works around −94 dBm: 50 dB, 100,000× less power.'},
-  {level: 'chip', block: null, cap: 'Functional diagram'},
+  {level: 'link', block: 'intro', p: -44, cap: 'My first radio chip: transmitter and receiver in six Tiny Tapeout tiles, with two bare wires for an antenna.'},
+  {level: 'link', block: 'air', p: -94, cap: 'At 1 m the receiver sees −44 dBm. At ~45 m it is down to −94 dBm: 100,000× weaker, below its own noise.'},
+  {level: 'link', block: 'ook', p: -94, cap: 'Trick 1: on is a 1, off is a 0. The receiver only measures energy, so the carrier needs no crystal.'},
+  {level: 'link', block: 'code', p: -94, cap: 'Trick 2: send a 127-chip pattern. Noise matches ~64; 97 is a detection, even with a quarter of the chips wrong.'},
+  {level: 'chip', block: null, p: -44, cap: 'Functional diagram'},
   {level: 'chip', focus: 'tx', block: null, cap: 'The transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
   {level: 'chip', block: 'gold', cap: 'The digital generates the Gold code from two 7-bit LFSRs and sends it three times.'},
   {level: 'chip', block: 'tx_ring', cap: 'A free-running ring of inverters. No crystal, no PLL: the receiver doesn\'t care about the exact frequency.'},
@@ -846,6 +860,7 @@ const TOUR = [
   {level: 'chip', block: 'slicer', cap: 'Eight samples per bit, majority vote, at four timing offsets at once.'},
   {level: 'chip', block: 'corr', cap: 'Count matches with the expected code: chance is ~64, 97 is a detection. Lots of wrong bits are fine.'},
   {level: 'chip', block: 'led', cap: 'Two detections one burst period apart toggle the LED. Noise and other codes don\'t.'},
+  {level: 'link', block: null, p: -88, cap: 'Back to the two boards: about 30 m apart on the model, and the LED still toggles. Move them further and it stops.'},
 ];
 
 // ------------------------------------------------------------------ render
@@ -900,7 +915,7 @@ function build() {
   let cr = `<button type="button" data-go="link"${S.level === 'link' && !S.block ? ' aria-current="page"' : ''}>Link</button>`;
   if (S.level === 'chip') cr += `<span class="sep">›</span><button type="button" data-go="chip"${!S.block && !S.focus ? ' aria-current="page"' : ''}>Chip</button>`;
   if (S.level === 'chip' && S.focus && !S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${S.focus === 'tx' ? 'Transmitter' : 'Receiver'}</button>`;
-  if (S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${B[S.block].name}</button>`;
+  if (S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${B[S.block].short || B[S.block].name}</button>`;
   $('crumbs').innerHTML = cr;
   const p = prx();
   $('distout').textContent = `${p.toFixed(0)} dBm ≈ ${fmtd(dist())}`;
