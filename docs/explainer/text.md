@@ -8,7 +8,7 @@ cap: My first radio chip: transmitter and receiver in six Tiny Tapeout tiles, wi
 
 My first semiconductor radio, and one of the first radios on a Tiny Tapeout shuttle. The transmitter and the receiver share six tiles, about 0.1 mm² of silicon.
 
-It's designed to use the minimum of external components, an external 10MHz clock and 2 16.5cm long wires for the antenna. It should work to around 80–90 meters in good conditions.
+It's designed to use the minimum of external components, an external 10 MHz clock and two 16.5 cm long wires for the antenna. It should work to around 80–90 meters in good conditions.
 
 The design can either transmit or receive, so 2 demoboards are needed to demonstrate. Pressing reset on one toggles the LED on the other.
 
@@ -23,7 +23,7 @@ That transmitter was weak: a 1.8 V pad with only about 200 mV of swing, −8.5 d
 
 Further out the reflection off the ground is expected to cancel more and more of the direct path. With both boards 1 m above the ground that takes over near 6 m, and the two-ray model then loses 40 dB per decade.
 
-The receiver has a sensitivity of about -94dBm, so I'm expecting a range of about 90 m.
+The receiver has a sensitivity of about −94 dBm, so I'm expecting a range of about 90 m.
 
 ## ook
 name: Trick 1: keep the radio simple
