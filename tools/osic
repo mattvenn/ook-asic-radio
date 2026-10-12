@@ -2,6 +2,10 @@
 # Run a command inside the IIC-OSIC-TOOLS image (headless, throwaway container),
 # with ~/work/asic-workshop mounted at /foss/designs and the current directory
 # mapped to the same place inside. Example:  tools/osic ngspice -b sim/tb.cir
+# Already inside the image (no docker, e.g. the sim-0 pod): run directly.
+if [ -n "${IIC_OSIC_TOOLS_VERSION:-}" ] && ! command -v docker >/dev/null; then
+  exec "$(dirname "$0")/osic-inimage" "$@"
+fi
 IMAGE=${OSIC_IMAGE:-hpretl/iic-osic-tools:2026.05}
 HOST_ROOT=/home/matt/work/asic-workshop
 here=$(pwd -P)

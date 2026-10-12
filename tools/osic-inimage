@@ -1,0 +1,15 @@
+#!/bin/bash
+# Stand-in for tools/osic / tools/osic-mac when already running inside the IIC-OSIC-TOOLS image
+# (e.g. the sim-0 pod): no docker, so run the command directly in a fresh login shell with
+# sky130A selected (the image's default PDK is ihp-sg13g2, and its profile only re-inits when
+# FOSS_INIT_DONE is unset). Sourced by tools/osic and tools/osic-mac, which exec it in that case.
+REPO=$(cd "$(dirname "$0")/.." && pwd -P)
+mkdir -p "$REPO/build"
+cp "$REPO/.spiceinit" "$REPO/build/.spiceinit"
+PRE=
+# OSIC_MAGIC=<bin dir>: use that magic instead of the image's (sim-0: ~/.local/magic642/bin, the
+# 2026.05 image's 8.3.642; 8.3.684 drops node-to-substrate C from ext2spice output)
+if [ -n "${OSIC_MAGIC:-}" ]; then PRE="export PATH=$OSIC_MAGIC:\$PATH; "; fi
+if [ -n "${OSIC_PDK_ROOT:-}" ]; then PRE="${PRE}export PDK_ROOT=$OSIC_PDK_ROOT PDKPATH=$OSIC_PDK_ROOT/sky130A; "; fi
+exec env -u FOSS_INIT_DONE -u PDKPATH -u SPICE_USERINIT_DIR -u KLAYOUT_PATH -u STD_CELL_LIBRARY \
+  PDK=sky130A bash -lc "$PRE$(printf '%q ' "$@")" 2>&1 | grep -v '^\[INFO\]'

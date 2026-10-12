@@ -28,7 +28,11 @@ import matplotlib.pyplot as plt
 B = os.path.join(ROOT, 'build')
 ON = [(60e-6, 164e-6), (268e-6, 372e-6)]      # chip-on intervals (joined.sh Vkey)
 OFF = [(20e-6, 60e-6), (164e-6, 268e-6), (372e-6, 400e-6)]
-SETTLE = 40e-6                                  # skip the LPF transition after each edge
+SETTLE = 40e-6                                  # skip the LPF transition after each key edge
+SETTLE_DET = 2e-6                               # det has no LPF lag: skip only the edge itself
+# The settle applies after key edges only (the first off chip starts at 20 us, already settled):
+# with it applied everywhere, the off level came from one 64 us window (204-268 us), and a slow det
+# wander there read as a 1/3-size swing at -90 dBm (2026-10-11; per chip it matches the model).
 
 
 def split_model_det(lvl):
@@ -40,10 +44,10 @@ def split_model_det(lvl):
     return f(pn), f(pn + ps)
 
 
-def window_stats(t, y, spans):
+def window_stats(t, y, spans, settle=SETTLE):
     vals = []
     for a, b in spans:
-        m = (t >= a + SETTLE) & (t < b)
+        m = (t >= a + (settle if a > OFF[0][0] else 0)) & (t < b)
         if m.any():
             vals.append(y[m])
     v = np.concatenate(vals) if vals else np.array([np.nan])
@@ -62,8 +66,8 @@ def main(levels):
         v = read_raw(path)[0]['vars']
         t = np.real(v['time'])
         det, lpf, avg = (np.real(v[k]) for k in ('v(det)', 'v(lpf)', 'v(avg)'))
-        d_off, _ = window_stats(t, det, OFF)
-        d_on, _ = window_stats(t, det, ON)
+        d_off, _ = window_stats(t, det, OFF, SETTLE_DET)
+        d_on, _ = window_stats(t, det, ON, SETTLE_DET)
         l_off, n_off = window_stats(t, lpf, OFF)
         l_on, n_on = window_stats(t, lpf, ON)
         m_off, m_on = split_model_det(lvl)

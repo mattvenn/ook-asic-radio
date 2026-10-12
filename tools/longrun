@@ -12,6 +12,9 @@ mkdir -p "$repo/build"
 log="$repo/build/$name.log"; done_="$repo/build/$name.done"
 rm -f "$done_"
 cd "$repo"
-DONE="$done_" setsid nohup systemd-inhibit --what=sleep:idle --who=asic-radio --why="$name" \
+# no systemd in a container (sim-0 pod): just detach
+INHIBIT=(systemd-inhibit --what=sleep:idle --who=asic-radio --why="$name")
+systemd-inhibit --what=sleep:idle --who=asic-radio --why=probe true 2>/dev/null || INHIBIT=()
+DONE="$done_" setsid nohup "${INHIBIT[@]}" \
   bash -c '"$@"; rc=$?; echo "exit $rc $(date)" > "$DONE"' _ "$@" > "$log" 2>&1 < /dev/null &
 echo "started '$name' (pid $!): log $log, done-marker $done_"

@@ -4,6 +4,10 @@
 # Usage, from the repo root: tools/osic-mac <command...>
 # OSIC_PDK_ROOT=<dir> uses that PDK root instead of the image's (e.g. the TT precheck's open_pdks version:
 #   ciel enable --pdk-family sky130 --pdk-root <dir> 0536d02d875c8f67dd7cca3902ac457e62f20005).
+# Already inside the image (no docker, e.g. the sim-0 pod): run directly.
+if [ -n "${IIC_OSIC_TOOLS_VERSION:-}" ] && ! command -v docker >/dev/null; then
+  exec "$(dirname "$0")/osic-inimage" "$@"
+fi
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 mkdir -p "$REPO/build"
 cp "$REPO/.spiceinit" "$REPO/build/.spiceinit"
