@@ -35,7 +35,7 @@ def lpf_rc():
     r = s.place('sky130_fd_pr/res_xhigh_po_0p35.sym', 0, -150, rot=1, name='R1',
                 L="'lr'", model='res_xhigh_po_0p35', mult='1', spiceprefix='X')
     s.connect(r, B='VSS')
-    c = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 200, -120, name='C1',
+    c = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 200, -120, flip=1, name='C1',
                 model='cap_mim_m3_1', W='30', L='30', MF="'nc'", spiceprefix='X')
     s.route((-300, -150), r.pin('M'))
     s.port((-300, -150), 'in')
