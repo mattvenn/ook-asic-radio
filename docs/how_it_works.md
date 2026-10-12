@@ -109,8 +109,8 @@ Left: gain to each stage output, peaking around 433 MHz. Middle: rejection of co
 At −70 dBm (fully joined transistor-level run): the detector output, then the filtered signal crossing the slow average, then the comparator output.
 ![RX at -70 dBm](../sim/plots/rx_joined.png)
 
-At −94 dBm the signal is buried in noise. Here the real RTL servo drives the real DAC and comparator: the trim code settles and dithers, and the burst is still detected.
-![RX at -94 dBm](../sim/plots/mixed_-94.png)
+At −92 dBm the signal is buried in noise. Here the real RTL servo drives the real DAC and comparator: the trim code settles and dithers, and the burst is still detected.
+![RX at -92 dBm](../sim/plots/mixed_-92.png)
 
 ### Support
 - [bias_gen](https://xschem-viewer.com/?file=https://github.com/mattvenn/ook-asic-radio/blob/main/xschem/bias_gen.sch): makes the reference currents and the mid-rail voltage for every analog block.
