@@ -11,7 +11,7 @@ Format: one section per page, in tour order.
     <page text: blank lines separate paragraphs>
 
 Lines before the first section are comments (kept as they are when the edit server writes the file).
-In page text, [[block|words]] links the words to that block's page, and {name} is a number from the
+In page text, [[block|words]] links the words to that block's page, [words](https://...) links out, and {name} is a number from the
 simulations (see FILL in template.html).
 """
 import os

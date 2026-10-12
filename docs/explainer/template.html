@@ -721,7 +721,8 @@ function chipPage() {
 }
 /* one block per page: its story on the left, its plots on the right (the over-the-air ideas put the link scene above their plots) */
 /* [[block|words]] in a page's text links those words to that block's page */
-const xrefs = t => t.replace(/\[\[(\w+)\|([^\]]+)\]\]/g, (m, id, w) => B[id] ? `<button type="button" class="xref" data-block="${id}">${w}</button>` : w);
+const xrefs = t => t.replace(/\[\[(\w+)\|([^\]]+)\]\]/g, (m, id, w) => B[id] ? `<button type="button" class="xref" data-block="${id}">${w}</button>` : w)
+  .replace(/\[([^\[\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (m, w, u) => `<a href="${u}" target="_blank" rel="noopener">${w}</a>`);   // [words](https://...) links out
 function focusPage(id) {
   const b = B[id], isLink = b.lvl === 'link';
   useGeo('detail');
