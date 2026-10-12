@@ -947,13 +947,13 @@ function codeStrip(b = 0, ib = 0) {
   const done = k => b > k || (b === k && ib >= 127), dets = [0, 1, 2].filter(k => done(k) && pk[k] >= th).length;
   const box = k => done(k) ? `<div class="burst ${pk[k] >= th ? 'ok' : 'bad'}">burst ${k + 1}: peak ${pk[k]} ${pk[k] >= th ? '✓' : '✗'}</div>`
     : b === k ? `<div class="burst now">burst ${k + 1}: sending</div>` : `<div class="burst later">burst ${k + 1}</div>`;
-  const led = r.toggled && dets >= 2 ? '<div class="burst ok">LED: toggled (2 of 3)</div>' : b >= 3 || (b === 2 && done(2)) ? '<div class="burst bad">LED: no toggle</div>' : '<div class="burst later">LED: waiting for 2 of 3</div>';
+  const led = r.toggled && dets >= 2 ? `<div class="burst ok">LED: toggled ${anim.led ? 'on' : 'off'} (2 of 3)</div>` : b >= 3 || (b === 2 && done(2)) ? '<div class="burst bad">LED: no toggle</div>' : '<div class="burst later">LED: waiting for 2 of 3</div>';
   return `<div class="bursts">${[0, 1, 2].map(box).join('')}${led}</div>` + fig(`bit ${N(b < 3 && ib < 127 ? ib + 1 : '–', 3)} of 127 · carrier ${N(on ? 'ON' : 'off', 3, 'left')}`,
     strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {ph: b < 3 && ib < 127 ? ib : -1, aria: 'sent and received bits'}),
     `received bits: link model run at ${DBM(r.lvl)}`);
 }
 const anim = {
-  t0: 0, reset() { this.t0 = performance.now(); },
+  t0: 0, led: false, _send: 0, reset() { this.t0 = performance.now(); this._send++; this._lastPos = null; },   // each restart is a new send; the LED state carries over
   frame(now) {
     requestAnimationFrame(t => anim.frame(t));
     if (!S.playing) { this.t0 += now - (this._last || now); }   // paused (p): every animation's clock stands still
@@ -970,6 +970,8 @@ const anim = {
     if (!D || S.level !== 'link') return;
     const rate = 30, m = D.model, total = 3 * m.period + 40;
     const pos = Math.floor((now - this.t0) / 1000 * rate) % total;
+    if (this._lastPos != null && pos < this._lastPos) this._send++;   // the loop came round: the next send (in real life after the ~1 s holdoff)
+    this._lastPos = pos;
     const b = Math.floor(pos / m.period), ib = pos % m.period, g = GOLD();
     const on = b < 3 && ib < 127 ? g[ib] : 0;
     const r = run();
@@ -993,7 +995,10 @@ const anim = {
     }
     const li = Math.min(r._s.length - 1, m.lead_chips + pos);
     const live = $('live'); if (live) { const sc = b < 3 ? r._s[li] : '–'; live.textContent = sc; live.className = sc >= m.thresh ? 'good' : ''; }
-    const led = $('led'); if (led) { const pk = burstPeaks(r), second = [0, 1, 2].filter(k => pk[k] >= m.thresh)[1]; const lit = r.toggled && second != null && pos >= second * m.period + 127; led.setAttribute('fill', lit ? 'var(--ok)' : '#2a3741'); }
+    // the LED toggles (rd_rx.v): a send whose second detection lands flips it, on one send and off the next; it never goes off by itself
+    { const pk = burstPeaks(r), second = [0, 1, 2].filter(k => pk[k] >= m.thresh)[1];
+      if (r.toggled && second != null && pos >= second * m.period + 127 && this._flipped !== this._send) { this._flipped = this._send; this.led = !this.led; } }
+    const led = $('led'); if (led) led.setAttribute('fill', this.led ? 'var(--ok)' : '#2a3741');
     const cs = $('codestrip');
     if (cs && (this._pos !== ib || this._lvl !== r.lvl || !cs.firstChild)) {
       this._pos = ib; this._lvl = r.lvl; this._b = b;
