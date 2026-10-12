@@ -483,12 +483,8 @@ function figChain() {
   // the tone transient nearest the slider (rf.sh's -60 dBm run, plus rf_levels.sh's other levels)
   const TL = toneLevels(), {br, n} = toneAt(prx());
   const x = n.map((_, i) => i), y = n.map(v => v.vpk * 1000);
-  // at the received power now: each stage's output from the chain's CW sweep (taps o1..o5, out = stages 1..6), log-interpolated
-  const L = D.logdet, p = Math.max(L.pin[0], Math.min(L.pin[L.pin.length - 1], prx()));
-  const nowY = L.tap_amp.map(a => 1000 * Math.pow(10, interp(p, L.pin, a.map(Math.log10)))), nowX = nowY.map((_, i) => i + 2);
   let h = fig(`peak signal at each stage, ${DBM(prx())}`, plot({series: [
-      {d: {x: nowX, y: nowY}, color: 'var(--sig2)', label: 'now (CW sweep)', w: 2.5}, {d: {x: nowX, y: nowY}, color: 'var(--sig2)', pts: true},
-      {d: {x, y}, color: 'var(--rx)', label: 'tone transient', w: 1.5, op: .7}, {d: {x, y}, color: 'var(--rx)', pts: true}],
+      {d: {x, y}, color: 'var(--rx)', w: 2}, {d: {x, y}, color: 'var(--rx)', pts: true}],   // the tone transient only: the log_det CW sweep gave the same points
     ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), runsNote(br, 'rx_rf_tone'));
   h += '<p>Each stage multiplies the signal until the last stages limit at ~1 V: that limiting is what the log detector uses.</p>';
   const cols = ['#e8eef2', '#9db0bc'].concat(STAGE_COLS);   // antenna, pad, then stages 1-6 in log_det's colours
