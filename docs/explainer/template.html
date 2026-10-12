@@ -445,7 +445,7 @@ function figCode() {
   const g = GOLD(), r = run();
   return fig(`code 0x${D.code.toString(16).toUpperCase()}: sent, and decided at ${DBM(prx())}`,
     strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {aria: 'sent and received bits'}),
-    'model/ link model, one burst') + `<p>Wrong chips are red. ${N(r.chip_ok + '/127', 7)} right: ${r.chip_ok < 97 ? 'below 97, not a detection.' : '97 or more, a detection.'}</p>`;
+    'model/ link model, one burst') + `<p>Wrong bits are red. ${N(r.chip_ok + '/127', 7)} right: ${r.chip_ok < 97 ? 'below 97, not a detection.' : '97 or more, a detection.'}</p>`;
 }
 function figPath() {
   const p = D.path, fit = {x: [], y: []}, old = {x: [], y: []}, two = {x: [], y: []};
