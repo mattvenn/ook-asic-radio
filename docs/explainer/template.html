@@ -836,6 +836,7 @@ const TOUR = [
   {level: 'link', block: 'air', p: -94, cap: 'At 1 m the receiver sees −44 dBm. At ~45 m it is down to −94 dBm: 100,000× weaker, below its own noise.'},
   {level: 'link', block: 'ook', p: -94, cap: 'Trick 1: on is a 1, off is a 0. The receiver only measures energy, so the carrier needs no crystal.'},
   {level: 'link', block: 'code', p: -94, cap: 'Trick 2: send a 127-chip pattern. Noise matches ~64; 97 is a detection, even with a quarter of the chips wrong.'},
+  {level: 'link', block: null, p: -94, cap: 'Putting it together: the code goes out three times, some chips arrive wrong, the score still clears 97 and the LED toggles.'},
   {level: 'chip', block: null, p: -44, cap: 'Functional diagram'},
   {level: 'chip', focus: 'tx', block: null, cap: 'The transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
   {level: 'chip', block: 'gold', cap: 'The digital generates the Gold code from two 7-bit LFSRs and sends it three times.'},
@@ -852,7 +853,6 @@ const TOUR = [
   {level: 'chip', block: 'slicer', cap: 'Eight samples per bit, majority vote, at four timing offsets at once.'},
   {level: 'chip', block: 'corr', cap: 'Count matches with the expected code: chance is ~64, 97 is a detection. Lots of wrong bits are fine.'},
   {level: 'chip', block: 'led', cap: 'Two detections one burst period apart toggle the LED. Noise and other codes don\'t.'},
-  {level: 'link', block: null, p: -88, cap: 'Back to the two boards: about 30 m apart on the model, and the LED still toggles. Move them further and it stops.'},
 ];
 
 // ------------------------------------------------------------------ render
