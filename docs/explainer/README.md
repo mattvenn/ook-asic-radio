@@ -27,4 +27,8 @@ The chip page and the per-block maps draw the system diagram from the floorplan 
 `sims.sh` stubs `pyvisa` (pulled in through `bench/scope.py`) so `gen_det.py` runs in the osic image.
 
 ## Editing
-Block text, tour captions and figure choices are in `template.html` (`B`, `TOUR`, `fig*` functions). Rebuild with `gendata.py` after editing.
+**Words** (headings, page text, tour captions) are in [`text.md`](text.md), one section per page in tour order; the format and the `{placeholders}` for simulated numbers are described in `textfile.py`. Two ways to change them:
+- Edit `text.md` and rebuild with `gendata.py`.
+- Type into the page: `python3 docs/explainer/edit.py`, open <http://localhost:8000/>, press `e`. Headings, subtitles, page text and the tour caption (bar at the bottom) become editable; each edit saves to `text.md` and `explainer.html` is rebuilt in the background. `e` again shows the result. Commit `text.md` and `explainer.html` afterwards.
+
+**Everything else** (figures, tour order, the block diagram) is in `template.html`: `B` (each page's plot and links), `TOUR` (order), `fig*` functions. Rebuild with `gendata.py` after editing.

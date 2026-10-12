@@ -258,6 +258,14 @@ def model_sweep():
             'thresh': radio.THRESH}
 
 
+def words():
+    """Headings, page text and tour captions: docs/explainer/text.md (format in textfile.py)."""
+    import textfile
+    pages = textfile.load()[1]
+    report.append(f'text    docs/explainer/text.md ({len(pages)} pages)')
+    return pages
+
+
 def layout_jpg():
     """The whole-design render for the opening page: the GitHub gds action's gds_render.png
     (artifact of the same name), scaled to 1200 px wide JPEG as docs/explainer/layout.jpg."""
@@ -278,7 +286,7 @@ def main():
     import gold as G   # the two LFSR sequences: code k = M1 xor M2 shifted by k (k = 127: M1 alone), as in model/gold.py
     payload = {'code': CODE, 'gold': gold_chips(), 'm1': ''.join(map(str, G.M1)), 'm2': ''.join(map(str, G.M2)), 'path': path_loss(), 'tx': tx(), 'rx_rf': rx_rf(),
                'logdet': logdet(), 'bb': [b for b in map(baseband, BB_LEVELS) if b],
-               'model': model_sweep(), 'layout_jpg': layout_jpg()}
+               'model': model_sweep(), 'layout_jpg': layout_jpg(), 'text': words()}
     blob = base64.b64encode(gzip.compress(json.dumps(payload, separators=(',', ':')).encode(), 9)).decode()
     html = open(os.path.join(HERE, 'template.html')).read().replace('/*__PAYLOAD__*/', blob)
     out = os.path.join(ROOT, 'docs', 'explainer.html')

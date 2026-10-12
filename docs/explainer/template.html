@@ -43,6 +43,13 @@ main{flex:1; display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; pad
 .stage > .inner{display:flex; flex-direction:column; gap:1rem}
 .stage h1{margin:0; font-size:1.55rem; line-height:1.2; letter-spacing:-.01em}
 .layoutimg{display:block; width:100%; height:auto; aspect-ratio:4932/2258; border-radius:6px}
+.editable{outline:1px dashed #6f8491; outline-offset:2px; border-radius:3px; cursor:text; white-space:pre-wrap; min-width:4ch; display:inline-block}
+div.editable, h1.editable, h2.editable{display:block}
+.editable:focus{outline:2px solid var(--sig)}
+.edbody{margin-top:1rem; line-height:1.5}
+.capbar{position:fixed; left:0; right:0; bottom:0; z-index:30; padding:.55rem 1rem; background:#0b0f12; border-top:1px solid #2a3741; font-size:.95rem}
+.capbar .editable{display:inline; min-width:20ch}
+.capbar .capl, #edstat{color:var(--muted); margin:0 .5rem}
 .stage .lede{margin:0; color:var(--muted); max-width:52rem}
 svg text{font-family:var(--sans)}
 .scene{width:100%; height:8rem; display:block}  /* about two readout rows */
@@ -177,6 +184,7 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
   </div>
 </header>
 <main id="main"><div class="loading">Loading simulation data…</div></main>
+<div class="capbar" id="capbar" hidden></div>
 <footer>
   <span><a href="https://github.com/mattvenn/ook-asic-radio/blob/main/docs/how_it_works.md">More details</a> · <a href="https://github.com/mattvenn/ook-asic-radio">github.com/mattvenn/ook-asic-radio</a></span>
 </footer>
@@ -189,6 +197,7 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
       <li><kbd>1</kbd>–<kbd>9</kbd>: go to that step; two digits quickly for steps 10 and up (<kbd>1</kbd> <kbd>2</kbd>: step 12)</li>
       <li><kbd>[</kbd> <kbd>]</kbd>: received power 1 dB stronger / weaker</li>
       <li><kbd>p</kbd>: pause or play the animation</li>
+      <li><kbd>e</kbd>: edit the words on the page (saves to text.md when served by <code>edit.py</code>)</li>
       <li><kbd>?</kbd>: this help</li>
     </ul>
     <p>The URL keeps the step (<code>#step=7</code>) so a take can restart at the same place.</p>
@@ -353,62 +362,68 @@ function fig(title, body, src) {
 }
 const NODATA = what => `<div class="nodata">No ${what} data in this build: run docs/explainer/sims.sh, then gendata.py.</div>`;
 
+// ------------------------------------------------------------------ words
+/* every heading, page text and tour caption is in docs/explainer/text.md (gendata.py embeds it; edit.py serves it live).
+   Press e to type into the page: edit mode shows the raw text, and edits save back to text.md through edit.py. */
+let TEXT = {};
+const pageId = () => S.block || (S.level + (S.focus ? ':' + S.focus : ''));
+const T = (id, f) => (TEXT[id] || {})[f] || '';
+const nm = id => T(id, 'name') || id;
+const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+/* {name} in the page text: numbers from the simulations */
+const FILL = {
+  f_mhz: () => D.tx ? D.tx.f_mhz : '~485',
+  on_ns: () => D.tx ? D.tx.on_ns : '~4',
+  off_ns: () => D.tx ? D.tx.off_ns : '~5',
+  dipole_swing: () => D.tx ? '±' + D.tx.dipole_swing + ' V (peaks up to ±' + D.tx.dipole_vpk + ' V)' : 'the full swing',
+  comp_high: () => { const b = bb(), hi = b && b.comp ? Math.round(100 * Array.from(dec(b.comp).y).filter(v => v > .9).length / dec(b.comp).y.length) : null;
+    return hi != null ? ` (here 1 for ${N(hi + '%', 4)} of the time)` : ''; },
+};
+const prose = t => t.replace(/\{(\w+)\}/g, (m, k) => FILL[k] ? FILL[k]() : m).split(/\n\s*\n/).map(x => `<p>${xrefs(x)}</p>`).join('');
+/* a heading or text: formatted normally, raw and editable in edit mode */
+const ed = (id, f, tag, attrs, html) => {
+  if (!S.edit) return `<${tag} ${attrs}>${html}</${tag}>`;
+  const cls = (attrs.match(/class="([^"]*)"/) || [])[1] || '', rest = attrs.replace(/class="[^"]*"/, '');
+  return `<${tag} ${rest} class="${cls} editable${f === 'body' ? ' edbody' : ''}" contenteditable="plaintext-only" spellcheck="true" data-id="${id}" data-f="${f}">${esc(T(id, f))}</${tag}>`;
+};
+
 // ------------------------------------------------------------------ blocks
 const B = {
-  intro: {lvl: 'link', scene: false, name: 'A radio on a tiny open-source chip', short: 'The idea', sub: 'my first semiconductor radio', anchor: 'how-it-works',
-    text: 'My first semiconductor radio, and one of the first radios on a Tiny Tapeout shuttle. The transmitter and the receiver share six tiles, about 0.1 mm² of silicon. The 433 MHz carrier comes from a [[tx_ring|ring of inverters]], with no crystal and no PLL. The antenna is two bare wires, with no parts on the board around the chip. The only thing it borrows from the board is a 10 MHz clock for timing. Two boards run the same chip: one sends a code, and the other toggles an [[led|LED]] when it hears it.',
+  intro: {lvl: 'link', scene: false, anchor: 'how-it-works',
     plot: () => figLayout()},
-  air: {lvl: 'link', name: 'How weak does the signal get?', short: 'Over the air', sub: 'received power vs distance, two wire dipoles', anchor: 'bench-measurements-phase-0',
-    text: 'A normal radio uses crystals, filters and tuned circuits. This one has none of them, so how much signal is there to work with? On the bench, with an earlier chip (ttsky25b, its ring at 518 MHz) and 14.5 cm wire dipoles held parallel, the receiver got −44 dBm at 1 m, falling as 1/d^1.89 out to 4 m. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. On that model the −94 dBm sensitivity is reached at about 45 m: 100,000× weaker than at 1 m, and below the receiver\'s own noise. Distances past 4 m are that model, not a measurement.',
+  air: {lvl: 'link', anchor: 'bench-measurements-phase-0',
     plot: () => figPath()},
-  ook: {lvl: 'link', name: 'Trick 1: keep the radio simple', short: 'On-off keying', sub: 'on-off keying (OOK)', anchor: 'on-off-keying-ook',
-    text: 'The transmitter switches a 433 MHz carrier on and off, at about +4 dBm, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. That is why the carrier can be sloppy, and a [[tx_ring|free-running ring of inverters]] is good enough. Each on/off bit lasts 104 µs, about 45,000 carrier cycles (the docs and code call these bits chips). Near the limit, though, a 1 hardly stands out from the noise and many bits come out wrong (red): move the boards closer and they clear.',
+  ook: {lvl: 'link', anchor: 'on-off-keying-ook',
     plot: () => figCode()},
-  code: {lvl: 'link', name: 'Trick 2: send a pattern, not a bit', short: 'The code', sub: 'a 127-chip Gold code, checked by correlation', anchor: 'finding-a-signal-weaker-than-the-noise',
-    text: 'The transmitter sends a fixed pattern of 127 chips, a [[gold|Gold code]] picked by the DIP switches, three times. The receiver doesn\'t need every chip right. After each chip it [[corr|counts how many of the last 127 match]] the pattern it expects. Noise matches about half, ~64. 97 or more is a detection, 6σ above chance, so a quarter of the chips can be wrong and the code still gets through. The [[led|LED]] toggles when two of the three bursts are detected. This is what lets the receiver work where the bits on their own are lost in the noise.',
+  code: {lvl: 'link', anchor: 'finding-a-signal-weaker-than-the-noise',
     plot: () => figScore()},
-  gold: {lvl: 'tx', rtl: 'rd_gold', name: 'Gold code (digital)', sub: 'radio_digital macro, TX side', anchor: 'digital-radio_digital-macro', color: 'dig',
-    text: 'The 7 DIP switches pick one of 128 Gold codes: two 7-bit LFSRs, the second started later by the switch value, XORed together. Flip the switches below. 127 noise-like bits, half on, half off. Each bit lasts 104 µs, so one burst takes 13.2 ms. The TX keys the [[tx_ring|ring]] with the code three times, with 64 silent bits between bursts.',
+  gold: {lvl: 'tx', rtl: 'rd_gold', anchor: 'digital-radio_digital-macro', color: 'dig',
     plot: () => figGold()},
-  tx_ring: {lvl: 'tx', name: 'tx_ring', sub: 'free-running ring oscillator', anchor: 'transmitter', sch: 'tx_ring', color: 'tx',
-    text: () => `A NAND gate (the on/off enable) plus a ring of standard-cell inverters. No crystal: wherever it lands in 330–560 MHz the receiver still works. It runs at ${D.tx ? D.tx.f_mhz : '~485'} MHz in simulation (tt), and silicon ran at ×0.87 of simulation on the bench chip. In simulation it starts on the first edge after the enable (zoom below), and the voltage across the dipole reaches full swing ${D.tx ? D.tx.on_ns : '~4'} ns after the enable rises and dies away ${D.tx ? D.tx.off_ns : '~5'} ns after it falls: about two carrier cycles each way.`,
+  tx_ring: {lvl: 'tx', anchor: 'transmitter', sch: 'tx_ring', color: 'tx',
     plot: () => figTx(['key', 'ring'], '_on')},
-  tx_ls: {lvl: 'tx', name: 'tx_ls', sub: 'level shifter 1.8 V → 3.3 V', anchor: 'transmitter', sch: 'tx_ls', color: 'tx',
-    text: 'Turns the 1.8 V [[tx_ring|ring]] into 3.3 V swings. Its two latch nodes are naturally opposite in phase, which gives the [[tx_drv|dipole\'s two arms]] for free.',
+  tx_ls: {lvl: 'tx', anchor: 'transmitter', sch: 'tx_ls', color: 'tx',
     plot: () => figTx(['a', 'b'])},
-  tx_drv: {lvl: 'tx', name: 'tx_drv ×2', sub: 'output drivers, one per dipole arm', anchor: 'transmitter', sch: 'tx_drv', color: 'tx',
-    text: () => `A tapered buffer: four thick-oxide 3.3 V inverters, each about 4× wider than the one before (PMOS 1.3 → 5 → 20 → 81 µm). The last one is big enough to drive the pin and antenna, but far too big for the small [[tx_ls|level shifter]] to switch quickly; stepping up 4× per stage gets the edge through fastest. One drives ua[3], the other ua[4]. Driving the two arms in antiphase puts the full swing across the dipole: ${D.tx ? '±' + D.tx.dipole_swing + ' V (peaks up to ±' + D.tx.dipole_vpk + ' V)' : 'the full swing'} in simulation, and +3.7 to +3.9 dBm into it across the process corners. Per-arm enables allow a monopole fallback.`,
+  tx_drv: {lvl: 'tx', anchor: 'transmitter', sch: 'tx_drv', color: 'tx',
     plot: () => figTx(['drv_p', 'drv_n', 'dipole'])},
-  lna_chain: {lvl: 'rx', name: 'lna_chain', sub: '6 differential amplifier stages', anchor: 'receiver-amplifier-chain', sch: 'lna_chain', color: 'rx',
-    text: 'Six differential stages, ~80 dB of gain in total (10,000× in voltage). Differential means each stage amplifies the difference between two wires and ignores noise common to both, like the chip\'s own 10 MHz clock. Stage 1 is the low-noise amplifier, and the chain\'s noise figure is about 11 dB. Coupling capacitors between stages stop DC offsets building up.',
+  lna_chain: {lvl: 'rx', anchor: 'receiver-amplifier-chain', sch: 'lna_chain', color: 'rx',
     plot: () => figChain()},
-  log_det: {lvl: 'rx', name: 'log_det', sub: 'successive-detection log detector', anchor: 'receiver-detector-filter-threshold', sch: 'log_det', color: 'rx',
-    text: 'One rectifier cell per [[lna_chain|chain stage]]. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V, about 13 mV per dB. Note it goes down as the signal goes up. The cells rectify the 434 MHz carrier, and the detector\'s output node smooths it with its own ~20 MHz low-pass: the output follows the carrier\'s strength, settling in ~16 ns, and only a few mV of ripple are left of the carrier. Below, the carrier is keyed on at 0.5 µs and off at 2.5 µs: about 870 cycles while on, so the whole view draws it as its envelope; zoom in to see the cycles arrive and the detector settle.',
+  log_det: {lvl: 'rx', anchor: 'receiver-detector-filter-threshold', sch: 'log_det', color: 'rx',
     plot: () => figLogdet()},
-  lpf_rc: {lvl: 'rx', name: 'lpf_rc', sub: '14 kHz RC low-pass', anchor: 'receiver-detector-filter-threshold', sch: 'lpf_rc', color: 'rx',
-    text: 'The [[log_det|log detector]] has already removed the 434 MHz carrier with its own ~20 MHz low-pass, so its output follows how strong the carrier is. But that output is noisy (grey): the [[lna_chain|amplifiers]] have no narrow filter (the receiver accepts anything from 330 to 560 MHz), so they amplify noise across that whole wide band along with the signal, and the detector turns it into a jittery voltage. This 14 kHz RC low-pass, about 1,500 times slower, smooths away everything faster than a 104 µs bit, leaving the on/off envelope.',
+  lpf_rc: {lvl: 'rx', anchor: 'receiver-detector-filter-threshold', sch: 'lpf_rc', color: 'rx',
     plot: () => figLpf()},
-  avg_sc: {lvl: 'rx', name: 'avg_sc', sub: 'switched-capacitor slow average', anchor: 'where-the-threshold-goes', sch: 'avg_sc', color: 'rx',
-    text: 'The threshold for the [[comp_ct|comparator]]. A Gold code is half on and half off, so the slow average of the signal sits in the middle of it at any range. A small capacitor clocked by the digital (sc_phi1/2) acts as a very large resistor, giving a time constant of about 0.45 ms.',
+  avg_sc: {lvl: 'rx', anchor: 'where-the-threshold-goes', sch: 'avg_sc', color: 'rx',
     plot: () => figBB(['lpf', 'avg'])},
-  comp_ct: {lvl: 'rx', name: 'comp_ct', sub: 'continuous-time comparator', anchor: 'receiver-detector-filter-threshold', sch: 'comp_ct', color: 'rx',
-    text: '[[lpf_rc|Filtered signal]] on one input, [[avg_sc|slow average]] on the other: is this bit on or off? Near the sensitivity limit the difference is ~1 mV and the noise is about as big, so many decisions are wrong. That is fine: the [[corr|correlator]] only needs most of them right. The digital [[slicer|samples it]] every 13 µs, 8 times per bit.',
+  comp_ct: {lvl: 'rx', anchor: 'receiver-detector-filter-threshold', sch: 'comp_ct', color: 'rx',
     plot: () => figComp()},
-  r2r: {lvl: 'rx', rtl: 'rd_rx', name: 'r2r + trim servo', sub: '8-bit DAC, offset trim', anchor: 'where-the-threshold-goes', sch: 'r2r', color: 'dac',
-    text: () => { const b = bb(), hi = b && b.comp ? Math.round(100 * Array.from(dec(b.comp).y).filter(v => v > .9).length / dec(b.comp).y.length) : null;
-      return `Every [[comp_ct|comparator]] has a small built-in error from imperfectly matched transistors, its offset: it might only flip when one input is 2 mV above the other. Near the sensitivity limit the signal is only ~1 mV, so without correction the comparator would always say 1 (or always 0). Every 13 µs sample, the digital steps an 8-bit DAC up for a 1 and down for a 0: 7 mV at the DAC, ~0.07 mV at the comparator through a weak second input pair. It settles where the comparator says 1 half the time, which cancels the offset${hi != null ? ` (here 1 for ${N(hi + '%', 4)} of the time)` : ''}. In this simulation a behavioural stand-in plays the digital servo; a mixed-signal run with the real RTL settles the same way at −94 dBm.`; },
+  r2r: {lvl: 'rx', rtl: 'rd_rx', anchor: 'where-the-threshold-goes', sch: 'r2r', color: 'dac',
     plot: () => figTrim()},
-  slicer: {lvl: 'rx', rtl: 'rd_corr', name: 'bit slicer (digital)', sub: 'majority vote per bit', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
-    text: 'The [[comp_ct|comparator]] is read every 13 µs: 8 samples per 104 µs bit. Many samples are wrong near the limit, so the 8 are combined by majority vote (5 or more 1s means on). The receiver doesn\'t know where each bit starts, so instead of recovering the transmitter\'s timing it runs four slicers at once, their windows offset by 2 samples; one of them is always nearly lined up. Each keeps its last 127 bit decisions for the [[corr|correlator]]. Below: green votes are right, red wrong, grey a window split half and half.',
+  slicer: {lvl: 'rx', rtl: 'rd_corr', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
     plot: () => figSlicer()},
-  corr: {lvl: 'rx', rtl: 'rd_corr', name: 'correlator (digital)', sub: 'score the last 127 bits', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
-    text: 'After every bit, count how many of the last 127 [[slicer|decisions]] match this board\'s own [[gold|code]]. Chance gives ~64. 97 or more is a detection: 6σ above chance. Even when a quarter of the samples are wrong the score still clears 97.',
+  corr: {lvl: 'rx', rtl: 'rd_corr', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
     plot: () => figScore()},
-  led: {lvl: 'rx', rtl: 'rd_rx', name: '2-of-3 + LED', sub: 'burst check', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
-    text: 'The TX sends the burst three times. The LED toggles only if two [[corr|detections]] arrive one or two burst periods (191 bits) apart, within ±2 bits, then the code is ignored for ~1 s. Other codes, garage remotes and noise don\'t toggle it.',
+  led: {lvl: 'rx', rtl: 'rd_rx', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
     plot: () => figLed()},
-  bias_gen: {lvl: 'rx', name: 'bias_gen', sub: 'support', anchor: 'support', sch: 'bias_gen', color: 'bias',
-    text: 'Makes the reference currents and the mid-rail voltage for every analog block. On-chip decoupling capacitors supply the TX\'s 433 MHz current spikes locally so they don\'t disturb the receiver.',
+  bias_gen: {lvl: 'rx', anchor: 'support', sch: 'bias_gen', color: 'bias',
     plot: () => ''},
 };
 
@@ -684,8 +699,8 @@ function linkScene(focus = null) {
 }
 function levelLink() {
   const p = prx(), r = run(), margin = p - SENS;
-  return `<h1>Does it get through?</h1>
-  <p class="lede">Two boards run the same chip: the left one sends its code three times, the right one toggles its LED when it hears two of them. Each antenna is two bare wires. Move the received-power slider to move the boards apart. Click a board to open its signal chain, the gap for how power relates to distance, the LED for how a send is confirmed, or the bits below for the idea.</p>
+  return `${ed('link', 'name', 'h1', '', nm('link'))}
+  ${S.edit ? ed('link', 'body', 'div', 'class="lede"', '') : `<p class="lede">${xrefs(T('link', 'body'))}</p>`}
   ${linkScene()}
   <div class="readouts">
     <div class="ro"><small>TX power</small><b>+4 dBm</b></div>
@@ -714,8 +729,8 @@ function focusPage(id) {
   useGeo('stage');
   return `<div class="focus">
     <div class="side">
-      <div><h2 id="dh">${b.name}</h2><p class="sub">${b.sub}</p></div>
-      <p>${xrefs(typeof b.text === 'function' ? b.text() : b.text)}</p>
+      <div>${ed(id, 'name', 'h2', 'id="dh"', nm(id))}${ed(id, 'sub', 'p', 'class="sub"', T(id, 'sub'))}${S.edit ? `<p class="sub">breadcrumb: ${ed(id, 'short', 'span', '', '')}</p>` : ''}</div>
+      ${S.edit ? ed(id, 'body', 'div', '', '') : prose(T(id, 'body'))}
       <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">More details ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}${b.rtl ? `<a class="secondary" href="${REPO}verilog/rtl/${b.rtl}.v" target="_blank" rel="noopener">RTL ↗</a>` : ''}</div>
     </div>
     <div class="fplots"${COL.pz < 1 ? ` style="zoom:${COL.pz}"` : ''}>${isLink && b.scene !== false ? linkScene(id) : ''}${plots || ''}</div>
@@ -805,7 +820,7 @@ function dgSVG(opts = {}) {
   }
   for (const [id, name, sub, x, y, w, h, g] of DG.blocks) {
     const col = DGC[g], pad = g === 'pad', lit = pad ? padOn(id) : on(id), sel = hl && lit && !pad && id !== 'macro', bid = DG2B[id];
-    o.push(`<g opacity="${lit ? 1 : DIM}"${bid ? ` class="hit dgb" role="button" tabindex="0" data-block="${bid}" aria-label="${B[bid].name}"` : ''}>`);
+    o.push(`<g opacity="${lit ? 1 : DIM}"${bid ? ` class="hit dgb" role="button" tabindex="0" data-block="${bid}" aria-label="${nm(bid)}"` : ''}>`);
     o.push(`<rect class="hl" x="${x}" y="${y}" width="${w}" height="${h}" rx="${pad ? 0 : 3}" fill="${col}" fill-opacity="${pad ? .9 : sel ? .3 : .12}" stroke="${col}" stroke-width="${sel ? 3 : 1.4}"/>`);
     if (pad) o.push(`<text x="${x + w / 2}" y="${y + 15}" font-size="10" text-anchor="middle" fill="#0a0e11" font-family="var(--mono)">${name}</text>` + (opts.small ? '' : `<text x="${x + w / 2}" y="${y - 4}" font-size="9" text-anchor="middle" fill="#9db0bc" font-family="var(--mono)">${sub}</text>`));
     else if (id === 'macro') o.push(`<text x="${x + w / 2}" y="${y + 120}" font-size="11" font-weight="600" text-anchor="middle" fill="#e8eef2">radio_digital</text><text x="${x + w / 2}" y="${y + 134}" font-size="9" text-anchor="middle" fill="#9db0bc" font-family="var(--mono)">macro</text>`);
@@ -817,7 +832,7 @@ function dgSVG(opts = {}) {
   }
   for (const [id, name, x, y, w, h] of DG.sub) {
     const lit = on(id), sel = hl && lit;
-    o.push(`<g opacity="${lit ? 1 : DIM}" class="hit dgb" role="button" tabindex="0" data-block="${DG2B[id]}" aria-label="${B[DG2B[id]].name}">
+    o.push(`<g opacity="${lit ? 1 : DIM}" class="hit dgb" role="button" tabindex="0" data-block="${DG2B[id]}" aria-label="${nm(DG2B[id])}">
       <rect class="hl" x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${DGC.dig}" fill-opacity="${sel ? .35 : .15}" stroke="${DGC.dig}" stroke-width="${sel ? 3 : 1}"/>
       <text x="${x + w / 2}" y="${y + h / 2 + 4}" font-size="11" text-anchor="middle" fill="#e8eef2">${name}</text></g>`);
   }
@@ -833,27 +848,27 @@ function dgSVG(opts = {}) {
 
 // ------------------------------------------------------------------ tour
 const TOUR = [
-  {level: 'link', block: 'intro', cap: 'My first radio chip: transmitter and receiver in six Tiny Tapeout tiles, with two bare wires for an antenna.'},
-  {level: 'link', block: 'air', cap: 'At 1 m the receiver sees −44 dBm. At ~45 m it is down to −94 dBm: 100,000× weaker, below its own noise.'},
-  {level: 'link', block: 'ook', cap: 'Trick 1: on is a 1, off is a 0. The receiver only measures energy, so the carrier needs no crystal.'},
-  {level: 'link', block: 'code', cap: 'Trick 2: send a 127-chip pattern. Noise matches ~64; 97 is a detection, even with a quarter of the chips wrong.'},
-  {level: 'link', block: null, cap: 'Putting it together: the code goes out three times, some chips arrive wrong, the score still clears 97 and the LED toggles.'},
-  {level: 'chip', block: null, cap: 'Functional diagram'},
-  {level: 'chip', focus: 'tx', block: null, cap: 'The transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
-  {level: 'chip', block: 'gold', cap: 'The digital generates the Gold code from two 7-bit LFSRs and sends it three times.'},
-  {level: 'chip', block: 'tx_ring', cap: 'A free-running ring of inverters. No crystal, no PLL: the receiver doesn\'t care about the exact frequency.'},
-  {level: 'chip', block: 'tx_ls', cap: 'The level shifter\'s two latch nodes are opposite in phase: one for each arm of the dipole.'},
-  {level: 'chip', block: 'tx_drv', cap: 'Two 3.3 V drivers in antiphase put about +4 dBm into the wire dipole.'},
-  {level: 'chip', focus: 'rx', block: null, cap: 'The receiver: amplify, measure energy, compare, then let the digital decide.'},
-  {level: 'chip', block: 'lna_chain', cap: 'Six differential stages, ~80 dB of gain (10,000×). The last stages limit: that is used by the detector.'},
-  {level: 'chip', block: 'log_det', cap: 'The log detector turns RF power into a voltage that is a straight line in dB: 70 dB in ~1 V.'},
-  {level: 'chip', block: 'lpf_rc', cap: 'A 14 kHz low-pass keeps the bit-rate envelope and removes most of the noise.'},
-  {level: 'chip', block: 'avg_sc', cap: 'The threshold is the signal\'s own slow average: the code is half on, half off, so it sits in the middle.'},
-  {level: 'chip', block: 'comp_ct', cap: 'The comparator decides on or off. Near the limit the difference is ~1 mV, as big as the noise.'},
-  {level: 'chip', block: 'r2r', cap: 'An 8-bit DAC servo cancels the comparator\'s own offset in ~0.07 mV steps.'},
-  {level: 'chip', block: 'slicer', cap: 'Eight samples per bit, majority vote, at four timing offsets at once.'},
-  {level: 'chip', block: 'corr', cap: 'Count matches with the expected code: chance is ~64, 97 is a detection. Lots of wrong bits are fine.'},
-  {level: 'chip', block: 'led', cap: 'Two detections one burst period apart toggle the LED. Noise and other codes don\'t.'},
+  {level: 'link', block: 'intro'},
+  {level: 'link', block: 'air'},
+  {level: 'link', block: 'ook'},
+  {level: 'link', block: 'code'},
+  {level: 'link', block: null},
+  {level: 'chip', block: null},
+  {level: 'chip', focus: 'tx', block: null},
+  {level: 'chip', block: 'gold'},
+  {level: 'chip', block: 'tx_ring'},
+  {level: 'chip', block: 'tx_ls'},
+  {level: 'chip', block: 'tx_drv'},
+  {level: 'chip', focus: 'rx', block: null},
+  {level: 'chip', block: 'lna_chain'},
+  {level: 'chip', block: 'log_det'},
+  {level: 'chip', block: 'lpf_rc'},
+  {level: 'chip', block: 'avg_sc'},
+  {level: 'chip', block: 'comp_ct'},
+  {level: 'chip', block: 'r2r'},
+  {level: 'chip', block: 'slicer'},
+  {level: 'chip', block: 'corr'},
+  {level: 'chip', block: 'led'},
 ];
 
 // ------------------------------------------------------------------ render
@@ -903,12 +918,12 @@ function build() {
   useGeo('stage');
   const page = S.block && B[S.block] ? focusPage(S.block) : S.level === 'chip' ? chipPage() : levelLink();
   main.className = '';
-  main.innerHTML = `<section class="stage" aria-label="${S.block ? B[S.block].name : S.level}"><div class="inner"${COL.z < 1 ? ` style="zoom:${COL.z}"` : ''}>${page}</div></section>`;
+  main.innerHTML = `<section class="stage" aria-label="${S.block ? nm(S.block) : S.level}"><div class="inner"${COL.z < 1 ? ` style="zoom:${COL.z}"` : ''}>${page}</div></section>`;
   wirePlots(main);
   let cr = `<button type="button" data-go="link"${S.level === 'link' && !S.block ? ' aria-current="page"' : ''}>Link</button>`;
   if (S.level === 'chip') cr += `<span class="sep">›</span><button type="button" data-go="chip"${!S.block && !S.focus ? ' aria-current="page"' : ''}>Chip</button>`;
   if (S.level === 'chip' && S.focus && !S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${S.focus === 'tx' ? 'Transmitter' : 'Receiver'}</button>`;
-  if (S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${B[S.block].short || B[S.block].name}</button>`;
+  if (S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${T(S.block, 'short') || nm(S.block)}</button>`;
   $('crumbs').innerHTML = cr;
   const p = prx();
   $('distout').textContent = `${p.toFixed(0)} dBm ≈ ${fmtd(dist())}`;
@@ -922,6 +937,8 @@ function build() {
   if (!onTour) { const i = TOUR.findIndex(at); if (i >= 0) { S.step = i; onTour = true; } }
   if (onTour) history.replaceState(null, '', '#step=' + S.step);
   $('stepno').textContent = `${onTour ? S.step + 1 : '–'} / ${TOUR.length}`;
+  const cb = $('capbar'); cb.hidden = !S.edit;
+  if (S.edit && !cb.contains(document.activeElement)) cb.innerHTML = `<b>EDIT</b> <span class="capl">tour caption${onTour ? ' (step ' + (S.step + 1) + ')' : ''}:</span> ${ed(pageId(), 'cap', 'span', '', '')} <span id="edstat">${edStat}</span> <span class="capl">e: done</span>`;
   anim.reset();
   useGeo('stage');
 }
@@ -1023,6 +1040,10 @@ document.addEventListener('click', e => {
 });
 const digits = {n: null, t: 0};
 document.addEventListener('keydown', e => {
+  if (e.target.isContentEditable) {   // typing in edit mode: no shortcuts; Enter ends a one-line field, Esc leaves the field
+    if (e.key === 'Escape' || (e.key === 'Enter' && e.target.dataset.f !== 'body')) { e.preventDefault(); e.target.blur(); }
+    return;
+  }
   if (e.target.closest && e.target.closest('.hit') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.target.closest('.hit').dispatchEvent(new MouseEvent('click', {bubbles: true})); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   // the number keys jump to that tour step, even with the distance slider focused (it keeps focus after a drag);
@@ -1044,7 +1065,20 @@ document.addEventListener('keydown', e => {
   else if (k === 'Escape') { if (S.block) S.block = null; else if (S.focus) S.focus = null; else S.level = 'link'; render(); }
   else if ((k === '[' || k === ']') && usesPower()) { S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); render(); }
   else if (k === 'p') S.playing = !S.playing;
+  else if (k === 'e') { S.edit = !S.edit; if (S.edit && location.protocol === 'file:') edStat = 'not saved: open the page through docs/explainer/edit.py'; render(); }
   else if (k === '?') $('help').hidden = false;
+});
+let edStat = '', saveT = null;
+const setStat = t => { edStat = t; const el = $('edstat'); if (el) el.textContent = t; };
+async function saveText() {
+  if (location.protocol === 'file:') { setStat('not saved: open the page through docs/explainer/edit.py'); return; }
+  try { const r = await fetch('save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(TEXT)}); setStat(r.ok ? 'saved to text.md' : 'save failed (' + r.status + ')'); }
+  catch (err) { setStat('save failed: ' + err.message); }
+}
+document.addEventListener('input', e => {
+  const el = e.target.closest && e.target.closest('[data-f]'); if (!el || !el.isContentEditable) return;
+  (TEXT[el.dataset.id] = TEXT[el.dataset.id] || {})[el.dataset.f] = el.innerText.replace(/ /g, ' ').replace(/\n$/, '');
+  setStat('editing…'); clearTimeout(saveT); saveT = setTimeout(saveText, 700);
 });
 $('dist').addEventListener('input', e => { S.p = -e.target.value; render(); $('dist').focus(); });
 $('dist').addEventListener('pointerdown', () => { S.dragging = true; });
@@ -1056,8 +1090,9 @@ let resizeT; addEventListener('resize', () => { clearTimeout(resizeT); resizeT =
 $('helpbtn').onclick = () => { $('help').hidden = false; $('helpclose').focus(); };
 $('helpclose').onclick = () => { $('help').hidden = true; };
 
-load().then(d => {
-  D = d; D.bb = D.bb || [];
+load().then(async d => {
+  D = d; D.bb = D.bb || []; TEXT = D.text || {};
+  if (location.protocol.startsWith('http')) { const t = await fetch('text.json').then(r => r.ok ? r.json() : null).catch(() => null); if (t) TEXT = t; }   // edit.py: the file as it is now
   const m = location.hash.match(/step=(\d+)/);
   setStep(m ? +m[1] : 0);
   if (document.fonts) document.fonts.ready.then(() => { COL.key = ''; render(); });   // re-fit once the web fonts have their real size
