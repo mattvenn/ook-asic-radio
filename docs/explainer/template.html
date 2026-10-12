@@ -931,10 +931,12 @@ function build() {
   main.className = '';
   main.innerHTML = `<section class="stage" aria-label="${S.block ? nm(S.block) : S.level}"><div class="inner"${COL.z < 1 ? ` style="zoom:${COL.z}"` : ''}>${page}</div></section>`;
   wirePlots(main);
-  let cr = `<button type="button" data-go="link"${S.level === 'link' && !S.block ? ' aria-current="page"' : ''}>Link</button>`;
-  if (S.level === 'chip') cr += `<span class="sep">›</span><button type="button" data-go="chip"${!S.block && !S.focus ? ' aria-current="page"' : ''}>Chip</button>`;
-  if (S.level === 'chip' && S.focus && !S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${S.focus === 'tx' ? 'Transmitter' : 'Receiver'}</button>`;
-  if (S.block) cr += `<span class="sep">›</span><button type="button" aria-current="page">${T(S.block, 'short') || nm(S.block)}</button>`;
+  // breadcrumbs follow the tour: Story (steps 1-5) or Chip › Transmitter / Receiver › block; the last one is this page
+  const half = S.focus || (S.block && (B[S.block].lvl === 'tx' || B[S.block].lvl === 'rx') ? B[S.block].lvl : null);
+  const path = S.level === 'link'
+    ? [['Story', 'data-step="0"'], [S.block ? T(S.block, 'short') || nm(S.block) : T('link', 'short') || nm('link')]]
+    : [['Chip', 'data-go="chip"']].concat(half ? [[half === 'tx' ? 'Transmitter' : 'Receiver', `data-go="chip:${half}"`]] : [], S.block ? [[T(S.block, 'short') || nm(S.block)]] : []);
+  const cr = path.map(([t, act], k) => k === path.length - 1 ? `<button type="button" aria-current="page">${t}</button>` : `<button type="button" ${act}>${t}</button>`).join('<span class="sep">›</span>');
   $('crumbs').innerHTML = cr;
   const p = prx();
   $('distout').textContent = `${p.toFixed(0)} dBm ≈ ${fmtd(dist())}`;
@@ -1041,6 +1043,8 @@ document.addEventListener('click', e => {
   if (lz) { S.ldZoom = lz.dataset.ldzoom === '1'; render(); return; }
   const dip = e.target.closest('[data-dip]');
   if (dip) { const k = S.dip == null ? D.code : S.dip; S.dip = k ^ (1 << +dip.dataset.dip); render(); return; }
+  const st = e.target.closest('[data-step]');
+  if (st) { setStep(+st.dataset.step); return; }
   const t = e.target.closest('[data-go],[data-block]');
   if (!t) return;
   if (t.dataset.go) { go(t.dataset.go); return; }

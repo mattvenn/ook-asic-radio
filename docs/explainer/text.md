@@ -14,7 +14,7 @@ The design can either transmit or receive, so two demo boards are needed to demo
 
 ## air
 name: Predicting range
-short: Over the air
+short: Range
 cap: With the new transmitter the receiver should see about −32 dBm at 1 m. At ~90 m it is down to −94 dBm: over a million times weaker, below its own noise.
 
 On the bench, I used an earlier [ring oscillator design](https://tinytapeout.com/chips/ttsky25b/tt_um_mattvenn_analog_ring_osc) as a transmitter. I used 14.5 cm wire dipoles held parallel and measured the received signal with a scope. The results are the white dots on the graph.
@@ -55,6 +55,7 @@ The [[led|LED]] toggles when two of the three bursts are detected.
 
 ## link
 name: All together
+short: Both boards
 cap: Putting it together: the code goes out three times, some bits arrive wrong, the score still clears 97 and the LED toggles.
 
 Two boards with the same chip on each, one set to transmit, the other to receive. If the receiver detects its code in two of the three bursts, it toggles the LED.
