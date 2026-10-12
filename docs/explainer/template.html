@@ -166,7 +166,7 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
   <nav class="crumbs" aria-label="Level" id="crumbs"></nav>
   <div class="dist">
     <label for="dist">Received power</label>
-    <input id="dist" type="range" min="25" max="110" step="0.5" value="44" aria-describedby="distout">
+    <input id="dist" type="range" min="25" max="110" step="0.5" value="68" aria-describedby="distout">
     <output id="distout" for="dist"></output>
   </div>
   <div class="navbtns">
@@ -204,7 +204,8 @@ const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.s
 const GDS = (n, dir = 'layout') => 'https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/' + dir + '/' + n + '.gds';
 const SENS = -94;
 let D = null;                       // decoded payload
-const S = {level: 'link', focus: null, block: null, p: -44, step: 0, playing: true};
+const S = {level: 'link', focus: null, block: null, p: -68,   // -68 dBm: ~10 m on the path model, where the page opens
+           step: 0, playing: true};
 
 // ------------------------------------------------------------------ data
 async function load() {
@@ -832,12 +833,12 @@ function dgSVG(opts = {}) {
 
 // ------------------------------------------------------------------ tour
 const TOUR = [
-  {level: 'link', block: 'intro', p: -44, cap: 'My first radio chip: transmitter and receiver in six Tiny Tapeout tiles, with two bare wires for an antenna.'},
-  {level: 'link', block: 'air', p: -94, cap: 'At 1 m the receiver sees −44 dBm. At ~45 m it is down to −94 dBm: 100,000× weaker, below its own noise.'},
-  {level: 'link', block: 'ook', p: -94, cap: 'Trick 1: on is a 1, off is a 0. The receiver only measures energy, so the carrier needs no crystal.'},
-  {level: 'link', block: 'code', p: -94, cap: 'Trick 2: send a 127-chip pattern. Noise matches ~64; 97 is a detection, even with a quarter of the chips wrong.'},
-  {level: 'link', block: null, p: -94, cap: 'Putting it together: the code goes out three times, some chips arrive wrong, the score still clears 97 and the LED toggles.'},
-  {level: 'chip', block: null, p: -44, cap: 'Functional diagram'},
+  {level: 'link', block: 'intro', cap: 'My first radio chip: transmitter and receiver in six Tiny Tapeout tiles, with two bare wires for an antenna.'},
+  {level: 'link', block: 'air', cap: 'At 1 m the receiver sees −44 dBm. At ~45 m it is down to −94 dBm: 100,000× weaker, below its own noise.'},
+  {level: 'link', block: 'ook', cap: 'Trick 1: on is a 1, off is a 0. The receiver only measures energy, so the carrier needs no crystal.'},
+  {level: 'link', block: 'code', cap: 'Trick 2: send a 127-chip pattern. Noise matches ~64; 97 is a detection, even with a quarter of the chips wrong.'},
+  {level: 'link', block: null, cap: 'Putting it together: the code goes out three times, some chips arrive wrong, the score still clears 97 and the LED toggles.'},
+  {level: 'chip', block: null, cap: 'Functional diagram'},
   {level: 'chip', focus: 'tx', block: null, cap: 'The transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
   {level: 'chip', block: 'gold', cap: 'The digital generates the Gold code from two 7-bit LFSRs and sends it three times.'},
   {level: 'chip', block: 'tx_ring', cap: 'A free-running ring of inverters. No crystal, no PLL: the receiver doesn\'t care about the exact frequency.'},
@@ -926,12 +927,11 @@ function build() {
 }
 function go(where, block = null) { const [level, focus] = where.split(':'); S.level = level; S.focus = focus || null; S.block = block; render(); }
 const nextStep = () => setStep((S.step + 1) % TOUR.length);   // the last step wraps to the first
-function setStep(i, initial = false) {
+function setStep(i) {
   S.step = Math.max(0, Math.min(TOUR.length - 1, i));
   const t = TOUR[S.step];
   S.level = t.level; S.focus = t.focus || null; S.block = t.block;
   history.replaceState(null, '', '#step=' + S.step);
-  if (t.p != null && initial) S.p = t.p;   // a step's power only applies when the page opens on it; moving between steps leaves the slider where it is
   render();
 }
 
@@ -1059,7 +1059,7 @@ $('helpclose').onclick = () => { $('help').hidden = true; };
 load().then(d => {
   D = d; D.bb = D.bb || [];
   const m = location.hash.match(/step=(\d+)/);
-  setStep(m ? +m[1] : 0, true);
+  setStep(m ? +m[1] : 0);
   if (document.fonts) document.fonts.ready.then(() => { COL.key = ''; render(); });   // re-fit once the web fonts have their real size
   requestAnimationFrame(t => anim.frame(t));
 }).catch(err => { $('main').innerHTML = `<div class="nodata">Could not load the embedded data (${err}). This page needs a browser with DecompressionStream (Chrome 80+, Firefox 113+, Safari 16.4+).</div>`; });
