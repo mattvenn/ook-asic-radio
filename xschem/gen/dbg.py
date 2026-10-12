@@ -24,7 +24,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mos, ports, write_symbol
+from xsch import Sch, inv, mos, ports, write_symbol
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
 TG_PARAMS = {'wn': 2, 'wp': 4}
@@ -32,17 +32,28 @@ TG_PARAMS = {'wn': 2, 'wp': 4}
 
 def dbg_tg():
     s = Sch()
-    s.text(-600, -560, 'dbg_tg: transmission gate a <-> b, on when en = 1\n'
+    s.pin_order = ['VDD', 'VSS', 'en', 'a', 'b']
+    s.text(-400, -260, 'dbg_tg: transmission gate a <-> b, on when en = 1\n'
            'thin 1.8 V devices (keep the pad side within 0..1.8 V); local inverter for enb', 0.4)
-    ports(s, -600, -460, ['VDD', 'VSS', 'en', 'a', 'b'])
-    p = mos(s, 'p', -200, -150, W=1, L=0.15, name='Mip')
-    s.connect(p, D='enb', G='en', S='VDD', B='VDD')
-    n = mos(s, 'n', -200, 100, W=0.5, L=0.15, name='Min')
-    s.connect(n, D='enb', G='en', S='VSS', B='VSS')
-    n = mos(s, 'n', 200, 100, W="'wn'", L=0.15, name='Mn')
-    s.connect(n, D='a', G='en', S='b', B='VSS')
-    p = mos(s, 'p', 200, -150, W="'wp'", L=0.15, name='Mp')
-    s.connect(p, D='a', G='enb', S='b', B='VDD')
+    XL, XR = -400, 450
+    # local inverter en -> enb
+    p, n, g, d = inv(s, 0, 300, dict(W=1, L=0.15, name='Mip', body='VDD'),
+                     dict(W=0.5, L=0.15, name='Min', body='VSS'))
+    s.route(g, (XL, 300))
+    s.port((XL, 300), 'en')
+    s.route(d, (100, 300))
+    s.label((100, 300), 'enb', right=True)
+    s.rail(190, XL, 0, [p.pin('S')], 'VDD', port=True)
+    s.rail(410, XL, 0, [n.pin('S')], 'VSS', port=True)
+    # transmission gate: NMOS (gate en) and PMOS (gate enb) side by side, a on top, b below
+    mn = mos(s, 'n', 230, 0, W="'wn'", L=0.15, name='Mn', body='VSS', flip=1)
+    mp = mos(s, 'p', 10, 0, W="'wp'", L=0.15, name='Mp', body='VDD', rot=2, flip=1)
+    s.label(mn.pin('G'), 'en', right=True)
+    s.label(mp.pin('G'), 'enb')
+    s.bus((XL, -30), mn.pin('D'), [mp.pin('D')])
+    s.port((XL, -30), 'a')
+    s.bus(mp.pin('S'), (XR, 30), [mn.pin('S')])
+    s.port((XR, 30), 'b', right=True)
     s.write(os.path.join(XDIR, 'dbg_tg.sch'))
     write_symbol(os.path.join(XDIR, 'dbg_tg.sym'), left=['a', 'en'], right=['b'], top=['VDD'],
                  bottom=['VSS'], params=TG_PARAMS)

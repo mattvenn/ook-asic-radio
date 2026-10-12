@@ -6,36 +6,51 @@ V {}
 S {}
 E {}
 T {amp_dp: NMOS diff pair, resistor loads, tail gate from pin nb
-params: w l rl (pair, load), mt (tail multiplier of unit W=wt, L=0.5)} -400 -560 0 0 0.4 0.4 {}
-C {devices/iopin.sym} -400 -460 0 0 {name=p1
+params: w l rl (pair, load), mt (tail multiplier of unit W=wt, L=0.5)} -200 -560 0 0 0.4 0.4 {}
+N 0 -290 0 -240 {}
+N 0 -240 0 -180 {}
+N 0 -240 -200 -240 {}
+N -40 -150 -200 -150 {}
+N 400 -290 400 -240 {}
+N 400 -240 400 -180 {}
+N 400 -240 600 -240 {}
+N 440 -150 600 -150 {}
+N 0 -350 0 -420 {}
+N 400 -350 400 -420 {}
+N -200 -420 0 -420 {}
+N 0 -420 400 -420 {}
+N 0 -120 0 -80 {}
+N 400 -120 400 -80 {}
+N 0 -80 200 -80 {}
+N 200 -80 400 -80 {}
+N 200 -80 200 -20 {}
+N 160 10 -200 10 {}
+N 200 40 200 100 {}
+N -200 100 200 100 {}
+N 200 100 400 100 {}
+C {devices/iopin.sym} -200 -420 0 1 {name=p7
 lab=VDD}
-C {devices/iopin.sym} -400 -430 0 0 {name=p2
+C {devices/iopin.sym} -200 100 0 1 {name=p10
 lab=VSS}
-C {devices/iopin.sym} -400 -400 0 0 {name=p3
+C {devices/iopin.sym} -200 10 0 1 {name=p9
 lab=nb}
-C {devices/iopin.sym} -400 -370 0 0 {name=p4
+C {devices/iopin.sym} -200 -150 0 1 {name=p3
 lab=inp}
-C {devices/iopin.sym} -400 -340 0 0 {name=p5
+C {devices/iopin.sym} 600 -150 0 0 {name=p6
 lab=inn}
-C {devices/iopin.sym} -400 -310 0 0 {name=p6
+C {devices/iopin.sym} 600 -240 0 0 {name=p5
 lab=outp}
-C {devices/iopin.sym} -400 -280 0 0 {name=p7
+C {devices/iopin.sym} -200 -240 0 1 {name=p2
 lab=outn}
-C {sky130_fd_pr/res_high_po_1p41.sym} 20 -300 0 0 {name=Rl_p
+C {sky130_fd_pr/res_high_po_1p41.sym} 0 -320 0 0 {name=Rl_p
 L='max((rl-278)/230.3,0.5)'
 model=res_high_po_1p41
 mult=1
 spiceprefix=X}
-C {devices/lab_pin.sym} 20 -330 0 1 {name=p8
-sig_type=std_logic
-lab=VDD}
-C {devices/lab_pin.sym} 20 -270 0 1 {name=p9
-sig_type=std_logic
-lab=outn}
-C {devices/lab_pin.sym} 0 -300 0 0 {name=p10
+C {devices/lab_pin.sym} -20 -320 0 0 {name=p1
 sig_type=std_logic
 lab=VSS}
-C {sky130_fd_pr/nfet_01v8.sym} 0 -150 0 0 {name=Mp
+C {sky130_fd_pr/nfet3_01v8.sym} -20 -150 0 0 {name=Mp
 nf=4
 mult=1
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -47,37 +62,20 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VSS
 L='l'
 W='w*(1+mm/2)'
 model=nfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} 20 -180 0 1 {name=p11
-sig_type=std_logic
-lab=outn}
-C {devices/lab_pin.sym} -20 -150 0 0 {name=p12
-sig_type=std_logic
-lab=inp}
-C {devices/lab_pin.sym} 20 -120 0 1 {name=p13
-sig_type=std_logic
-lab=tail}
-C {devices/lab_pin.sym} 20 -150 0 1 {name=p14
-sig_type=std_logic
-lab=VSS}
-C {sky130_fd_pr/res_high_po_1p41.sym} 320 -300 0 0 {name=Rl_n
+C {sky130_fd_pr/res_high_po_1p41.sym} 400 -320 0 0 {name=Rl_n
 L='max((rl-278)/230.3,0.5)'
 model=res_high_po_1p41
 mult=1
 spiceprefix=X}
-C {devices/lab_pin.sym} 320 -330 0 1 {name=p15
-sig_type=std_logic
-lab=VDD}
-C {devices/lab_pin.sym} 320 -270 0 1 {name=p16
-sig_type=std_logic
-lab=outp}
-C {devices/lab_pin.sym} 300 -300 0 0 {name=p17
+C {devices/lab_pin.sym} 380 -320 0 0 {name=p4
 sig_type=std_logic
 lab=VSS}
-C {sky130_fd_pr/nfet_01v8.sym} 300 -150 0 0 {name=Mn
+C {sky130_fd_pr/nfet3_01v8.sym} 420 -150 0 1 {name=Mn
 nf=4
 mult=1
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -89,23 +87,12 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VSS
 L='l'
 W='w*(1-mm/2)'
 model=nfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} 320 -180 0 1 {name=p18
-sig_type=std_logic
-lab=outp}
-C {devices/lab_pin.sym} 280 -150 0 0 {name=p19
-sig_type=std_logic
-lab=inn}
-C {devices/lab_pin.sym} 320 -120 0 1 {name=p20
-sig_type=std_logic
-lab=tail}
-C {devices/lab_pin.sym} 320 -150 0 1 {name=p21
-sig_type=std_logic
-lab=VSS}
-C {sky130_fd_pr/nfet_01v8.sym} 150 50 0 0 {name=Mtail
+C {sky130_fd_pr/nfet3_01v8.sym} 180 10 0 0 {name=Mtail
 nf=2
 mult='mt'
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -117,19 +104,11 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VSS
 L=0.5
 W='wt'
 model=nfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} 170 20 0 1 {name=p22
+C {devices/lab_pin.sym} 200 -80 0 1 {name=p8
 sig_type=std_logic
 lab=tail}
-C {devices/lab_pin.sym} 130 50 0 0 {name=p23
-sig_type=std_logic
-lab=nb}
-C {devices/lab_pin.sym} 170 80 0 1 {name=p24
-sig_type=std_logic
-lab=VSS}
-C {devices/lab_pin.sym} 170 50 0 1 {name=p25
-sig_type=std_logic
-lab=VSS}

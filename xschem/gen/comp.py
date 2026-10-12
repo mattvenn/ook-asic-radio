@@ -40,98 +40,184 @@ COMP_PARAMS = {'w1': 20, 'l1': 1, 'mt1': 10, 'rdeg': '2Meg', 'mta': 2, 'lref': 1
 
 def comp_ct():
     s = Sch()
-    s.text(-700, -860, 'comp_ct: continuous comparator, out = 1 when inp > inn + trim offset\n'
+    s.pin_order = ['VDD', 'VSS', 'ibias', 'inp', 'inn', 'trim', 'out']
+    s.text(-1000, -560, 'comp_ct: continuous comparator, out = 1 when inp > inn + trim offset\n'
            'lvt NMOS pair + lvt PMOS mirror; degenerated trim pair (trim vs VDD/2); PMOS CS; inverter', 0.4)
-    ports(s, -700, -760, ['VDD', 'VSS', 'ibias', 'inp', 'inn', 'trim', 'out'])
-    # bias: ibias into a diode (unit W 2, L 2); tails are multiples of it
-    md = mos(s, 'n', -600, 300, W=2, L=2, name='Mb')
-    s.connect(md, D='ibias', G='ibias', S='VSS', B='VSS')
+    XL, XR, YV, YS = -1000, 1150, -400, 200
+    # bias: ibias into a diode (unit W 2, L 2); tails are multiples of it (gates labelled ibias)
+    md = mos(s, 'n', -880, 100, W=2, L=2, name='Mb', body='VSS')
+    s.route(md.pin('D'), (-860, 40))
+    s.bus((XL, 40), (-860, 40), [(-900, 40)])
+    s.route((-900, 40), (-900, 100))
+    s.port((XL, 40), 'ibias')
     # Mt1 / Mn3 are 4.55 um fingers (the layout's row height) instead of 2 um units: that W
     # bin gives ~12 % more current per um than Mb's, so the total W is 0.91 x the units'
     # (10 / 5 units within +1.4 / -1 % over tt/ss/ff/sf/fs). Written as W per finger x mult,
     # as magic extracts them: with .spiceinit's skywaterpdk mode, W/nf bins differently.
-    mt = mos(s, 'n', 0, 300, W="'0.455*mt1'", L=2, mult=4, name='Mt1')
-    s.connect(mt, D='tail', G='ibias', S='VSS', B='VSS')
+    mt = mos(s, 'n', 80, 100, W="'0.455*mt1'", L=2, mult=4, name='Mt1', body='VSS')
+    s.label(mt.pin('G'), 'ibias')
     # main pair: inp -> d1 (diode side), inn -> d2 (output side)
-    for nm, x, g, d in (('M1', -100, 'inp', 'd1'), ('M2', 100, 'inn', 'd2')):
-        m = mos(s, 'n', x, 100, W="'w1'", L="'l1'", nf=4, name=nm, vt='lvt')
-        s.connect(m, D=d, G=g, S='tail', B='VSS')
+    m1 = mos(s, 'n', -20, -100, W="'w1'", L="'l1'", nf=4, name='M1', vt='lvt', body='VSS')
+    m2 = mos(s, 'n', 220, -100, W="'w1'", L="'l1'", nf=4, name='M2', vt='lvt', body='VSS', flip=1)
+    s.route(m1.pin('G'), (-100, -100))
+    s.port((-100, -100), 'inp')
+    s.route(m2.pin('G'), (300, -100))
+    s.port((300, -100), 'inn', right=True)
+    s.route(m1.pin('S'), (0, -20))
+    s.route(m2.pin('S'), (200, -20))
+    s.bus((0, -20), (200, -20), [(100, -20)])
+    s.route((100, -20), mt.pin('D'))
+    s.label((100, -20), 'tail', right=True)
     # PMOS mirror load (lvt, L 1): diode on d1
-    for nm, x, d in (('Mp1', -100, 'd1'), ('Mp2', 100, 'd2')):
-        m = mos(s, 'p', x, -150, W=4, L=1, name=nm, vt='lvt')
-        s.connect(m, D=d, G='d1', S='VDD', B='VDD')
-    # trim pair: vref -> d1, trim -> d2 (acts like inn), split tails + rdeg
-    for nm, x, g, d, sn in (('M3', 300, 'vref', 'd1', 'sa'), ('M4', 500, 'trim', 'd2', 'sb')):
-        m = mos(s, 'n', x, 100, W=2, L=1, name=nm, vt='lvt')
-        s.connect(m, D=d, G=g, S=sn, B='VSS')
-        t = mos(s, 'n', x, 300, W=2, L=2, mult="'mta'", name=f'Mta_{sn}')
-        s.connect(t, D=sn, G='ibias', S='VSS', B='VSS')
-    r = s.place('sky130_fd_pr/res_xhigh_po_0p35.sym', 400, 200, rot=1, name='Rdeg',
+    mp1 = mos(s, 'p', 20, -300, W=4, L=1, name='Mp1', vt='lvt', body='VDD', flip=1)
+    mp2 = mos(s, 'p', 180, -300, W=4, L=1, name='Mp2', vt='lvt', body='VDD')
+    s.bus(mp1.pin('G'), mp2.pin('G'), [(100, -300)])
+    s.route((0, -240), (100, -240), (100, -300))
+    s.bus(mp1.pin('D'), m1.pin('D'), [(0, -240), (0, -200)])
+    s.bus(mp2.pin('D'), m2.pin('D'), [(200, -240), (200, -200)])
+    s.label((0, -200), 'd1')
+    s.label((200, -200), 'd2', right=True)
+    # trim pair, outside the main pair so its drains join d1 / d2 without crossing:
+    # vref -> d1, trim -> d2 (acts like inn), split tails + rdeg between the sources
+    ta = []
+    for nm, x, g, sn, fl in (('M3', -250, 'vref', 'sa', 0), ('M4', 450, 'trim', 'sb', 1)):
+        m = mos(s, 'n', x + (20 if fl else -20), -100, W=2, L=1, name=nm, vt='lvt', body='VSS', flip=fl)
+        s.route(m.pin('D'), (x, -200), (0 if x < 0 else 200, -200), vfirst=True)
+        t = mos(s, 'n', x + (20 if fl else -20), 100, W=2, L=2, mult="'mta'", name=f'Mta_{sn}', body='VSS',
+                flip=fl)
+        s.label(t.pin('G'), 'ibias', right=bool(fl))
+        s.bus(m.pin('S'), t.pin('D'), [(x, 30)])
+        s.label((x, 30), sn, right=bool(fl))
+        ta.append((m, t))
+    s.route(ta[1][0].pin('G'), (550, -100))
+    s.port((550, -100), 'trim', right=True)
+    r = s.place('sky130_fd_pr/res_xhigh_po_0p35.sym', -100, 30, rot=1, name='Rdeg',
                 L="'rdeg/7.37k'", model='res_xhigh_po_0p35', mult='1', spiceprefix='X')
-    s.connect(r, P='sb', M='sa', B='VSS')
+    s.connect(r, B='VSS')
+    s.route((-250, 30), r.pin('M'))
+    s.route(r.pin('P'), (450, 30))
     # VDD/2 reference for the trim pair (xhigh poly divider + MIM decoupling)
-    for nm, y, p, m_ in (('Rr1', -350, 'VDD', 'vref'), ('Rr2', -250, 'vref', 'VSS')):
-        rr = s.place('sky130_fd_pr/res_xhigh_po_0p35.sym', 700, y, name=nm, L="'lref'",
-                     model='res_xhigh_po_0p35', mult='1', spiceprefix='X')
-        s.connect(rr, P=p, M=m_, B='VSS')
-    cr = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 800, -250, name='Cref', model='cap_mim_m3_1',
+    rr = []
+    for nm, y in (('Rr1', -250), ('Rr2', -40)):
+        rr.append(s.place('sky130_fd_pr/res_xhigh_po_0p35.sym', -700, y, name=nm, L="'lref'",
+                          model='res_xhigh_po_0p35', mult='1', spiceprefix='X'))
+        s.connect(rr[-1], B='VSS')
+    cr = s.place('sky130_fd_pr/cap_mim_m3_1.sym', -800, -40, name='Cref', model='cap_mim_m3_1',
                  W='10', L='10', MF='1', spiceprefix='X')
-    s.connect(cr, c0='vref', c1='VSS')
+    s.bus(rr[0].pin('M'), rr[1].pin('P'), [(-700, -100)])
+    s.route(cr.pin('c0'), (-800, -100))
+    s.bus((-800, -100), ta[0][0].pin('G'), [(-700, -100)])
+    s.label((-700, -100), 'vref')
     # band-limit stage 1 (dominant pole ~100 kHz): cuts the integrated noise;
     # a decision only has to settle within one 13 us sample
-    cl = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 200, -50, name='Cl', model='cap_mim_m3_1',
+    cl = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 600, -210, name='Cl', model='cap_mim_m3_1',
                  W="'wcl'", L="'wcl/2'", MF='2', spiceprefix='X')   # 2 x (wcl x wcl/2): fits the layout's band
-    s.connect(cl, c0='d2', c1='VSS')
+    s.connect(cl, c1='VSS')
     # stage 2: PMOS CS (same W/L as the load) + NMOS sink (5 x unit); out2 low when inp > inn
-    mp = mos(s, 'p', 900, -150, W=4, L=1, name='Mp3', vt='lvt')
-    s.connect(mp, D='o2', G='d2', S='VDD', B='VDD')
-    mn = mos(s, 'n', 900, 100, W=4.55, L=2, mult=2, name='Mn3')
-    s.connect(mn, D='o2', G='ibias', S='VSS', B='VSS')
+    mp = mos(s, 'p', 830, -300, W=4, L=1, name='Mp3', vt='lvt', body='VDD')
+    s.bus((200, -240), (810, -240), [cl.pin('c0')])
+    s.route((810, -240), mp.pin('G'))
+    mn = mos(s, 'n', 830, 100, W=4.55, L=2, mult=2, name='Mn3', body='VSS')
+    s.label(mn.pin('G'), 'ibias')
+    s.bus(mp.pin('D'), mn.pin('D'), [(850, -100)])
+    s.label((850, -100), 'o2')
     # output inverter
-    ip = mos(s, 'p', 1200, -150, W=2, L=0.15, name='Mip')
-    s.connect(ip, D='out', G='o2', S='VDD', B='VDD')
-    i_n = mos(s, 'n', 1200, 100, W=1, L=0.15, name='Min')
-    s.connect(i_n, D='out', G='o2', S='VSS', B='VSS')
+    ip = mos(s, 'p', 1030, -300, W=2, L=0.15, name='Mip', body='VDD')
+    i_n = mos(s, 'n', 1030, 100, W=1, L=0.15, name='Min', body='VSS')
+    s.bus(ip.pin('G'), i_n.pin('G'), [(1010, -100)])
+    s.bus((850, -100), (1010, -100))
+    s.bus(ip.pin('D'), i_n.pin('D'), [(1050, -100)])
+    s.route((1050, -100), (XR, -100))
+    s.port((XR, -100), 'out', right=True)
+    s.rail(YV, XL, 1050, [rr[0].pin('P'), mp1.pin('S'), mp2.pin('S'), mp.pin('S'), ip.pin('S')], 'VDD', port=True)
+    s.rail(YS, XL, 1050, [md.pin('S'), cr.pin('c1'), rr[1].pin('M'), ta[0][1].pin('S'), mt.pin('S'),
+                         ta[1][1].pin('S'), mn.pin('S'), i_n.pin('S')], 'VSS', port=True)
     # layout matching dummies (layout/gen/comp_ct.py: rail-tied dummies either side of the
     # ABBA pairs and the bias units): all terminals on the rail, no electrical effect; drawn
     # here so LVS sees the same devices (IIC etiquette: dummies belong in the schematic)
-    for nm, x, kind, W, L, vt, m in (('Mdn1', 1500, 'n', 5, 1, 'lvt', 2), ('Mdn2', 1700, 'n', 1, 1, 'lvt', 2),
-                                     ('Mdn3', 1900, 'n', 2, 2, '', 1), ('Mdp1', 1500, 'p', 2, 1, 'lvt', 2),
-                                     ('Mdp2', 1700, 'p', 4, 1, 'lvt', 1)):
+    s.text(-200, 300, 'layout matching dummies (all terminals on the rail)', 0.4)
+    taps = {'n': [], 'p': []}
+    for nm, x, kind, W, L, vt, m in (('Mdn1', -100, 'n', 5, 1, 'lvt', 2), ('Mdn2', 100, 'n', 1, 1, 'lvt', 2),
+                                     ('Mdn3', 300, 'n', 2, 2, '', 1), ('Mdp1', 500, 'p', 2, 1, 'lvt', 2),
+                                     ('Mdp2', 700, 'p', 4, 1, 'lvt', 1)):
         rail = 'VSS' if kind == 'n' else 'VDD'
-        d = mos(s, kind, x, 100 if kind == 'n' else -150, W=W, L=L, mult=m, name=nm, vt=vt)
-        s.connect(d, D=rail, G=rail, S=rail, B=rail)
+        d = mos(s, kind, x, 450, W=W, L=L, mult=m, name=nm, vt=vt, body=rail)
+        ry = 530 if kind == 'n' else 370
+        far = d.pin('D')                     # D is on the far side from the rail for both kinds
+        s.route(far, (x + 60, far[1]), (x + 60, ry))
+        s.route(d.pin('G'), (x - 20, ry))
+        taps[kind] += [(x - 20, ry), d.pin('S'), (x + 60, ry)]
+    s.bus((-160, 530), (360, 530), [(t[0], 530) for t in taps['n']])
+    for t in taps['n']:
+        if t[1] != 530:
+            s.wire(t, (t[0], 530))
+    s.label((-160, 530), 'VSS')
+    s.bus((440, 370), (760, 370), [(t[0], 370) for t in taps['p']])
+    for t in taps['p']:
+        if t[1] != 370:
+            s.wire(t, (t[0], 370))
+    s.label((440, 370), 'VDD')
     s.write(os.path.join(XDIR, 'comp_ct.sch'))
     write_symbol(os.path.join(XDIR, 'comp_ct.sym'), left=['inp', 'inn', 'trim', 'ibias'],
                  right=['out'], top=['VDD'], bottom=['VSS'], params=COMP_PARAMS)
 
 
-def tgate(s, x, y, a, b, phi, phib, name):
-    n = mos(s, 'n', x, y, W=0.5, L=0.15, name=f'{name}n')
-    s.connect(n, D=a, G=phi, S=b, B='VSS')
-    p = mos(s, 'p', x + 200, y, W=1, L=0.15, name=f'{name}p')
-    s.connect(p, D=a, G=phib, S=b, B='VDD')
+def tgate(s, x, y, a, b, phi, phib, name, a_top=True):
+    """Transmission gate centred on (x, y): PMOS (gate phib, out to the left)
+    and NMOS (gate phi, out to the right) upright side by side, a joining one
+    end of both, b the other (a on top, or at the bottom with a_top=False).
+    Returns the a and b junctions (left end of the a line, right end of b)."""
+    # (rot, flip) giving the drain (= a) on the wanted side with the gate outward
+    n = mos(s, 'n', x + 110, y, W=0.5, L=0.15, name=f'{name}n', body='VSS',
+            rot=0 if a_top else 2, flip=1 if a_top else 0)
+    p = mos(s, 'p', x - 110, y, W=1, L=0.15, name=f'{name}p', body='VDD',
+            rot=2 if a_top else 0, flip=1 if a_top else 0)
+    s.bus(p.pin('D'), n.pin('D'))
+    s.bus(p.pin('S'), n.pin('S'))
+    s.label(p.pin('G'), phib)
+    s.label(n.pin('G'), phi, right=True)
+    return p.pin('D'), n.pin('S')
 
 
 def avg_sc():
     s = Sch()
-    s.text(-600, -660, 'avg_sc: switched-cap average, tau = cavg / (cs * f_phi)\n'
+    s.pin_order = ['VDD', 'VSS', 'in', 'out', 'phi1', 'phi2']
+    s.text(-600, -300, 'avg_sc: switched-cap average, tau = cavg / (cs * f_phi)\n'
            'phi1: cs <- in, phi2: cs -> out (cavg). cs = ncs x wcs x wcs um, cavg = nca x 30x30 um MIM', 0.4)
-    ports(s, -600, -560, ['VDD', 'VSS', 'in', 'out', 'phi1', 'phi2'])
+    XL = -600
+    # local clock inverters: phib for the PMOS halves of the switches
+    tops, bots = [], []
     for ph in ('phi1', 'phi2'):
         x = -300 if ph == 'phi1' else 300
-        p = mos(s, 'p', x, 300, W=1, L=0.15, name=f'Mi{ph}p')
-        s.connect(p, D=f'{ph}b', G=ph, S='VDD', B='VDD')
-        n = mos(s, 'n', x, 450, W=0.5, L=0.15, name=f'Mi{ph}n')
-        s.connect(n, D=f'{ph}b', G=ph, S='VSS', B='VSS')
-    tgate(s, -300, 0, 'in', 'cs', 'phi1', 'phi1b', 'S1')
-    tgate(s, 300, 0, 'cs', 'out', 'phi2', 'phi2b', 'S2')
-    cs = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 100, 150, name='Cs', model='cap_mim_m3_1',
+        p = mos(s, 'p', x - 20, 330, W=1, L=0.15, name=f'Mi{ph}p', body='VDD')
+        n = mos(s, 'n', x - 20, 480, W=0.5, L=0.15, name=f'Mi{ph}n', body='VSS')
+        s.bus(p.pin('G'), n.pin('G'), [(x - 40, 405)])
+        s.bus(p.pin('D'), n.pin('D'), [(x, 405)])
+        s.route((x, 405), (x + 80, 405))
+        s.label((x + 80, 405), f'{ph}b', right=True)
+        s.route((x - 40, 405), (x - 200, 405))
+        s.port((x - 200, 405), ph)
+        tops.append(p.pin('S'))
+        bots.append(n.pin('S'))
+    s.rail(260, XL, 300, tops, 'VDD', port=True)
+    s.rail(560, XL, 300, bots, 'VSS', port=True)
+    # in -S1(phi1)- cs -S2(phi2)- out
+    # S1 drawn a-on-top, S2 a-at-the-bottom: in -> S1 -> cs -> S2 -> out zig-zags through
+    a1, b1 = tgate(s, -250, 0, 'in', 'cs', 'phi1', 'phi1b', 'S1')
+    a2, b2 = tgate(s, 350, 0, 'cs', 'out', 'phi2', 'phi2b', 'S2', a_top=False)
+    cs = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 50, 100, name='Cs', model='cap_mim_m3_1',
                  W="'wcs'", L="'wcs'", MF="'ncs'", spiceprefix='X')
-    s.connect(cs, c0='cs', c1='VSS')
-    ca = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 700, 150, name='Cavg', model='cap_mim_m3_1',
+    ca = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 650, 100, name='Cavg', model='cap_mim_m3_1',
                  W='30', L='30', MF="'nca'", spiceprefix='X')
-    s.connect(ca, c0='out', c1='VSS')
+    s.route((XL, a1[1]), a1)
+    s.port((XL, a1[1]), 'in')
+    s.bus(b1, a2, [(50, 30)])
+    s.route((50, 30), cs.pin('c0'))
+    s.label((50, 30), 'cs')
+    s.bus(b2, (850, -30), [(650, -30)])
+    s.route((650, -30), ca.pin('c0'))
+    s.port((850, -30), 'out', right=True)
+    s.rail(190, -50, 650, [cs.pin('c1'), ca.pin('c1')], 'VSS')
     s.write(os.path.join(XDIR, 'avg_sc.sch'))
     write_symbol(os.path.join(XDIR, 'avg_sc.sym'), left=['in', 'phi1', 'phi2'], right=['out'],
                  top=['VDD'], bottom=['VSS'], params={'ncs': 1, 'nca': 2, 'wcs': 7})

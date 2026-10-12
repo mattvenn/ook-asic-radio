@@ -39,40 +39,78 @@ ANA_PADS = ['tx_p', 'tx_n', 'rx_p', 'rx_n', 'dbg']
 
 def radio_analog():
     s = Sch()
-    s.text(-1400, -1060, 'radio_analog: all analog blocks, real bias (bias_gen on rx_en)\n'
+    s.pin_order = ['VDPWR', 'VAPWR', 'VGND'] + ANA_IF_IN + ['comp_out'] + ANA_PADS
+    s.text(-900, -760, 'radio_analog: all analog blocks, real bias (bias_gen on rx_en)\n'
            'RX: rx_p/n -> lna_chain -> log_det -> lpf_rc -> avg_sc / comp_ct (+ r2r trim) -> comp_out; '
-           'det -> dbg_tg -> dbg. TX: tx_top -> tx_p/n', 0.4)
-    ports(s, -1400, -960, ['VDPWR', 'VAPWR', 'VGND'] + ANA_IF_IN + ['comp_out'] + ANA_PADS)
-    b = s.place('bias_gen.sym', -900, 400, name='xbias')
+           'det -> dbg_tg -> dbg. TX: tx_top -> tx_p/n\n'
+           'signal paths are wired; supplies, bias currents, clocks and enables are labelled', 0.4)
+    # label-only ports (supplies and the digital's control inputs)
+    ports(s, -900, -600, ['VDPWR', 'VAPWR', 'VGND', 'rx_en', 'dbg_en', 'sc_phi1', 'sc_phi2', 'trim[7:0]'])
+    b = s.place('bias_gen.sym', -500, 450, name='xbias')
     s.connect(b, en='rx_en', vcm='vcm', ib_chain='ib_chain', ib_det='ib_det', ib_comp='ib_comp',
               VDD='VDPWR', VSS='VGND')
     taps = {f'o{i}{sd}': f'o{i}{sd}' for i in range(1, NT) for sd in 'pn'}
-    c = s.place('lna_chain.sym', -500, -150, name='xchain')
-    s.connect(c, inp='rx_p', inn='rx_n', ibias='ib_chain', vcm='vcm', outp='out_p', outn='out_n',
-              VDD='VDPWR', VSS='VGND', **taps)
-    d = s.place('log_det.sym', 100, -150, name='xdet')
-    nets = {f't{i}{sd}': f'o{i}{sd}' for i in range(1, NT) for sd in 'pn'}
-    nets.update({f't{NT}p': 'out_p', f't{NT}n': 'out_n'})
-    s.connect(d, ibias_det='ib_det', det='det', VDD='VDPWR', VSS='VGND', **nets)
-    f = s.place('lpf_rc.sym', 600, -150, name='xlpf')
-    s.connect(f, **{'in': 'det'}, out='lpf', VSS='VGND')
-    a = s.place('avg_sc.sym', 900, 0, name='xavg')
-    s.connect(a, **{'in': 'lpf'}, out='avg', phi1='sc_phi1', phi2='sc_phi2', VDD='VDPWR', VSS='VGND')
-    r = s.place('r2r.sym', 900, 400, name='xdac')
-    s.connect(r, out='trim', VGND='VGND', **{f'b{i}': f'trim[{i}]' for i in range(8)})
-    ct = mim(s, 1100, 500, 1e-12, name='Ctrim')                 # strips clock-edge spikes (10.6k Rout)
-    s.connect(ct, c0='trim', c1='VGND')
-    k = s.place('comp_ct.sym', 1300, -100, name='xcomp')
-    s.connect(k, inp='avg', inn='lpf', trim='trim', ibias='ib_comp', out='comp_out', VDD='VDPWR', VSS='VGND')
-    g = s.place('dbg_tg.sym', 600, 300, name='xdbg')
-    s.connect(g, a='det', b='dbg', en='dbg_en', VDD='VDPWR', VSS='VGND')
-    t = s.place('tx_top.sym', -500, 700, name='xtx')
-    s.connect(t, key='tx_en', en_p='tx_en', en_n='tx_en_n', out_p='tx_p', out_n='tx_n', VDPWR='VDPWR',
-              VAPWR='VAPWR', VSS='VGND')
+    c = s.place('lna_chain.sym', 0, 0, name='xchain')
+    s.connect(c, ibias='ib_chain', vcm='vcm', outp='out_p', outn='out_n', VDD='VDPWR', VSS='VGND', **taps)
+    for pin, net in (('inp', 'rx_p'), ('inn', 'rx_n')):
+        q = c.pin(pin)
+        s.route(q, (q[0] - 120, q[1]))
+        s.port((q[0] - 120, q[1]), net)
+    # log_det placed so its taps t1..t5 line up with the chain's o1..o5: straight wires;
+    # the last tap pair (t6 = the chain output) is labelled out_p / out_n
+    d = s.place('log_det.sym', 500, 100, name='xdet')
+    nets = {f't{NT}p': 'out_p', f't{NT}n': 'out_n'}
+    s.connect(d, ibias_det='ib_det', VDD='VDPWR', VSS='VGND', **nets)
+    for i in range(1, NT):
+        for sd in 'pn':
+            s.route(c.pin(f'o{i}{sd}'), d.pin(f't{i}{sd}'))
+    f = s.place('lpf_rc.sym', 850, -140, name='xlpf')
+    s.connect(f, VSS='VGND')
+    s.bus(d.pin('det'), f.pin('in'), [(700, -140)])
+    s.label((700, -140), 'det', right=True)
+    a = s.place('avg_sc.sym', 1150, -300, name='xavg')
+    s.connect(a, phi1='sc_phi1', phi2='sc_phi2', VDD='VDPWR', VSS='VGND')
+    r = s.place('r2r.sym', 1150, 500, name='xdac')
+    s.connect(r, VGND='VGND', **{f'b{i}': f'trim[{i}]' for i in range(8)})
+    ct = mim(s, 1300, 390, 1e-12, flip=1, name='Ctrim')                 # strips clock-edge spikes (10.6k Rout)
+    s.connect(ct, c1='VGND')
+    k = s.place('comp_ct.sym', 1500, -100, name='xcomp')
+    s.connect(k, ibias='ib_comp', VDD='VDPWR', VSS='VGND')
+    # lpf -> comp inn and the averager; averager -> comp inp; dac -> comp trim
+    s.bus(f.pin('out'), (1000, -140))
+    s.route((1000, -140), (1000, -340), a.pin('in'))
+    s.route((1000, -140), (1350, -140), (1350, -120), k.pin('inn'))
+    s.label((1000, -140), 'lpf', right=True)
+    s.route(a.pin('out'), (1300, -340), (1300, -160), k.pin('inp'))
+    s.label(a.pin('out'), 'avg', right=True)
+    s.bus(r.pin('out'), (1370, 360), [ct.pin('c0')])
+    s.route((1370, 360), (1370, -80), k.pin('trim'))
+    s.label(ct.pin('c0'), 'trim')
+    q = k.pin('out')
+    s.route(q, (q[0] + 100, q[1]))
+    s.port((q[0] + 100, q[1]), 'comp_out', right=True)
+    g = s.place('dbg_tg.sym', 900, 150, name='xdbg')
+    s.connect(g, en='dbg_en', VDD='VDPWR', VSS='VGND')
+    s.route((700, -140), (700, 130), g.pin('a'))
+    q = g.pin('b')
+    s.route(q, (q[0] + 60, q[1]))
+    s.port((q[0] + 60, q[1]), 'dbg', right=True)
+    t = s.place('tx_top.sym', 0, 800, name='xtx')
+    s.connect(t, VDPWR='VDPWR', VSS='VGND')
+    s.label(t.pin('VAPWR'), 'VAPWR', right=True)
+    s.bus((-300, 760), t.pin('key'), [(-150, 760)])
+    s.route((-150, 760), t.pin('en_p'), vfirst=True)
+    s.port((-300, 760), 'tx_en')
+    s.route((-300, 840), t.pin('en_n'))
+    s.port((-300, 840), 'tx_en_n')
+    for pin, net in (('out_p', 'tx_p'), ('out_n', 'tx_n')):
+        q = t.pin(pin)
+        s.route(q, (q[0] + 100, q[1]))
+        s.port((q[0] + 100, q[1]), net, right=True)
     # supply decoupling (xschem/gen/decap.py): ~50 pF on VAPWR (TX), ~30 pF on VDPWR (RX)
-    da = s.place('decap_vapwr.sym', 0, 700, name='xdeca')
+    da = s.place('decap_vapwr.sym', 450, 800, name='xdeca')
     s.connect(da, VAPWR='VAPWR', VGND='VGND')
-    dd = s.place('decap_vdpwr.sym', 300, 700, name='xdecd')
+    dd = s.place('decap_vdpwr.sym', 650, 800, name='xdecd')
     s.connect(dd, VDPWR='VDPWR', VGND='VGND')
     s.write(os.path.join(XDIR, 'radio_analog.sch'))
     write_symbol(os.path.join(XDIR, 'radio_analog.sym'), left=ANA_IF_IN, right=['comp_out'] + ANA_PADS,
@@ -92,20 +130,35 @@ def radio_digital_sym():
 
 def tt_top():
     s = Sch()
-    s.text(-900, -760, 'tt_um_mattvenn_radio: radio_analog + radio_digital (hardened macro) on the TT pins\n'
-           'ua[0]/ua[1] RX dipole, ua[2] debug (det, dbg_en only), ua[3]/ua[4] TX dipole', 0.4)
-    ports(s, -900, -660, ['VGND', 'VDPWR', 'VAPWR', 'ui_in[7:0]', 'uo_out[7:0]', 'uio_in[7:0]',
-                          'uio_out[7:0]', 'uio_oe[7:0]', 'ua[7:0]', 'ena', 'clk', 'rst_n'])
+    s.pin_order = ['VGND', 'VDPWR', 'VAPWR', 'ui_in[7:0]', 'uo_out[7:0]', 'uio_in[7:0]',
+                   'uio_out[7:0]', 'uio_oe[7:0]', 'ua[7:0]', 'ena', 'clk', 'rst_n']
+    s.text(-700, -560, 'tt_um_mattvenn_radio: radio_analog + radio_digital (hardened macro) on the TT pins\n'
+           'ua[0]/ua[1] RX dipole, ua[2] debug (det, dbg_en only), ua[3]/ua[4] TX dipole\n'
+           'enables / clocks wired across; rx_en, trim and comp are labelled', 0.4)
+    ports(s, -700, -400, ['VGND', 'VDPWR', 'VAPWR', 'ua[7:0]', 'ena'])
     dg = s.place('radio_digital.sym', -300, 0, name='xdig')
-    s.connect(dg, clk='clk', rst_n='rst_n', **{'ui_in[7:0]': 'ui_in[7:0]', 'uio_in[7:0]': 'uio_in[7:0]',
-              'uo_out[7:0]': 'uo_out[7:0]', 'uio_out[7:0]': 'uio_out[7:0]', 'uio_oe[7:0]': 'uio_oe[7:0]',
-              'trim_out[7:0]': 'trim[7:0]'},
-              comp_in='comp', tx_en='tx_en', tx_en_n='tx_en_n', rx_en='rx_en', dbg_en='dbg_en',
-              sc_phi1='sc_phi1', sc_phi2='sc_phi2', VPWR='VDPWR', VGND='VGND')
-    an = s.place('radio_analog.sym', 400, 0, name='xana')
-    s.connect(an, rx_en='rx_en', tx_en='tx_en', tx_en_n='tx_en_n', dbg_en='dbg_en', sc_phi1='sc_phi1',
-              sc_phi2='sc_phi2', comp_out='comp', VDPWR='VDPWR', VAPWR='VAPWR', VGND='VGND',
+    s.connect(dg, comp_in='comp', rx_en='rx_en', VPWR='VDPWR', VGND='VGND',
+              **{'trim_out[7:0]': 'trim[7:0]'})
+    for pin in ('clk', 'rst_n', 'ui_in[7:0]', 'uio_in[7:0]'):
+        q = dg.pin(pin)
+        s.route(q, (q[0] - 60, q[1]))
+        s.port((q[0] - 60, q[1]), pin)
+    for pin in ('uo_out[7:0]', 'uio_out[7:0]', 'uio_oe[7:0]'):
+        q = dg.pin(pin)
+        s.route(q, (q[0] + 60, q[1]))
+        s.port((q[0] + 60, q[1]), pin, right=True)
+    an = s.place('radio_analog.sym', 400, 60, name='xana')
+    s.label(an.pin('VAPWR'), 'VAPWR', right=True)
+    s.connect(an, rx_en='rx_en', comp_out='comp', VDPWR='VDPWR', VGND='VGND',
               rx_p='ua[0]', rx_n='ua[1]', dbg='ua[2]', tx_p='ua[3]', tx_n='ua[4]', **{'trim[7:0]': 'trim[7:0]'})
+    # digital -> analog control wires (straight, or one jog each, staggered so none cross)
+    for pin, jx in (('tx_en', None), ('tx_en_n', None), ('dbg_en', 0), ('sc_phi1', 40), ('sc_phi2', 80)):
+        a, b = dg.pin(pin), an.pin(pin)
+        if jx is None:
+            s.route(a, b)
+        else:
+            s.route(a, (jx, a[1]), (jx, b[1]), b)
+        s.label(a, pin, right=True)
     s.write(os.path.join(XDIR, 'tt_um_mattvenn_radio.sch'))
 
 

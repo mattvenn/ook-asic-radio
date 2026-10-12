@@ -31,28 +31,65 @@ RSYM = 'sky130_fd_pr/res_high_po_1p41.sym'
 
 def r2r():
     s = Sch()
-    s.text(-800, -660, 'r2r: 8-bit R-2R ladder, matches the reused tt08 r2r layout\n'
+    s.pin_order = ['b0', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'out', 'VGND']
+    s.text(-500, -560, 'r2r: 8-bit R-2R ladder, matches the reused tt08 r2r layout\n'
            'unit R = res_high_po_1p41 L 45 (~10.6 k); 2R = two units; out = code/256 x V(bits)', 0.4)
-    ports(s, -800, -560, ['b0', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'out', 'VGND'])
     n = [0]
+    YA, YG = -300, 80                       # ladder node row, VGND rail
+    gnd = []
 
-    def unit(p, m, x, y):
+    def unit(p, m, x, y, rot=0):
         n[0] += 1
-        r = s.place(RSYM, x, y, name=f'R{n[0]}', **UNIT)
-        s.connect(r, P=p, M=m, B='VGND')
-    # start module: b0 -2R- a0, a0 -2R- VGND, dummy
-    unit('b0', 's0', -500, -200)
-    unit('s0', 'a0', -500, -100)
-    unit('a0', 's1', -400, -200)
-    unit('s1', 'VGND', -400, -100)
-    unit('VGND', 'VGND', -300, -200)
+        r = s.place(RSYM, x, y, rot=rot, name=f'R{n[0]}', **UNIT)
+        s.connect(r, B='VGND')
+        return r
+
+    def leg(x, top, bot):
+        """2R leg from the node row down: two stacked units joined at a labelled mid node"""
+        s.bus((x, YA), top.pin('M' if top.rot == 2 else 'P'))
+        s.bus(top.pin('P' if top.rot == 2 else 'M'), bot.pin('M' if bot.rot == 2 else 'P'), [(x, -140)])
+
+    def dummy(x):
+        r = unit('VGND', 'VGND', x, 200)
+        s.route(r.pin('P'), (x, YG))
+        s.label(r.pin('M'), 'VGND', right=True)
+        gnd.append((x, YG))
+
+    def bit(x, pin, b):
+        s.route(pin, (x, 0))
+        s.port((x, 0), b, right=True)
+    # start module: b0 -2R- a0 (drawn upside down: a0 on top), a0 -2R- VGND (termination), dummy
+    lo = unit('b0', 's0', 0, -80, rot=2)
+    up = unit('s0', 'a0', 0, -200, rot=2)
+    leg(0, up, lo)
+    s.label((0, -140), 's0', right=True)
+    bit(0, lo.pin('P'), 'b0')
+    up = unit('a0', 's1', -250, -200)
+    lo = unit('s1', 'VGND', -250, -80)
+    leg(-250, up, lo)
+    s.label((-250, -140), 's1')
+    s.route(lo.pin('M'), (-250, YG))
+    gnd.append((-250, YG))
+    dummy(-500)
+    s.label((0, YA), 'a0', right=True)
     for i in range(1, 8):
         a_prev, a_next = f'a{i - 1}', 'out' if i == 7 else f'a{i}'
-        x = -200 + i * 200
-        unit(a_prev, a_next, x, -300)                  # series R
-        unit(a_next, f't{i}', x, -200)                 # 2R to the bit
-        unit(f't{i}', f'b{i}', x, -100)
-    unit('VGND', 'VGND', 1500, -200)                   # end dummy
+        x = i * 250
+        r = unit(a_prev, a_next, x - 125, YA, rot=3)      # series R along the node row
+        s.route((x - 250, YA), r.pin('P'))
+        s.route(r.pin('M'), (x, YA))
+        up = unit(a_next, f't{i}', x, -200)               # 2R to the bit
+        lo = unit(f't{i}', f'b{i}', x, -80)
+        leg(x, up, lo)
+        s.label((x, -140), f't{i}', right=True)
+        bit(x, lo.pin('M'), f'b{i}')
+        if i < 7:
+            s.label((x, YA), a_next, right=True)
+    s.route((1750, YA), (1900, YA))
+    s.port((1900, YA), 'out', right=True)
+    s.route((-250, YA), (0, YA))
+    dummy(1900)                                           # end dummy
+    s.rail(YG, -500, 1900, gnd, 'VGND', port=True)
     s.write(os.path.join(XDIR, 'r2r.sch'))
     write_symbol(os.path.join(XDIR, 'r2r.sym'), left=[f'b{i}' for i in range(8)], right=['out'],
                  bottom=['VGND'])

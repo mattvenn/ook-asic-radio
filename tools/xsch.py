@@ -33,6 +33,10 @@ LIB_PINS = {
     'sky130_fd_pr/pfet_01v8_hvt.sym': {'D': (20, 30), 'G': (-20, 0), 'S': (20, -30), 'B': (20, 0)},
     'sky130_fd_pr/nfet_g5v0d10v5.sym': {'D': (20, -30), 'G': (-20, 0), 'S': (20, 30), 'B': (20, 0)},
     'sky130_fd_pr/pfet_g5v0d10v5.sym': {'D': (20, 30), 'G': (-20, 0), 'S': (20, -30), 'B': (20, 0)},
+    # 3-terminal variants: body is the instance property 'body' (same netlist line)
+    **{f'sky130_fd_pr/{k}fet3_{m}.sym': {'D': (20, -30) if k == 'n' else (20, 30), 'G': (-20, 0),
+                                         'S': (20, 30) if k == 'n' else (20, -30)}
+       for k in 'np' for m in ('01v8', '01v8_lvt', '01v8_hvt', 'g5v0d10v5')},
     # std cells: supplies are instance properties (VPWR=, VGND=, VPB=, VNB=), not pins
     'sky130_stdcells/inv_2.sym': {'A': (-40, 0), 'Y': (40, 0)},
     'sky130_stdcells/nand2_2.sym': {'A': (-60, -20), 'B': (-60, 20), 'Y': (60, 0)},
@@ -91,6 +95,7 @@ class Sch:
     def __init__(self):
         self.items, self.boxes, self.texts, self.wires = [], [], [], []
         self._n = {}
+        self.pin_order = None
 
     def _name(self, prefix):
         self._n[prefix] = self._n.get(prefix, 0) + 1
@@ -126,6 +131,45 @@ class Sch:
     def wire(self, a, b, lab=''):
         self.wires.append((a, b, lab))
 
+    # --- drawn wiring (classical schematics). Every wire end sits on a pin or
+    # on another wire's end: T junctions are split so xschem dots them.
+    def route(self, *pts, vfirst=False):
+        """Orthogonal wire through pts. A diagonal step gets one corner:
+        horizontal first, or vertical first with vfirst=True."""
+        out = [pts[0]]
+        for p in pts[1:]:
+            q = out[-1]
+            if q[0] != p[0] and q[1] != p[1]:
+                out.append((q[0], p[1]) if vfirst else (p[0], q[1]))
+            out.append(p)
+        for a, b in zip(out, out[1:]):
+            if a != b:
+                self.wire(a, b)
+
+    def bus(self, a, b, taps=()):
+        """Straight wire a -> b split at the tap points on it (T junctions)."""
+        pts = sorted({a, b, *taps})
+        for p, q in zip(pts, pts[1:]):
+            self.wire(p, q)
+
+    def rail(self, y, x1, x2, taps=(), net=None, port=False):
+        """Horizontal supply rail at y from x1 to x2; taps = pins below/above it
+        (each gets a vertical drop to the rail). The rail is labelled net at x1,
+        with an iopin there when port=True."""
+        xs = []
+        for t in taps:
+            if t[1] != y:
+                self.wire(t, (t[0], y))
+            xs.append((t[0], y))
+        self.bus((x1, y), (x2, y), xs)
+        if net:
+            (self.port if port else self.label)((x1, y), net)
+
+    def port(self, pt, net, right=False):
+        """iopin at a wire end; text outward (left, or right with right=True)."""
+        self.items.append(Inst('devices/iopin.sym', pt[0], pt[1], 0, 0 if right else 1,
+                               {'name': self._name('p'), 'lab': net}))
+
     def code(self, x, y, name, value, only_toplevel='false', tcleval=False):
         props = {'name': name, 'only_toplevel': only_toplevel}
         if tcleval:
@@ -159,7 +203,14 @@ class Sch:
         lines += self.boxes + self.texts
         for (x1, y1), (x2, y2), lab in self.wires:
             lines.append(f'N {fmt(x1)} {fmt(y1)} {fmt(x2)} {fmt(y2)} {{' + (f'\nlab={lab}' if lab else '') + '}')
-        lines += [i.text() for i in self.items]
+        items = self.items
+        if self.pin_order:
+            # ports first, in pin_order: keeps the netlist's *.PININFO order
+            # independent of where the ports are drawn
+            ports_ = sorted((i for i in items if i.sym == 'devices/iopin.sym'),
+                            key=lambda i: self.pin_order.index(i.props['lab']))
+            items = ports_ + [i for i in items if i.sym != 'devices/iopin.sym']
+        lines += [i.text() for i in items]
         with open(path, 'w') as fh:
             fh.write('\n'.join(lines) + '\n')
 
@@ -172,16 +223,34 @@ MOS_DEFAULTS = {
 }
 
 
-def mos(sch, kind, x, y, W, L, nf=1, mult=1, name=None, rot=0, flip=0, vt=''):
+def mos(sch, kind, x, y, W, L, nf=1, mult=1, name=None, rot=0, flip=0, vt='', body=None):
     """Place a sky130 nfet/pfet with the PDK's standard property set.
     vt='lvt' / 'hvt' selects that 1.8 V flavour (pfet_01v8_lvt needs L >= 0.35);
-    vt='g5' gives the thick-oxide 3.3 V device (g5v0d10v5, L >= 0.5)."""
+    vt='g5' gives the thick-oxide 3.3 V device (g5v0d10v5, L >= 0.5).
+    body=<net> uses the 3-terminal symbol (body as a property, no B pin to
+    wire); the netlist line is the same as with B wired to that net."""
     model = f'{kind}fet_g5v0d10v5' if vt == 'g5' else f'{kind}fet_01v8' + (f'_{vt}' if vt else '')
     sym = f'sky130_fd_pr/{model}.sym'
     props = dict(MOS_DEFAULTS)
+    if body:
+        sym = sym.replace(f'{kind}fet_', f'{kind}fet3_')
+        props['body'] = body
     props.update({'L': str(L), 'W': str(W), 'nf': str(nf), 'mult': str(mult),
                   'model': model, 'spiceprefix': 'X'})
     return sch.place(sym, x, y, rot=rot, flip=flip, name=name or sch._name('M'), **props)
+
+
+def inv(sch, x, y, pkw, nkw, h=75):
+    """CMOS inverter drawn as a textbook stack: PMOS (mos() kwargs pkw) over
+    NMOS (nkw), drain column at x, gates joined at x - 40. Returns
+    (p, n, gate junction, drain junction); the sources (p.pin('S') at the
+    top, n.pin('S') at the bottom) are left for the caller's rails."""
+    p = mos(sch, 'p', x - 20, y - h, **pkw)
+    n = mos(sch, 'n', x - 20, y + h, **nkw)
+    g, d = (x - 40, y), (x, y)
+    sch.bus(p.pin('G'), n.pin('G'), [g])
+    sch.bus(p.pin('D'), n.pin('D'), [d])
+    return p, n, g, d
 
 
 def write_symbol(path, left=(), right=(), top=(), bottom=(), width=160, params=None):
@@ -231,30 +300,30 @@ POLY = {('high', '0p35'): (995.0, 963.0), ('high', '0p69'): (470.9, 526.0), ('hi
 MIM_F_PER_UM2 = 2.06e-15        # cap_mim_m3_1 incl. its perimeter term, 10x10 um (hh +14 %, ll -13 %)
 
 
-def poly_r(sch, x, y, r, kind='high', w='0p35', rot=0, name=None):
+def poly_r(sch, x, y, r, kind='high', w='0p35', rot=0, flip=0, name=None):
     """sky130 poly resistor of value r (a number or a spice param/expression
     string, e.g. "rl"), L computed from the fitted R(L). Pins P, M, B (B = body,
     connect to VSS)."""
     b, a = POLY[(kind, w)]
     expr = f"'max(({r}-{a:g})/{b:g},0.5)'"     # no spaces: xschem splits property values
-    return sch.place(f'sky130_fd_pr/res_{kind}_po_{w}.sym', x, y, rot=rot, name=name or sch._name('R'),
+    return sch.place(f'sky130_fd_pr/res_{kind}_po_{w}.sym', x, y, rot=rot, flip=flip, name=name or sch._name('R'),
                      L=expr, model=f'res_{kind}_po_{w}', mult='1', spiceprefix='X')
 
 
-def mim(sch, x, y, c, mf=1, rot=0, name=None):
+def mim(sch, x, y, c, mf=1, rot=0, flip=0, name=None):
     """cap_mim_m3_1 of value c (number or param string) as mf square units
     (keep units <= 30 um, as the LPF / averager: use mf for more than ~1.8 pF).
     Pins c0 (top plate, m4) and c1 (bottom plate, m3): put c1 on the quieter /
     lower-impedance node, since in layout the bottom plate carries the
     substrate parasitic."""
     side = f"'sqrt(({c})/{mf}/{MIM_F_PER_UM2:g})'"
-    return sch.place('sky130_fd_pr/cap_mim_m3_1.sym', x, y, rot=rot, name=name or sch._name('C'),
+    return sch.place('sky130_fd_pr/cap_mim_m3_1.sym', x, y, rot=rot, flip=flip, name=name or sch._name('C'),
                      model='cap_mim_m3_1', W=side, L=side, MF=str(mf), spiceprefix='X')
 
 
-def stdcell(sch, cell, x, y, vdd='VDD', vss='VSS', name=None):
+def stdcell(sch, cell, x, y, vdd='VDD', vss='VSS', name=None, flip=0):
     """Place a sky130_fd_sc_hd cell (inv_2, nand2_2, ...) on supplies vdd/vss."""
-    return sch.place(f'sky130_stdcells/{cell}.sym', x, y, name=name or sch._name('x'),
+    return sch.place(f'sky130_stdcells/{cell}.sym', x, y, flip=flip, name=name or sch._name('x'),
                      VGND=vss, VNB=vss, VPB=vdd, VPWR=vdd, prefix='sky130_fd_sc_hd__')
 
 

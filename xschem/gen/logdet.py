@@ -32,18 +32,36 @@ DET_PARAMS = {'wd': 1, 'rs': '10k', 'cc': '100f', 'rb': '200k', 'rdet': '8k', 'c
 
 def det_cell():
     s = Sch()
-    s.text(-400, -560, 'det_cell: full-wave rectifier, gates AC coupled and biased at ~Vth from vb\n'
+    s.pin_order = ['VSS', 'vb', 'inp', 'inn', 'out']
+    s.text(-300, -460, 'det_cell: full-wave rectifier, gates AC coupled and biased at ~Vth from vb\n'
            'params: wd (W, L=0.15), rs (source degeneration), cc/rb (coupling)', 0.4)
-    ports(s, -400, -460, ['VSS', 'vb', 'inp', 'inn', 'out'])
-    for side, x in (('p', 0), ('n', 400)):
-        c = mim(s, x - 200, -200, 'cc', name=f'Cc_{side}')          # bottom plate on the chain tap
-        s.connect(c, c0=f'g{side}', c1=f'in{side}')
-        rb = poly_r(s, x - 100, -300, 'rb', 'xhigh', '0p35', name=f'Rb_{side}')
-        s.connect(rb, P='vb', M=f'g{side}', B='VSS')
-        m = mos(s, 'n', x, -200, W="'wd'", L=0.15, nf=1, name=f'M{side}')
-        s.connect(m, D='out', G=f'g{side}', S=f's{side}', B='VSS')
-        r = poly_r(s, x + 20, -50, 'rs', 'high', '0p35', name=f'Rs_{side}')
-        s.connect(r, P=f's{side}', M='VSS', B='VSS')
+    XL, XR = -400, 800
+    bots, vbs = [], []
+    for side, x, fl in (('p', 0, 0), ('n', 400, 1)):
+        o = 1 if not fl else -1                     # outward = -x for p, +x for n
+        c = mim(s, x - 200 * o, -40, 'cc', flip=fl, name=f'Cc_{side}')  # bottom plate on the chain tap
+        rb = poly_r(s, x - 80 * o, -200, 'rb', 'xhigh', '0p35', name=f'Rb_{side}')
+        s.connect(rb, B='VSS')
+        m = mos(s, 'n', x - 20 * o, -100, W="'wd'", L=0.15, nf=1, name=f'M{side}', body='VSS', flip=fl)
+        r = poly_r(s, x, 20, 'rs', 'high', '0p35', name=f'Rs_{side}')
+        s.connect(r, B='VSS')
+        s.route(c.pin('c0'), (x - 200 * o, -100))
+        s.bus((x - 200 * o, -100), m.pin('G'), [(x - 80 * o, -100)])
+        s.route(rb.pin('M'), (x - 80 * o, -100))
+        s.label((x - 80 * o, -100), f'g{side}', right=bool(fl))
+        edge = XR if fl else XL
+        s.route(c.pin('c1'), (x - 200 * o, 40), (edge, 40))
+        s.port((edge, 40), f'in{side}', right=bool(fl))
+        s.bus(m.pin('S'), r.pin('P'), [(x, -40)])
+        s.label((x, -40), f's{side}', right=bool(fl))
+        s.route(m.pin('D'), (x, -180))
+        vbs.append(rb.pin('P'))
+        bots.append(r.pin('M'))
+    s.bus((0, -180), (400, -180), [(200, -180)])
+    s.route((200, -180), (200, -220), (300, -220))
+    s.port((300, -220), 'out', right=True)
+    s.rail(-260, XL, 480, vbs, 'vb', port=True)
+    s.rail(120, XL, 400, bots, 'VSS', port=True)
     s.write(os.path.join(XDIR, 'det_cell.sch'))
     write_symbol(os.path.join(XDIR, 'det_cell.sym'), left=['inp', 'inn', 'vb'],
                  right=['out'], bottom=['VSS'], params=CELL_PARAMS)
@@ -51,23 +69,44 @@ def det_cell():
 
 def log_det(n=NTAPS):
     s = Sch()
-    s.text(-600, -760, f'log_det: {n} det_cells summed into rdet || cdet; vb from a replica diode\n'
-           'taps t<i>p/n: chain stage outputs, last = chain output', 0.4)
     taps = [f't{i}{sd}' for i in range(1, n + 1) for sd in 'pn']
-    ports(s, -600, -660, ['VDD', 'VSS', 'ibias_det', 'det'] + taps)
+    s.pin_order = ['VDD', 'VSS', 'ibias_det', 'det'] + taps
+    s.text(-700, -460, f'log_det: {n} det_cells summed into rdet || cdet; vb from a replica diode\n'
+           'taps t<i>p/n: chain stage outputs, last = chain output', 0.4)
+    XL, XR, YV, YS, YD = -700, 400 * n + 200, -300, 200, -150
     # replica: diode-connected cell device with the same degeneration
-    mb = mos(s, 'n', -400, 200, W="'wd'", L=0.15, nf=1, name='Mbias')
-    s.connect(mb, D='ibias_det', G='ibias_det', S='sb', B='VSS')
-    rsb = poly_r(s, -380, 350, 'rs', 'high', '0p35', name='Rs_b')
-    s.connect(rsb, P='sb', M='VSS', B='VSS')
-    r = poly_r(s, -200, -500, 'rdet', 'high', '0p69', name='Rdet')
-    s.connect(r, P='VDD', M='det', B='VSS')
-    c = mim(s, -100, -500, 'cdet', name='Cdet')                     # ~22 um square; bottom plate on VDD
-    s.connect(c, c0='det', c1='VDD')
+    mb = mos(s, 'n', -400, 0, W="'wd'", L=0.15, nf=1, name='Mbias', body='VSS')
+    rsb = poly_r(s, -380, 100, 'rs', 'high', '0p35', name='Rs_b')
+    s.connect(rsb, B='VSS')
+    s.bus((XL, -60), (-380, -60), [(-440, -60)])
+    s.route((-440, -60), mb.pin('G'), vfirst=True)
+    s.route((-380, -60), mb.pin('D'))
+    s.port((XL, -60), 'ibias_det')
+    s.bus(mb.pin('S'), rsb.pin('P'), [(-380, 50)])
+    s.label((-380, 50), 'sb', right=True)
+    r = poly_r(s, XR - 300, -220, 'rdet', 'high', '0p69', name='Rdet')
+    s.connect(r, B='VSS')
+    c = mim(s, XR, -220, 'cdet', rot=2, name='Cdet')                # ~22 um square; bottom plate on VDD
+    s.route(r.pin('M'), (XR - 300, YD))
+    s.route(c.pin('c0'), (XR, YD))
+    vss, outs = [rsb.pin('M')], []
     for i in range(1, n + 1):
         x = (i - 1) * 400
-        cell = s.place('det_cell.sym', x, -200, name=f'xd{i}', wd="'wd'", rs="'rs'", cc="'cc'", rb="'rb'")
-        s.connect(cell, inp=f't{i}p', inn=f't{i}n', vb='ibias_det', out='det', VSS='VSS')
+        cell = s.place('det_cell.sym', x, 0, name=f'xd{i}', wd="'wd'", rs="'rs'", cc="'cc'", rb="'rb'")
+        s.label(cell.pin('vb'), 'ibias_det')
+        for pin, net in (('inp', f't{i}p'), ('inn', f't{i}n')):
+            q = cell.pin(pin)
+            s.route(q, (q[0] - 60, q[1]))
+            s.port((q[0] - 60, q[1]), net)
+        q = cell.pin('out')
+        s.route(q, (q[0] + 40, q[1]), (q[0] + 40, YD))
+        outs.append((q[0] + 40, YD))
+        vss.append(cell.pin('VSS'))
+    s.bus(outs[0], (XR + 100, YD), outs[1:] + [(XR - 300, YD), (XR, YD)])
+    s.label(outs[-1], 'det')
+    s.port((XR + 100, YD), 'det', right=True)
+    s.rail(YV, XL, XR, [r.pin('P'), c.pin('c1')], 'VDD', port=True)
+    s.rail(YS, XL, vss[-1][0], vss, 'VSS', port=True)
     s.write(os.path.join(XDIR, 'log_det.sch'))
     write_symbol(os.path.join(XDIR, 'log_det.sym'), left=taps + ['ibias_det'],
                  right=['det'], top=['VDD'], bottom=['VSS'], params=DET_PARAMS, width=200)

@@ -6,18 +6,32 @@ V {}
 S {}
 E {}
 T {dbg_tg: transmission gate a <-> b, on when en = 1
-thin 1.8 V devices (keep the pad side within 0..1.8 V); local inverter for enb} -600 -560 0 0 0.4 0.4 {}
-C {devices/iopin.sym} -600 -460 0 0 {name=p1
+thin 1.8 V devices (keep the pad side within 0..1.8 V); local inverter for enb} -400 -260 0 0 0.4 0.4 {}
+N -40 225 -40 300 {}
+N -40 300 -40 375 {}
+N 0 255 0 300 {}
+N 0 300 0 345 {}
+N -40 300 -400 300 {}
+N 0 300 100 300 {}
+N 0 195 0 190 {}
+N -400 190 0 190 {}
+N 0 405 0 410 {}
+N -400 410 0 410 {}
+N -400 -30 30 -30 {}
+N 30 -30 210 -30 {}
+N 30 30 210 30 {}
+N 210 30 450 30 {}
+C {devices/iopin.sym} -400 190 0 1 {name=p3
 lab=VDD}
-C {devices/iopin.sym} -600 -430 0 0 {name=p2
+C {devices/iopin.sym} -400 410 0 1 {name=p4
 lab=VSS}
-C {devices/iopin.sym} -600 -400 0 0 {name=p3
+C {devices/iopin.sym} -400 300 0 1 {name=p1
 lab=en}
-C {devices/iopin.sym} -600 -370 0 0 {name=p4
+C {devices/iopin.sym} -400 -30 0 1 {name=p7
 lab=a}
-C {devices/iopin.sym} -600 -340 0 0 {name=p5
+C {devices/iopin.sym} 450 30 0 0 {name=p8
 lab=b}
-C {sky130_fd_pr/pfet_01v8.sym} -200 -150 0 0 {name=Mip
+C {sky130_fd_pr/pfet3_01v8.sym} -20 225 0 0 {name=Mip
 nf=1
 mult=1
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -29,23 +43,12 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VDD
 L=0.15
 W=1
 model=pfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} -180 -120 0 1 {name=p6
-sig_type=std_logic
-lab=enb}
-C {devices/lab_pin.sym} -220 -150 0 0 {name=p7
-sig_type=std_logic
-lab=en}
-C {devices/lab_pin.sym} -180 -180 0 1 {name=p8
-sig_type=std_logic
-lab=VDD}
-C {devices/lab_pin.sym} -180 -150 0 1 {name=p9
-sig_type=std_logic
-lab=VDD}
-C {sky130_fd_pr/nfet_01v8.sym} -200 100 0 0 {name=Min
+C {sky130_fd_pr/nfet3_01v8.sym} -20 375 0 0 {name=Min
 nf=1
 mult=1
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -57,23 +60,15 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VSS
 L=0.15
 W=0.5
 model=nfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} -180 70 0 1 {name=p10
+C {devices/lab_pin.sym} 100 300 0 1 {name=p2
 sig_type=std_logic
 lab=enb}
-C {devices/lab_pin.sym} -220 100 0 0 {name=p11
-sig_type=std_logic
-lab=en}
-C {devices/lab_pin.sym} -180 130 0 1 {name=p12
-sig_type=std_logic
-lab=VSS}
-C {devices/lab_pin.sym} -180 100 0 1 {name=p13
-sig_type=std_logic
-lab=VSS}
-C {sky130_fd_pr/nfet_01v8.sym} 200 100 0 0 {name=Mn
+C {sky130_fd_pr/nfet3_01v8.sym} 230 0 0 1 {name=Mn
 nf=1
 mult=1
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -85,23 +80,12 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VSS
 L=0.15
 W='wn'
 model=nfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} 220 70 0 1 {name=p14
-sig_type=std_logic
-lab=a}
-C {devices/lab_pin.sym} 180 100 0 0 {name=p15
-sig_type=std_logic
-lab=en}
-C {devices/lab_pin.sym} 220 130 0 1 {name=p16
-sig_type=std_logic
-lab=b}
-C {devices/lab_pin.sym} 220 100 0 1 {name=p17
-sig_type=std_logic
-lab=VSS}
-C {sky130_fd_pr/pfet_01v8.sym} 200 -150 0 0 {name=Mp
+C {sky130_fd_pr/pfet3_01v8.sym} 10 0 2 1 {name=Mp
 nf=1
 mult=1
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -113,19 +97,14 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VDD
 L=0.15
 W='wp'
 model=pfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} 220 -120 0 1 {name=p18
+C {devices/lab_pin.sym} 250 0 0 1 {name=p5
 sig_type=std_logic
-lab=a}
-C {devices/lab_pin.sym} 180 -150 0 0 {name=p19
+lab=en}
+C {devices/lab_pin.sym} -10 0 0 0 {name=p6
 sig_type=std_logic
 lab=enb}
-C {devices/lab_pin.sym} 220 -180 0 1 {name=p20
-sig_type=std_logic
-lab=b}
-C {devices/lab_pin.sym} 220 -150 0 1 {name=p21
-sig_type=std_logic
-lab=VDD}

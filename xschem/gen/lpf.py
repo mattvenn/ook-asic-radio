@@ -29,15 +29,19 @@ LPF_PARAMS = {'lr': 400, 'nc': 2}
 
 def lpf_rc():
     s = Sch()
-    s.text(-400, -460, 'lpf_rc: xhigh poly R (L=lr um, 0.35 um wide) + nc x 30x30 um MIM caps\n'
+    s.pin_order = ['VSS', 'in', 'out']
+    s.text(-300, -360, 'lpf_rc: xhigh poly R (L=lr um, 0.35 um wide) + nc x 30x30 um MIM caps\n'
            'defaults ~2.95 MOhm, ~3.7 pF -> ~14.6 kHz', 0.4)
-    ports(s, -400, -360, ['VSS', 'in', 'out'])
     r = s.place('sky130_fd_pr/res_xhigh_po_0p35.sym', 0, -150, rot=1, name='R1',
                 L="'lr'", model='res_xhigh_po_0p35', mult='1', spiceprefix='X')
-    s.connect(r, P='out', M='in', B='VSS')
-    c = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 200, -100, name='C1',
+    s.connect(r, B='VSS')
+    c = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 200, -120, name='C1',
                 model='cap_mim_m3_1', W='30', L='30', MF="'nc'", spiceprefix='X')
-    s.connect(c, c0='out', c1='VSS')
+    s.route((-300, -150), r.pin('M'))
+    s.port((-300, -150), 'in')
+    s.bus(r.pin('P'), (400, -150), [c.pin('c0')])
+    s.port((400, -150), 'out', right=True)
+    s.rail(0, -300, 200, [c.pin('c1')], 'VSS', port=True)
     s.write(os.path.join(XDIR, 'lpf_rc.sch'))
     write_symbol(os.path.join(XDIR, 'lpf_rc.sym'), left=['in'], right=['out'], bottom=['VSS'],
                  params=LPF_PARAMS)

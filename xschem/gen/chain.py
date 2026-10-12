@@ -37,18 +37,47 @@ CHAIN_PARAMS = {'w1': 80, 'rl1': '1k', 'mt1': 20, 'w2': 20, 'rl2': '4k', 'mt2': 
                 'cs': '0.6p', 'cin': '2p', 'rb': '20k', 'mm': 0}
 
 
+def diff_pair(s, r_w, rl='rl', after_side=None):
+    """Textbook resistor-loaded NMOS pair: VDD rail on top, loads, the pair
+    (right half mirrored), outputs and inputs wired out to ports at the sides.
+    Returns the two source pins (left, right) for the caller's tail."""
+    XL, XR, YV = -200, 600, -420
+    tops, srcs = [], []
+    for side, x, gate, drain, sgn, fl in (('p', 0, 'inp', 'outn', '+', 0), ('n', 400, 'inn', 'outp', '-', 1)):
+        r = poly_r(s, x, -320, rl, 'high', r_w, name=f'Rl_{side}')
+        s.connect(r, B='VSS')
+        m = mos(s, 'n', x + (20 if fl else -20), -150, W=f"'w*(1{sgn}mm/2)'", L="'l'", nf=4,
+                name=f'M{side}', flip=fl, body='VSS')
+        if after_side:
+            after_side(side, x, fl, m)
+        tap = (x, -240)
+        s.bus(r.pin('M'), m.pin('D'), [tap])
+        edge = XR if fl else XL
+        s.route(tap, (edge, -240))
+        s.port((edge, -240), drain, right=bool(fl))
+        s.route(m.pin('G'), (edge, -150))
+        s.port((edge, -150), gate, right=bool(fl))
+        tops.append(r.pin('P'))
+        srcs.append(m.pin('S'))
+    s.rail(YV, XL, XR - 200, tops, 'VDD', port=True)
+    return srcs
+
+
 def amp_dp():
     s = Sch()
-    s.text(-400, -560, 'amp_dp: NMOS diff pair, resistor loads, tail gate from pin nb\n'
+    s.pin_order = ['VDD', 'VSS', 'nb', 'inp', 'inn', 'outp', 'outn']
+    s.text(-200, -560, 'amp_dp: NMOS diff pair, resistor loads, tail gate from pin nb\n'
            'params: w l rl (pair, load), mt (tail multiplier of unit W=wt, L=0.5)', 0.4)
-    ports(s, -400, -460, ['VDD', 'VSS', 'nb', 'inp', 'inn', 'outp', 'outn'])
-    for side, x, gate, drain, sgn in (('p', 0, 'inp', 'outn', '+'), ('n', 300, 'inn', 'outp', '-')):
-        r = poly_r(s, x + 20, -300, 'rl', 'high', '1p41', name=f'Rl_{side}')
-        s.connect(r, P='VDD', M=drain, B='VSS')
-        m = mos(s, 'n', x, -150, W=f"'w*(1{sgn}mm/2)'", L="'l'", nf=4, name=f'M{side}')
-        s.connect(m, D=drain, G=gate, S='tail', B='VSS')
-    mt = mos(s, 'n', 150, 50, W="'wt'", L=0.5, nf=2, mult="'mt'", name='Mtail')
-    s.connect(mt, D='tail', G='nb', S='VSS', B='VSS')
+    sp, sn = diff_pair(s, '1p41')
+    mt = mos(s, 'n', 180, 10, W="'wt'", L=0.5, nf=2, mult="'mt'", name='Mtail', body='VSS')
+    s.route(sp, (0, -80))
+    s.route(sn, (400, -80))
+    s.bus((0, -80), (400, -80), [(200, -80)])
+    s.route((200, -80), mt.pin('D'))
+    s.label((200, -80), 'tail', right=True)
+    s.route(mt.pin('G'), (-200, 10))
+    s.port((-200, 10), 'nb')
+    s.rail(100, -200, 400, [mt.pin('S')], 'VSS', port=True)
     s.write(os.path.join(XDIR, 'amp_dp.sch'))
     write_symbol(os.path.join(XDIR, 'amp_dp.sym'), left=['inp', 'inn', 'nb'],
                  right=['outp', 'outn'], top=['VDD'], bottom=['VSS'], params=AMP_PARAMS)
@@ -56,20 +85,29 @@ def amp_dp():
 
 def amp_dpc():
     s = Sch()
-    s.text(-400, -560, 'amp_dpc: NMOS diff pair, resistor loads, split tail + cs between sources\n'
+    s.pin_order = ['VDD', 'VSS', 'nb', 'inp', 'inn', 'outp', 'outn']
+    s.text(-200, -560, 'amp_dpc: NMOS diff pair, resistor loads, split tail + cs between sources\n'
            'params: w l rl (pair, load), mt (total tail multiplier, mt/2 per side), cs', 0.4)
-    ports(s, -400, -460, ['VDD', 'VSS', 'nb', 'inp', 'inn', 'outp', 'outn'])
-    for side, x, gate, drain, sgn in (('p', 0, 'inp', 'outn', '+'), ('n', 300, 'inn', 'outp', '-')):
-        r = poly_r(s, x + 20, -300, 'rl', 'high', '0p69', name=f'Rl_{side}')
-        s.connect(r, P='VDD', M=drain, B='VSS')
-        m = mos(s, 'n', x, -150, W=f"'w*(1{sgn}mm/2)'", L="'l'", nf=4, name=f'M{side}')
-        s.connect(m, D=drain, G=gate, S=f's{side}', B='VSS')
-        mt = mos(s, 'n', x, 50, W="'wt'", L=0.5, nf=2, mult="'mt/2'", name=f'Mtail_{side}')
-        s.connect(mt, D=f's{side}', G='nb', S='VSS', B='VSS')
+
+    def tail(side, x, fl, m):
+        mt = mos(s, 'n', x + (20 if fl else -20), 10, W="'wt'", L=0.5, nf=2, mult="'mt/2'",
+                 name=f'Mtail_{side}', flip=fl, body='VSS')
+        y = -90 if fl else -30            # sn joins the caps' top line, sp the bottom one
+        s.bus(m.pin('S'), mt.pin('D'), [(x, y)])
+        s.label((x, y), f's{side}', right=bool(fl))
+        tails.append(mt)
+    tails = []
+    diff_pair(s, '0p69', after_side=tail)
     # Cs as two MIM halves, anti-parallel: each source sees one bottom plate
-    for nm, top, bot, y in (('Cs_a', 'sn', 'sp', -60), ('Cs_b', 'sp', 'sn', 60)):
-        c = mim(s, 150, y, 'cs/2', name=nm)
-        s.connect(c, c0=top, c1=bot)
+    # (Cs_b drawn upside down: top plate c0 at the bottom, on sp)
+    ca = mim(s, 120, -60, 'cs/2', name='Cs_a')
+    cb = mim(s, 280, -60, 'cs/2', rot=2, name='Cs_b')
+    s.bus((0, -30), cb.pin('c0'), [ca.pin('c1')])
+    s.bus(ca.pin('c0'), (400, -90), [cb.pin('c1')])
+    s.route(tails[0].pin('G'), (-200, 10))
+    s.port((-200, 10), 'nb')
+    s.label(tails[1].pin('G'), 'nb', right=True)
+    s.rail(100, -200, 400, [t.pin('S') for t in tails], 'VSS', port=True)
     s.write(os.path.join(XDIR, 'amp_dpc.sch'))
     write_symbol(os.path.join(XDIR, 'amp_dpc.sym'), left=['inp', 'inn', 'nb'],
                  right=['outp', 'outn'], top=['VDD'], bottom=['VSS'], params=AMPC_PARAMS)
@@ -77,34 +115,63 @@ def amp_dpc():
 
 def lna_chain(n=NSTAGES):
     s = Sch()
-    s.text(-600, -760, f'lna_chain: {n} diff-pair stages; stage 1 sized for noise, 2..{n} cap-degenerated\n'
-           'tail current of stage i = mt x ibias (one reference diode)', 0.4)
     taps = [f'o{i}{sd}' for i in range(1, n) for sd in 'pn']
-    ports(s, -600, -660, ['VDD', 'VSS', 'ibias', 'vcm', 'inp', 'inn', 'outp', 'outn'] + taps)
-    md = mos(s, 'n', -400, 300, W=AMP_PARAMS['wt'], L=0.5, nf=2, name='Mref')
-    s.connect(md, D='ibias', G='ibias', S='VSS', B='VSS')
-    prev = ('inp', 'inn')
+    s.pin_order = ['VDD', 'VSS', 'ibias', 'vcm', 'inp', 'inn', 'outp', 'outn'] + taps
+    s.text(-1000, -400, f'lna_chain: {n} diff-pair stages; stage 1 sized for noise, 2..{n} cap-degenerated\n'
+           'tail current of stage i = mt x ibias (one reference diode); taps o<i>p/n = stage outputs', 0.4)
+    XL, YV, YS = -1000, -220, 220
+    # reference diode: stage tail = mt x ibias (each stage's nb labelled ibias)
+    md = mos(s, 'n', -860, 150, W=AMP_PARAMS['wt'], L=0.5, nf=2, name='Mref', body='VSS')
+    s.bus((XL, 100), (-840, 100), [(-900, 100)])
+    s.route((-900, 100), (-900, 150), md.pin('G'))
+    s.route((-840, 100), md.pin('D'))
+    s.port((XL, 100), 'ibias')
+    vdd, vss = [], [md.pin('S')]
     for i in range(1, n + 1):
-        x = (i - 1) * 700
+        x = (i - 1) * 400
         first = i == 1
         last = i == n
         outp, outn = ('outp', 'outn') if last else (f'o{i}p', f'o{i}n')
         if first:
-            for side, y, src in (('p', -400, prev[0]), ('n', -200, prev[1])):
-                # bottom plate on the pad side (already ~5 pF there)
-                c = mim(s, x - 250, y, 'cin', name=f'Cin_{side}')
-                s.connect(c, c0=f'g1{side}', c1=src)
-                rb = poly_r(s, x - 150, y + 60, 'rb', 'high', '0p35', name=f'Rb_{side}')
-                s.connect(rb, P='vcm', M=f'g1{side}', B='VSS')
-            a = s.place('amp_dp.sym', x, -300, name='xa1',
+            # on-chip input coupling: Cin (bottom plate on the pad side, already ~5 pF there)
+            # in series, Rb from vcm to the gate
+            for side, y, src, cy, crot, ry, rrot in (('p', -40, 'inp', -70, 2, -70, 0),
+                                                     ('n', 0, 'inn', 30, 0, 30, 2)):
+                c = mim(s, x - 650, cy, 'cin', rot=crot, name=f'Cin_{side}')
+                rb = poly_r(s, x - 350, ry, 'rb', 'high', '0p35', rot=rrot, name=f'Rb_{side}')
+                s.connect(rb, B='VSS')
+                s.bus(c.pin('c0'), (x - 100, y), [rb.pin('M')])
+                s.label(c.pin('c0'), f'g1{side}')
+                py = c.pin('c1')[1]
+                s.route(c.pin('c1'), (XL, py))
+                s.port((XL, py), src)
+                if side == 'p':
+                    s.route(rb.pin('P'), (x - 350, -160), (XL, -160))
+                    s.port((XL, -160), 'vcm')
+                else:
+                    s.label(rb.pin('P'), 'vcm', right=True)
+            a = s.place('amp_dp.sym', x, 0, name='xa1',
                         w="'w1'", l='0.15', rl="'rl1'", wt=AMP_PARAMS['wt'], mt="'mt1'", mm="'mm'")
-            gp, gn = 'g1p', 'g1n'
         else:
-            a = s.place('amp_dpc.sym', x, -300, name=f'xa{i}', w="'w2'", l='0.15', rl="'rl2'",
+            a = s.place('amp_dpc.sym', x, 0, name=f'xa{i}', w="'w2'", l='0.15', rl="'rl2'",
                         wt=AMP_PARAMS['wt'], mt="'mt2'", cs="'cs'", mm="'mm'")
-            gp, gn = prev
-        s.connect(a, inp=gp, inn=gn, nb='ibias', outp=outp, outn=outn, VDD='VDD', VSS='VSS')
-        prev = (outp, outn)
+        s.label(a.pin('nb'), 'ibias')
+        vdd.append(a.pin('VDD'))
+        vss.append(a.pin('VSS'))
+        if last:
+            for pin, net in (('outp', 'outp'), ('outn', 'outn')):
+                q = a.pin(pin)
+                s.route(q, (q[0] + 100, q[1]))
+                s.port((q[0] + 100, q[1]), net, right=True)
+        else:
+            # straight on to the next stage, with the tap brought out as a port
+            for pin, nxt, net, tx, ty in (('outp', 'inp', outp, 180, -120), ('outn', 'inn', outn, 220, 120)):
+                q = a.pin(pin)
+                s.bus(q, (x + 300, q[1]), [(x + tx, q[1])])
+                s.route((x + tx, q[1]), (x + tx, ty))
+                s.port((x + tx, ty), net, right=True)
+    s.rail(YV, XL, (n - 1) * 400, vdd, 'VDD', port=True)
+    s.rail(YS, XL, (n - 1) * 400, vss, 'VSS', port=True)
     s.write(os.path.join(XDIR, 'lna_chain.sch'))
     write_symbol(os.path.join(XDIR, 'lna_chain.sym'), left=['inp', 'inn', 'ibias', 'vcm'],
                  right=['outp', 'outn'] + taps, top=['VDD'], bottom=['VSS'], params=CHAIN_PARAMS,

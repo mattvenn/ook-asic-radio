@@ -5,31 +5,53 @@ K {}
 V {}
 S {}
 E {}
-T {lna_dp: NMOS diff pair, resistor loads, mirrored tail (x10 of ibias)} -400 -560 0 0 0.5 0.5 {}
-C {devices/iopin.sym} -400 -480 0 0 {name=p1
+T {lna_dp: NMOS diff pair, resistor loads, mirrored tail (x10 of ibias)} -300 -560 0 0 0.5 0.5 {}
+N 0 -290 0 -240 {}
+N 0 -240 0 -180 {}
+N 0 -240 -300 -240 {}
+N -40 -150 -300 -150 {}
+N 0 -120 0 -80 {}
+N 400 -290 400 -240 {}
+N 400 -240 400 -180 {}
+N 400 -240 600 -240 {}
+N 440 -150 600 -150 {}
+N 400 -120 400 -80 {}
+N 0 -350 0 -420 {}
+N 400 -350 400 -420 {}
+N -300 -420 0 -420 {}
+N 0 -420 400 -420 {}
+N 0 -80 200 -80 {}
+N 200 -80 400 -80 {}
+N 200 -80 200 -20 {}
+N -100 -20 -100 -50 {}
+N -100 -50 -40 -50 {}
+N -40 -50 -40 10 {}
+N -60 10 -40 10 {}
+N -40 10 160 10 {}
+N -100 -50 -300 -50 {}
+N -100 40 -100 100 {}
+N 200 40 200 100 {}
+N -300 100 -100 100 {}
+N -100 100 200 100 {}
+N 200 100 400 100 {}
+C {devices/iopin.sym} -300 -420 0 1 {name=p5
 lab=VDD}
-C {devices/iopin.sym} -400 -450 0 0 {name=p2
+C {devices/iopin.sym} -300 100 0 1 {name=p8
 lab=VSS}
-C {devices/iopin.sym} -400 -420 0 0 {name=p3
+C {devices/iopin.sym} -300 -50 0 1 {name=p7
 lab=ibias}
-C {devices/iopin.sym} -400 -390 0 0 {name=p4
+C {devices/iopin.sym} -300 -150 0 1 {name=p2
 lab=inp}
-C {devices/iopin.sym} -400 -360 0 0 {name=p5
+C {devices/iopin.sym} 600 -150 0 0 {name=p4
 lab=inn}
-C {devices/iopin.sym} -400 -330 0 0 {name=p6
+C {devices/iopin.sym} 600 -240 0 0 {name=p3
 lab=outp}
-C {devices/iopin.sym} -400 -300 0 0 {name=p7
+C {devices/iopin.sym} -300 -240 0 1 {name=p1
 lab=outn}
-C {devices/res.sym} 20 -300 0 0 {name=Rl_p
+C {devices/res.sym} 0 -320 0 0 {name=Rl_p
 value='rl_dp'
 m=1}
-C {devices/lab_pin.sym} 20 -330 0 1 {name=p8
-sig_type=std_logic
-lab=VDD}
-C {devices/lab_pin.sym} 20 -270 0 1 {name=p9
-sig_type=std_logic
-lab=outn}
-C {sky130_fd_pr/nfet_01v8.sym} 0 -150 0 0 {name=Mp
+C {sky130_fd_pr/nfet3_01v8.sym} -20 -150 0 0 {name=Mp
 nf=4
 mult=1
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -41,32 +63,15 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VSS
 L='l_dp'
 W='w_dp*(1+mm/2)'
 model=nfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} 20 -180 0 1 {name=p10
-sig_type=std_logic
-lab=outn}
-C {devices/lab_pin.sym} -20 -150 0 0 {name=p11
-sig_type=std_logic
-lab=inp}
-C {devices/lab_pin.sym} 20 -120 0 1 {name=p12
-sig_type=std_logic
-lab=tail}
-C {devices/lab_pin.sym} 20 -150 0 1 {name=p13
-sig_type=std_logic
-lab=VSS}
-C {devices/res.sym} 320 -300 0 0 {name=Rl_n
+C {devices/res.sym} 400 -320 0 0 {name=Rl_n
 value='rl_dp'
 m=1}
-C {devices/lab_pin.sym} 320 -330 0 1 {name=p14
-sig_type=std_logic
-lab=VDD}
-C {devices/lab_pin.sym} 320 -270 0 1 {name=p15
-sig_type=std_logic
-lab=outp}
-C {sky130_fd_pr/nfet_01v8.sym} 300 -150 0 0 {name=Mn
+C {sky130_fd_pr/nfet3_01v8.sym} 420 -150 0 1 {name=Mn
 nf=4
 mult=1
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -78,23 +83,15 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VSS
 L='l_dp'
 W='w_dp*(1-mm/2)'
 model=nfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} 320 -180 0 1 {name=p16
-sig_type=std_logic
-lab=outp}
-C {devices/lab_pin.sym} 280 -150 0 0 {name=p17
-sig_type=std_logic
-lab=inn}
-C {devices/lab_pin.sym} 320 -120 0 1 {name=p18
+C {devices/lab_pin.sym} 200 -80 0 1 {name=p6
 sig_type=std_logic
 lab=tail}
-C {devices/lab_pin.sym} 320 -150 0 1 {name=p19
-sig_type=std_logic
-lab=VSS}
-C {sky130_fd_pr/nfet_01v8.sym} 150 50 0 0 {name=Mtail
+C {sky130_fd_pr/nfet3_01v8.sym} 180 10 0 0 {name=Mtail
 nf=2
 mult=10
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -106,23 +103,12 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VSS
 L=0.5
 W='wt_dp'
 model=nfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} 170 20 0 1 {name=p20
-sig_type=std_logic
-lab=tail}
-C {devices/lab_pin.sym} 130 50 0 0 {name=p21
-sig_type=std_logic
-lab=ibias}
-C {devices/lab_pin.sym} 170 80 0 1 {name=p22
-sig_type=std_logic
-lab=VSS}
-C {devices/lab_pin.sym} 170 50 0 1 {name=p23
-sig_type=std_logic
-lab=VSS}
-C {sky130_fd_pr/nfet_01v8.sym} -150 50 0 0 {name=Mdiode
+C {sky130_fd_pr/nfet3_01v8.sym} -80 10 0 1 {name=Mdiode
 nf=2
 mult=1
 ad="'int((nf+1)/2) * W/nf * 0.29'"
@@ -134,19 +120,8 @@ nrs="'0.29 / W'"
 sa=0
 sb=0
 sd=0
+body=VSS
 L=0.5
 W='wt_dp'
 model=nfet_01v8
 spiceprefix=X}
-C {devices/lab_pin.sym} -130 20 0 1 {name=p24
-sig_type=std_logic
-lab=ibias}
-C {devices/lab_pin.sym} -170 50 0 0 {name=p25
-sig_type=std_logic
-lab=ibias}
-C {devices/lab_pin.sym} -130 80 0 1 {name=p26
-sig_type=std_logic
-lab=VSS}
-C {devices/lab_pin.sym} -130 50 0 1 {name=p27
-sig_type=std_logic
-lab=VSS}
