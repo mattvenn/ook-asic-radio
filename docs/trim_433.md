@@ -1,6 +1,6 @@
 # Stretch goal: record and replay a 433.92 MHz fixed-code fob
 
-Work plan with review gates: [plan_ring_tune.md](plan_ring_tune.md).
+Work plan with review gates: [plan_ring_tune.md](plan_ring_tune.md). **Not pursued (2026-10-12): considered too much of a stretch goal for this shuttle; the ring stays untrimmed (`NINV`).**
 
 What it would take to record a garage-door fob with the RX and replay it with the TX so a commercial receiver
 accepts it. **No new sims were run.** Every number here comes from results already in the repo (PLAN.md,

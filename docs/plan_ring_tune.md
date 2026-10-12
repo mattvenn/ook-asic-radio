@@ -1,5 +1,7 @@
 # Plan: tunable TX ring (433.92 MHz for fob record / replay)
 
+> **Not pursued (2026-10-12):** the tunable ring was considered too much of a stretch goal for this shuttle. Phase 1 was started (taps + varactors looked feasible, but the fine control path needed more work) and then dropped. The TX frequency is set by `NINV` instead (STATUS next step 1).
+
 Why, and the numbers behind it: [trim_433.md](trim_433.md). This is the work plan. It has six phases. Each phase
 ends at a **gate where Matt reviews and approves** before the next phase starts. Nothing merges to `main`
 until gate 5: all work happens on a branch (`ring-tune`), so `main` stays a tapeout-ready fallback (the
