@@ -2,16 +2,15 @@
 
 Where these come from: a review of [verify_2026-10-11.md](verify_2026-10-11.md) against
 [verification.md](verification.md). Every check the plan lists passes. This plan adds the checks the plan
-doesn't have yet. The tunable TX ring was dropped on 2026-10-12 ([plan_ring_tune.md](plan_ring_tune.md)); the TX
-frequency is set by `NINV` (STATUS.md next step 1).
+doesn't have yet. The tunable TX ring was dropped on 2026-10-12 ([plan_ring_tune.md](plan_ring_tune.md)), and the
+ring stays at `NINV` 22 (STATUS.md next step 1).
 
 The work is in four phases, ordered by what they depend on, not only by severity. Each phase ends at a
 **gate where Matt reviews the results**. A failing check opens a design change and is not patched over in this plan.
 
-**Interaction with the `NINV` change:** setting `NINV` changes `tx_ring` and re-opens the tile build. Phase 1 and
-the RX parts of phase 2 don't depend on it and can start now. The TX parts of 2.1 and all of phase 3 run on the
-tile, so run them after `NINV` is set and the tile is rebuilt. Anything run before that has to be repeated. Item 4.1
-(decap flatten) is a layout change, so do it in that same tile rebuild.
+**No block change pending:** `NINV` stays 22 (2026-10-12), so every phase runs on the current tile. Item 4.1 (decap
+flatten) is the only layout change here; it fixes a standalone-cell DRC flag and changes nothing electrically, so do
+it in the final tile rebuild before 4.2.
 
 ## Gaps, ranked
 
@@ -67,7 +66,7 @@ TT supply tolerances first; use them if they're wider.)
 - **RX:** chain gain at 434 MHz, NF, det idle and slope, comparator offset and trim step at the DAC operating point.
   Run at tt and the two worst corners (ss 10 °C for gain and stability, fs 50 °C for sensitivity) × 3 supplies.
   Rerun `sim/chain/stability.sh` at 1.89 V, ss 10 °C, the highest-gain point.
-- **TX** (on the final `NINV` ring): ring frequency, power and arm duty, at 5 corners × 3 VDPWR × 3 VAPWR,
+- **TX:** ring frequency, power and arm duty, at 5 corners × 3 VDPWR × 3 VAPWR,
   schematic, and `--pex` at tt.
 - Feed the worst RX gain / slope / trim into `model/e2e.py` (as for the corners): −92 dBm at the worst supply ×
   fs 50 °C.
@@ -150,10 +149,10 @@ of reset, and no TX output before `tx_en`.
 ## Phase 4: housekeeping, with the next tile rebuild
 
 **4.1 Decap hvi.5 (G11).** `lay.py` `write(flatten=True)` for `decap_vapwr_p1`–`p4`, as for the TX blocks in
-13c28aa. Then `layout/check.sh` on each part, and drop the caveat from verification.md. Do this in the same tile
-rebuild as the `NINV` change, followed by `check_top.sh`, `export_tt.sh` and the GitHub precheck.
+13c28aa. Then `layout/check.sh` on each part, and drop the caveat from verification.md. Do this in the final tile
+rebuild, followed by `check_top.sh`, `export_tt.sh` and the GitHub precheck.
 
-**4.2 Full rerun.** After the `NINV` change and tile rebuild, rerun verification.md end to end, including
+**4.2 Full rerun.** After that tile rebuild, rerun verification.md end to end, including
 every check added here, and write `docs/verify_<date>.md` as before.
 
 > **Gate 4 (Matt):** tapeout sign-off on verification.

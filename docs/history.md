@@ -421,6 +421,15 @@ Measured ring: tt08/ttsky25b `tt_um_mattvenn_analog_ring_osc`, ring 1 = 18 × `s
 - **Rule for the 433 MHz ring:** design to **433 / 0.866 ≈ 500 MHz extracted-tt**. With the same std-cell ring that's ~23 stages (22 inv + nand) if the load stays similar (f ∝ 1/N: 19 × 598 / 500 ≈ 22.7).
   - If the new lot is really tt it lands ~500 MHz; if ss, ~414 MHz. Both are inside the RX band (330–560 MHz).
 - ngspice trap: in a control loop, `option temp = X` must come **after** `reset` (`set temp` does nothing).
+- **NINV sweep (2026-10-12), both ttsky25b rings.** Silicon: ring 1 (18 inv) ~515 MHz, ring 2 (36 inv) ~285 MHz (TT
+  feedback page). Their `ring.mag` / `ring_2.mag` re-extracted alone with `layout/pex.sh`'s flow (magic 8.3.642 R+C), with
+  their driver + pad_model: tt 611 / 337 MHz (ss 503 / 277, ff 702 / 387). Silicon / extracted = **0.843 / 0.847**: the
+  factor doesn't depend on ring length. The 0.866 above is against the *whole-tile* extraction (598), so it applies to
+  our tile extraction (519 MHz rc → ~450); the block extraction (530) takes 0.843 → ~447. Either way **~448 MHz (+3 %)**
+  for 22 inv; STATUS's earlier ~459 was 530 × 0.866. Our folded `tx_ring` swept (each point generated, DRC 0, LVS match,
+  `tb_tx_ring --pex`; block tt MHz → ×0.845): 18: 626 → 529; 20: 574 → 485; **22: 530 → 448**; 24: 493 → 416;
+  26: 460 → 389; 28: 432 → 365; 36: 345 → 292. ss / ff are −17 / +14 %. The layout is lighter than the 3.2 fF/stage
+  schematic (2.4 fF matches), which is why 22 lands above the 428 predicted at sizing. **Decision: keep 22.**
 - **Schematic vs extracted:** the original schematic (10 fF wiring per stage in `inverter`) gives only **357 MHz** against 598 extracted, so it was very pessimistic. **3.2 fF per stage** reproduces the extracted ring (`sim/ring/ttsky25b_ring_sch.sh` sweeps it).
 - **New ring sizing** with that calibrated model (`sim/ring/ring_stages.sh`; nand2_2 enable + N × inv_2, same first-driver load):
   - 18 inverters: 590 MHz (check vs 598);
