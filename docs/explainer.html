@@ -184,9 +184,9 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
   <div>
     <h2 id="helph">Keys</h2>
     <ul>
-      <li><kbd>→</kbd> or <kbd>Space</kbd>: next step of the tour; <kbd>←</kbd>: back</li>
+      <li><kbd>→</kbd> or <kbd>Space</kbd>: next step of the tour (after the last, back to the first); <kbd>←</kbd>: back</li>
       <li><kbd>Esc</kbd>: up one level</li>
-      <li><kbd>1</kbd> link, <kbd>2</kbd> chip, <kbd>3</kbd> transmitter, <kbd>4</kbd> receiver</li>
+      <li><kbd>1</kbd> start, <kbd>2</kbd> chip, <kbd>3</kbd> transmitter, <kbd>4</kbd> receiver</li>
       <li><kbd>[</kbd> <kbd>]</kbd>: received power 1 dB stronger / weaker</li>
       <li><kbd>p</kbd>: pause or play the animation</li>
       <li><kbd>?</kbd>: this help</li>
@@ -947,6 +947,7 @@ function glideTo(target, ms = 1200) {
   };
   requestAnimationFrame(tick);
 }
+const nextStep = () => setStep((S.step + 1) % TOUR.length);   // the last step wraps to the first
 function setStep(i, initial = false) {
   S.step = Math.max(0, Math.min(TOUR.length - 1, i));
   const t = TOUR[S.step];
@@ -1042,11 +1043,11 @@ document.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('.hit') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.target.closest('.hit').dispatchEvent(new MouseEvent('click', {bubbles: true})); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   // the number keys always jump to a page, even with the distance slider focused (it keeps focus after a drag)
-  if (/^[1-4]$/.test(e.key)) { e.preventDefault(); if (e.target.blur && e.target !== document.body) e.target.blur(); go(['link', 'chip', 'chip:tx', 'chip:rx'][+e.key - 1]); return; }
+  if (/^[1-4]$/.test(e.key)) { e.preventDefault(); if (e.target.blur && e.target !== document.body) e.target.blur(); if (e.key === '1') setStep(0); else go(['chip', 'chip:tx', 'chip:rx'][+e.key - 2]); return; }   // 1: the start of the tour (the two-board page is its last step now)
   if (e.target.tagName === 'INPUT') return;
   if (!$('help').hidden) { if (e.key === 'Escape' || e.key === '?') { $('help').hidden = true; } return; }
   const k = e.key;
-  if (k === 'ArrowRight' || (k === ' ' && e.target.tagName !== 'BUTTON')) { e.preventDefault(); setStep(S.step + 1); }
+  if (k === 'ArrowRight' || (k === ' ' && e.target.tagName !== 'BUTTON')) { e.preventDefault(); nextStep(); }
   else if (k === 'ArrowLeft') { e.preventDefault(); setStep(S.step - 1); }
   else if (k === 'Escape') { if (S.block) S.block = null; else if (S.focus) S.focus = null; else S.level = 'link'; render(); }
   else if ((k === '[' || k === ']') && usesPower()) { glideId++; S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); render(); }
@@ -1058,7 +1059,7 @@ $('dist').addEventListener('pointerdown', () => { S.dragging = true; });
 addEventListener('pointerup', () => { if (S.dragging) { S.dragging = false; anim.reset(); anim._si = null; } });
 $('dist').addEventListener('change', () => { S.dragging = false; anim.reset(); anim._si = null; });   // keyboard or release: start the sweep from chip 1
 $('prev').onclick = () => setStep(S.step - 1);
-$('next').onclick = () => setStep(S.step + 1);
+$('next').onclick = nextStep;
 let resizeT; addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (D) render(); }, 100); });
 $('helpbtn').onclick = () => { $('help').hidden = false; $('helpclose').focus(); };
 $('helpclose').onclick = () => { $('help').hidden = true; };
