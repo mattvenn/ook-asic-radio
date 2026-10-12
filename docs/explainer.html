@@ -355,7 +355,7 @@ const NODATA = what => `<div class="nodata">No ${what} data in this build: run d
 
 // ------------------------------------------------------------------ blocks
 const B = {
-  intro: {lvl: 'link', name: 'A radio on a tiny open-source chip', short: 'The idea', sub: 'my first semiconductor radio', anchor: 'how-it-works',
+  intro: {lvl: 'link', scene: false, name: 'A radio on a tiny open-source chip', short: 'The idea', sub: 'my first semiconductor radio', anchor: 'how-it-works',
     text: 'My first semiconductor radio, and one of the first radios on a Tiny Tapeout shuttle. The transmitter and the receiver share six tiles, about 0.1 mm² of silicon. The 433 MHz carrier comes from a [[tx_ring|ring of inverters]], with no crystal and no PLL. The antenna is two bare wires, with no parts on the board around the chip. The only thing it borrows from the board is a 10 MHz clock for timing. Two boards run the same chip: one sends a code, and the other toggles an [[led|LED]] when it hears it.',
     plot: () => figLayout()},
   air: {lvl: 'link', name: 'How weak does the signal get?', short: 'Over the air', sub: 'received power vs distance, two wire dipoles', anchor: 'bench-measurements-phase-0',
@@ -718,7 +718,7 @@ function focusPage(id) {
       <p>${xrefs(typeof b.text === 'function' ? b.text() : b.text)}</p>
       <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">More details ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}${b.rtl ? `<a class="secondary" href="${REPO}verilog/rtl/${b.rtl}.v" target="_blank" rel="noopener">RTL ↗</a>` : ''}</div>
     </div>
-    <div class="fplots"${COL.pz < 1 ? ` style="zoom:${COL.pz}"` : ''}>${isLink ? linkScene(id) : ''}${plots || ''}</div>
+    <div class="fplots"${COL.pz < 1 ? ` style="zoom:${COL.pz}"` : ''}>${isLink && b.scene !== false ? linkScene(id) : ''}${plots || ''}</div>
   </div>`;
 }
 
@@ -861,7 +861,7 @@ const $ = id => document.getElementById(id);
 const COL = {stage: {w: 800, ph: 1}, detail: {w: 800, ph: 1}, z: 1, pz: 1, key: ''};   // z scales the whole page, pz only the plot column
 const useGeo = c => { GEO.w = Math.floor(COL[c].w / COL.z / (c === 'detail' ? COL.pz : 1)); GEO.ph = COL[c].ph; GEO.f = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * .82); };
 /* pages the received power doesn't change: the slider greys out there */
-const usesPower = () => S.block ? !(B[S.block].lvl === 'tx' || S.block === 'bias_gen') : S.level !== 'chip';
+const usesPower = () => S.block ? !(B[S.block].lvl === 'tx' || S.block === 'bias_gen' || S.block === 'intro') : S.level !== 'chip';
 const fits = () => innerWidth > 1000;   // desktop: the page is fixed to the screen; narrower stacks and scrolls
 const inner = el => el.firstElementChild;
 /* build, measure, and rebuild until the page fits the screen: first at the real column widths,
