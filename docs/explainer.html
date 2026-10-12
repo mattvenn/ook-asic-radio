@@ -186,7 +186,7 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
     <ul>
       <li><kbd>→</kbd> or <kbd>Space</kbd>: next step of the tour (after the last, back to the first); <kbd>←</kbd>: back</li>
       <li><kbd>Esc</kbd>: up one level</li>
-      <li><kbd>1</kbd> start, <kbd>2</kbd> chip, <kbd>3</kbd> transmitter, <kbd>4</kbd> receiver</li>
+      <li><kbd>1</kbd>–<kbd>9</kbd>: go to that step; two digits quickly for steps 10 and up (<kbd>1</kbd> <kbd>2</kbd>: step 12)</li>
       <li><kbd>[</kbd> <kbd>]</kbd>: received power 1 dB stronger / weaker</li>
       <li><kbd>p</kbd>: pause or play the animation</li>
       <li><kbd>?</kbd>: this help</li>
@@ -933,29 +933,14 @@ function build() {
   useGeo('stage');
 }
 function go(where, block = null) { const [level, focus] = where.split(':'); S.level = level; S.focus = focus || null; S.block = block; render(); }
-/* tour steps that set a distance glide the slider there, so it never jumps */
-let glideId = 0;
-function glideTo(target, ms = 1200) {
-  const id = ++glideId, from = S.p;
-  let t0 = null;
-  const tick = now => {
-    if (id !== glideId) return;
-    if (t0 == null) t0 = now;
-    const u = Math.max(0, Math.min(1, (now - t0) / ms)), e = u < .5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u);
-    S.p = from + (target - from) * e; render();
-    if (u < 1) requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-}
 const nextStep = () => setStep((S.step + 1) % TOUR.length);   // the last step wraps to the first
 function setStep(i, initial = false) {
   S.step = Math.max(0, Math.min(TOUR.length - 1, i));
   const t = TOUR[S.step];
   S.level = t.level; S.focus = t.focus || null; S.block = t.block;
   history.replaceState(null, '', '#step=' + S.step);
-  if (t.p != null && initial) { glideId++; S.p = t.p; }
+  if (t.p != null && initial) S.p = t.p;   // a step's power only applies when the page opens on it; moving between steps leaves the slider where it is
   render();
-  if (t.p != null && !initial && Math.abs(S.p - t.p) > .05) glideTo(t.p);
 }
 
 // ------------------------------------------------------------------ animation (link level)
@@ -1039,22 +1024,32 @@ document.addEventListener('click', e => {
   S.block = id; S.level = B[id].lvl === 'link' ? 'link' : 'chip'; S.focus = null;
   render();
 });
+const digits = {n: null, t: 0};
 document.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('.hit') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.target.closest('.hit').dispatchEvent(new MouseEvent('click', {bubbles: true})); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  // the number keys always jump to a page, even with the distance slider focused (it keeps focus after a drag)
-  if (/^[1-4]$/.test(e.key)) { e.preventDefault(); if (e.target.blur && e.target !== document.body) e.target.blur(); if (e.key === '1') setStep(0); else go(['chip', 'chip:tx', 'chip:rx'][+e.key - 2]); return; }   // 1: the start of the tour (the two-board page is its last step now)
+  // the number keys jump to that tour step, even with the distance slider focused (it keeps focus after a drag);
+  // a second digit within 0.8 s makes a two-digit step (1 then 2: step 12)
+  if (/^[0-9]$/.test(e.key)) {
+    e.preventDefault(); if (e.target.blur && e.target !== document.body) e.target.blur();
+    const now = performance.now(), two = digits.n != null && now - digits.t < 800 ? digits.n * 10 + +e.key : null;
+    const n = two != null && two <= TOUR.length ? two : +e.key;
+    digits.n = two != null && two <= TOUR.length ? null : n; digits.t = now;
+    if (n >= 1 && n <= TOUR.length) setStep(n - 1);
+    return;
+  }
+  // ← / → always change the step: the slider keeps focus after a drag and would otherwise take them ([ / ] nudge the power)
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); if (e.target.blur && e.target !== document.body) e.target.blur(); if (e.key === 'ArrowRight') nextStep(); else setStep(S.step - 1); return; }
   if (e.target.tagName === 'INPUT') return;
   if (!$('help').hidden) { if (e.key === 'Escape' || e.key === '?') { $('help').hidden = true; } return; }
   const k = e.key;
-  if (k === 'ArrowRight' || (k === ' ' && e.target.tagName !== 'BUTTON')) { e.preventDefault(); nextStep(); }
-  else if (k === 'ArrowLeft') { e.preventDefault(); setStep(S.step - 1); }
+  if (k === ' ' && e.target.tagName !== 'BUTTON') { e.preventDefault(); nextStep(); }
   else if (k === 'Escape') { if (S.block) S.block = null; else if (S.focus) S.focus = null; else S.level = 'link'; render(); }
-  else if ((k === '[' || k === ']') && usesPower()) { glideId++; S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); render(); }
+  else if ((k === '[' || k === ']') && usesPower()) { S.p = Math.max(-110, Math.min(-25, S.p + (k === '[' ? 1 : -1))); render(); }
   else if (k === 'p') S.playing = !S.playing;
   else if (k === '?') $('help').hidden = false;
 });
-$('dist').addEventListener('input', e => { glideId++; S.p = -e.target.value; render(); $('dist').focus(); });
+$('dist').addEventListener('input', e => { S.p = -e.target.value; render(); $('dist').focus(); });
 $('dist').addEventListener('pointerdown', () => { S.dragging = true; });
 addEventListener('pointerup', () => { if (S.dragging) { S.dragging = false; anim.reset(); anim._si = null; } });
 $('dist').addEventListener('change', () => { S.dragging = false; anim.reset(); anim._si = null; });   // keyboard or release: start the sweep from chip 1
