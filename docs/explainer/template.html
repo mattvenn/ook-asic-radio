@@ -201,7 +201,7 @@ const DOC = REPO + 'docs/how_it_works.md#';
 const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.sch';
 // 3D view of the block's layout, as linked from layout/README.md (the GDS has the same name as the schematic)
 const GDS = (n, dir = 'layout') => 'https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/' + dir + '/' + n + '.gds';
-const SENS = -92;
+const SENS = -94;
 let D = null;                       // decoded payload
 const S = {level: 'link', focus: null, block: null, p: -44, step: 0, playing: true};
 
@@ -357,7 +357,7 @@ const B = {
     text: 'The transmitter switches a 433 MHz carrier on and off, at about +4 dBm, and that is all it does. The receiver doesn\'t tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. Each on/off bit lasts 104 µs, about 45,000 cycles of the 433 MHz carrier (the docs and code call these bits chips), and the pattern is a [[gold|127-bit code]]. So the TX needs no crystal or PLL, just a [[tx_ring|free-running ring of inverters]].',
     plot: () => figCode()},
   air: {lvl: 'link', name: 'Over the air', sub: 'received power vs distance, two wire dipoles', anchor: 'bench-measurements-phase-0',
-    text: 'Measured on the bench with an earlier chip (ttsky25b, its ring at 518 MHz), 14.5 cm wire dipoles held parallel, 10 cm to 4 m: close to free space, −44 dBm at 1 m, falling as 1/d^1.89. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. On that model the −92 dBm sensitivity is reached at about 40 m. Distances past 4 m are that model, not a measurement.',
+    text: 'Measured on the bench with an earlier chip (ttsky25b, its ring at 518 MHz), 14.5 cm wire dipoles held parallel, 10 cm to 4 m: close to free space, −44 dBm at 1 m, falling as 1/d^1.89. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. On that model the −94 dBm sensitivity is reached at about 45 m. Distances past 4 m are that model, not a measurement.',
     plot: () => figPath()},
   gold: {lvl: 'tx', rtl: 'rd_gold', name: 'Gold code (digital)', sub: 'radio_digital macro, TX side', anchor: 'digital-radio_digital-macro', color: 'dig',
     text: 'The 7 DIP switches pick one of 128 Gold codes: two 7-bit LFSRs, the second started later by the switch value, XORed together. Flip the switches below. 127 noise-like bits, half on, half off. Each bit lasts 104 µs, so one burst takes 13.2 ms. The TX keys the [[tx_ring|ring]] with the code three times, with 64 silent bits between bursts.',
@@ -388,7 +388,7 @@ const B = {
     plot: () => figComp()},
   r2r: {lvl: 'rx', rtl: 'rd_rx', name: 'r2r + trim servo', sub: '8-bit DAC, offset trim', anchor: 'where-the-threshold-goes', sch: 'r2r', color: 'dac',
     text: () => { const b = bb(), hi = b && b.comp ? Math.round(100 * Array.from(dec(b.comp).y).filter(v => v > .9).length / dec(b.comp).y.length) : null;
-      return `Every [[comp_ct|comparator]] has a small built-in error from imperfectly matched transistors, its offset: it might only flip when one input is 2 mV above the other. Near the sensitivity limit the signal is only ~1 mV, so without correction the comparator would always say 1 (or always 0). Every 13 µs sample, the digital steps an 8-bit DAC up for a 1 and down for a 0: 7 mV at the DAC, ~0.07 mV at the comparator through a weak second input pair. It settles where the comparator says 1 half the time, which cancels the offset${hi != null ? ` (here 1 for ${N(hi + '%', 4)} of the time)` : ''}. In this simulation a behavioural stand-in plays the digital servo; a mixed-signal run with the real RTL settles the same way at −92 dBm.`; },
+      return `Every [[comp_ct|comparator]] has a small built-in error from imperfectly matched transistors, its offset: it might only flip when one input is 2 mV above the other. Near the sensitivity limit the signal is only ~1 mV, so without correction the comparator would always say 1 (or always 0). Every 13 µs sample, the digital steps an 8-bit DAC up for a 1 and down for a 0: 7 mV at the DAC, ~0.07 mV at the comparator through a weak second input pair. It settles where the comparator says 1 half the time, which cancels the offset${hi != null ? ` (here 1 for ${N(hi + '%', 4)} of the time)` : ''}. In this simulation a behavioural stand-in plays the digital servo; a mixed-signal run with the real RTL settles the same way at −94 dBm.`; },
     plot: () => figTrim()},
   slicer: {lvl: 'rx', rtl: 'rd_corr', name: 'bit slicer (digital)', sub: 'majority vote per bit', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
     text: 'The [[comp_ct|comparator]] is read every 13 µs: 8 samples per 104 µs bit. Many samples are wrong near the limit, so the 8 are combined by majority vote (5 or more 1s means on). The receiver doesn\'t know where each bit starts, so instead of recovering the transmitter\'s timing it runs four slicers at once, their windows offset by 2 samples; one of them is always nearly lined up. Each keeps its last 127 bit decisions for the [[corr|correlator]]. Below: green votes are right, red wrong, grey a window split half and half.',
@@ -420,7 +420,7 @@ function figPath() {
       {d: two, color: 'var(--sig2)', label: `two-ray, boards ${HGT} m up`, w: 2},
       {d: {x: p.d_m, y: p.p_dbm}, color: '#e8eef2', label: 'measured', pts: true}],
     xlog: true, xlim: [0.1, 200], xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
-    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −92 dBm', left: true}], vl: [{x: Math.max(0.1, Math.min(200, dist())), color: '#fff'}],
+    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm', left: true}], vl: [{x: Math.max(0.1, Math.min(200, dist())), color: '#fff'}],
     bands: [{x0: 4, x1: 200, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + '<p>Measured from 10 cm to 4 m. Further out (shaded) is a model: flat ground, line of sight, no walls or bodies. Real range will vary.</p>';
 }
 /* the Gold code page: seven DIP switches pick the code; code k = M1 xor M2 shifted by k bits (model/gold.py, as the RTL makes it) */
@@ -681,7 +681,7 @@ function levelLink() {
     <div class="ro"><small>TX power</small><b>+4 dBm</b></div>
     <div class="ro"><small>≈ distance (${dist() > DB ? 'two-ray' : dist() > 4 ? 'extrapolated' : 'bench'})</small><b>${fmtd(dist())}</b></div>
     <div class="ro"><small>received</small><b>${p.toFixed(0)} dBm</b></div>
-    <div class="ro"><small>margin to −92 dBm</small><b class="${margin >= 0 ? 'good' : 'bad'}">${margin >= 0 ? '+' : ''}${margin.toFixed(0)} dB</b></div>
+    <div class="ro"><small>margin to −94 dBm</small><b class="${margin >= 0 ? 'good' : 'bad'}">${margin >= 0 ? '+' : ''}${margin.toFixed(0)} dB</b></div>
     <div class="ro"><small>correlator</small><b id="live">–</b></div>
     <div class="ro"><small>LED (2 of 3 bursts)</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'missed'}</b></div>
   </div>
@@ -829,7 +829,7 @@ function dgSVG(opts = {}) {
 const TOUR = [
   {level: 'link', block: null, p: -44, cap: 'Two boards, the same chip. The left one transmits, the right one receives, 1 m apart.'},
   {level: 'link', block: 'ook', cap: 'On-off keying: carrier on is a 1, carrier off is a 0. The pattern is a 127-bit Gold code.'},
-  {level: 'link', block: 'air', cap: 'At 1 m the receiver sees −44 dBm. It still works down to about −92 dBm: 48 dB, some 60,000× less power.'},
+  {level: 'link', block: 'air', cap: 'At 1 m the receiver sees −44 dBm. It still works around −94 dBm: 50 dB, 100,000× less power.'},
   {level: 'chip', block: null, cap: 'Functional diagram'},
   {level: 'chip', focus: 'tx', block: null, cap: 'The transmitter: digital code → ring oscillator → level shifter → two drivers → dipole.'},
   {level: 'chip', block: 'gold', cap: 'The digital generates the Gold code from two 7-bit LFSRs and sends it three times.'},
