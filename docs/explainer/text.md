@@ -4,18 +4,26 @@
 ## intro
 name: A radio on a tiny open-source chip
 short: The idea
-sub: my first semiconductor radio
 cap: My first radio chip: transmitter and receiver in six Tiny Tapeout tiles, with two bare wires for an antenna.
 
-My first semiconductor radio, and one of the first radios on a Tiny Tapeout shuttle. The transmitter and the receiver share six tiles, about 0.1 mm² of silicon. The 433 MHz carrier comes from a [[tx_ring|ring of inverters]], with no crystal and no PLL. The antenna is two bare wires, with no parts on the board around the chip. The only thing it borrows from the board is a 10 MHz clock for timing. Two boards run the same chip: one sends a code, and the other toggles an [[led|LED]] when it hears it.
+My first semiconductor radio, and one of the first radios on a Tiny Tapeout shuttle. The transmitter and the receiver share six tiles, about 0.1 mm² of silicon.
+
+It's designed to use the minimum of external components, an external 10MHz clock and 2 14cm long wires for the antenna. It should work to around 80–90 meters in good conditions.
+
+The design can either transmit or receive, so 2 demoboards are needed to demonstrate. Pressing reset on one toggles the LED on the other.
 
 ## air
 name: How weak does the signal get?
 short: Over the air
-sub: received power vs distance, two wire dipoles
-cap: At 1 m the receiver sees −44 dBm. At ~45 m it is down to −94 dBm: 100,000× weaker, below its own noise.
+cap: With the new transmitter the receiver should see about −32 dBm at 1 m. At ~90 m it is down to −94 dBm: over a million times weaker, below its own noise.
 
-A normal radio uses crystals, filters and tuned circuits. This one has none of them, so how much signal is there to work with? On the bench, with an earlier chip (ttsky25b, its ring at 518 MHz) and 14.5 cm wire dipoles held parallel, the receiver got −44 dBm at 1 m, falling as 1/d^1.89 out to 4 m. Further out the reflection off the ground cancels more and more of the direct path. With both boards 1 m up that takes over near 6 m, and the two-ray model then loses 40 dB per decade. On that model the −94 dBm sensitivity is reached at about 45 m: 100,000× weaker than at 1 m, and below the receiver's own noise. Distances past 4 m are that model, not a measurement.
+On the bench, I used an earlier [ring oscillator design](https://tinytapeout.com/chips/ttsky25b/tt_um_mattvenn_analog_ring_osc) as a transmitter. I used 14.5 cm wire dipoles held parallel and measured the received signal with a scope. The scope recorded −44 dBm at 1 m, falling as 1/d^1.89 out to 4 m.
+
+That transmitter was weak: a 1.8 V pad with only about 200 mV of swing, −8.5 dBm. The new transmitter drives both wires of the dipole at 3.3 V, about +3.5 dBm in simulation, so 12 dB more. The solid line is the bench measurement shifted up by those 12 dB: about −32 dBm at 1 m.
+
+Further out the reflection off the ground is expected to cancel more and more of the direct path. With both boards 1 m above the ground that takes over near 6 m, and the two-ray model then loses 40 dB per decade.
+
+The receiver has a sensitivity of about -94dBm, so I'm expecting a range of about 90 m.
 
 ## ook
 name: Trick 1: keep the radio simple

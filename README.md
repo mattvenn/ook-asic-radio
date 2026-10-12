@@ -5,7 +5,7 @@
 [![Made with Claude](https://img.shields.io/badge/Made%20with-Claude-D97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code)
 
 A mixed-signal Tiny Tapeout project: two demo boards with the same chip talk over the air with
-bare-wire dipole antennas and no external components. It should get to about 50m in good conditions.
+bare-wire dipole antennas and no external components. It should get to roughly 80–90 m in good conditions (estimate: the bench path loss plus the new transmitter's simulated power).
 
 - **TX:** an on-chip ring oscillator at ~433 MHz, keyed on and off (OOK), with antiphase drivers into a dipole.
 - **RX:** a 6-stage NMOS differential-pair limiting chain with a successive-detection log detector, and one comparator with an averaged, trimmed threshold. A digital Gold-code correlator detects the transmitter's code and toggles an LED.

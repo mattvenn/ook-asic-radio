@@ -173,7 +173,7 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
   <nav class="crumbs" aria-label="Level" id="crumbs"></nav>
   <div class="dist">
     <label for="dist">Received power</label>
-    <input id="dist" type="range" min="25" max="110" step="0.5" value="68" aria-describedby="distout">
+    <input id="dist" type="range" min="25" max="110" step="0.5" value="56" aria-describedby="distout">
     <output id="distout" for="dist"></output>
   </div>
   <div class="navbtns">
@@ -213,7 +213,7 @@ const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.s
 const GDS = (n, dir = 'layout') => 'https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/' + dir + '/' + n + '.gds';
 const SENS = -94;
 let D = null;                       // decoded payload
-const S = {level: 'link', focus: null, block: null, p: -68,   // -68 dBm: ~10 m on the path model, where the page opens
+const S = {level: 'link', focus: null, block: null, p: -56,   // -56 dBm: ~10 m on the path model (new TX), where the page opens
            step: 0, playing: true};
 
 // ------------------------------------------------------------------ data
@@ -242,11 +242,16 @@ function unpack(b64, n) {
    past it, the two-ray ground-reflection model, 40 dB per decade. Breakpoint d_b = 4·h_tx·h_rx/λ for both boards
    HGT m above flat ground at 433.92 MHz. */
 const HGT = 1, LAMBDA = 299.792458 / 433.92, DB = 4 * HGT * HGT / LAMBDA;
+/* The bench sweep used the old ttsky25b ring on a 1.8 V pad (-8.5 dBm into 50 ohm, ~200 mV swing). The new TX drives
+   both dipole arms at 3.3 V: +3.1 (extracted) to +4.1 dBm (schematic) into a 73 ohm dipole model, ~12 dB more.
+   Every received power and distance here is the bench path loss shifted up by that: an estimate until silicon. */
+const TX_DB = 12;
 const WAVE_S = 22, WAVE_N = 32;   // link scene: wavefront spacing on screen (scene units) and how many can be in flight
-const benchP = d => D.path.ref_dbm - 10 * D.path.n * Math.log10(d);
+const REF = () => D.path.ref_dbm + TX_DB;   // ~-32 dBm at 1 m with the new TX
+const benchP = d => REF() - 10 * D.path.n * Math.log10(d);
 const pathP = d => d <= DB ? benchP(d) : benchP(DB) - 40 * Math.log10(d / DB);
 const prx = () => S.p;
-const dist = (p = S.p) => p >= benchP(DB) ? Math.pow(10, (D.path.ref_dbm - p) / (10 * D.path.n)) : DB * Math.pow(10, (benchP(DB) - p) / 40);
+const dist = (p = S.p) => p >= benchP(DB) ? Math.pow(10, (REF() - p) / (10 * D.path.n)) : DB * Math.pow(10, (benchP(DB) - p) / 40);
 const distSrc = (d = dist()) => d <= 4 ? 'bench fit' : d <= DB ? 'bench fit, extrapolated' : 'two-ray model';
 function run() {             // model run nearest the received power
   const m = D.model, p = Math.max(m.levels[0], Math.min(m.levels[m.levels.length - 1], prx()));
@@ -313,7 +318,7 @@ function plot(opts) {
     if (s.pts) { for (let i = 0; i < s.d.x.length; i++) g += `<circle cx="${sx(s.d.x[i])}" cy="${sy(s.d.y[i])}" r="5" fill="${s.color}"/>`; return; }
     let p = '';
     for (let i = 0; i < s.d.x.length; i++) { const Y = s.d.y[i]; if (!isFinite(ty(Y))) continue; p += (s.step && i ? `${sx(s.d.x[i]).toFixed(1)},${sy(s.d.y[i - 1]).toFixed(1)} ` : '') + `${sx(s.d.x[i]).toFixed(1)},${sy(Y).toFixed(1)} `; }
-    g += `<polyline points="${p}" fill="none" stroke="${s.color}" stroke-width="${s.w || 1.6}" stroke-linejoin="round" opacity="${s.op || 1}"/>`;
+    g += `<polyline points="${p}" fill="none" stroke="${s.color}" stroke-width="${s.w || 1.6}" stroke-linejoin="round" opacity="${s.op || 1}"${s.dash ? ` stroke-dasharray="${s.dash}"` : ''}/>`;
   });
   g += `</g><line class="cur" x1="0" x2="0" y1="${T}" y2="${H - Bm}" stroke="#ffffff55" visibility="hidden"/></svg>`;
   PLOTS[id] = {opts, sx, x0, x1, L, W, R, tx};
@@ -441,16 +446,17 @@ function figCode() {
     'model/ link model, one burst') + `<p>Wrong chips are red. ${N(r.chip_ok + '/127', 7)} right: ${r.chip_ok < 97 ? 'below 97, not a detection.' : '97 or more, a detection.'}</p>`;
 }
 function figPath() {
-  const p = D.path, fit = {x: [], y: []}, two = {x: [], y: []};
-  for (let l = -1; l <= Math.log10(DB) + 1e-9; l += 0.02) { fit.x.push(Math.pow(10, l)); fit.y.push(benchP(Math.pow(10, l))); }
+  const p = D.path, fit = {x: [], y: []}, old = {x: [], y: []}, two = {x: [], y: []};
+  for (let l = -1; l <= Math.log10(DB) + 1e-9; l += 0.02) { fit.x.push(Math.pow(10, l)); fit.y.push(benchP(Math.pow(10, l))); old.x.push(Math.pow(10, l)); old.y.push(benchP(Math.pow(10, l)) - TX_DB); }
   for (let l = Math.log10(DB); l <= 2.3; l += 0.02) { two.x.push(Math.pow(10, l)); two.y.push(pathP(Math.pow(10, l))); }
   return fig('received power vs distance', plot({series: [
-      {d: fit, color: 'var(--sig)', label: 'bench fit: −44 dBm at 1 m, 1/d^1.89', w: 2},
-      {d: two, color: 'var(--sig2)', label: `two-ray, boards ${HGT} m up`, w: 2},
-      {d: {x: p.d_m, y: p.p_dbm}, color: '#e8eef2', label: 'measured', pts: true}],
+      {d: old, color: '#9db0bc', label: 'bench, old 1.8 V transmitter', w: 1.5, dash: '5 4'},
+      {d: {x: p.d_m, y: p.p_dbm}, color: '#e8eef2', label: 'measured', pts: true},
+      {d: fit, color: 'var(--sig)', label: `new transmitter: bench + ${TX_DB} dB`, w: 2},
+      {d: two, color: 'var(--sig2)', label: `two-ray, boards ${HGT} m up`, w: 2}],
     xlog: true, xlim: [0.1, 200], xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
     hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm', left: true}], vl: [{x: Math.max(0.1, Math.min(200, dist())), color: '#fff'}],
-    bands: [{x0: 4, x1: 200, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + '<p>Measured from 10 cm to 4 m. Further out (shaded) is a model: flat ground, line of sight, no walls or bodies. Real range will vary.</p>';
+    bands: [{x0: 4, x1: 200, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + `<p>Measured from 10 cm to 4 m with the old transmitter (dashed, dots). The solid line adds the new transmitter's simulated ${TX_DB} dB. Further out (shaded) is a model: flat ground, line of sight, no walls or bodies. Real range will vary.</p>`;
 }
 /* the Gold code page: seven DIP switches pick the code; code k = M1 xor M2 shifted by k bits (model/gold.py, as the RTL makes it) */
 const goldCode = k => { const m1 = D.m1, m2 = D.m2; return Uint8Array.from({length: 127}, (_, i) => k === 127 ? +m1[i] : +m1[i] ^ +m2[(i + k) % 127]); };
@@ -1069,16 +1075,17 @@ document.addEventListener('keydown', e => {
   else if (k === 'e') { S.edit = !S.edit; if (S.edit && location.protocol === 'file:') edStat = 'not saved: open the page through docs/explainer/edit.py'; render(); }
   else if (k === '?') $('help').hidden = false;
 });
-let edStat = '', saveT = null;
+let edStat = '', saveT = null, dirty = {};   // dirty: only the fields edited here are sent, so edits made elsewhere in text.md survive
 const setStat = t => { edStat = t; const el = $('edstat'); if (el) el.textContent = t; };
 async function saveText() {
   if (location.protocol === 'file:') { setStat('not saved: open the page through docs/explainer/edit.py'); return; }
-  try { const r = await fetch('save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(TEXT)}); setStat(r.ok ? 'saved to text.md' : 'save failed (' + r.status + ')'); }
+  try { const r = await fetch('save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dirty)}); if (r.ok) dirty = {}; setStat(r.ok ? 'saved to text.md' : 'save failed (' + r.status + ')'); }
   catch (err) { setStat('save failed: ' + err.message); }
 }
 document.addEventListener('input', e => {
   const el = e.target.closest && e.target.closest('[data-f]'); if (!el || !el.isContentEditable) return;
-  (TEXT[el.dataset.id] = TEXT[el.dataset.id] || {})[el.dataset.f] = el.innerText.replace(/ /g, ' ').replace(/\n$/, '');
+  const v = el.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
+  (TEXT[el.dataset.id] = TEXT[el.dataset.id] || {})[el.dataset.f] = v; (dirty[el.dataset.id] = dirty[el.dataset.id] || {})[el.dataset.f] = v;
   setStat('editing…'); clearTimeout(saveT); saveT = setTimeout(saveText, 700);
 });
 $('dist').addEventListener('input', e => { S.p = -e.target.value; render(); $('dist').focus(); });

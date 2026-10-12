@@ -67,11 +67,13 @@ def load(path=PATH):
     return parse(open(path).read())
 
 
-def save(pages, path=PATH):
-    """Write pages back, keeping the file's header and section order (new ids go at the end)."""
+def save(changes, path=PATH):
+    """Merge {id: {field: value}} into the file (only the fields given), keeping its header and
+    section order; new ids go at the end."""
     head, old = load(path) if os.path.exists(path) else ([], {})
-    order = [k for k in old if k in pages] + [k for k in pages if k not in old]
-    clean = {k: {f: pages[k].get(f, '') for f in FIELDS + ['body']} for k in order}
+    for k, fields in changes.items():
+        old.setdefault(k, {}).update({f: v for f, v in fields.items() if f in FIELDS + ['body']})
+    clean = {k: {f: old[k].get(f, '') for f in FIELDS + ['body']} for k in old}
     tmp = path + '.tmp'
     open(tmp, 'w').write(render(head, clean))
     os.replace(tmp, path)

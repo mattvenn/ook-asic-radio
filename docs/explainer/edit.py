@@ -4,7 +4,7 @@
     python3 docs/explainer/edit.py        then open http://localhost:8000/ and press e
 
 Serves docs/ (the built explainer.html). The page reads the live docs/explainer/text.md through
-/text.json, and every edit is POSTed to /save, which rewrites text.md (format: textfile.py).
+/text.json, and every edit is POSTed to /save (just the fields changed), which merges it into text.md (format: textfile.py).
 After each save, explainer.html is rebuilt in the background (gendata.py, ~15-25 s), so the
 committed page has the new words too. Ctrl-C to stop. Local use only: it binds to 127.0.0.1.
 """
