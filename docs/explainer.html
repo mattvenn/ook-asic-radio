@@ -379,7 +379,7 @@ const B = {
     text: () => `A tapered buffer: four thick-oxide 3.3 V inverters, each about 4× wider than the one before (PMOS 1.3 → 5 → 20 → 81 µm). The last one is big enough to drive the pin and antenna, but far too big for the small [[tx_ls|level shifter]] to switch quickly; stepping up 4× per stage gets the edge through fastest. One drives ua[3], the other ua[4]. Driving the two arms in antiphase puts the full swing across the dipole: ${D.tx ? '±' + D.tx.dipole_swing + ' V (peaks up to ±' + D.tx.dipole_vpk + ' V)' : 'the full swing'} in simulation, and +3.7 to +3.9 dBm into it across the process corners. Per-arm enables allow a monopole fallback.`,
     plot: () => figTx(['drv_p', 'drv_n', 'dipole'])},
   lna_chain: {lvl: 'rx', name: 'lna_chain', sub: '6 differential amplifier stages', anchor: 'receiver-amplifier-chain', sch: 'lna_chain', color: 'rx',
-    text: 'Six differential stages, ~80 dB of gain in total. Differential means each stage amplifies the difference between two wires and ignores noise common to both, like the chip\'s own 10 MHz clock. Stage 1 is the low-noise amplifier, and the chain\'s noise figure is about 11 dB. Coupling capacitors between stages stop DC offsets building up.',
+    text: 'Six differential stages, ~80 dB of gain in total (10,000× in voltage). Differential means each stage amplifies the difference between two wires and ignores noise common to both, like the chip\'s own 10 MHz clock. Stage 1 is the low-noise amplifier, and the chain\'s noise figure is about 11 dB. Coupling capacitors between stages stop DC offsets building up.',
     plot: () => figChain()},
   log_det: {lvl: 'rx', name: 'log_det', sub: 'successive-detection log detector', anchor: 'receiver-detector-filter-threshold', sch: 'log_det', color: 'rx',
     text: 'One rectifier cell per [[lna_chain|chain stage]]. A weak signal only registers at the last stages; as it grows, earlier stages saturate one after another. Summing the cells gives an output that is a straight line in dB, so 70 dB of range fits in ~1 V, about 13 mV per dB. Note it goes down as the signal goes up. The cells rectify the 434 MHz carrier, and the detector\'s output node smooths it with its own ~20 MHz low-pass: the output follows the carrier\'s strength, settling in ~16 ns, and only a few mV of ripple are left of the carrier. Below, the carrier is keyed on at 0.5 µs and off at 2.5 µs: about 870 cycles while on, so the whole view draws it as its envelope; zoom in to see the cycles arrive and the detector settle.',
@@ -701,12 +701,8 @@ function levelLink() {
   <div class="hit striphit" role="button" tabindex="0" data-block="ook" aria-pressed="${S.block === 'ook'}" aria-label="On-off keying: the idea, bit by bit"><div id="codestrip">${codeStrip(anim._b || 0, anim._pos || 0)}</div></div>`;
 }
 function chipPage() {
-  const f = S.focus, lede = {
-    tx: 'The transmitter: the digital keys the ring oscillator with the Gold code, the level shifter makes two opposite-phase 3.3 V signals, and one driver feeds each dipole arm.',
-    rx: `The receiver never tunes to the carrier: ~80 dB of gain, a log detector that turns RF power into a DC level, a comparator against its own slow average, then the digital correlates against the expected code.`,
-  }[f] || '';   // the plain chip page has no intro: the breadcrumb says Chip
+  const f = S.focus;   // no intro text on any chip page, so the transmitter / receiver diagrams are as big as the whole one
   return `<div class="chippage">
-  ${lede ? `<p class="lede">${lede}</p>` : ''}
   <div class="dgwrap">${dgSVG({hl: f ? DGHALF[f] : null, cls: 'big'})}</div>
   <div class="links"><a class="secondary" href="${GDS('tt_um_mattvenn_radio', 'gds')}" target="_blank" rel="noopener">Whole layout ↗</a></div>
   </div>`;
@@ -851,7 +847,7 @@ const TOUR = [
   {level: 'chip', block: 'tx_ls', cap: 'The level shifter\'s two latch nodes are opposite in phase: one for each arm of the dipole.'},
   {level: 'chip', block: 'tx_drv', cap: 'Two 3.3 V drivers in antiphase put about +4 dBm into the wire dipole.'},
   {level: 'chip', focus: 'rx', block: null, cap: 'The receiver: amplify, measure energy, compare, then let the digital decide.'},
-  {level: 'chip', block: 'lna_chain', cap: 'Six differential stages, ~80 dB of gain. The last stages limit: that is used by the detector.'},
+  {level: 'chip', block: 'lna_chain', cap: 'Six differential stages, ~80 dB of gain (10,000×). The last stages limit: that is used by the detector.'},
   {level: 'chip', block: 'log_det', cap: 'The log detector turns RF power into a voltage that is a straight line in dB: 70 dB in ~1 V.'},
   {level: 'chip', block: 'lpf_rc', cap: 'A 14 kHz low-pass keeps the bit-rate envelope and removes most of the noise.'},
   {level: 'chip', block: 'avg_sc', cap: 'The threshold is the signal\'s own slow average: the code is half on, half off, so it sits in the middle.'},
