@@ -242,17 +242,19 @@ function unpack(b64, n) {
    past it, the two-ray ground-reflection model, 40 dB per decade. Breakpoint d_b = 4·h_tx·h_rx/λ for both boards
    HGT m above flat ground at 433.92 MHz. */
 const HGT = 1, LAMBDA = 299.792458 / 433.92, DB = 4 * HGT * HGT / LAMBDA;
-/* The bench sweep used the old ttsky25b ring on a 1.8 V pad (-8.5 dBm into 50 ohm, ~200 mV swing). The new TX drives
-   both dipole arms at 3.3 V: +3.1 (extracted) to +4.1 dBm (schematic) into a 73 ohm dipole model, ~12 dB more.
-   Every received power and distance here is the bench path loss shifted up by that: an estimate until silicon. */
-const TX_DB = 12;
+/* The bench sweep used the old ttsky25b ring on a 1.8 V pad (-8.5 dBm into 50 ohm, ~200 mV swing). The new TX has 3.3 V
+   drivers on both arms; after the pads ~1.2 V p-p across the dipole (tb_tx, tt): +3.1 (extracted tile, rc) to +4.3 dBm
+   (schematic, all corners) into a 73 ohm dipole model
+   (docs/verify_2026-10-11.md), so ~+3.5 dBm: 12 dB more. Every received power and distance here is the bench path loss
+   shifted up by that: an estimate until silicon. */
+const BENCH_TX_DBM = -8.5, TX_DBM = 3.5, TX_DB = TX_DBM - BENCH_TX_DBM;
 const WAVE_S = 22, WAVE_N = 32;   // link scene: wavefront spacing on screen (scene units) and how many can be in flight
 const REF = () => D.path.ref_dbm + TX_DB;   // ~-32 dBm at 1 m with the new TX
 const benchP = d => REF() - 10 * D.path.n * Math.log10(d);
 const pathP = d => d <= DB ? benchP(d) : benchP(DB) - 40 * Math.log10(d / DB);
 const prx = () => S.p;
 const dist = (p = S.p) => p >= benchP(DB) ? Math.pow(10, (REF() - p) / (10 * D.path.n)) : DB * Math.pow(10, (benchP(DB) - p) / 40);
-const distSrc = (d = dist()) => d <= 4 ? 'bench fit' : d <= DB ? 'bench fit, extrapolated' : 'two-ray model';
+const distSrc = (d = dist()) => d <= 4 ? 'bench fit + new TX' : d <= DB ? 'bench fit + new TX, extrapolated' : 'two-ray model';
 function run() {             // model run nearest the received power
   const m = D.model, p = Math.max(m.levels[0], Math.min(m.levels[m.levels.length - 1], prx()));
   let best = 0;
@@ -448,15 +450,15 @@ function figCode() {
 function figPath() {
   const p = D.path, fit = {x: [], y: []}, old = {x: [], y: []}, two = {x: [], y: []};
   for (let l = -1; l <= Math.log10(DB) + 1e-9; l += 0.02) { fit.x.push(Math.pow(10, l)); fit.y.push(benchP(Math.pow(10, l))); old.x.push(Math.pow(10, l)); old.y.push(benchP(Math.pow(10, l)) - TX_DB); }
-  for (let l = Math.log10(DB); l <= 2.3; l += 0.02) { two.x.push(Math.pow(10, l)); two.y.push(pathP(Math.pow(10, l))); }
+  for (let l = Math.log10(DB); l <= 2.5; l += 0.02) { two.x.push(Math.pow(10, l)); two.y.push(pathP(Math.pow(10, l))); }
   return fig('received power vs distance', plot({series: [
       {d: old, color: '#9db0bc', label: 'bench, old 1.8 V transmitter', w: 1.5, dash: '5 4'},
       {d: {x: p.d_m, y: p.p_dbm}, color: '#e8eef2', label: 'measured', pts: true},
       {d: fit, color: 'var(--sig)', label: `new transmitter: bench + ${TX_DB} dB`, w: 2},
       {d: two, color: 'var(--sig2)', label: `two-ray, boards ${HGT} m up`, w: 2}],
-    xlog: true, xlim: [0.1, 200], xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
-    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm', left: true}], vl: [{x: Math.max(0.1, Math.min(200, dist())), color: '#fff'}],
-    bands: [{x0: 4, x1: 200, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + `<p>Measured from 10 cm to 4 m with the old transmitter (dashed, dots). The solid line adds the new transmitter's simulated ${TX_DB} dB. Further out (shaded) is a model: flat ground, line of sight, no walls or bodies. Real range will vary.</p>`;
+    xlog: true, xlim: [0.1, 300], xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
+    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm', left: true}], vl: [{x: Math.max(0.1, Math.min(300, dist())), color: '#fff'}],
+    bands: [{x0: 4, x1: 300, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + `<p>Measured from 10 cm to 4 m with the old transmitter (dashed, dots). The solid line adds the new transmitter's simulated ${TX_DB} dB. Further out (shaded) is a model: flat ground, line of sight, no walls or bodies. Real range will vary.</p>`;
 }
 /* the Gold code page: seven DIP switches pick the code; code k = M1 xor M2 shifted by k bits (model/gold.py, as the RTL makes it) */
 const goldCode = k => { const m1 = D.m1, m2 = D.m2; return Uint8Array.from({length: 127}, (_, i) => k === 127 ? +m1[i] : +m1[i] ^ +m2[(i + k) % 127]); };
@@ -674,7 +676,8 @@ function figLed() {
 
 // ------------------------------------------------------------------ levels
 function linkScene(focus = null) {
-  const d = dist(), p = prx(), gap = 400 + Math.max(0, Math.min(1, (Math.log10(d) + 1) / 3.1)) * 490, tx = 600 - gap / 2, rx = 600 + gap / 2;
+  const d = dist(), p = prx(), lo = Math.log10(dist(-25)), hi = Math.log10(dist(-110)),   // the slider's whole range, on a log scale
+    gap = 400 + Math.max(0, Math.min(1, (Math.log10(d) - lo) / (hi - lo))) * 490, tx = 600 - gap / 2, rx = 600 + gap / 2;
   /* vertical, parallel dipoles on the facing sides: the link is broadside to both (a dipole has a null along its own axis) */
   const board = (x, label, sub, color, lvl, pin, side) => `
     <g class="hit" role="button" tabindex="0" data-go="${lvl}" aria-label="Open the ${label.toLowerCase()}">
@@ -709,7 +712,7 @@ function levelLink() {
   ${S.edit ? ed('link', 'body', 'div', 'class="lede"', '') : `<p class="lede">${xrefs(T('link', 'body'))}</p>`}
   ${linkScene()}
   <div class="readouts">
-    <div class="ro"><small>TX power</small><b>+4 dBm</b></div>
+    <div class="ro"><small>TX power (sim)</small><b>+${TX_DBM} dBm</b></div>
     <div class="ro"><small>≈ distance (${dist() > DB ? 'two-ray' : dist() > 4 ? 'extrapolated' : 'bench'})</small><b>${fmtd(dist())}</b></div>
     <div class="ro"><small>received</small><b>${p.toFixed(0)} dBm</b></div>
     <div class="ro"><small>margin to −94 dBm</small><b class="${margin >= 0 ? 'good' : 'bad'}">${margin >= 0 ? '+' : ''}${margin.toFixed(0)} dB</b></div>

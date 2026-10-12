@@ -8,7 +8,7 @@ cap: My first radio chip: transmitter and receiver in six Tiny Tapeout tiles, wi
 
 My first semiconductor radio, and one of the first radios on a Tiny Tapeout shuttle. The transmitter and the receiver share six tiles, about 0.1 mm² of silicon.
 
-It's designed to use the minimum of external components, an external 10MHz clock and 2 14cm long wires for the antenna. It should work to around 80–90 meters in good conditions.
+It's designed to use the minimum of external components, an external 10MHz clock and 2 16.5cm long wires for the antenna. It should work to around 80–90 meters in good conditions.
 
 The design can either transmit or receive, so 2 demoboards are needed to demonstrate. Pressing reset on one toggles the LED on the other.
 
@@ -19,7 +19,7 @@ cap: With the new transmitter the receiver should see about −32 dBm at 1 m. At
 
 On the bench, I used an earlier [ring oscillator design](https://tinytapeout.com/chips/ttsky25b/tt_um_mattvenn_analog_ring_osc) as a transmitter. I used 14.5 cm wire dipoles held parallel and measured the received signal with a scope. The scope recorded −44 dBm at 1 m, falling as 1/d^1.89 out to 4 m.
 
-That transmitter was weak: a 1.8 V pad with only about 200 mV of swing, −8.5 dBm. The new transmitter drives both wires of the dipole at 3.3 V, about +3.5 dBm in simulation, so 12 dB more. The solid line is the bench measurement shifted up by those 12 dB: about −32 dBm at 1 m.
+That transmitter was weak: a 1.8 V pad with only about 200 mV of swing, −8.5 dBm. The new transmitter has 3.3 V drivers on both wires of the dipole. After the chip's pads, the simulation gives about 1.2 V peak-to-peak across the dipole at 485 MHz, around 5 times the old swing: about +3.5 dBm, so 12 dB more. The solid line is the bench measurement shifted up by those 12 dB: about −32 dBm at 1 m.
 
 Further out the reflection off the ground is expected to cancel more and more of the direct path. With both boards 1 m above the ground that takes over near 6 m, and the two-ray model then loses 40 dB per decade.
 
@@ -31,7 +31,7 @@ short: On-off keying
 sub: on-off keying (OOK)
 cap: Trick 1: on is a 1, off is a 0. The receiver only measures energy, so the carrier needs no crystal.
 
-The transmitter switches a 433 MHz carrier on and off, at about +4 dBm, and that is all it does. The receiver doesn't tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. That is why the carrier can be sloppy, and a [[tx_ring|free-running ring of inverters]] is good enough. Each on/off bit lasts 104 µs, about 45,000 carrier cycles (the docs and code call these bits chips). Near the limit, though, a 1 hardly stands out from the noise and many bits come out wrong (red): move the boards closer and they clear.
+The transmitter switches a 433 MHz carrier on and off, at about +3.5 dBm, and that is all it does. The receiver doesn't tune to the carrier: it only measures how much RF energy arrives, anywhere in 330–560 MHz. Loud is 1, quiet is 0. That is why the carrier can be sloppy, and a [[tx_ring|free-running ring of inverters]] is good enough. Each on/off bit lasts 104 µs, about 45,000 carrier cycles (the docs and code call these bits chips). Near the limit, though, a 1 hardly stands out from the noise and many bits come out wrong (red): move the boards closer and they clear.
 
 ## code
 name: Trick 2: send a pattern, not a bit
@@ -77,9 +77,9 @@ Turns the 1.8 V [[tx_ring|ring]] into 3.3 V swings. Its two latch nodes are natu
 ## tx_drv
 name: tx_drv ×2
 sub: output drivers, one per dipole arm
-cap: Two 3.3 V drivers in antiphase put about +4 dBm into the wire dipole.
+cap: Two 3.3 V drivers in antiphase put about +3.5 dBm into the wire dipole.
 
-A tapered buffer: four thick-oxide 3.3 V inverters, each about 4× wider than the one before (PMOS 1.3 → 5 → 20 → 81 µm). The last one is big enough to drive the pin and antenna, but far too big for the small [[tx_ls|level shifter]] to switch quickly; stepping up 4× per stage gets the edge through fastest. One drives ua[3], the other ua[4]. Driving the two arms in antiphase puts the full swing across the dipole: {dipole_swing} in simulation, and +3.7 to +3.9 dBm into it across the process corners. Per-arm enables allow a monopole fallback.
+A tapered buffer: four thick-oxide 3.3 V inverters, each about 4× wider than the one before (PMOS 1.3 → 5 → 20 → 81 µm). The last one is big enough to drive the pin and antenna, but far too big for the small [[tx_ls|level shifter]] to switch quickly; stepping up 4× per stage gets the edge through fastest. One drives ua[3], the other ua[4]. Each driver swings about 2.4 V peak-to-peak on the die, but the pad's inductance and capacitance leave about 0.65 V on each wire at 485 MHz. Driving the two arms in antiphase doubles that across the dipole: {dipole_swing} in simulation, and +4.1 to +4.3 dBm into it across the process corners (+3.1 to +3.4 dBm with the extracted layout). Per-arm enables allow a monopole fallback.
 
 ## chip:rx
 cap: The receiver: amplify, measure energy, compare, then let the digital decide.

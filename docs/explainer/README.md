@@ -17,7 +17,7 @@ The chip page and the per-block maps draw the system diagram from the floorplan 
 | View | Source |
 |---|---|
 | opening page: whole-design layout | `layout.jpg`: the GitHub `gds` action's `gds_render` artifact (`gds_render.png`), scaled to 1200 px wide JPEG. Refresh it from a recent run after a layout change |
-| received power → estimated distance | `bench/data/sweep2/ota.csv` fit (−44 dBm at 1 m, 1/d^1.89, measured 10 cm–4 m) up to the ground-reflection breakpoint (5.8 m for both boards 1 m up at 433.92 MHz), then the two-ray model (40 dB/decade). Constants in `template.html` (`HGT`, `DB`) |
+| received power → estimated distance | `bench/data/sweep2/ota.csv` fit (−44 dBm at 1 m, 1/d^1.89, measured 10 cm–4 m with the old ttsky25b transmitter), shifted up by the new transmitter's simulated power (`TX_DB` = +3.5 − (−8.5) = 12 dB) up to the ground-reflection breakpoint (5.8 m for both boards 1 m up at 433.92 MHz), then the two-ray model (40 dB/decade). Constants in `template.html` (`HGT`, `DB`) |
 | TX ring, level-shifter A/B, drivers, dipole | `build/tb_tx_ab.raw` from `xschem/tb_tx.sch` (tt, schematic) |
 | RX antenna → 6 stages → det (−60 dBm tone, keyed) | `build/rx_rf_tone.raw`, `rx_rf_key.raw` from `sim/rx/rf.sh` |
 | log detector transfer, per-tap amplitude | `sim/logdet/taps.txt`, `transfer_cw.txt` |

@@ -63,7 +63,7 @@ These were measured on an existing chip (ttsky25b) that has a ring oscillator, u
 
 | Spec | Value |
 |---|---|
-| TX power into the dipole | +3.7 to +3.9 dBm, all process corners |
+| TX power into the dipole | +4.1 to +4.3 dBm schematic, all process corners; +3.1 to +3.4 dBm extracted |
 | TX frequency | ~460 MHz expected on silicon (untrimmed ring; RX accepts 330–560 MHz) |
 | RX sensitivity | −94 dBm typical, ≈ −92 dBm worst case |
 | RX chain | ~80 dB gain, noise figure ≈ 11 dB |
