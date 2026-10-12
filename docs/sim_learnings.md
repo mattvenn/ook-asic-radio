@@ -201,6 +201,14 @@ sky130A, run headless in Docker.
   MHz** in the models (~40 % of a min-L input pair's noise at 434 MHz);
   `pfet_01v8` shows almost none. Even so, a wider or higher-current NMOS pair
   beat a PMOS pair on NF at RF.
+- **Monte Carlo mismatch in sky130:** `.lib … sky130.lib.spice tt_mm` (also `ss_mm`, `fs_mm`, …) sets
+  `MC_MM_SWITCH=1`: Vt (and R, MIM C) get an `AGAUSS` per device, scaled 1/sqrt(W·L·mult). Each
+  `reset` in a control loop redraws. To find which devices matter, zero one type's term after the .lib:
+  `.param sw_mm_vth0_sky130_fd_pr__pfet_01v8_lvt=0`. A_Vt in this PDK: nfet 3.4, nfet_lvt 5.5, pfet 5.9,
+  **pfet_lvt 10.9 mV·µm**.
+- **A `meas` result lives in its analysis's plot.** After the next analysis, `$&off0` is gone ("no such
+  variable"); copy it first with `set o0 = "$&off0"`. `$&` takes a vector name only: `let d = v(a)-v(b)`
+  then `$&d`, not `$&v(a)-v(b)`.
 - **trnoise doesn't repeat between runs in ngspice 47.** `.options seed=1`,
   `set rndseed=1` (in the deck or `.spiceinit`) and `setseed 1` all give
   different noise on each run. To share noise between runs (e.g. an on / off

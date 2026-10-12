@@ -21,13 +21,15 @@ cases=${CASES:-"0:0 2n:0 5n:0 2n:0.01f 2n:0.1f 2n:1f 5n:0.1f 5n:1f"}
 cdec=${CDEC:-30p}
 cnode=${CNODE:-pad_p}   # where the coupling lands (e.g. o1p: stage 2 input)
 corner=${CORNER:-tt}; temp=${TEMP:-27}   # e.g. CORNER=ss TEMP=10: the highest-gain case
+vsup=${VSUP:-1.8}                         # board supply, e.g. VSUP=1.89
 for cs in $cases; do
   l=${cs%:*}; c=${cs#*:}
   tag=${l}_$c; [ "$cnode" != pad_p ] && tag=${tag}_$cnode
   [ "$corner/$temp" != tt/27 ] && tag=${tag}_${corner}_$temp
+  [ "$vsup" != 1.8 ] && tag=${tag}_v$vsup
   f=stab_$tag.spice
   sed -e '/^\.control/,/^\.endc/d' -e '/^\.end$/d' \
-      -e 's/^VDPWR VDPWR GND .*/Vsup vsup GND 1.8\nRsup vsup vs1 0.5/' \
+      -e "s/^VDPWR VDPWR GND .*/Vsup vsup GND $vsup\nRsup vsup vs1 0.5/" \
       -e 's/^\(x1 .*\) VDPWR GND lna_chain/\1 VDPWR gchip lna_chain/' \
       -e 's/^Vcm vcm GND /Vcm vcm gchip /' \
       -e 's/^\.param vemf=.*/.param vemf=0/' \

@@ -8,6 +8,10 @@ run's frequency / power into the 73 ohm dipole / supply currents.
 
     python3 sim/top/tb_tile.py sch lvs [c] [rc]       (each one ~3 min, more with parasitics)
     python3 sim/top/tb_tile.py --no-run lvs           (analyse existing raws)
+    python3 sim/top/tb_tile.py --vdd=1.71 --vapwr=3.0 --corner=fs --temp=50 sch c
+                                                      (supplies / MOS corner / temperature; files
+                                                       tb_tile_<mode>_<tag>, e.g. _v171_a30_fs_50)
+NT=1 in the environment sets ngspice's threads (default: .spiceinit's 8).
 Runs ngspice in build/ through tools/osic-mac (set OSIC=... for the Linux host). One at a time.
 """
 import os
@@ -62,10 +66,35 @@ def deck_for(src, mode):
     return re.sub(r'^\.end\s*$', inc + '.end', deck, flags=re.M)
 
 
+COND = {'vdd': 1.8, 'vapwr': 3.3, 'corner': 'tt', 'temp': 27.0}
+
+
+def suffix():
+    t = ''
+    if (COND['vdd'], COND['vapwr']) != (1.8, 3.3):
+        t += f'_v{COND["vdd"]:g}_a{COND["vapwr"]:g}'.replace('.', '')
+    if (COND['corner'], COND['temp']) != ('tt', 27.0):
+        t += f'_{COND["corner"]}_{COND["temp"]:g}'
+    return t
+
+
+def conditions(deck, mode):
+    """COND applied to a deck: supplies, the .lib corner, .temp, raw names."""
+    deck, n = re.subn(r'^VDPWR VDPWR GND dc 1\.8 ', f'VDPWR VDPWR GND dc {COND["vdd"]:g} ', deck, flags=re.M)
+    deck, m = re.subn(r'^VA VAPWR GND 3\.3$', f'VA VAPWR GND {COND["vapwr"]:g}', deck, flags=re.M)
+    assert n == m == 1, (n, m)
+    deck = re.sub(r'(sky130\.lib\.spice) tt\b', rf'\1 {COND["corner"]}', deck)
+    deck = re.sub(r'^\.end\s*$', f'.temp {COND["temp"]:g}\n.end', deck, count=1, flags=re.M)
+    deck = deck.replace(f'write tb_tile_{mode}_tx.raw', f'write tb_tile_{mode}{suffix()}_tx.raw')
+    if os.environ.get('NT'):
+        deck = re.sub(r'^\.control$', f'.control\nset num_threads={os.environ["NT"]}', deck, count=1, flags=re.M)
+    return deck
+
+
 def run(src, mode):
-    name = f'tb_tile_{mode}'
+    name = f'tb_tile_{mode}{suffix()}'
     with open(os.path.join(B, name + '.spice'), 'w') as fh:
-        fh.write(deck_for(src, mode))
+        fh.write(conditions(deck_for(src, mode), mode))
     subprocess.run([OSIC, 'bash', '-c', f'cd build && ngspice -b {name}.spice > {name}.log 2>&1'], cwd=ROOT)
     log = open(os.path.join(B, name + '.log')).read()
     res = [ln for ln in log.splitlines() if ln.startswith('RESULT')]
@@ -76,19 +105,27 @@ def run(src, mode):
 
 
 def analyse(mode):
-    path = os.path.join(B, f'tb_tile_{mode}_tx.raw')
+    path = os.path.join(B, f'tb_tile_{mode}{suffix()}_tx.raw')
     if not os.path.exists(path):
         print(f'{mode}: no TX raw')
         return
     v = dict(read_raw(path)[0]['vars'])
     v['v(ant_p)'], v['v(ant_n)'], v['i(vd)'] = v['v(ant_tx_p)'], v['v(ant_tx_n)'], v['i(vdpwr)']
-    m = ring_metrics(v, 5e-9, 60e-9, drv=('tx_p', 'tx_n'))
-    print(f'{mode} TX: ' + fmt_ring(m), flush=True)
+    try:
+        m = ring_metrics(v, 5e-9, 60e-9, drv=('tx_p', 'tx_n'))
+    except IndexError:          # an output never toggles (e.g. an enable level shifter stuck)
+        print(f'{mode}{suffix()} TX: FAIL, an output arm never toggles', flush=True)
+        return
+    print(f'{mode}{suffix()} TX: ' + fmt_ring(m), flush=True)
 
 
 if __name__ == '__main__':
     args = sys.argv[1:]
     modes = [a for a in args if not a.startswith('--')] or ['sch', 'lvs']
+    for a in args:
+        k = a[2:].split('=')[0]
+        if '=' in a and k in COND:
+            COND[k] = a.split('=')[1] if k == 'corner' else float(a.split('=')[1])
     src = None if '--no-run' in args else netlist()
     for md in modes:
         if src is not None:

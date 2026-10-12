@@ -8,6 +8,16 @@ VDD 1.8, ibias 1 uA (as bias_gen), inp = 1.0 V + vd, inn = 1.0 V, Cl load on out
 --pex swaps in layout/pex/comp_ct.spice.
 
     python sim/comp_ct/tb_comp_ct.py [--pex] [corner]
+    python sim/comp_ct/tb_comp_ct.py --mc 200 [--cm 1.5] [--temp 27] [--jobs 8] [corner]
+
+--mc N: Monte Carlo with the PDK's mismatch models (<corner>_mm: MC_MM_SWITCH=1, AGAUSS per device;
+each `reset` redraws). Inputs at the operating CM (--cm, default 1.5 V: LPF idle 1.45-1.52 V), ideal
+1 uA bias. Per sample: the offset at trim mid (0.9 V), and the trim voltage where out switches
+with vd = 0, i.e. the DAC code the servo settles to without signal. Samples split over --jobs
+single-thread ngspice runs (seeds aren't repeatable in ngspice 47, so neither are the samples).
+Rows in build/mc/comp_<corner>_<temp>_cm<cm>.txt; prints mean, sigma and the 4-sigma code range.
+MM_OFF="pfet_01v8_lvt nfet_01v8" in the environment zeroes those device types' Vt mismatch
+(sw_mm_vth0_sky130_fd_pr__<type>), to see which devices set the spread (files *_no-<types>).
 """
 import os
 import re
@@ -69,6 +79,68 @@ echo RES tup=$&tup tdn=$&tdn
 """
 
 
+def mc_deck(corner, n, cm, temp, sub):
+    pdk = os.environ.get('PDK_ROOT', '/foss/pdks')
+    loop = ''.join(f"""reset
+dc Vdif -40m 40m 0.02m
+meas dc off0 when v(out)=0.9 cross=1
+set o0 = "$&off0"
+dc Vt 0 1.8 0.5m
+meas dc vsw when v(out)=0.9 cross=1
+echo MC {k} $o0 $&vsw
+destroy all
+""" for k in range(n))
+    return f"""* tb_comp_ct Monte Carlo, {corner}_mm, {temp} C, CM {cm}
+.lib {pdk}/sky130A/libs.tech/combined/sky130.lib.spice {corner}_mm
+{sub}
+{''.join(f'.param sw_mm_vth0_sky130_fd_pr__{t}=0{chr(10)}' for t in os.environ.get('MM_OFF', '').split())}VD VDD 0 1.8
+Ib VDD ibias 1u
+Vcm inn 0 {cm}
+Vdif inp inn dc 0
+Vt trim 0 0.9
+x1 inp inn trim ibias out VDD 0 comp_ct {PRM}
+Co out 0 10f
+.temp {temp}
+.options method=GEAR
+.control
+set num_threads=1
+{loop}.endc
+.end
+"""
+
+
+def run_mc(corner, n, cm, temp, jobs):
+    import numpy as np
+    from concurrent.futures import ThreadPoolExecutor
+    sub = subckt()
+    os.makedirs(os.path.join(B, 'mc'), exist_ok=True)
+    tag = f'comp_{corner}_{temp:g}_cm{cm:g}'
+    if os.environ.get('MM_OFF'):
+        tag += '_no-' + '-'.join(os.environ['MM_OFF'].split())
+    per = [n // jobs + (j < n % jobs) for j in range(jobs)]
+
+    def one(j):
+        name = f'mc/{tag}_{j}'
+        with open(os.path.join(B, name + '.spice'), 'w') as fh:
+            fh.write(mc_deck(corner, per[j], cm, temp, sub))
+        subprocess.run([OSIC, 'bash', '-c', f'cd build && ngspice -b {name}.spice > {name}.log 2>&1'], cwd=ROOT)
+        rows = re.findall(r'^MC \d+ (\S+) (\S+)$', open(os.path.join(B, name + '.log')).read(), re.M)
+        return [(float(a), float(b)) for a, b in rows if a != 'failed' and b != 'failed']
+
+    with ThreadPoolExecutor(jobs) as ex:
+        rows = [r for rr in ex.map(one, range(jobs)) for r in rr]
+    a = np.array(rows)
+    np.savetxt(os.path.join(B, 'mc', tag + '.txt'), a, header='offset_V trim_switch_V')
+    off, vsw = a[:, 0] * 1e3, a[:, 1]
+    code = vsw / LSB
+    print(f'comp_ct MC {corner} {temp:g} C, CM {cm:g} V: {len(a)}/{n} samples; offset (trim mid) '
+          f'{off.mean():+.2f} mV, sigma {off.std(ddof=1):.2f} mV; switching trim {vsw.mean():.3f} V '
+          f'(code {code.mean():.0f}), sigma {vsw.std(ddof=1) * 1e3:.1f} mV ({code.std(ddof=1):.1f} codes); '
+          f'4 sigma: {vsw.mean() - 4 * vsw.std(ddof=1):.3f}..{vsw.mean() + 4 * vsw.std(ddof=1):.3f} V; '
+          f'samples outside 0.6-1.4 V: {np.sum((vsw < 0.6) | (vsw > 1.4))}')
+    return a
+
+
 def run(corner, pex):
     name = f'tb_comp_ct_{corner}' + ('_pex' if pex else '')
     with open(os.path.join(B, name + '.spice'), 'w') as fh:
@@ -83,8 +155,14 @@ def run(corner, pex):
 
 if __name__ == '__main__':
     args = sys.argv[1:]
+    opt = {k: args[i + 1] for i, k in enumerate(args) if k in ('--mc', '--cm', '--temp', '--jobs')}
+    pos = [a for i, a in enumerate(args) if not a.startswith('-') and (i == 0 or args[i - 1] not in opt)]
+    corner = pos[0] if pos else 'tt'
+    if '--mc' in opt:
+        run_mc(corner, int(opt['--mc']), float(opt.get('--cm', 1.5)), float(opt.get('--temp', 27)),
+               int(opt.get('--jobs', 8)))
+        sys.exit()
     pex = '--pex' in args
-    corner = next((a for a in args if not a.startswith('-')), 'tt')
     r = run(corner, pex)
     gain = (r['off1'] - r['off0']) / 64
     print(f'comp_ct {corner} {"pex" if pex else "sch"}: offset {r["off0"] * 1e3:+.3f} mV (trim mid), '

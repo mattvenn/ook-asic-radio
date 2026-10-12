@@ -87,7 +87,18 @@ Run: `tools/osic bash sim/mixed/build_so.sh` (verilates the RTL), `tools/osic ba
 - **Power delivery** ([sim/power/](../sim/power)): supply resistance, IR drop, and coupling from the TX into the RX supplies on the routed tile ([power.md](power.md); commands in its "Re-running" section). Rerun 2026-10-11 on the final layout: R, IR, EM and |Z| match "After the fix". The keyed TX transient halved at the drivers (tx_drv_p 63 → 29 mV p-p), and the RX blocks see ≤ 0.22 mV at 434 MHz.
 - **Tile checks** ([layout/check_top.sh](../layout/check_top.sh)): magic and KLayout DRC 0, LVS "Circuits match uniquely", TT power-pin precheck pass. **Open:** magic's antenna check reports 7 violations on gates inside the digital macro. The GitHub actions ([.github/workflows](../.github/workflows)) re-run the TT GDS, docs and LVS checks on every push.
 
+## Supply and mismatch
+[verify_supply_mc.md](verify_supply_mc.md) (2026-10-12) has the tables and run commands.
+- **Supply:** `VDD=` / `OUT=` / `NT=` on `sim/corners/rx_corners.sh`, `--vdd=` / `--vapwr=` on `sim/tx/tb_tx.py`
+  (and `--pex-ring` for the extracted ring), `--vdd= --vapwr= --corner= --temp=` on `sim/top/tb_tile.py`,
+  `VSUP=` on `sim/chain/stability.sh`. RX and e2e pass at VDPWR 1.71–1.89 V, also with the real bias. The
+  TX enable level shifter `tx_ls_en` fails at VDPWR 1.71 V / VAPWR 3.6 V (ss and fs, extracted). The extracted
+  ring stays in the RX band, but ss at 1.71 V is at its bottom edge (332 MHz on silicon).
+- **Mismatch:** `--mc N` on `sim/comp_ct/tb_comp_ct.py` and `sim/avg_sc/tb_avg_sc.py`, and
+  `sim/chain/mc_chain.py`, with the PDK's `<corner>_mm` models. The comparator offset (sigma ~3 mV, mostly
+  the pfet_lvt mirror) puts ~26 % of chips where the trim step is too coarse for −92 dBm: open at Gate 2.
+
 ## Not covered by simulation
 - The pad and antenna model is rough, so absolute noise figure and out-of-band rejection are estimates.
-- Silicon speed: the ring frequency uses a ×0.866 correction measured on ttsky25b.
+- Silicon speed: the ring frequency uses a ×0.845 correction measured on ttsky25b's blocks (×0.866 whole tile).
 - Real-world interferers and indoor fading; these are only in the model.

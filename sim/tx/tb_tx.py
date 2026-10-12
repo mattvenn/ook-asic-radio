@@ -12,6 +12,9 @@ levels.
     python sim/tx/tb_tx.py --no-run tt           (analyse existing raws)
     python sim/tx/tb_tx.py --pex tt              (tx_drv from its extracted layout,
                                                   layout/pex/tx_drv.spice; files *_pex)
+    python sim/tx/tb_tx.py --pex --pex-ring tt   (tx_ring extracted too; files *_pexr)
+    python sim/tx/tb_tx.py --vdd=1.71 --vapwr=3.0 tt   (supplies; files *_v171_a30)
+NT=1 in the environment sets ngspice's threads (default: .spiceinit's 8).
 """
 import os
 import re
@@ -43,10 +46,14 @@ def netlist():
 
 
 PEX = []    # blocks to take from their extracted layouts (--pex)
+SUPPLY = {'vdd': 1.8, 'vapwr': 3.3}
 
 
 def tag(corner):
-    return corner + ('_pex' if PEX else '')
+    sup = ''
+    if SUPPLY != {'vdd': 1.8, 'vapwr': 3.3}:
+        sup = f'_v{SUPPLY["vdd"]:g}_a{SUPPLY["vapwr"]:g}'.replace('.', '')
+    return corner + ('_pex' if PEX else '') + ('r' if 'tx_ring' in PEX else '') + sup
 
 
 def run(corner, src):
@@ -54,6 +61,14 @@ def run(corner, src):
     deck = re.sub(r'write tb_tx_(\w+)\.raw', rf'write tb_tx_{tag(corner)}_\1.raw', deck)
     if PEX:
         deck = swap(deck, PEX)
+    if 'tx_ring' in PEX:        # the extracted ring has no cw parameter
+        deck, n = re.subn(r'^(xring .* tx_ring) cw=\S+', r'\1', deck, flags=re.M)
+        assert n == 1
+    deck, n = re.subn(r'^VA VAPWR GND 3\.3$', f'VA VAPWR GND {SUPPLY["vapwr"]:g}', deck, flags=re.M)
+    deck, m = re.subn(r'^VD VDPWR GND 1\.8$', f'VD VDPWR GND {SUPPLY["vdd"]:g}', deck, flags=re.M)
+    assert n == m == 1, (n, m)
+    if os.environ.get('NT'):
+        deck = re.sub(r'^\.control$', f'.control\nset num_threads={os.environ["NT"]}', deck, count=1, flags=re.M)
     name = f'tb_tx_{tag(corner)}'
     with open(os.path.join(B, name + '.spice'), 'w') as fh:
         fh.write(deck)
@@ -67,7 +82,12 @@ def analyse(corner):
     for vn in ('ab', 'se'):
         path = os.path.join(B, f'tb_tx_{tag(corner)}_{vn}.raw')
         v = read_raw(path)[0]['vars']
-        m = ring_metrics(v, TON, TOFF, drv=('out_p', 'out_n'))
+        try:
+            m = ring_metrics(v, TON, TOFF, drv=('out_p', 'out_n'))
+        except IndexError:          # an output never toggles (e.g. an enable level shifter stuck)
+            print(f'{tag(corner)} {vn}: FAIL, an output arm never toggles', flush=True)
+            out[vn] = None
+            continue
         t = np.real(v['time'])
         at = lambda k, x: float(np.interp(x, t, np.real(v[k])))
         m['park'] = (at('v(out_p)', 79e-9), at('v(out_n)', 79e-9))
@@ -85,6 +105,12 @@ if __name__ == '__main__':
     dorun = '--no-run' not in args
     if '--pex' in args:
         PEX.append('tx_drv')
+    if '--pex-ring' in args:
+        PEX.append('tx_ring')
+    for a in args:
+        if a.startswith('--vdd=') or a.startswith('--vapwr='):
+            k, x = a[2:].split('=')
+            SUPPLY[k] = float(x)
     corners = [a for a in args if not a.startswith('--')] or ['tt']
     src = netlist() if dorun else None
     for c in corners:

@@ -10,6 +10,11 @@ netlist the cap plates sit behind wire R, and uic would start them at 0 V):
 --pex swaps in layout/pex/avg_sc.spice.
 
     python sim/avg_sc/tb_avg_sc.py [--pex] [corner]
+    python sim/avg_sc/tb_avg_sc.py --mc 200 [--temp 27] [--jobs 8] [corner]
+
+--mc N: Monte Carlo with the PDK's mismatch models (<corner>_mm; each `reset` redraws), both runs
+per sample. Reports the hold drift over the 20 cycles and the settled injection offset it implies
+(drift / (1 - (1 - a)^20)), split over --jobs single-thread runs. Rows in build/mc/avg_<corner>_<temp>.txt.
 """
 import math
 import os
@@ -66,6 +71,65 @@ save v(out)
 """
 
 
+def mc_deck(corner, n, temp, sub):
+    pdk = os.environ.get('PDK_ROOT', '/foss/pdks')
+    t1 = NCYC * T
+    loop = ''
+    for k in range(n):
+        loop += 'reset\n'
+        for tag, vin in (('step', V0 + DV), ('hold', V0)):
+            loop += (f'alter Vin dc = {vin}\ntran 20n {t1:.4e} 0\n'
+                     f'meas tran o_{tag} find v(out) at={t1 - 0.2e-6:.4e}\nset v_{tag} = "$&o_{tag}"\ndestroy all\n')
+        loop += f'echo MC {k} $v_step $v_hold\n'
+    return f"""* tb_avg_sc Monte Carlo, {corner}_mm, {temp} C
+.lib {pdk}/sky130A/libs.tech/combined/sky130.lib.spice {corner}_mm
+{sub}
+VD VDD 0 1.8
+Vin in 0 {V0}
+Vphi1 phi1 0 pulse(0 1.8 0 10n 10n 6.09u 13u)
+Vphi2 phi2 0 pulse(0 1.8 6.5u 10n 10n 6.09u 13u)
+x1 in phi1 phi2 out VDD 0 avg_sc {PRM}
+.ic v(out)={V0} v(x1.cs)={V0}
+.temp {temp}
+.options method=GEAR
+.control
+set num_threads=1
+save v(out)
+{loop}.endc
+.end
+"""
+
+
+def run_mc(corner, n, temp, jobs):
+    import numpy as np
+    from concurrent.futures import ThreadPoolExecutor
+    sub = subckt()
+    os.makedirs(os.path.join(B, 'mc'), exist_ok=True)
+    tag = f'avg_{corner}_{temp:g}'
+    per = [n // jobs + (j < n % jobs) for j in range(jobs)]
+
+    def one(j):
+        name = f'mc/{tag}_{j}'
+        with open(os.path.join(B, name + '.spice'), 'w') as fh:
+            fh.write(mc_deck(corner, per[j], temp, sub))
+        subprocess.run([OSIC, 'bash', '-c', f'cd build && ngspice -b {name}.spice > {name}.log 2>&1'], cwd=ROOT)
+        rows = re.findall(r'^MC \d+ (\S+) (\S+)$', open(os.path.join(B, name + '.log')).read(), re.M)
+        return [(float(a), float(b)) for a, b in rows]
+
+    with ThreadPoolExecutor(jobs) as ex:
+        rows = np.array([r for rr in ex.map(one, range(jobs)) for r in rr])
+    off = rows[:, 1] - V0
+    e = (V0 + DV) - (rows[:, 0] - off)
+    a = 1 - (e / DV) ** (1 / NCYC)
+    ss = off / (1 - (1 - a) ** NCYC)
+    np.savetxt(os.path.join(B, 'mc', tag + '.txt'), np.column_stack([rows, a, ss]),
+               header='o_step_V o_hold_V a settled_offset_V')
+    print(f'avg_sc MC {corner} {temp:g} C: {len(rows)}/{n} samples; a {a.mean():.4f} (sigma {a.std(ddof=1):.4f}); '
+          f'hold drift over {NCYC} cycles {off.mean() * 1e3:+.3f} mV (sigma {off.std(ddof=1) * 1e3:.3f}); '
+          f'settled offset {ss.mean() * 1e3:+.3f} mV, sigma {ss.std(ddof=1) * 1e3:.3f} mV')
+    return rows
+
+
 def run(corner, pex):
     name = f'tb_avg_sc_{corner}' + ('_pex' if pex else '')
     with open(os.path.join(B, name + '.spice'), 'w') as fh:
@@ -83,8 +147,13 @@ def run(corner, pex):
 
 if __name__ == '__main__':
     args = sys.argv[1:]
+    opt = {k: args[i + 1] for i, k in enumerate(args) if k in ('--mc', '--temp', '--jobs')}
+    pos = [a for i, a in enumerate(args) if not a.startswith('-') and (i == 0 or args[i - 1] not in opt)]
+    corner = pos[0] if pos else 'tt'
+    if '--mc' in opt:
+        run_mc(corner, int(opt['--mc']), float(opt.get('--temp', 27)), int(opt.get('--jobs', 8)))
+        sys.exit()
     pex = '--pex' in args
-    corner = next((a for a in args if not a.startswith('-')), 'tt')
     r = run(corner, pex)
     print(f'avg_sc {corner} {"pex" if pex else "sch"}: Cs/(Cs+Cavg) {r["a"]:.4f}, tau {r["tau"] * 1e3:.3f} ms, '
           f'offset drift over {NCYC} cycles {r["off"] * 1e3:+.3f} mV')

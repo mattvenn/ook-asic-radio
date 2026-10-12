@@ -12,19 +12,26 @@
 # tb_comp):  CORNERS="tt ss" TEMPS="-20 27 85" ../sim/corners/rx_corners.sh
 # Output: build/corners/*.raw, build/corners/rx_<tb>_<corner>.log (RESULT
 # lines). TBS="comp" runs only some testbenches. Analyse: python sim/corners/rx_corners.py
+# Supply: VDD=1.71 sets VDPWR (default 1.8); OUT=corners_v171 writes there instead (analyse with
+# CORNERS_DIR=build/corners_v171). NT=1 sets ngspice threads (default: .spiceinit's 8).
 corners=${CORNERS:-"tt ss ff sf fs"}
 temps=${TEMPS:-"-20 27 85"}
 levels=${LEVELS:-"-110 -90 -80 -70 -60 -50 -40 -30"}
-mkdir -p corners
-strip() { sed -e '/^\.control/,/^\.endc/d' -e '/^\.end$/d' -e "s/\(sky130\.lib\.spice\) tt/\1 $2/" $1; }
+vdd=${VDD:-1.8}
+out=${OUT:-corners}
+nt=${NT:+set num_threads=$NT}
+mkdir -p $out
+strip() { sed -e '/^\.control/,/^\.endc/d' -e '/^\.end$/d' -e "s/\(sky130\.lib\.spice\) tt/\1 $2/" \
+  -e "s/^VDPWR VDPWR GND dc 1\.8 /VDPWR VDPWR GND dc $vdd /" -e "s/^VDD VDD GND 1\.8$/VDD VDD GND $vdd/" $1; }
 
 for c in $corners; do
   # ---- chain
-  f=corners/rx_chain_$c.spice
+  f=$out/rx_chain_$c.spice
   strip tb_chain.spice $c > $f
   cat >> $f <<CTL
 .options method=GEAR
 .control
+$nt
 foreach t $temps
   reset
   option temp = \$t
@@ -33,22 +40,23 @@ foreach t $temps
   echo RESULT chain $c \$t idd_mA \$&idd
   destroy all
   ac dec 50 100meg 1g
-  write corners/chain_${c}_{\$t}_ac.raw
+  write $out/chain_${c}_{\$t}_ac.raw
   destroy all
   noise v(out_p,out_n) vant_p lin 1 433.92e6 433.92e6
-  write corners/chain_${c}_{\$t}_noise.raw
+  write $out/chain_${c}_{\$t}_noise.raw
   destroy all
 end
 .endc
 .end
 CTL
   # ---- log detector CW transfer
-  f=corners/rx_logdet_$c.spice
+  f=$out/rx_logdet_$c.spice
   strip tb_logdet.spice $c > $f
   cat >> $f <<CTL
 .save v(det)
 .options method=GEAR
 .control
+$nt
 foreach t $temps
   foreach p $levels
     let ve = sqrt(8 * 73 * 1e-3 * 10^(\$p/10))
@@ -65,11 +73,12 @@ end
 .end
 CTL
   # ---- comparator: offset vs CM (trim mid), trim transfer ends (CM 1.0)
-  f=corners/rx_comp_$c.spice
+  f=$out/rx_comp_$c.spice
   strip tb_comp.spice $c > $f
   cat >> $f <<CTL
 .options method=GEAR
 .control
+$nt
 foreach t $temps
   foreach cm 0.6 1.0 1.4 1.55
     alterparam vcm = \$cm
@@ -99,7 +108,7 @@ end
 CTL
   for tb in ${TBS:-chain logdet comp}; do
     echo "start $tb $c: $(date)"
-    ngspice -b corners/rx_${tb}_$c.spice > corners/rx_${tb}_$c.log 2>&1
-    echo "done  $tb $c: $(date), $(grep -c RESULT corners/rx_${tb}_$c.log) results, $(grep -ci error corners/rx_${tb}_$c.log) errors"
+    ngspice -b $out/rx_${tb}_$c.spice > $out/rx_${tb}_$c.log 2>&1
+    echo "done  $tb $c: $(date), $(grep -c RESULT $out/rx_${tb}_$c.log) results, $(grep -ci error $out/rx_${tb}_$c.log) errors"
   done
 done
