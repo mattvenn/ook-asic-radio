@@ -191,6 +191,7 @@ See the tables above.
 **Stretch (only if time allows)**
 - **Ring frequency trim + on-chip frequency counter:** coarse stage select + fine current DAC; the counter measures the ring against the 10 MHz clock, and the logic or the RP2350 trims to 433.92 MHz (±0.2%).
   - Needed for interoperating with commercial 433 receivers, e.g. replaying a recorded **fixed-code** remote via raw TX. Rolling-code fobs reject replays anyway.
+  - What it takes (analog + digital, extrapolated from existing results): **docs/trim_433.md**.
   - The measured drift after trim (±0.1% with temperature, ~±50 kHz wander) should stay within a SAW receiver's window.
 - **Shared TX/RX antenna pins (half-duplex):** one dipole on `ua[0]`/`ua[1]` for both roles, freeing `ua[2]`/`ua[3]` (one antenna per board, fewer analog pins, no long RX input route); written before the 2026-10-09 pin reassignment: with RX on `ua[0]`/`ua[1]` and TX on `ua[3]`/`ua[4]`, sharing frees `ua[3]`/`ua[4]` instead. Needs:
   - `tx_drv` tri-stated in RX (P gate to VAPWR, N gate to 0) instead of today's "both arms low", which would short the LNA input; keep the two arms' delay matched. The monopole fallback becomes "tri-state one arm".
