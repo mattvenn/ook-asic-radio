@@ -201,6 +201,14 @@ sky130A, run headless in Docker.
   MHz** in the models (~40 % of a min-L input pair's noise at 434 MHz);
   `pfet_01v8` shows almost none. Even so, a wider or higher-current NMOS pair
   beat a PMOS pair on NF at RF.
+- **trnoise doesn't repeat between runs in ngspice 47.** `.options seed=1`,
+  `set rndseed=1` (in the deck or `.spiceinit`) and `setseed 1` all give
+  different noise on each run. To share noise between runs (e.g. an on / off
+  pair), write it once with numpy and read it with an XSPICE filesource:
+  `anz %v([nzp nzn]) nzsrc` + `.model nzsrc filesource (file="nz.txt" ...)`
+  (columns: time, then one per output), then `E` sources put it in series.
+  The source doesn't add breakpoints, so cap the step (`tran ... tmax`) at the
+  sample spacing.
 
 ## Python side
 
@@ -219,6 +227,12 @@ sky130A, run headless in Docker.
   (495). It isn't temperature (+0.5 % from 27 to 60 °C at 1.8 V) and it isn't
   VDD (good on the demoboards). Use it as the empirical sim → silicon factor
   for new rings.
+- **Same chip, ring 2** (36 × inv_2 + nand2_2): ~285 MHz measured. Both rings
+  re-extracted alone with magic 8.3.642 R+C (`layout/pex.sh` flow) give
+  611 / 337 MHz tt, so silicon / extracted = 0.843 / 0.847: one factor at both
+  lengths. Match the kind of extraction: 0.866 is against the whole-tile
+  extraction (598, ring + wiring to the driver), ~0.845 against the ring cell
+  alone.
 
 ## Silicon vs sim (mini-mosbius)
 

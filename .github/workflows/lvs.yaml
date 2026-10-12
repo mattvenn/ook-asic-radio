@@ -13,6 +13,12 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Pinout check (info.yaml vs schematic vs macro)
+        shell: bash
+        run: |
+            python3 -c 'import yaml' 2>/dev/null || pip install --break-system-packages pyyaml
+            python3 tools/check_pinout.py
+
       - name: Set up environment variables
         shell: bash
         run: |

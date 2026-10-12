@@ -28,3 +28,5 @@ mag/*.def
 build/
 verilog/test/sim_build_gl/
 verilog/test/results_gl.xml
+test/sim_build_gl
+test/results_gl.xml

@@ -10,6 +10,15 @@ switching point, found first with DC operating points (avg = lpf: both sc clocks
     python3 sim/top/tb_tile_joined.py scan                 trim code scan (~min)
     python3 sim/top/tb_tile_joined.py run -90 [400u] [code]   the joined transient (many hours)
     python3 sim/top/tb_tile_joined.py --no-run run -90        analyse build/tile_joined_-90.raw
+    python3 sim/top/tb_tile_joined.py pair -92 [30u] [code] [seed]   on / off pair (~15 h each, in parallel)
+    python3 sim/top/tb_tile_joined.py --no-run pair -92       analyse build/tile_pair_-92_{on,off}.raw
+
+pair: the stand-in for the full run (~8 days on sim-0), docs/verify_2026-10-11.md. Two short runs,
+keyed on at 1 us and on to the end, one with the signal and one without (vemf = 0), with the same
+RF noise. ngspice 47 doesn't repeat trnoise between runs (.options seed, set rndseed and setseed all
+fail), so the pair replaces it with one noise waveform from numpy (seeded; same sigma and 50 ps step)
+that both runs read through an XSPICE filesource. det / LPF off - on per window then shows whether the signal reaches det and the LPF
+at the model's size (~1.1 mV at -92 dBm); it checks level, not detection.
 
 Keying as joined.sh: off 0-60 us, chips on / off / on (104 us each), off to the end. Clock and key
 edges sit 25 ps off trnoise's 50 ps grid ('timestep too small' otherwise).
@@ -73,6 +82,64 @@ def run_deck(src, level, tstop, code):
     return re.sub(r'^\.control\b.*?^\.endc\b[^\n]*\n', lambda m: ctl, d, count=1, flags=re.S | re.M)
 
 
+PAIR_KEY = 'pwl(0 0 1.000025u 0 1.010025u 1)'
+PAIR_WIN = [(1e-6, 5e-6), (5e-6, 10e-6), (10e-6, 20e-6), (20e-6, 30e-6)]
+
+
+def seconds(x):
+    m = re.fullmatch(r'([0-9.]+)([munp]?)', x)
+    return float(m.group(1)) * {'': 1, 'm': 1e-3, 'u': 1e-6, 'n': 1e-9, 'p': 1e-12}[m.group(2)]
+
+
+def noise_file(tstop, seed):
+    """build/tile_pair_noise_<seed>.txt: time, p arm, n arm; N(0, NZ) every 50 ps, as trnoise(NZ 50p)."""
+    import numpy as np
+    path = os.path.join(B, f'tile_pair_noise_{seed}.txt')
+    t = np.arange(0, seconds(tstop) + 1e-9, 50e-12)
+    x = np.random.default_rng(seed).normal(0, NZ, (len(t), 2))
+    np.savetxt(path, np.column_stack([t, x]), fmt='%.6g')
+    return path
+
+
+def pair_deck(src, level, tstop, code, seed, on):
+    """run_deck keyed on at 1 us for good; on=False: the same deck with no signal."""
+    d = run_deck(src, level, tstop, code).replace(f'Vkey key 0 {KEY}', f'Vkey key 0 {PAIR_KEY}')
+    # the RF noise from a file both runs share, in place of trnoise
+    nz = noise_file(tstop, seed)
+    for s in 'pn':
+        d, n = re.subn(rf'^Vnz_{s} ant_{s} an_{s} dc 0 trnoise\(.*\)$', f'Enz_{s} ant_{s} an_{s} nz{s} 0 1', d, flags=re.M)
+        assert n == 1, s
+    d = d.replace(f'Vkey key 0 {PAIR_KEY}', f'Vkey key 0 {PAIR_KEY}\nanz %v([nzp nzn]) nzsrc\n'
+                  f'.model nzsrc filesource (file="{os.path.basename(nz)}" amploffset=[0 0] amplscale=[1 1] '
+                  'timeoffset=0 timescale=1 timerelative=false amplstep=false)')
+    name = f'tile_pair_{level}_{"on" if on else "off"}'
+    if not on:
+        d = re.sub(r'^alterparam vemf = \S+$', 'alterparam vemf = 0', d, count=1, flags=re.M)
+    return name, d.replace(f'write tile_joined_{level}.raw', f'write {name}.raw')
+
+
+def analyse_pair(level):
+    import numpy as np
+    r = {}
+    for k in ('on', 'off'):
+        v = dict(read_raw(os.path.join(B, f'tile_pair_{level}_{k}.raw'))[0]['vars'])
+        r[k] = {n: np.real(v[n]) for n in ('time', 'v(xana.x1.det)', 'v(xana.x1.lpf)')}
+    t = r['on']['time']
+    tg = r['off']['time']
+    if len(tg) != len(t) or np.max(np.abs(tg - t)) > 1e-12:     # interp grids should match; else resample
+        for n in ('v(xana.x1.det)', 'v(xana.x1.lpf)'):
+            r['off'][n] = np.interp(t, tg, r['off'][n])
+    diff = {n: (r['off'][n] - r['on'][n]) * 1e3 for n in ('v(xana.x1.det)', 'v(xana.x1.lpf)')}
+    print(f'{level} dBm pair, {t[-1] * 1e6:.1f} us: off - on (mV)')
+    print('  window       det     LPF')
+    for a, b in PAIR_WIN + [(2e-6, 30e-6)]:
+        m = (t >= a) & (t < b)
+        if m.any():
+            print(f'  {a * 1e6:4.0f}-{b * 1e6:<3.0f} us {np.mean(diff["v(xana.x1.det)"][m]):+7.2f} '
+                  f'{np.mean(diff["v(xana.x1.lpf)"][m]):+7.2f}')
+    print(f'  model at {level} dBm: ~{1.80 * 10 ** ((level + 90) / 10):.2f} mV (1.80 mV at -90, square law)')
+
+
 def ngspice(name, deck):
     with open(os.path.join(B, name + '.spice'), 'w') as fh:
         fh.write(deck)
@@ -123,3 +190,15 @@ if __name__ == '__main__':
             print(f'run {level} dBm, {tstop}, trim code {code}', flush=True)
             ngspice(f'tile_joined_{level}', run_deck(tb_tile.netlist(), level, tstop, code))
         analyse(level)
+    elif a[0] == 'pair':
+        level = int(a[1])
+        if '--no-run' not in sys.argv:
+            from concurrent.futures import ThreadPoolExecutor
+            tstop = a[2] if len(a) > 2 else '30u'
+            code = int(a[3]) if len(a) > 3 else 135
+            seed = int(a[4]) if len(a) > 4 else 1
+            print(f'pair {level} dBm, {tstop}, trim code {code}, seed {seed}', flush=True)
+            src = tb_tile.netlist()
+            with ThreadPoolExecutor(2) as ex:
+                list(ex.map(lambda on: ngspice(*pair_deck(src, level, tstop, code, seed, on)), (True, False)))
+        analyse_pair(level)

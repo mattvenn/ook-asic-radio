@@ -5,8 +5,12 @@ servo driving the real r2r ladder into the real comparator.
 Checks (pin order of the d_cosim .so, end to end):
   - rx_en = 1 (RX role);
   - the code starts at 128 after reset;
-  - every settled change of v(trim) is exactly +-1 LSB (1.8/256 V), one per servo
-    tick (13 us): a reversed or shifted trim bus would give other step sizes.
+  - every settled change of v(trim) is exactly +-1 LSB (1.8/256 V): a reversed,
+    shifted or swapped trim bus gives other step sizes;
+  - at least one settled step per servo tick (13 us), -3: fewer means a stuck bit.
+    More is not a pin-order problem: the comparator toggling near a clock edge adds
+    extra +-1 steps (2026-10-11: 1173 at -94 dBm vs 1169 ticks). They are counted and
+    reported, not failed.
 Prints the servo's convergence and dither statistics, the comparator's duty
 cycle and the event / LED pins; plots det, lpf / avg, trim (code), comp.
 
@@ -52,12 +56,15 @@ def main(level):
     code = np.interp(ts, t, trim) / LSB
     rx_en = np.interp(10e-6, t, g('v(rx_en_a)'))
     print(f'{level} dBm, {t[-1] * 1e3:.2f} ms simulated, {n_ticks} servo ticks')
+    big = np.abs(steps) > 1
+    sizes = sorted(set(int(x) for x in steps[big]))
     print(f'  pin-order checks: rx_en = {rx_en:.2f} V (expect 1.8); first code {np.round(code[0]):.0f} '
-          f'(expect 128); {len(steps)} settled ladder steps (expect ~{n_ticks}), sizes '
-          f'{sorted(set(steps.astype(int)))} (expect -1 / +1 only)')
-    ok = (abs(rx_en - 1.8) < 0.1 and round(code[0]) == 128 and set(steps.astype(int)) <= {-1, 1}
-          and abs(len(steps) - n_ticks) <= 3)
-    print('  ->', 'PIN ORDER OK' if ok else 'PIN ORDER PROBLEM')
+          f'(expect 128); {len(steps)} settled ladder steps for {n_ticks} ticks (expect >= {n_ticks - 3}); '
+          f'{np.sum(big)} steps > 1 LSB (expect 0){", sizes " + str(sizes) if sizes else ""}')
+    ok = (abs(rx_en - 1.8) < 0.1 and round(code[0]) == 128 and not np.any(big)
+          and len(steps) >= n_ticks - 3)
+    extra = max(len(steps) - n_ticks, 0)
+    print('  ->', f'PIN ORDER OK ({extra} extra +-1 steps)' if ok else 'PIN ORDER PROBLEM')
     c = np.round(code)
     settle = np.argmax(np.abs(np.diff(c[:200])) > 0) if len(c) > 1 else 0
     tail = c[len(c) // 2:]
