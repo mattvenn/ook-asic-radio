@@ -234,6 +234,16 @@ code, worst corner):
 
 † ss / fs for today's design are from the Linux-host rerun above.
 
+**Supply (Matt, 2026-10-13): the chip can rely on good 1.8 / 3.3 V supplies.** Measured on 3 TT boards: IO /
+VDDA 3.30 V on all three, core 1.80 / 1.80 / 1.81 V. So the 1.71 / 1.89 V columns above are information only.
+The worst corner at 1.8 V is fs 50 °C (`--nf 12.0 --slope 12.4 --offset-mv 1.3`, 48 trials), −92 dBm: step
+0.077 → 48/48, 0.122 → 48, 0.128 → 47, 0.137 → 48, **0.142 → 43**, 0.148 → 42, 0.166 → 42 (pass ≥ 44). The
+F designs' p95 there is 0.142–0.143, right at the edge (borderline, no longer a clear fail). G129's is 0.128.
+One more candidate under that rule: **H135** (Rdeg 0.85 MΩ, mirror, 1.35 V: today's 32-segment string, tap moved
+only). −92 dBm 100 % at tt / ss / fs / ss 10 / fs 50 / ff 50 / sf 27 CM 1.45, 99 % at sf 10 CM 1.45. p95 at
+fs 50 °C 0.135 (passes). But its +4σ code is **256 at tt** (180 ± 19), one past the DAC end. G129 also gained
+ff 50 °C (100 %, p95 0.135) and sf 27 °C CM 1.45 (99.5 %).
+
 **Recommendation: G129** is the only candidate that meets every pass condition: ≥ 95 % of chips at −92 dBm at
 every corner and supply, where the lowest is 96 % at sf 10 °C / CM 1.45; the e2e at its p95 step on the worst
 corner; and no chip past the DAC end at 4σ, with 253 the worst (tt) against 255, so only a few codes spare.
