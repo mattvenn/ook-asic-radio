@@ -1,6 +1,6 @@
 """Summarise trim_curve.py results: vref, balance point (nominal code), flat step and fine-trim window.
 
-Flat step: the median of the steps within 1.3x the smallest step (0.4-1.7 V). Two windows, each quoted as the
+Flat step: the median of the steps within 1.3x the smallest step (0.4 V to VDD - 0.15 V). Two windows, each quoted as the
 threshold (mV) at its ends, i.e. the input offsets a chip can cancel there (a chip with offset x needs threshold
 -x, so the window's negative end serves positive-offset chips):
   fine: the contiguous run of 50 mV points around the balance point whose step (from the previous point) is
@@ -25,7 +25,7 @@ def summary(tag, vdd=1.8):
     vt, th = r[:, 0], r[:, 1] * 1e3
     st = np.full(len(vt), np.nan)
     st[1:] = np.abs(np.diff(th)) / (np.diff(vt) / lsb)
-    mid = (vt >= 0.4) & (vt <= 1.7) & ~np.isnan(st)
+    mid = (vt >= 0.4) & (vt <= vdd - 0.15) & ~np.isnan(st)
     flat = np.median(st[mid][st[mid] <= 1.3 * np.nanmin(st[mid])])
     k = np.where(np.diff(np.sign(th)) > 0)[0][0]              # th crosses 0 between k and k+1
     v0 = vt[k] - th[k] * (vt[k + 1] - vt[k]) / (th[k + 1] - th[k])

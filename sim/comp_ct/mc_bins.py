@@ -17,6 +17,8 @@ import numpy as np
 def bins(path, vdd=1.8):
     a = np.loadtxt(path, ndmin=2)
     n = len(a)
+    if a.shape[1] < 3:
+        return None
     _, cnt = np.unique(a[~np.isnan(a).any(axis=1)], axis=0, return_counts=True)
     dup = int(np.sum(cnt - 1))
     nan = np.isnan(a[:, 2])
@@ -41,6 +43,9 @@ if __name__ == '__main__':
           'code mean ± sig (min..max)')
     for p in args:
         r = bins(p, vdd)
+        if r is None:
+            print(f"{p.split('/')[-1]} | no rows (no comparator threshold at this point)")
+            continue
         print(f"{p.split('/')[-1]} | {r['n']} | {r['dup']} | {r['off_mean']:+.2f} ± {r['off_sig']:.2f} | "
               f"{r['med']:.3f} / {r['p95']:.3f} / {r['p99']:.3f} | {r['b92']:.1f} % | {r['b90']:.1f} % | "
               f"{r['b88']:.1f} % | {r['nan']} | {r['hi']} | {r['code_mean']:.0f} ± {r['code_sig']:.0f} "

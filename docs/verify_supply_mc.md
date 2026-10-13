@@ -194,6 +194,78 @@ Options for Gate 2 (options 2 + 3 being tried, 2026-10-13: `sim/comp_ct/trim_cur
 3. **Wider linear trim** (smaller rdeg or larger trim current): more range per code, at a larger step
    (0.08 mV/LSB still passes e2e).
 
+### Trim redesign candidates (2026-10-13, sim-0, branch `comp-trim`): gate for Matt
+
+[handoff_comp_trim.md](handoff_comp_trim.md) steps 1–5. Every candidate: trim pair M3 / M4 W 2 → 8. Tags give
+Rdeg and vref: **A** 1.2 MΩ, **B** 1.0, **E** 0.8, **G** 0.9 MΩ; **C / F / G** add option 1's mirror (Mp1 / Mp2
+W 4 L 1 → W 8 L 2); the number is vref (124 = 1.24 V). Curves: `trim_curve.py` + `trim_summary.py`; Monte Carlo:
+`tb_comp_ct.py --mc 200 --jobs 24 --step` (200 distinct samples, **no duplicate rows in any run**; `mc_bins.py`).
+
+**Which vref the layout can make.** vref is a bottom link of the Rr1 + Rr2 string, and `PolyRes` puts the bottom
+links after an even number of segments from VDD (`links[k]`, k odd). The 32-segment string today gives 1.35 /
+1.24 / 1.125 / 1.01 V. **1.286 V needs a 28-segment string** (same 8.5 µm segments, tap after 8: LR1 68 /
+LR2 170 µm), which is narrower than today's.
+
+**What decides it.** The offset σ (~3.2 mV without the mirror) has to fit in the window both ways. The top end
+is hard: a chip whose switching trim is past code 255 (the DAC end) can't trim, so it's deaf. Between code 242
+and 255 the step only gets *finer*. The bottom end is soft: past it, chips trim on the steep part and lose dB.
+- **Without the mirror no buildable vref works.** B124 / B113 / A113 / A124 put 100 % of chips at −92 dBm at tt,
+  but their code σ is 29–34, so mean + 4σ = 276–288 codes, past the DAC. E (0.8 MΩ) gets to 253–262.
+- **The mirror cuts the offset σ to 2.0–2.6 mV** (17–21 codes) at every corner.
+- **sf 10 °C at CM 1.45 V moves every chip ~40 codes down**, into the steep part, so vref can't go low:
+  C113 has 70 % there, F124 94 %, F129 / G129 / F135 / G135 96–100 %.
+- **The worst supply corner sets the step.** e2e at fs 50 °C / 1.71 V (`--nf 12 --slope 11.8 --offset-mv 1.67`,
+  48 trials), −92 dBm: step 0.077 → 48/48, 0.110 → 46, 0.122 → 47, 0.130 → 45, **0.138 → 40/48** (pass ≥ 44).
+  F (0.8 MΩ) has its p95 step there at 0.135 (median 0.130), so about half its chips are at the edge.
+
+**Gate table** (% of chips with step ≤ 0.19 / 0.19–0.43 / > 0.43 mV/LSB ≈ −92 / ≈ −90 / ≈ −88 dBm; 27 °C CM 1.5 V
+unless noted; supply rows with CM scaled with VDD, 1.43 / 1.58 V, sf 1.52 V at 1.89 V; +4σ = mean + 4σ switching
+code, worst corner):
+
+| candidate | tt | ss | fs | ss 10 °C | fs 50 °C | sf 10 °C CM 1.45 | 1.71 V (tt, fs 50) | 1.89 V (tt, fs 50, sf 10, ss 10) | can't trim | +4σ code | step med (p95 worst) | −94 dBm, typical chip (tt / worst corner, 48 trials) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| today (nom) | 78 / 15 / 8 | 66 / 24 / 10 † | 74 / 17 / 8 † | | | 47 / 28 / 25 | | | 0–1 | 266 | 0.069 (0.62) | 43 / 16 of 48 |
+| C113 (1.0 MΩ, mirror, 1.125 V) | 100 | 98 / 2 / 0 | 100 | 100 | 100 | **70 / 24 / 6** | | | 0 | 233 | 0.110 (0.44 sf) | 32 / 4 |
+| F124 (0.8 MΩ, mirror, 1.24 V) | 100 | 100 | 100 | 100 | 100 | **94 / 6 / 0** | | | 0 | 237 | 0.134 (0.19 sf) | 23 / 0 |
+| F129 (0.8 MΩ, mirror, 1.286 V) | 100 | 100 | 100 | 100 | 100 | 100 | 100, 100 | 100 ×4 | 0 | 245 | 0.134 (0.135 at fs 50 / 1.71: **e2e ✗**) | 23 / 0 |
+| F135 (0.8 MΩ, mirror, 1.35 V) | 100 | 100 | 100 | 100 | 100 | 99 / 1 / 0 | 100, 100 | 100 ×3 | 0 | 249 | as F129: **e2e ✗** | 23 / 0 |
+| G135 (0.9 MΩ, mirror, 1.35 V) | 100 | | 100 | | 100 | 100 | | | 0 | **257** | 0.121 | 30 / 2 |
+| **G129 (0.9 MΩ, mirror, 1.286 V)** | **100** | **100** | **100** | **100** | **100** | **96 / 4 / 0** | **100, 100** | **100 ×4** | **0** | **253** | **0.121 (0.122 at fs 50 / 1.71: 47/48)** | **30 / 2 of 48** |
+
+† ss / fs for today's design are from the Linux-host rerun above.
+
+**Recommendation: G129** is the only candidate that meets every pass condition: ≥ 95 % of chips at −92 dBm at
+every corner and supply, where the lowest is 96 % at sf 10 °C / CM 1.45; the e2e at its p95 step on the worst
+corner; and no chip past the DAC end at 4σ, with 253 the worst (tt) against 255, so only a few codes spare.
+**Cost:** −94 dBm on the typical chip drops from 43/48 to 30/48 at tt, and from 16/48 to 2/48 at the worst
+corner. −94 dBm becomes a best-case number; −92 dBm becomes the number for nearly every chip, not 2/3 to 3/4 of
+them. F129 has more room at the top (245) but a coarser step that misses the e2e bar at fs 50 °C / 1.71 V. The
+two candidates that fit today's 32-segment string fail: G135 on the top end (257), F135 on the e2e.
+
+**Layout and design change (G129):**
+- Schematic: `COMP_PARAMS` rdeg 2 MΩ → 0.9 MΩ; M3 / M4 W 2 → 8; Mp1 / Mp2 W 4 L 1 → 8 / 2; Rr1 / Rr2
+  `lref` 136 / 136 → 68 / 170 µm.
+- Layout: Rdeg 30 segments, 271 → 122 µm total, so shorter segments. vref string 32 → 28 segments, tap
+  `rr.links[15]` → `links[7]`; the divider current goes up ~14 %, to ~1.3 µA. The trim halves go W 1.0 → 4.0,
+  under the main pair's 5 µm fingers.
+  **The mirror is the open layout question:** four halves of W 2 L 1 become W 4 L 2 in the ABBA P row. That row
+  gets taller and its gates longer, and nobody has checked yet whether it fits the 73.5 × 42.0 µm footprint
+  without moving pins.
+- The servo's nominal code goes from 112 to ~170. The RTL resets to 128, so add ~40 ticks (~0.6 ms) of settling
+  after reset.
+
+**Found on the way (new finding, not a trim problem): sf 10 °C at VDPWR 1.71 V.** At CM 1.38 V (≈ det idle
+there), today's design has 16 % of chips at −92 dBm (offset +8.1 ± 4.6 mV, balance code ~91, on the steep
+part) and G129 has 2 % (+16.5 ± 5.9 mV). At CM 1.43 V neither has a threshold for most or all chips: 75 / 200
+rows for today's, none for G129. This is the known sf "no threshold at high CM" region (CM 1.55 V at 1.8 V),
+moving down with VDD. The input pair runs out of headroom, which a trim can't fix. It was never run before. If
+TT's VDPWR stays ≥ 1.75 V it may not occur; see [verify_system_2.md](verify_system_2.md) Findings #10.
+
+Re-run: `python3 sim/comp_ct/trim_curve.py G129 LR1=68 LR2=170 rdeg=0.9Meg W3=8 W4=8 WP=8 LP=2`, then
+`COMP_SUB=build/trim/G129_sub.spice COMP_PRM="$(cat build/trim/G129_prm)" COMP_TAG=G129 python3
+sim/comp_ct/tb_comp_ct.py --mc 200 --jobs 24 --step [--temp T] [--cm C] [--vdd V] <corner>` (~40 s for 200
+samples on sim-0), `python3 sim/comp_ct/mc_bins.py [--vdd V] build/mc/comp_*_step_G129.txt`.
+
 ### avg_sc (`tb_avg_sc.py --mc 200 --temp … <corner>`)
 
 Cs / (Cs + Cavg) 0.0280 with no measurable spread. Settled charge-injection offset: tt 27 °C −0.04 ± 0.13 mV,
