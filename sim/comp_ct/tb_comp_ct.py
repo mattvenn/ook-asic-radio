@@ -19,6 +19,7 @@ jobs all drew the same samples: --jobs 8 gave 8 copies of n/8).
 Rows in build/mc/comp_<corner>_<temp>_cm<cm>.txt; prints mean, sigma and the 4-sigma code range.
 --step also finds the switching trim with vd = +-0.1 mV, so each sample's own trim step at its switching
 point (mV/LSB, third column; files *_step).
+COMP_SUB=<file> (a comp_ct .subckt), COMP_PRM='<params>' and COMP_TAG=<name> run a modified comparator.
 MM_OFF="pfet_01v8_lvt nfet_01v8" in the environment zeroes those device types' Vt mismatch
 (sw_mm_vth0_sky130_fd_pr__<type>), to see which devices set the spread (files *_no-<types>).
 """
@@ -31,11 +32,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 B = os.path.join(ROOT, 'build')
 OSIC = os.environ.get('OSIC', os.path.join(ROOT, 'tools', 'osic'))
-PRM = 'w1=20 l1=1 mt1=10 rdeg=2Meg mta=2 lref=136 wcl=22'
+PRM = os.environ.get('COMP_PRM', 'w1=20 l1=1 mt1=10 rdeg=2Meg mta=2 lref=136 wcl=22')
 LSB = 1.8 / 256
 
 
 def subckt():
+    if os.environ.get('COMP_SUB'):                  # a modified comp_ct subckt (design exploration)
+        return open(os.environ['COMP_SUB']).read()
     out = os.path.join(B, 'tb_comp_ct')
     os.makedirs(out, exist_ok=True)
     subprocess.run([OSIC, 'bash', '-c', 'xschem -n -s -q --tcl "set top_subckt 1" -o build/tb_comp_ct xschem/comp_ct.sch'],
@@ -134,6 +137,8 @@ def run_mc(corner, n, cm, temp, jobs, step=False):
         tag += '_no-' + '-'.join(os.environ['MM_OFF'].split())
     if step:
         tag += '_step'
+    if os.environ.get('COMP_TAG'):
+        tag += '_' + os.environ['COMP_TAG']
     # One sample per ngspice run, each with its own .options seed. Without a seed every run starts from
     # the same sequence (parallel jobs drew identical samples), and with one, each reset re-seeds to it.
     per = [1] * n

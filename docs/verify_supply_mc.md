@@ -185,7 +185,7 @@ estimates.
 10.9 mV·µm, so σVt ≈ 5.4 mV per device), ~28 % the nfet_lvt input and trim pairs, ~22 % the nfet current
 sources (Mta_sa / sb, Mt1).
 
-Options for Gate 2 (not tried):
+Options for Gate 2 (options 2 + 3 being tried, 2026-10-13: `sim/comp_ct/trim_curve.py`, [handoff_comp_trim.md](handoff_comp_trim.md)):
 1. **Bigger mirror**: Mp1 / Mp2 at 4× area halves their term (e.g. W 8 L 2); pfet_01v8 (A_Vt 5.9) instead of
    lvt helps too if headroom allows. Then the nfet terms: input pair, Mta pair.
 2. **Centre the operating point in the linear part of the trim**: today nominal sits at the knee (code 112),
