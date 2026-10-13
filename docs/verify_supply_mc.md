@@ -175,7 +175,8 @@ Above code 112 the step is 0.06 mV/LSB up to the end (+7.5 mV at code 233). e2e 
 (fs 50 °C, 1.71 V) against the step: 0.10 → −92 dBm 12/12; 0.13 → 11/12; 0.16 → 9/12; 0.19 → 6/12 (−90 and
 −88 dBm still 12/12); 0.3 → 1/12. Against offset (linear trim model): +6.4 and +8.0 mV 12/12, +9.6 mV 0/12
 (the trim runs out). So a chip whose comparator lands below code ~96 loses 1–3 dB of sensitivity, and one past
-the top end doesn't detect at all. The fractions above use the nominal transfer for every sample, so they are
+the top end misses −92 dBm: the servo stops at code 255 and the rest of the offset stays, costing part of the
+~2 dB the servo buys (more the further past the end; only −92 dBm was run). The fractions above use the nominal transfer for every sample, so they are
 estimates.
 
 **What sets the spread** (tt, 100 samples each, one device type's Vt mismatch zeroed with
@@ -207,7 +208,8 @@ links after an even number of segments from VDD (`links[k]`, k odd). The 32-segm
 LR2 170 µm), which is narrower than today's.
 
 **What decides it.** The offset σ (~3.2 mV without the mirror) has to fit in the window both ways. The top end
-is hard: a chip whose switching trim is past code 255 (the DAC end) can't trim, so it's deaf. Between code 242
+is the harder one: past code 255 (the DAC end) the servo stops and the rest of the offset stays, so the chip loses
+part of the sensitivity the servo buys (a little just past the end, more further out; not quantified). Between code 242
 and 255 the step only gets *finer*. The bottom end is soft: past it, chips trim on the steep part and lose dB.
 - **Without the mirror no buildable vref works.** B124 / B113 / A113 / A124 put 100 % of chips at −92 dBm at tt,
   but their code σ is 29–34, so mean + 4σ = 276–288 codes, past the DAC. E (0.8 MΩ) gets to 253–262.
