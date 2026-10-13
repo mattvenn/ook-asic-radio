@@ -109,16 +109,28 @@ goes from 0.077 to ~0.094–0.11 mV/LSB, so expect to lose some of −94 dBm: re
 count, typical-chip −94 dBm, and the layout change. Add it to verify_supply_mc.md §2.2. **Stop here** until Matt
 picks one, or decides to keep today's design.
 
-**7. Implement (only after the gate).**
+**7. Implement (only after the gate).** All of this goes into one tile rebuild.
 - Schematic: `xschem/gen/comp.py`: `COMP_PARAMS` rdeg; M3 / M4 `W=2` → the new W (line ~84); Rr1 / Rr2 both use
   `lref` today, so split it (e.g. `lref1` / `lref2`) for the new vref. Also `xschem/gen/top.py` (`xcomp`) if
   it passes params. Regenerate, netlist, and check `tb_comp_ct.py` (no `COMP_SUB`) gives the chosen curve.
 - Layout: `layout/gen/comp_ct.py`: `PARAMS` (rdeg; the `write_ref` call hardcodes `rdeg=2e6`), the trim
   halves in `trim()` (`dev('n', 1.0, 1.0, ...)`: each half is W/2, so 4.0 for W 8; it fits under the main
   pair's 5 µm fingers, so the row shouldn't get longer), and the vref tap (`rr.links[15]`). Footprint and
-  pins (`PIN_X`, `PIN_Y`, `OUT_X`) must not change, so the floorplan doesn't either. Then
+  pins (`PIN_X`, `PIN_Y`, `OUT_X`) must not change, so the floorplan doesn't either (except inp, below). Then
   `layout/check.sh comp_ct` (DRC / LVS), `layout/pex.sh comp_ct` with magic 8.3.642, and
   `tb_comp_ct.py --pex` against the schematic.
+- **inp dead-end stub (STATUS.md step 5a), fix in the same rebuild.** In `gds/` the top-level `avg` route
+  (`layout/gen/top_nets.py:51`) hops comp_ct's VDD met3 rail on met4 at chip (136.8–139.8, 173.5) and lands on
+  the *top* of inp's met3 run, not on the pin. The rest of the run (~22 µm down to chip y 152.3, plus the bend
+  out through the gap in the VDD rail at cell x 36.85–37.35, the N-edge pin from `PIN_X` in
+  `layout/gen/comp_ct.py:85`) is a dangling stub on the same net: a few fF on `avg` and some VDD-rail coupling.
+  LVS is clean because the net is still connected. Fix it one of two ways:
+  - Move inp's pin in `comp_ct.py` to where `avg` arrives (the riser end, cell x ≈ 16 under the rail), and drop
+    the long run and its gap in the rail. This changes `PIN_X['inp']`, the one pin change allowed here.
+  - Make the top-level router land `avg` on the existing pin.
+
+  Check the result in the tile GDS: inp's met3 has no unconnected end, and inn (lpf, through the other gap) is
+  unchanged. Then clear step 5a in STATUS.md.
 - RTL: the servo resets to code 128 (`verilog/rtl/rd_rx.v:59`). Leave it: changing it means re-hardening the
   macro. The new nominal is about code 166–178, so it adds ~40–50 ticks (~0.6 ms) of settling after reset.
   Check that with the mixed-signal deck (`gen_mixed.py`, burst at 1.5 ms: is the servo settled before it?).
