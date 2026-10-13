@@ -41,6 +41,36 @@ The same 15 tests run on the hardened netlist ([`macros/radio_digital/`](../macr
 
 LibreLane signoff ([`openlane/radio_digital`](../openlane/radio_digital)) is clean: DRC, LVS, antenna, and timing at all corners.
 
+### Formal
+[`formal/radio_digital.sby`](../formal/radio_digital.sby) (SymbiYosys, in the image) proves properties of the RTL
+for all time, with every input free (straps, DIP code, comparator, `rst_n` at any moment) and only a reset in the
+first clock assumed. The harness [`formal/fv_radio_digital.sv`](../formal/fv_radio_digital.sv) doesn't touch the RTL:
+`fv_props` latches its own copy of the straps, and reaches internal signals through `connect -set` in the
+.sby (Yosys has no hierarchical references). The four 127-bit chip registers are abstracted (free state), which
+is sound here because no property depends on their contents.
+- **TX / RX safety:** `rx_en` follows the role strap; the n arm is never on without the p arm; `dbg_en` only with
+  the magic and debug strap; in code mode, `tx_en` is never high while `rx_en` is.
+- **Correlator timing** (the assumptions in `rd_corr` / `rd_rx`): a chip window never ends while the popcount or
+  the post-reset clear runs; `done` comes exactly 128 clocks after the window end and only then; a score never
+  arrives in the clock an event closes.
+- **Switched-cap clocks:** `sc_phi1` and `sc_phi2` never overlap, have ≥ 4 clocks with both low between them, and
+  are off when `rx_en` is.
+
+Result (2026-10-13): **all pass** (PDR, single-threaded: 13–45 min from run to run; 38 min without the abstraction). Each property group catches a deliberate
+bug in a copy of the RTL: 2 dead clocks (dead-time assert), `tx_en_n` = `tx_en` ^ `se` (n-arm assert), the
+popcount one clock longer (`done` timing) and the popcount never clearing `busy` (window end while busy). The
+"score never arrives as an event closes" assert wasn't mutation-tested (a mutant would need a full burst).
+Two findings:
+- **Raw mode keys the TX in the RX role** (task `raw_rx`, an expected FAIL): with the magic strap, mode `01` and
+  `ui_in[7]` = 0 (RX), `tx_en` = `uio_in[2]` while `rx_en` = 1. docs/info.md describes raw mode as raw TX only.
+  It is harmless unless someone straps raw mode on an RX board and drives `uio[2]` (also the debug strap pin).
+- **Dead time after a short reset:** if `sc_phi2` is high when a 1-clock reset arrives (at power-up the
+  flops start random, or a very short `rst_n` pulse), reset clears it and `sc_phi1` rises 2 clocks later instead
+  of ≥ 4. They still never overlap. The dead-time check is waived across a reset for that reason.
+
+Run: `tools/osic bash -c 'cd formal && sby -f radio_digital.sby prove'` (and `raw_rx` for the counterexample trace,
+`formal/radio_digital_raw_rx/engine_0/trace.vcd`).
+
 ### TT top level and pinout
 - **Pinout check** ([`tools/check_pinout.py`](../tools/check_pinout.py)): its `PINOUT` table is the one statement of what each TT pin does. The script checks that `info.yaml`'s pinout labels match it. It checks that in the top schematic every `radio_digital` and `radio_analog` port lands on the expected net, including the digital ↔ analog nets, with `ena` and `ua[5..7]` unconnected. It also checks that the `radio_digital` symbol's pins are the macro's (GL netlist and LEF). It parses the schematic directly (labels on pins, no xschem), and `--xschem <netlist>` cross-checks that parse against xschem's netlist. It runs in the `lvs` GitHub action. Result (2026-10-12): OK, and it catches a swapped `ua[0]`/`ua[1]`, a reversed trim bus and a wrong `info.yaml` label. Run: `python3 tools/check_pinout.py`.
 - **TT-level cocotb** ([`test/`](../test)): `tt_um_mattvenn_radio` with a wrapper generated from the top schematic (`check_pinout.py --verilog`, which also runs the check), the macro inside it and `radio_analog` as a stub. It runs `test_tx_codes`, `test_raw_and_straps` and `test_debug_strap` from `test_radio.py` through the TT pins, plus `test_uio_oe` (`uio_oe` is 0 in reset, then 1 on exactly the uio pins `PINOUT` marks as outputs). The macro ↔ analog signals are driven and read at the stub's ports, so they go through the schematic's wiring. Result (2026-10-12): **4/4 pass** RTL (~1 min) and GL (~2 min). Run: `cd test && make` and `make GL=1 SIM_BUILD=sim_build_gl COCOTB_RESULTS_FILE=results_gl.xml` (cell models from `$PDK_ROOT/sky130A`).

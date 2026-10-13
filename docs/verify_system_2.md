@@ -44,6 +44,8 @@ happens only if one of these leads to a design change.
 | 7 | ⚠️ TX outputs high with VDPWR missing | VDPWR 0 / VAPWR 3.3 V: tx_p = tx_n = 3.3 V, ≤ 16 nA. | Harmless with the antenna: both sides at the same voltage, so no current and no transmission. It only matters if a board powers VAPWR alone and something on the TX pins expects them low. On TT both supplies come up together. |
 | 8 | ⏹ Closed loop through the extracted RF chain not run | ~10 000 s per simulated µs. | No simulation detects a burst end to end with the extracted RF chain. The extracted signal level and extracted baseband detection were each checked on their own, so this is a coverage gap, not a known problem. |
 | 9 | ℹ️ Not covered | Latch-up / substrate injection at +6 dBm not modelled. Supply ranges (±5 % / ±10 %) assumed, not TT's figures. | Unknowns, not known failures. Latch-up with a strong nearby transmitter is a bench check. If TT's real supply range is tighter, #2 and #3 may never occur in practice. |
+| 10 | ⚠️ Raw mode keys the TX in the RX role (formal, 2026-10-13) | With the magic strap, mode `01` and the RX role, `tx_en` follows `uio_in[2]` while `rx_en` = 1 ([verification.md](verification.md) "Formal"). | The chip can transmit while its own receiver is on. That only happens if someone straps raw mode on an RX board and drives `uio[2]`; in the default code mode it can't (proven). |
+| 11 | ℹ️ Shorter switched-cap dead time after a 1-clock reset (formal) | If `sc_phi2` is high when a 1-clock reset arrives, `sc_phi1` rises 2 clocks later instead of ≥ 4. | No effect: the phases still never overlap (proven), and 2 clocks (200 ns) is far longer than the switches need. |
 
 ## 3.1 Extracted chain sensitivity, noise-free (G3)
 

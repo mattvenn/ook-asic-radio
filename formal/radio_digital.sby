@@ -1,0 +1,45 @@
+# Formal checks on the digital macro's RTL (docs/verification.md "Formal").
+#   tools/osic bash -c 'cd formal && sby -f radio_digital.sby'           all tasks
+#   tools/osic bash -c 'cd formal && sby -f radio_digital.sby prove'     one task
+# prove:  properties 1 (TX/RX safety), 2 (correlator timing), 6 (sc clocks) for all time (PDR)
+# raw_rx: never TX while RX, in raw mode too (expected FAIL: a counterexample trace)
+[tasks]
+prove
+raw_rx
+
+[options]
+prove: mode prove
+raw_rx: mode bmc
+raw_rx: depth 8
+multiclock on
+
+[engines]
+prove: abc pdr
+raw_rx: smtbmc yices
+
+[script]
+prove: read_verilog -D SIM -formal -sv rd_cg.v rd_gold.v rd_corr.v rd_rx.v rd_tx.v radio_digital.v fv_radio_digital.sv
+raw_rx: read_verilog -D SIM -D FV_RAW_RX -formal -sv rd_cg.v rd_gold.v rd_corr.v rd_rx.v rd_tx.v radio_digital.v fv_radio_digital.sv
+hierarchy -check -top fv_radio_digital
+proc
+opt_clean fv_props
+flatten
+connect -set chk.s_rst dut.rst
+connect -set chk.s_wend dut.u_corr.wend
+connect -set chk.s_busy dut.u_corr.busy
+connect -set chk.s_clr dut.u_corr.clr
+connect -set chk.s_done dut.u_corr.done
+connect -set chk.s_closing dut.u_rx.closing
+# the chip registers' contents don't affect any property here: make them free
+# (sound for these safety properties, and it keeps PDR small)
+abstract -state w:dut.u_corr.sr0 w:dut.u_corr.sr1 w:dut.u_corr.sr2 w:dut.u_corr.sr3
+prep -top fv_radio_digital
+
+[files]
+../verilog/rtl/rd_cg.v
+../verilog/rtl/rd_gold.v
+../verilog/rtl/rd_corr.v
+../verilog/rtl/rd_rx.v
+../verilog/rtl/rd_tx.v
+../verilog/rtl/radio_digital.v
+fv_radio_digital.sv
