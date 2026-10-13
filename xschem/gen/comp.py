@@ -6,13 +6,18 @@ testbenches.
             samples it, so no strobe, no kickback onto the ~1 mV LPF node).
             out = 1 when inp > inn + trim offset.
             - stage 1: low-Vt NMOS pair (W 20, L 1, weak inversion), tail
-              10 x ibias, low-Vt PMOS mirror load. Low Vt stretches the input
+              10 x ibias, low-Vt PMOS mirror load (W 8 L 2: 4x the area of the
+              W 4 L 1 before 2026-10-13, for offset; docs/verify_supply_mc.md 2.2). Low Vt stretches the input
               CM range (det runs ~0.6 V at -20 dBm to ~1.52 V idle).
-            - trim: small low-Vt NMOS pair with split tails and rdeg (2 M; was 1.4 M,
-              raised 2026-10-08 so the step is ~0.075-0.107 mV/LSB over corners) between
-              its sources, on the same loads: offset ~ (trim - VDD/2) *
-              (1/rdeg) / gm1; trim from the R2R DAC, VDD/2 from an on-chip
-              xhigh-poly divider. Raising 'trim' acts like raising inn.
+            - trim: low-Vt NMOS pair (W 8) with split tails and rdeg (0.85 M) between
+              its sources, on the same loads: offset ~ (trim - vref) * (1/rdeg) / gm1;
+              trim from the R2R DAC, vref = 0.75 VDD (1.35 V) from an on-chip xhigh-poly
+              divider (lref1 / lref2 = 68 / 204: a tap 8 of 32 segments down the layout's
+              string). Raising 'trim' acts like raising inn. Candidate H135 of
+              docs/verify_supply_mc.md 2.2 (2026-10-13): the nominal chip balances near
+              code 179, mid-way along the linear part of the trim (step ~0.127 mV/LSB),
+              so offsets of either sign trim finely. Before: W 2, rdeg 2 M, vref VDD/2,
+              balance at code 112 on the knee (steep step below it).
             - Cl (wcl x wcl um MIM, ~1 pF) on the stage-1 output sets a
               ~100 kHz dominant pole: limits the noise bandwidth.
             - stage 2: PMOS common source (matched to the load, so the
@@ -35,7 +40,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
 from xsch import Sch, mos, ports, write_symbol
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
-COMP_PARAMS = {'w1': 20, 'l1': 1, 'mt1': 10, 'rdeg': '2Meg', 'mta': 2, 'lref': 136, 'wcl': 22}
+COMP_PARAMS = {'w1': 20, 'l1': 1, 'mt1': 10, 'rdeg': '0.85Meg', 'mta': 2, 'lref1': 68, 'lref2': 204, 'wcl': 22}
 
 
 def comp_ct():
@@ -69,8 +74,8 @@ def comp_ct():
     s.route((100, -20), mt.pin('D'))
     s.label((100, -20), 'tail', right=True)
     # PMOS mirror load (lvt, L 1): diode on d1
-    mp1 = mos(s, 'p', 20, -300, W=4, L=1, name='Mp1', vt='lvt', body='VDD', flip=1)
-    mp2 = mos(s, 'p', 180, -300, W=4, L=1, name='Mp2', vt='lvt', body='VDD')
+    mp1 = mos(s, 'p', 20, -300, W=8, L=2, name='Mp1', vt='lvt', body='VDD', flip=1)
+    mp2 = mos(s, 'p', 180, -300, W=8, L=2, name='Mp2', vt='lvt', body='VDD')
     s.bus(mp1.pin('G'), mp2.pin('G'), [(100, -300)])
     s.route((0, -240), (100, -240), (100, -300))
     s.bus(mp1.pin('D'), m1.pin('D'), [(0, -240), (0, -200)])
@@ -81,7 +86,7 @@ def comp_ct():
     # vref -> d1, trim -> d2 (acts like inn), split tails + rdeg between the sources
     ta = []
     for nm, x, g, sn, fl in (('M3', -250, 'vref', 'sa', 0), ('M4', 450, 'trim', 'sb', 1)):
-        m = mos(s, 'n', x + (20 if fl else -20), -100, W=2, L=1, name=nm, vt='lvt', body='VSS', flip=fl)
+        m = mos(s, 'n', x + (20 if fl else -20), -100, W=8, L=1, name=nm, vt='lvt', body='VSS', flip=fl)
         s.route(m.pin('D'), (x, -200), (0 if x < 0 else 200, -200), vfirst=True)
         t = mos(s, 'n', x + (20 if fl else -20), 100, W=2, L=2, mult="'mta'", name=f'Mta_{sn}', body='VSS',
                 flip=fl)
@@ -96,10 +101,10 @@ def comp_ct():
     s.connect(r, B='VSS')
     s.route((-250, 30), r.pin('M'))
     s.route(r.pin('P'), (450, 30))
-    # VDD/2 reference for the trim pair (xhigh poly divider + MIM decoupling)
+    # vref for the trim pair (xhigh poly divider + MIM decoupling)
     rr = []
-    for nm, y in (('Rr1', -250), ('Rr2', -40)):
-        rr.append(s.place('sky130_fd_pr/res_xhigh_po_0p35.sym', -700, y, name=nm, L="'lref'",
+    for nm, y, lr in (('Rr1', -250, "'lref1'"), ('Rr2', -40, "'lref2'")):
+        rr.append(s.place('sky130_fd_pr/res_xhigh_po_0p35.sym', -700, y, name=nm, L=lr,
                           model='res_xhigh_po_0p35', mult='1', spiceprefix='X'))
         s.connect(rr[-1], B='VSS')
     cr = s.place('sky130_fd_pr/cap_mim_m3_1.sym', -800, -40, name='Cref', model='cap_mim_m3_1',
@@ -137,8 +142,8 @@ def comp_ct():
     # here so LVS sees the same devices (IIC etiquette: dummies belong in the schematic)
     s.text(-200, 300, 'layout matching dummies (all terminals on the rail)', 0.4)
     taps = {'n': [], 'p': []}
-    for nm, x, kind, W, L, vt, m in (('Mdn1', -100, 'n', 5, 1, 'lvt', 2), ('Mdn2', 100, 'n', 1, 1, 'lvt', 2),
-                                     ('Mdn3', 300, 'n', 2, 2, '', 1), ('Mdp1', 500, 'p', 2, 1, 'lvt', 2),
+    for nm, x, kind, W, L, vt, m in (('Mdn1', -100, 'n', 5, 1, 'lvt', 2), ('Mdn2', 100, 'n', 4, 1, 'lvt', 2),
+                                     ('Mdn3', 300, 'n', 2, 2, '', 1), ('Mdp1', 500, 'p', 4, 2, 'lvt', 2),
                                      ('Mdp2', 700, 'p', 4, 1, 'lvt', 1)):
         rail = 'VSS' if kind == 'n' else 'VDD'
         d = mos(s, kind, x, 450, W=W, L=L, mult=m, name=nm, vt=vt, body=rail)

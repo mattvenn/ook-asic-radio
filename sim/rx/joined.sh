@@ -48,7 +48,7 @@ PY
 * 50 ps, and an edge landing on that grid (+- rounding) gives 'timestep too small'
 x11 det lpf GND lpf_rc lr=136 nc=6
 x12 lpf phi1 phi2 avg VDPWR GND avg_sc ncs=1 nca=5
-x13 avg lpf trim ibc comp VDPWR GND comp_ct w1=20 l1=1 mt1=10 rdeg=1.4Meg mta=2 lref=136 wcl=22
+x13 avg lpf trim ibc comp VDPWR GND comp_ct w1=20 l1=1 mt1=10 rdeg=0.85Meg mta=2 lref1=68 lref2=204 wcl=22
 Ibc VDPWR ibc 1u
 Vphi1 phi1 GND pulse(0 1.8 25p 10n 10n 6.09u 13u)
 Vphi2 phi2 GND pulse(0 1.8 6.500025u 10n 10n 6.09u 13u)
