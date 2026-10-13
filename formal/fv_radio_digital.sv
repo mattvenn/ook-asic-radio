@@ -89,7 +89,7 @@ module fv_props (
     always @(*) if (f_on && !f_raw) assert (!(rx_en && tx_en));
 `ifdef FV_RAW_RX
     // the same in every mode (expected to fail: raw mode keys tx_en from
-    // uio_in[2] whatever the role)
+    // uio_in[2] whatever the role; intended, a loopback test, docs/info.md)
     always @(*) if (f_on) assert (!(rx_en && tx_en));
 `endif
 

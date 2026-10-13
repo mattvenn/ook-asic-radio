@@ -62,8 +62,9 @@ popcount one clock longer (`done` timing) and the popcount never clearing `busy`
 "score never arrives as an event closes" assert wasn't mutation-tested (a mutant would need a full burst).
 Two findings:
 - **Raw mode keys the TX in the RX role** (task `raw_rx`, an expected FAIL): with the magic strap, mode `01` and
-  `ui_in[7]` = 0 (RX), `tx_en` = `uio_in[2]` while `rx_en` = 1. docs/info.md describes raw mode as raw TX only.
-  It is harmless unless someone straps raw mode on an RX board and drives `uio[2]` (also the debug strap pin).
+  `ui_in[7]` = 0 (RX), `tx_en` = `uio_in[2]` while `rx_en` = 1.
+  **Intended** (Matt, 2026-10-13): raw RX with TX keying is a loopback test, now described in docs/info.md. The `raw_rx`
+  task stays as a record that the property doesn't hold in raw mode.
 - **Dead time after a short reset:** if `sc_phi2` is high when a 1-clock reset arrives (at power-up the
   flops start random, or a very short `rst_n` pulse), reset clears it and `sc_phi1` rises 2 clocks later instead
   of ≥ 4. They still never overlap. The dead-time check is waived across a reset for that reason.
