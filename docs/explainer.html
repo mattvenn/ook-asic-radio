@@ -439,6 +439,7 @@ function figLayout() {
   if (!D.layout_jpg) return NODATA('layout image');
   return fig('the whole design: 3 × 2 Tiny Tapeout tiles, 493 × 226 µm',
     `<img class="layoutimg" src="data:image/jpeg;base64,${D.layout_jpg}" alt="The chip layout: analog blocks on the left, the digital block on the right">`, 'GitHub gds action render') +
+    `<div class="links"><a class="primary" href="${GDS('tt_um_mattvenn_radio', 'gds')}" target="_blank" rel="noopener">Open in 3D viewer ↗</a></div>` +
     '<p>Left: the analog, the transmitter and receiver blocks and their decoupling capacitors. Right: the digital, which makes the code, scores what the receiver hears and trims the comparator.</p>';
 }
 function figCode() {
