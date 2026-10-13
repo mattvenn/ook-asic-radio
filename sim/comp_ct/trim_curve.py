@@ -9,7 +9,8 @@ Same bench as tb_comp_ct.py (ideal 1 uA bias, CM 1.5 V, VDD 1.8 V, nominal devic
 
 key=val: a comp_ct param (rdeg=1.2Meg, mta=...), or a device change:
   W3= / W4= (trim pair W), L34= (trim pair L), LR1= / LR2= (vref divider lengths, VDD side / VSS side;
-  vref = 1.8 * LR2 / (LR1 + LR2)), WTA= / LTA= (Mta tails), WP= / LP= (mirror Mp1 / Mp2), cm=, temp=.
+  vref = 1.8 * LR2 / (LR1 + LR2)), WTA= / LTA= (Mta tails), WP= / LP= (mirror Mp1 / Mp2), cm=, temp=, vdd= (bench supply, default 1.8: the trim sweep runs to it and
+the step is per vdd / 256, since the DAC runs off VDPWR too; vref = vdd * LR2 / (LR1 + LR2)).
 Writes build/trim/<tag>.json (rows), build/trim/<tag>_sub.spice and <tag>_prm: the modified subckt and its
 params, for tb_comp_ct.py's Monte Carlo:
     COMP_SUB=build/trim/<tag>_sub.spice COMP_PRM="$(cat build/trim/<tag>_prm)" COMP_TAG=<tag> \\
@@ -60,8 +61,8 @@ def build(tag, kv):
     return sub, P
 
 
-def deck(tag, corner, sub, P, cm, temp):
-    vts = [round(0.05 * i, 3) for i in range(4, 37)]
+def deck(tag, corner, sub, P, cm, temp, vdd=1.8):
+    vts = [round(0.05 * i, 3) for i in range(4, int(vdd / 0.05 + 1e-6) + 1)]
     loop = ''.join(f"""alter Vt dc = {vt}
 dc Vdif -30m 30m 0.01m
 meas dc th when v(out)=0.9 cross=1
@@ -74,7 +75,7 @@ $&@m.x1.xm4.msky130_fd_pr__nfet_01v8_lvt[id]
     return f"""* comp_ct trim curve {tag}
 .lib {pdk}/sky130A/libs.tech/combined/sky130.lib.spice {corner}
 {sub}
-VD VDD 0 1.8
+VD VDD 0 {vdd:g}
 Ib VDD ibias 1u
 Vcm inn 0 {cm}
 Vdif inp inn dc 0
@@ -96,10 +97,10 @@ def main():
     rest = args[1:]
     corner = rest[0] if rest and '=' not in rest[0] else 'tt'
     kv = dict(a.split('=', 1) for a in rest if '=' in a)
-    cm, temp = kv.pop('cm', '1.5'), kv.pop('temp', '27')
+    cm, temp, vdd = kv.pop('cm', '1.5'), kv.pop('temp', '27'), float(kv.pop('vdd', '1.8'))
     sub, P = build(tag, kv)
     with open(os.path.join(OUT, f'{tag}.spice'), 'w') as fh:
-        fh.write(deck(tag, corner, sub, P, cm, temp))
+        fh.write(deck(tag, corner, sub, P, cm, temp, vdd))
     subprocess.run([T.OSIC, 'bash', '-c', f'cd build && ngspice -b trim/{tag}.spice > trim/{tag}.log 2>&1'],
                    cwd=ROOT)
     rows = []
@@ -110,12 +111,12 @@ def main():
         except ValueError:
             rows.append([float(f[0])] + [float('nan')] * 6)
     json.dump(rows, open(os.path.join(OUT, f'{tag}.json'), 'w'))
-    print(f'{tag} {corner} {temp} C, CM {cm} V: {P} {kv}')
+    print(f'{tag} {corner} {temp} C, CM {cm} V, VDD {vdd:g} V: {P} {kv}')
     print(' vt     th_mV  step_mV/LSB  sa     sb     vref   I3uA  I4uA')
     prev = None
     for o in rows:
         st = ('' if prev is None or o[1] != o[1] or prev[1] != prev[1]
-              else f'{abs(o[1] - prev[1]) * 1e3 / ((o[0] - prev[0]) / T.LSB):.3f}')
+              else f'{abs(o[1] - prev[1]) * 1e3 / ((o[0] - prev[0]) / (vdd / 256)):.3f}')
         print(f'{o[0]:.2f} {o[1] * 1e3:+8.3f} {st:>8}  {o[2]:.3f} {o[3]:.3f} {o[4]:.3f} '
               f'{o[5] * 1e6:5.2f} {o[6] * 1e6:5.2f}')
         prev = o

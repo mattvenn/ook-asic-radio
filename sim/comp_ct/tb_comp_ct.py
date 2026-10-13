@@ -19,6 +19,8 @@ jobs all drew the same samples: --jobs 8 gave 8 copies of n/8).
 Rows in build/mc/comp_<corner>_<temp>_cm<cm>.txt; prints mean, sigma and the 4-sigma code range.
 --step also finds the switching trim with vd = +-0.1 mV, so each sample's own trim step at its switching
 point (mV/LSB, third column; files *_step).
+--vdd V: the bench supply (default 1.8); the trim sweep runs 0..V and a code is V / 256 (the R2R ladder runs
+off VDPWR, so vref and the DAC both scale). Files get _vdd<V> when it isn't 1.8.
 COMP_SUB=<file> (a comp_ct .subckt), COMP_PRM='<params>' and COMP_TAG=<name> run a modified comparator.
 MM_OFF="pfet_01v8_lvt nfet_01v8" in the environment zeroes those device types' Vt mismatch
 (sw_mm_vth0_sky130_fd_pr__<type>), to see which devices set the spread (files *_no-<types>).
@@ -88,21 +90,21 @@ echo RES tup=$&tup tdn=$&tdn
 STEP_VD = 0.1e-3
 
 
-def mc_deck(corner, n, cm, temp, sub, step=False, seed=1):
+def mc_deck(corner, n, cm, temp, sub, step=False, seed=1, vdd=1.8):
     pdk = os.environ.get('PDK_ROOT', '/foss/pdks')
     loop = ''.join(f"""reset
 dc Vdif -40m 40m 0.02m
 meas dc off0 when v(out)=0.9 cross=1
 set o0 = "$&off0"
-dc Vt 0 1.8 0.5m
+dc Vt 0 {vdd:g} 0.5m
 meas dc vsw when v(out)=0.9 cross=1
 echo MC {k} $o0 $&vsw
 """ + (f"""alter Vdif dc = {STEP_VD}
-dc Vt 0 1.8 0.5m
+dc Vt 0 {vdd:g} 0.5m
 meas dc vp when v(out)=0.9 cross=1
 set op = "$&vp"
 alter Vdif dc = {-STEP_VD}
-dc Vt 0 1.8 0.5m
+dc Vt 0 {vdd:g} 0.5m
 meas dc vm when v(out)=0.9 cross=1
 alter Vdif dc = 0
 echo STEP {k} $op $&vm
@@ -111,7 +113,7 @@ echo STEP {k} $op $&vm
     return f"""* tb_comp_ct Monte Carlo, {corner}_mm, {temp} C, CM {cm}
 .lib {pdk}/sky130A/libs.tech/combined/sky130.lib.spice {corner}_mm
 {sub}
-{''.join(f'.param sw_mm_vth0_sky130_fd_pr__{t}=0{chr(10)}' for t in os.environ.get('MM_OFF', '').split())}VD VDD 0 1.8
+{''.join(f'.param sw_mm_vth0_sky130_fd_pr__{t}=0{chr(10)}' for t in os.environ.get('MM_OFF', '').split())}VD VDD 0 {vdd:g}
 Ib VDD ibias 1u
 Vcm inn 0 {cm}
 Vdif inp inn dc 0
@@ -127,7 +129,7 @@ set num_threads=1
 """
 
 
-def run_mc(corner, n, cm, temp, jobs, step=False):
+def run_mc(corner, n, cm, temp, jobs, step=False, vdd=1.8):
     import numpy as np
     from concurrent.futures import ThreadPoolExecutor
     sub = subckt()
@@ -135,6 +137,8 @@ def run_mc(corner, n, cm, temp, jobs, step=False):
     tag = f'comp_{corner}_{temp:g}_cm{cm:g}'
     if os.environ.get('MM_OFF'):
         tag += '_no-' + '-'.join(os.environ['MM_OFF'].split())
+    if vdd != 1.8:
+        tag += f'_vdd{vdd:g}'
     if step:
         tag += '_step'
     if os.environ.get('COMP_TAG'):
@@ -147,7 +151,7 @@ def run_mc(corner, n, cm, temp, jobs, step=False):
     def one(j):
         name = f'mc/{tag}_{j}'
         with open(os.path.join(B, name + '.spice'), 'w') as fh:
-            fh.write(mc_deck(corner, per[j], cm, temp, sub, step, seed0 + j))
+            fh.write(mc_deck(corner, per[j], cm, temp, sub, step, seed0 + j, vdd))
         subprocess.run([OSIC, 'bash', '-c', f'cd build && ngspice -b {name}.spice > {name}.log 2>&1'], cwd=ROOT)
         log = open(os.path.join(B, name + '.log')).read()
         rows = re.findall(r'^MC (\d+) (\S+) (\S+)$', log, re.M)
@@ -160,7 +164,7 @@ def run_mc(corner, n, cm, temp, jobs, step=False):
             if 'failed' in (a, b, p, m):
                 out.append((float('nan'),) * 3)       # no switching point in 0..1.8 V: out of trim
             else:
-                out.append((float(a), float(b), 2 * STEP_VD / abs(float(p) - float(m)) * LSB))
+                out.append((float(a), float(b), 2 * STEP_VD / abs(float(p) - float(m)) * vdd / 256))
         return out
 
     with ThreadPoolExecutor(jobs) as ex:
@@ -179,7 +183,7 @@ def run_mc(corner, n, cm, temp, jobs, step=False):
               f'{np.sum(s_mv > 0.13)}, > 0.16: {np.sum(s_mv > 0.16)}, > 0.19: {np.sum(s_mv > 0.19)}')
         a = a[~bad]
     off, vsw = a[:, 0] * 1e3, a[:, 1]
-    code = vsw / LSB
+    code = vsw / (vdd / 256)
     print(f'comp_ct MC {corner} {temp:g} C, CM {cm:g} V: {len(a)}/{n} samples; offset (trim mid) '
           f'{off.mean():+.2f} mV, sigma {off.std(ddof=1):.2f} mV; switching trim {vsw.mean():.3f} V '
           f'(code {code.mean():.0f}), sigma {vsw.std(ddof=1) * 1e3:.1f} mV ({code.std(ddof=1):.1f} codes); '
@@ -202,12 +206,12 @@ def run(corner, pex):
 
 if __name__ == '__main__':
     args = sys.argv[1:]
-    opt = {k: args[i + 1] for i, k in enumerate(args) if k in ('--mc', '--cm', '--temp', '--jobs')}
+    opt = {k: args[i + 1] for i, k in enumerate(args) if k in ('--mc', '--cm', '--temp', '--jobs', '--vdd')}
     pos = [a for i, a in enumerate(args) if not a.startswith('-') and (i == 0 or args[i - 1] not in opt)]
     corner = pos[0] if pos else 'tt'
     if '--mc' in opt:
         run_mc(corner, int(opt['--mc']), float(opt.get('--cm', 1.5)), float(opt.get('--temp', 27)),
-               int(opt.get('--jobs', 8)), '--step' in args)
+               int(opt.get('--jobs', 8)), '--step' in args, float(opt.get('--vdd', 1.8)))
         sys.exit()
     pex = '--pex' in args
     r = run(corner, pex)
