@@ -1,12 +1,25 @@
 name: lvs
-
+# Pinout check, then the tile LVS this repo signs off with (layout/check_top.sh lvs: magic extraction of
+# gds/ against the xschem netlist + layout/ref/ cells) on the committed gds/. Tool and PDK versions are the
+# IIC-OSIC-TOOLS 2026.09 image's (magic 8.3.684, netgen 1.5.323, sky130 1689ac3f via ciel; xschem 3.4.7,
+# the nearest release to the image's 3.4.8RC). Until 2026-10-13 this job ran the TT template's mag/ flow,
+# which has no .mag / src/project.v here, with a PDK hash volare doesn't have: it never got to LVS.
 on:
   push:
   workflow_dispatch:
 
+env:
+  PDK_ROOT: /home/runner/pdk
+  PDK: sky130A
+  PDK_VERSION: 1689ac3f2dc763876eaf967227c7dfe831b031ae
+  MAGIC_VERSION: 8.3.684
+  NETGEN_VERSION: 1.5.323
+  XSCHEM_VERSION: 3.4.7
+  TOOLS: /home/runner/tools
+
 jobs:
   lvs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: checkout repo
         uses: actions/checkout@v4
@@ -19,44 +32,51 @@ jobs:
             python3 -c 'import yaml' 2>/dev/null || pip install --break-system-packages pyyaml
             python3 tools/check_pinout.py
 
-      - name: Set up environment variables
+      - name: Build dependencies
         shell: bash
         run: |
-          cat << EOF >> $GITHUB_ENV
-          PDK_ROOT=/home/runner/pdk
-          PDK=sky130A
-          MAGIC_VERSION=master
-          NETGEN_VERSION=master
-          EOF
-  
-      - name: Install Sky130 PDK
-        uses: TinyTapeout/volare-action@v1
+            sudo apt-get update -q
+            sudo apt-get install -y -q m4 tcl-dev tk-dev libx11-dev libcairo2-dev mesa-common-dev \
+              libglu1-mesa-dev libxpm-dev libxrender-dev libxft-dev flex bison gawk
+
+      - name: Cache tools
+        id: cache-tools
+        uses: actions/cache@v4
         with:
-          pdk_name: sky130
-          pdk_version: 7b70722e33c03fcb5dabcf4d479fb0822d9251c9  # matches the IIC-OSIC-TOOLS 2026.05 image used locally
-          pdk_root: /home/runner/pdk
+          path: ${{ env.TOOLS }}
+          key: tools-magic${{ env.MAGIC_VERSION }}-netgen${{ env.NETGEN_VERSION }}-xschem${{ env.XSCHEM_VERSION }}
 
-      - name: Magic
+      - name: Build magic, netgen, xschem
+        if: steps.cache-tools.outputs.cache-hit != 'true'
         shell: bash
         run: |
-            sudo apt-get install -y m4 python3 libx11-dev tcl-dev tk-dev libcairo2-dev mesa-common-dev libglu1-mesa-dev
-            git clone -b $MAGIC_VERSION https://github.com/RTimothyEdwards/magic /tmp/magic
-            cd /tmp/magic
-            ./configure
-            make -j4 
-            sudo make install
+            set -e
+            git clone -q --depth 1 -b $MAGIC_VERSION https://github.com/RTimothyEdwards/magic /tmp/magic
+            (cd /tmp/magic && ./configure --prefix=$TOOLS > /dev/null && make -j4 > /dev/null && make install > /dev/null)
+            git clone -q --depth 1 -b $NETGEN_VERSION https://github.com/RTimothyEdwards/netgen /tmp/netgen
+            (cd /tmp/netgen && ./configure --prefix=$TOOLS > /dev/null && make -j4 > /dev/null && make install > /dev/null)
+            git clone -q --depth 1 -b $XSCHEM_VERSION https://github.com/StefanSchippers/xschem /tmp/xschem
+            (cd /tmp/xschem && ./configure --prefix=$TOOLS > /dev/null && make -j4 > /dev/null && make install > /dev/null)
 
-      - name: Netgen
+      - name: Cache PDK
+        id: cache-pdk
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PDK_ROOT }}
+          key: pdk-sky130-${{ env.PDK_VERSION }}
+
+      - name: Install PDK
+        if: steps.cache-pdk.outputs.cache-hit != 'true'
         shell: bash
         run: |
-            git clone -b $NETGEN_VERSION https://github.com/RTimothyEdwards/netgen /tmp/netgen
-            cd /tmp/netgen
-            ./configure
-            make -j4 
-            sudo make install
+            pip install --break-system-packages -q ciel
+            ciel enable --pdk-root $PDK_ROOT --pdk-family sky130 $PDK_VERSION
 
-      - name: Run LVS
+      - name: Tile LVS (gds/ vs schematic)
         shell: bash
         run: |
-            cd mag
-            make lvs
+            export PATH=$TOOLS/bin:$PATH
+            magic --version; xschem --version | head -1
+            GDS=$PWD/gds/tt_um_mattvenn_radio.gds bash layout/check_top.sh lvs
+            tail -40 build/lvs/top/lvs.report
+            grep -q "Final result: Circuits match uniquely" build/lvs/top/lvs.report

@@ -9,7 +9,7 @@ PINOUT below is the single source of truth for what each TT pin does. The script
 - each uio_oe bit is wired to the macro's uio_oe bit (the value is checked in test/: it
   must equal UIO_OE_OUT after reset, from the PINOUT directions).
 
-The top schematic is labels on pins (xschem/gen/top.py), so it is parsed directly and
+The top schematic (xschem/gen/top.py: labels, iopins and wires) is parsed directly, so the check
 needs no xschem. With --xschem NETLIST the parse is cross-checked against an xschem netlist
 of the same schematic (`xschem -q -x -n -s -o <dir> xschem/tt_um_mattvenn_radio.sch`).
 --verilog OUT writes the tt_um wrapper used by the cocotb tests in test/ (radio_digital
@@ -94,34 +94,57 @@ def sym_pins(sym):
 
 
 def parse_sch(path):
-    """{net: sorted [(inst, port)]} from the top schematic: block pins and the lab_pins on them."""
+    """{net: sorted [(inst, port)]} from the top schematic: block pins, the lab_pins / iopins that name
+    nets, and the wires between them. A wire joins its two ends and anything lying on it (end or
+    middle); each group of joined points takes its name from its label(s) or iopin."""
     text = open(path).read()
     comps = re.findall(r'^C \{([^}]*)\} (\S+) (\S+) (\S+) (\S+) \{([^}]*)\}', text, re.M)
-    if re.search(r'^N ', text, re.M):
-        sys.exit(f'{path}: has wires; this parser only handles labels placed on pins')
-    labels, iopins, insts = {}, [], []
+    wires = [tuple(map(float, m)) for m in re.findall(r'^N (\S+) (\S+) (\S+) (\S+) ', text, re.M)]
+    names, iopins, insts = [], [], []          # names: (xy, net name) from lab_pins and iopins
     for sym, x, y, rot, flip, attrs in comps:
         a = dict(re.findall(r'(\w+)=(\S+)', attrs))
         xy = (float(x), float(y))
         if sym == 'devices/lab_pin.sym':
-            labels.setdefault(xy, []).append(a['lab'])
+            names.append((xy, a['lab']))
         elif sym == 'devices/iopin.sym':
             iopins += bits(a['lab'])
+            names.append((xy, a['lab']))
         elif sym in ('radio_digital.sym', 'radio_analog.sym'):
             if (rot, flip) != ('0', '0'):
                 sys.exit(f'{a["name"]}: rotated / flipped instance, not handled')
             insts.append((a['name'], os.path.join(REPO, 'xschem', sym), xy))
+    pins = [(name, pin, (ix + px, iy + py)) for name, sym, (ix, iy) in insts for pin, px, py in sym_pins(sym)]
+    # union-find over the points of interest and the wire ends
+    pts = [xy for xy, _ in names] + [xy for _, _, xy in pins] + [e for w in wires for e in (w[:2], w[2:])]
+    up = {q: q for q in pts}
+
+    def root(q):
+        while up[q] != q:
+            up[q] = up[up[q]]
+            q = up[q]
+        return q
+
+    def on(q, w):                                 # q on the (axis-parallel or not) segment w
+        (x, y), (x1, y1, x2, y2) = q, w
+        return (abs((x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)) < 1e-6
+                and min(x1, x2) - 1e-6 <= x <= max(x1, x2) + 1e-6 and min(y1, y2) - 1e-6 <= y <= max(y1, y2) + 1e-6)
+    for w in wires:
+        for q in up:
+            if on(q, w):
+                up[root(q)] = root(w[:2])
+    named = {}
+    for xy, n in names:
+        named.setdefault(root(xy), set()).add(n)
     nets = {}
-    for name, sym, (ix, iy) in insts:
-        for pin, px, py in sym_pins(sym):
-            labs = labels.get((ix + px, iy + py), [])
-            if len(labs) != 1:
-                sys.exit(f'{name}.{pin}: {len(labs)} labels on the pin')
-            pb, lb = bits(pin), bits(labs[0])
-            if len(pb) != len(lb):
-                sys.exit(f'{name}.{pin}: width {len(pb)} vs label {labs[0]}')
-            for p, n in zip(pb, lb):
-                nets.setdefault(n, []).append((name, p))
+    for name, pin, xy in pins:
+        labs = sorted(named.get(root(xy), ()))
+        if len(labs) != 1:
+            sys.exit(f'{name}.{pin}: {len(labs)} net names on the pin ({labs})')
+        pb, lb = bits(pin), bits(labs[0])
+        if len(pb) != len(lb):
+            sys.exit(f'{name}.{pin}: width {len(pb)} vs net {labs[0]}')
+        for p, n in zip(pb, lb):
+            nets.setdefault(n, []).append((name, p))
     for n in iopins:
         nets.setdefault(n, [])
     return {n: sorted(p) for n, p in nets.items()}, iopins

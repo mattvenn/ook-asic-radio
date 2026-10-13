@@ -5,7 +5,7 @@
 set -u
 REPO=$(pwd)
 B=tt_um_mattvenn_radio
-GDS=$REPO/build/top/$B.gds
+GDS=${GDS:-$REPO/build/top/$B.gds}       # GDS=gds/... to check the exported tile (the CI does)
 OUT=$REPO/build/lvs/top
 mkdir -p "$OUT"; cd "$OUT"
 RC=$PDK_ROOT/$PDK/libs.tech/magic/sky130A.magicrc
