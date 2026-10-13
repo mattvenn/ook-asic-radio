@@ -246,7 +246,9 @@ def main():
     total = {'VAPWR': [], 'VDPWR': []}
     for p in parts():
         b, devs, caps = make(p)
-        b.write(os.path.join(REPO, 'layout', p['cell'] + '.gds'))
+        # VAPWR parts flattened (as the TX blocks, 13c28aa): their per-device hvi markers merge with the
+        # part's own, so magic with gds maskhints (the TT precheck) sees no hvi.5 gaps (plan_verify_gaps 4.1)
+        b.write(os.path.join(REPO, 'layout', p['cell'] + '.gds'), flatten=p['sup'] == 'VAPWR')
         ref = write_ref(p['cell'], p['sup'], p['vt'], devs, caps)
         open(os.path.join(REPO, 'layout', 'ref', p['cell'] + '.spice'), 'w').write('\n'.join(ref) + '\n')
         total[p['sup']].append((p, devs, caps))

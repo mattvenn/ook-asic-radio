@@ -97,7 +97,7 @@ Run: `python3 sim/<dir>/tb_<block>.py [--pex] [corner]` (no flag = schematic, `-
 | `tx_drv` | [tb_tx_drv](../sim/tx/tb_tx_drv.py) | output power −0.32 dB |
 | decaps | [decap_ac.sh](../sim/decap/decap_ac.sh) | capacitance flat to 434 MHz |
 
-Every block layout is also DRC and LVS clean (`tools/osic bash layout/check.sh <block>`: magic DRC as the TT precheck runs it, antenna, KLayout DRC, LVS). Exception: checked on their own, `decap_vapwr_p1`–`p4` show magic hvi.5 flags (per-device hvi, not flattened). In the tile they are clean.
+Every block layout is also DRC and LVS clean (`tools/osic bash layout/check.sh <block>`: magic DRC as the TT precheck runs it, antenna, KLayout DRC, LVS). The `decap_vapwr` parts are written flattened (since 2026-10-13, as the TX blocks), so they are clean on their own too, not only in the tile.
 
 **Corners:** [sim/corners/rx_corners.sh](../sim/corners/rx_corners.sh) runs the RX blocks at all 5 process corners and 10–50 °C. The worst corner (fs 50 °C) still decodes −92 dBm, which sets the worst-case sensitivity spec. Run in the image from `build/` after netlisting `tb_chain`, `tb_logdet`, `tb_comp`: `CORNERS="tt ss ff sf fs" TEMPS="10 50" ../sim/corners/rx_corners.sh`, then `python3 sim/corners/rx_corners.py`.
 
