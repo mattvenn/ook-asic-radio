@@ -217,6 +217,12 @@ sky130A, run headless in Docker.
   `reset` in a control loop redraws. To find which devices matter, zero one type's term after the .lib:
   `.param sw_mm_vth0_sky130_fd_pr__pfet_01v8_lvt=0`. A_Vt in this PDK: nfet 3.4, nfet_lvt 5.5, pfet 5.9,
   **pfet_lvt 10.9 mV·µm**.
+- **Monte Carlo draws repeat across processes unless seeded (ngspice 47).** Without a seed every ngspice
+  run starts from the same AGAUSS sequence, so N parallel jobs give N copies of the same samples
+  (asic-radio phase 2: "200" comparator samples were 8 × 25). `set rndseed` and `option seed` in .control
+  are ignored; `.options seed=N` in the netlist works, but every `reset` re-seeds to N, so a reset loop then
+  repeats one sample. What works: one sample per ngspice process, each with its own `.options seed`
+  (`sim/comp_ct/tb_comp_ct.py`). Check for duplicate rows after any MC run.
 - **A `meas` result lives in its analysis's plot.** After the next analysis, `$&off0` is gone ("no such
   variable"); copy it first with `set o0 = "$&off0"`. `$&` takes a vector name only: `let d = v(a)-v(b)`
   then `$&d`, not `$&v(a)-v(b)`.

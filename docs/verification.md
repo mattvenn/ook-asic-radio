@@ -127,7 +127,8 @@ Run: `tools/osic bash sim/mixed/build_so.sh` (verilates the RTL), `tools/osic ba
   ring stays in the RX band, but ss at 1.71 V is at its bottom edge (332 MHz on silicon).
 - **Mismatch:** `--mc N` on `sim/comp_ct/tb_comp_ct.py` and `sim/avg_sc/tb_avg_sc.py`, and
   `sim/chain/mc_chain.py`, with the PDK's `<corner>_mm` models. The comparator offset (sigma ~3 mV, mostly
-  the pfet_lvt mirror) puts ~26 % of chips where the trim step is too coarse for −92 dBm: open at Gate 2.
+  the pfet_lvt mirror) puts 26–34 % of chips where the trim step is too coarse for −92 dBm, 8–10 % at about
+  −88 dBm (`tb_comp_ct.py --mc 200 --step`, rerun 2026-10-13): open at Gate 2.
 
 ## System on the extracted chip
 [verify_system_2.md](verify_system_2.md) (2026-10-12/13) has the tables. **Sensitivity: −92 dBm at 10–50 °C, −90 dBm

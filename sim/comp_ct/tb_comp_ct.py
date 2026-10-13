@@ -14,8 +14,11 @@ VDD 1.8, ibias 1 uA (as bias_gen), inp = 1.0 V + vd, inn = 1.0 V, Cl load on out
 each `reset` redraws). Inputs at the operating CM (--cm, default 1.5 V: LPF idle 1.45-1.52 V), ideal
 1 uA bias. Per sample: the offset at trim mid (0.9 V), and the trim voltage where out switches
 with vd = 0, i.e. the DAC code the servo settles to without signal. Samples split over --jobs
-single-thread ngspice runs (seeds aren't repeatable in ngspice 47, so neither are the samples).
+single-thread ngspice runs, one sample per run with a random .options seed (before 2026-10-13 the
+jobs all drew the same samples: --jobs 8 gave 8 copies of n/8).
 Rows in build/mc/comp_<corner>_<temp>_cm<cm>.txt; prints mean, sigma and the 4-sigma code range.
+--step also finds the switching trim with vd = +-0.1 mV, so each sample's own trim step at its switching
+point (mV/LSB, third column; files *_step).
 MM_OFF="pfet_01v8_lvt nfet_01v8" in the environment zeroes those device types' Vt mismatch
 (sw_mm_vth0_sky130_fd_pr__<type>), to see which devices set the spread (files *_no-<types>).
 """
@@ -79,7 +82,10 @@ echo RES tup=$&tup tdn=$&tdn
 """
 
 
-def mc_deck(corner, n, cm, temp, sub):
+STEP_VD = 0.1e-3
+
+
+def mc_deck(corner, n, cm, temp, sub, step=False, seed=1):
     pdk = os.environ.get('PDK_ROOT', '/foss/pdks')
     loop = ''.join(f"""reset
 dc Vdif -40m 40m 0.02m
@@ -88,7 +94,16 @@ set o0 = "$&off0"
 dc Vt 0 1.8 0.5m
 meas dc vsw when v(out)=0.9 cross=1
 echo MC {k} $o0 $&vsw
-destroy all
+""" + (f"""alter Vdif dc = {STEP_VD}
+dc Vt 0 1.8 0.5m
+meas dc vp when v(out)=0.9 cross=1
+set op = "$&vp"
+alter Vdif dc = {-STEP_VD}
+dc Vt 0 1.8 0.5m
+meas dc vm when v(out)=0.9 cross=1
+alter Vdif dc = 0
+echo STEP {k} $op $&vm
+""" if step else '') + """destroy all
 """ for k in range(n))
     return f"""* tb_comp_ct Monte Carlo, {corner}_mm, {temp} C, CM {cm}
 .lib {pdk}/sky130A/libs.tech/combined/sky130.lib.spice {corner}_mm
@@ -101,7 +116,7 @@ Vt trim 0 0.9
 x1 inp inn trim ibias out VDD 0 comp_ct {PRM}
 Co out 0 10f
 .temp {temp}
-.options method=GEAR
+.options method=GEAR seed={seed}
 .control
 set num_threads=1
 {loop}.endc
@@ -109,7 +124,7 @@ set num_threads=1
 """
 
 
-def run_mc(corner, n, cm, temp, jobs):
+def run_mc(corner, n, cm, temp, jobs, step=False):
     import numpy as np
     from concurrent.futures import ThreadPoolExecutor
     sub = subckt()
@@ -117,20 +132,47 @@ def run_mc(corner, n, cm, temp, jobs):
     tag = f'comp_{corner}_{temp:g}_cm{cm:g}'
     if os.environ.get('MM_OFF'):
         tag += '_no-' + '-'.join(os.environ['MM_OFF'].split())
-    per = [n // jobs + (j < n % jobs) for j in range(jobs)]
+    if step:
+        tag += '_step'
+    # One sample per ngspice run, each with its own .options seed. Without a seed every run starts from
+    # the same sequence (parallel jobs drew identical samples), and with one, each reset re-seeds to it.
+    per = [1] * n
+    seed0 = int.from_bytes(os.urandom(3), 'little')
 
     def one(j):
         name = f'mc/{tag}_{j}'
         with open(os.path.join(B, name + '.spice'), 'w') as fh:
-            fh.write(mc_deck(corner, per[j], cm, temp, sub))
+            fh.write(mc_deck(corner, per[j], cm, temp, sub, step, seed0 + j))
         subprocess.run([OSIC, 'bash', '-c', f'cd build && ngspice -b {name}.spice > {name}.log 2>&1'], cwd=ROOT)
-        rows = re.findall(r'^MC \d+ (\S+) (\S+)$', open(os.path.join(B, name + '.log')).read(), re.M)
-        return [(float(a), float(b)) for a, b in rows if a != 'failed' and b != 'failed']
+        log = open(os.path.join(B, name + '.log')).read()
+        rows = re.findall(r'^MC (\d+) (\S+) (\S+)$', log, re.M)
+        if not step:
+            return [(float(a), float(b)) for _, a, b in rows if a != 'failed' and b != 'failed']
+        st = dict((k, (p, m)) for k, p, m in re.findall(r'^STEP (\d+) (\S+) (\S+)$', log, re.M))
+        out = []
+        for k, a, b in rows:
+            p, m = st.get(k, ('failed', 'failed'))
+            if 'failed' in (a, b, p, m):
+                out.append((float('nan'),) * 3)       # no switching point in 0..1.8 V: out of trim
+            else:
+                out.append((float(a), float(b), 2 * STEP_VD / abs(float(p) - float(m)) * LSB))
+        return out
 
     with ThreadPoolExecutor(jobs) as ex:
-        rows = [r for rr in ex.map(one, range(jobs)) for r in rr]
+        rows = [r for rr in ex.map(one, range(n)) for r in rr]
+    for j in range(n):
+        for ext in ('.spice', '.log'):
+            os.remove(os.path.join(B, f'mc/{tag}_{j}{ext}'))
     a = np.array(rows)
-    np.savetxt(os.path.join(B, 'mc', tag + '.txt'), a, header='offset_V trim_switch_V')
+    np.savetxt(os.path.join(B, 'mc', tag + '.txt'), a,
+               header='offset_V trim_switch_V' + (' step_V_per_LSB' if step else ''))
+    if step:
+        bad = np.isnan(a[:, 2])
+        s_mv = a[~bad, 2] * 1e3
+        print(f'comp_ct MC {corner} {temp:g} C, CM {cm:g} V: {len(a)}/{n} samples; out of trim {bad.sum()}; '
+              f'step mV/LSB median {np.median(s_mv):.3f}; > 0.10: {np.sum(s_mv > 0.10)}, > 0.13: '
+              f'{np.sum(s_mv > 0.13)}, > 0.16: {np.sum(s_mv > 0.16)}, > 0.19: {np.sum(s_mv > 0.19)}')
+        a = a[~bad]
     off, vsw = a[:, 0] * 1e3, a[:, 1]
     code = vsw / LSB
     print(f'comp_ct MC {corner} {temp:g} C, CM {cm:g} V: {len(a)}/{n} samples; offset (trim mid) '
@@ -160,7 +202,7 @@ if __name__ == '__main__':
     corner = pos[0] if pos else 'tt'
     if '--mc' in opt:
         run_mc(corner, int(opt['--mc']), float(opt.get('--cm', 1.5)), float(opt.get('--temp', 27)),
-               int(opt.get('--jobs', 8)))
+               int(opt.get('--jobs', 8)), '--step' in args)
         sys.exit()
     pex = '--pex' in args
     r = run(corner, pex)

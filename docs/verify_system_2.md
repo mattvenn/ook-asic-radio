@@ -24,7 +24,7 @@ plan, failing checks are recorded here and left for a design change; nothing in 
 | 3.6 one supply missing (c, tt / ss / ff) | ⚠️ VDPWR 1.8 / VAPWR 0: 0.91–1.02 µA. VDPWR 0 / VAPWR 3.3: ≤ 16 nA, but **tx_p = tx_n = 3.3 V** (not the off state with both supplies up, where they sit at 0): no DC path and no RF |
 
 **For Gate 3.** Sensitivity: **−92 dBm at 10–50 °C** (tile extraction, noisy pair and seeds agree), **−90 dBm**
-for every Monte Carlo chip and at 85 °C. Overload: detection dead time < 0.1 ms after a −10 dBm burst, servo
+at 85 °C (for every Monte Carlo chip in the first run; the 2026-10-13 comparator rerun puts 8–10 % of chips at about −88 dBm, finding 1). Overload: detection dead time < 0.1 ms after a −10 dBm burst, servo
 disturbed ~2.8 ms; +6 dBm at the pads recovers fully. Power-up: ready ~3 ms after `rx_en` (~2 ms with a slow supply ramp). Open findings: [Findings](#findings-phases-2-and-3) below, none fixed (per the plan).
 
 ## Findings (phases 2 and 3)
@@ -35,7 +35,7 @@ happens only if one of these leads to a design change.
 
 | # | Finding | Detail | What this means |
 |:-:|---|---|---|
-| 1 | ❌ Comparator mismatch vs trim step | Offset σ ≈ 3 mV. ~26 % of chips (tt / fs) and ~48 % (sf 10 °C) land where the trim step is > 0.13 mV/LSB. ~2 % at tt run out of trim range. | A quarter to half of chips lose ~2 dB of sensitivity: −90 dBm instead of −92 dBm, ~20 % less range. The ~2 % that run out of trim can't cancel their comparator offset, so they receive badly or not at all. The biggest effect on yield. |
+| 1 | ❌ Comparator mismatch vs trim step | Offset σ ≈ 3 mV; the nominal chip switches at the knee of the trim transfer (code 112), so offsets of one sign land where the step is steep. Rerun 2026-10-13 (200 distinct samples, each chip's own step, tt / ss / fs 27 °C; [verify_supply_mc.md](verify_supply_mc.md) "Rerun"): 66–74 % of chips at −92 dBm, 17–24 % at about −90 dBm, 8–10 % at about −88 dBm, 1 in 200 (ss) can't trim. | A quarter to a third of chips lose 2–4 dB of sensitivity (20–40 % less range); about 1 in 10 is in the 4 dB group. The corner barely matters. The biggest effect on yield. (The phase 2 figures, 26 % / 48 % / 2 %, came from duplicated samples.) |
 | 2 | ❌ TX enable level shifter `tx_ls_en` | Fails at VDPWR 1.71 V / VAPWR 3.6 V at ss and fs (extracted): one output arm never turns on. At 1.71 / 3.3 V the TX loses 1.5 dB. | Some chips won't transmit, or transmit weakly, with VDPWR low and VAPWR high. At nominal supplies the TX is fine. Whether it matters depends on TT's real supply tolerances, which weren't looked up. |
 | 3 | ⚠️ TX frequency at the band edge | ss at 1.71 V gives 332 MHz on silicon, at the RX band's 330 MHz bottom edge; likely below it hot. | A slow chip on a low supply may transmit at or just outside what another chip's receiver accepts: chip-to-chip range drops or the link fails at that corner. (The TX is untrimmed, so it's never exactly on 433.92 MHz anyway.) |
 | 4 | ⚠️ Slow TX turn-off | 18 ns at ss 10 °C, 1.71 / 3.0 V. | No practical effect: a chip lasts ~100 µs, so 18 ns is ~0.02 % of it. |
@@ -143,8 +143,9 @@ chips land below code 100. −90 dBm is 12/12 in every case. (First pass, scalin
 loss.)
 
 **Sensitivity, one number (for Gate 3): −92 dBm** at 10–50 °C and every supply corner: on the tile extraction for
-every chip in the Monte Carlo except those that already miss in phase 2 (trim step > 0.13 mV/LSB, 26 % at tt / fs),
-and on the pessimistic block extraction for a typical chip. **−90 dBm** covers every chip in every case, and 85 °C (3.4).
+every chip in the Monte Carlo except those that already miss in phase 2 (trim step > 0.19 mV/LSB, 26–34 % at tt / ss / fs
+in the 2026-10-13 rerun), and on the pessimistic block extraction for a typical chip. **−90 dBm** covers 85 °C (3.4) and
+all but the 8–10 % of chips with a trim step > 0.43 mV/LSB, which reach about −88 dBm (finding 1).
 
 ### G3 pair on the extracted tile, shared noise
 
@@ -188,7 +189,6 @@ same noise at −92 and −94 dBm for each seed:
 | | s1 | s2 | s3 | s4 | s5 |
 |---|---|---|---|---|---|
 | −92 dBm, schematic | ✅ 14.671 ms | ✅ 14.664 | ✅ 14.666 | ✅ 14.664 | ✅ 14.667 |
-
 | −92 dBm, extracted baseband | ✅ 14.674 | ✅ 14.668 | ✅ 14.673 | ✅ 14.669 | ✅ 14.674 |
 | −94 dBm, schematic | ✅ 14.686 | ✗ | ✅ 14.659 | ✅ 14.660 | ✗ |
 | −94 dBm, extracted baseband | ✅ 14.667 | ✅ 14.692 | ✅ 14.660 | ✗ | ✅ 14.666 |

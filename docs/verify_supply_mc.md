@@ -17,7 +17,7 @@ board tolerances were not looked up, so these may be wider than real).
 | TX, schematic, 5 corners × 3 × 3 supplies | ⚠️ **ss at 1.71 V / 3.6 V: the p arm never turns on** (enable level shifter `tx_ls_en` stuck); fs there is weak (+3.4 dBm). Power follows VAPWR (−1.2 / +1.1 dB at 3.0 / 3.6 V) |
 | TX, extracted ring + driver, 5 corners × 9 supplies | ⚠️ frequency 332–545 MHz on silicon (×0.845), inside the 330–560 MHz RX band but **ss at 1.71 V is at the bottom edge** (and likely below it hot). `tx_ls_en` is worse than in the schematic: **ss and fs at 1.71 / 3.6 V fail**, ss / fs at 1.71 / 3.3 V lose 1.5 dB |
 | Analog top with real bias over supply (`tb_tile.py sch`, 7 points) | ✅ RX operating point tracks VDPWR; −60 dBm det drop 0.23–0.35 V everywhere. TX: ss 1.71 / 3.6 V fails here too; ss 10 °C 1.71 / 3.0 V turns off slowly (18 ns) |
-| **Comparator-path mismatch (Monte Carlo)** | ❌ **offset sigma 2.9–3.7 mV; ~26 % of chips (tt / fs) and ~48 % (sf 10 °C) land where the trim step is > 0.13 mV/LSB and miss −92 dBm; ~2 % at tt run out of trim** |
+| **Comparator-path mismatch (Monte Carlo)** | ❌ **offset sigma 2.8–3.4 mV. Rerun 2026-10-13 (200 distinct samples, each chip's own step): at tt / ss / fs 27 °C, 26–34 % of chips miss −92 dBm (about −90 dBm) and 8–10 % only reach about −88 dBm; 1 in 200 (ss) can't trim.** The first run here had duplicated samples (below) |
 | avg_sc mismatch | ✅ settled offset sigma 0.13–0.16 mV |
 | lna_chain mismatch (20 samples, tt) | ✅ gain 76.3–77.3 dB (nominal 76.7), no stage saturates |
 
@@ -113,13 +113,21 @@ power, dBm. Frequency doesn't depend on VAPWR (within 1 MHz), so one column per 
 ## 2.2 Mismatch (Monte Carlo)
 
 sky130A in the 2026.09 image: `.lib … <corner>_mm` sets `MC_MM_SWITCH=1`, which adds `AGAUSS` per device
-(FETs: Vt, scaled 1/sqrt(W·L·mult); resistors; MIM caps). Each `reset` redraws. Seeds aren't repeatable in
-ngspice 47, so neither are the samples (see sim_learnings.md).
+(FETs: Vt, scaled 1/sqrt(W·L·mult); resistors; MIM caps). Each `reset` redraws.
+
+**Correction (2026-10-13): the first runs below drew duplicated samples.** Without a seed every ngspice
+process starts from the same sequence, so `--jobs 8` gave 8 copies of the same 25 chips (`--jobs 4` in
+`mc_chain.py`: 4 copies of 5). `tb_comp_ct.py` now runs one sample per process with its own `.options seed`
+(sim_learnings.md). The comparator was rerun ("Rerun" below); the avg_sc and lna_chain tables are still
+from the duplicated runs (25 and 5 distinct samples), which is too few for their sigmas but unlikely to
+change their verdicts.
 
 ### comp_ct (`tb_comp_ct.py --mc 200 --cm … --temp … <corner>`)
 
 Ideal 1 µA bias, inputs at the operating CM. Per sample: offset at trim mid, and the trim voltage where the
 output switches with no input difference (the code the servo settles to without signal).
+
+First run (duplicated samples, about 25 distinct; superseded by the rerun below):
 
 | corner, CM | offset mean | sigma | switch code mean ± sigma | below code 96 | code > 242 or no switch |
 |---|---|---|---|---|---|
@@ -129,6 +137,30 @@ output switches with no input difference (the code the servo settles to without 
 | sf 10 °C, 1.5 V | +13.4 mV | 6.5 mV | 80 ± 9 | (known no-threshold region) | |
 
 ![comparator Monte Carlo](../sim/plots/mc_comp.png)
+
+**Rerun (2026-10-13, Linux host): 200 distinct samples, each chip's own step.**
+`tb_comp_ct.py --mc 200 --jobs 6 --step <corner>` (27 °C, CM 1.5 V): `--step` finds the switching trim
+with vd = ±0.1 mV, so each sample's own step at its switching point, instead of the nominal transfer
+used for the fractions above. e2e at each step (`model/e2e.py --nf 11 --brf 450e6 --slope 13.4
+--offset-mv 1.26 --comp-noise-mv 0.3 --cases noise --trials 12`, tt 27 °C, nominal supply):
+
+| step mV/LSB | 0.077 | 0.15 | 0.19 | 0.30 | 0.43 | 0.57 |
+|---|---|---|---|---|---|---|
+| −94 dBm | 11/12 | 2/12 | 1/12 | 0/12 | 0/12 | 0/12 |
+| −92 dBm | 12/12 | 12/12 | 12/12 | 9/12 | 1/12 | 1/12 |
+| −90 dBm | 12/12 | 12/12 | 12/12 | 12/12 | 11/12 | 8/12 |
+| −88 dBm | 12/12 | 12/12 | 12/12 | 12/12 | 12/12 | 12/12 |
+
+| corner | offset mean ± sigma | switch code | step median | ≤ 0.19 (−92 dBm) | 0.19–0.43 (≈ −90) | 0.43–0.6 (≈ −88) | no switching point |
+|---|---|---|---|---|---|---|---|
+| tt 27 °C | +1.34 ± 3.17 mV | 120 ± 36 | 0.077 | 70 % | 20 % | 10 % | 0 (2 at code > 242) |
+| ss 27 °C | +1.02 ± 3.35 mV | 126 ± 37 | 0.075 | 66 % | 24 % | 10 % | 1 |
+| fs 27 °C | +0.92 ± 2.79 mV | 124 ± 32 | 0.075 | 74 % | 17 % | 8 % | 0 |
+
+The steps split in two: a chip lands either on the linear part (0.06–0.08 mV/LSB) or well down the steep
+part, up to 0.57–0.60 mV/LSB, steeper than the nominal transfer gives for the same code because the
+mismatch bends each chip's transfer too. The corner barely matters (the spread is mismatch). Not rerun:
+ss 10 °C, fs 50 °C, sf, and the 1.71 V supply corner, where the earlier e2e loses more at the same step.
 
 **Why it matters: the trim transfer is not linear around the nominal code.** At CM 1.5 V, tt, nominal
 devices, the comparator switches at code 112 (0.786 V), not ~135 (0.95 V) as assumed for the "local step
