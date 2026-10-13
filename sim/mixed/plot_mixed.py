@@ -75,6 +75,9 @@ def main(level):
     tail = c[len(c) // 2:]
     print(f'  servo: code {c[0]:.0f} -> mean {tail.mean():.1f} (last half: min {tail.min():.0f}, max {tail.max():.0f}, '
           f'std {tail.std():.2f} LSB)')
+    k = np.argmax((c - tail.mean()) * np.sign(tail.mean() - c[0]) >= 0)   # first reaches the settled mean
+    print(f'  servo settled (first at its last-half mean) at {ts[k] * 1e3:.2f} ms, {k} ticks '
+          f'(the burst starts at 1.5 ms)')
     duty = np.mean(np.interp(ts, t, comp) > 0.9)
     print(f'  comparator ones density over the run: {duty:.2f}')
     ev = g('v(uio_out_4_a)')
