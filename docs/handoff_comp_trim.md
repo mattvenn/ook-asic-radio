@@ -7,7 +7,11 @@ Prompt for a new session (written 2026-10-13 on the Linux host, where this ran o
 Finding 1 of [verify_system_2.md](verify_system_2.md) is the biggest yield loss in the receiver: comparator mismatch
 against a trim that is only fine on one side. Your job: **finish choosing a `comp_ct` trim design (options 2 + 3 of
 [verify_supply_mc.md](verify_supply_mc.md) §2.2), stop at the decision gate for Matt, then implement it** if he picks
-one. Commit and push to `main` as you go (small commits; other sessions push to `main` too).
+one.
+
+**Git: work on a branch, `comp-trim`** (`git switch -c comp-trim` from an up-to-date `main`). Commit there at the
+end of each step. **Don't push and don't touch `main`** unless Matt asks; he decides at the gate whether and
+how it gets merged. Other sessions keep pushing to `main`, so rebase onto it before handing back.
 
 ## Read first
 - `docs/agent_start.md`, `STATUS.md`, `docs/sim_learnings.md` (ngspice traps, **including the Monte Carlo seed
