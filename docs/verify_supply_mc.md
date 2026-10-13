@@ -259,7 +259,7 @@ there), today's design has 16 % of chips at −92 dBm (offset +8.1 ± 4.6 mV, ba
 part) and G129 has 2 % (+16.5 ± 5.9 mV). At CM 1.43 V neither has a threshold for most or all chips: 75 / 200
 rows for today's, none for G129. This is the known sf "no threshold at high CM" region (CM 1.55 V at 1.8 V),
 moving down with VDD. The input pair runs out of headroom, which a trim can't fix. It was never run before. If
-TT's VDPWR stays ≥ 1.75 V it may not occur; see [verify_system_2.md](verify_system_2.md) Findings #10.
+TT's VDPWR stays ≥ 1.75 V it may not occur; see [verify_system_2.md](verify_system_2.md) Findings #12.
 
 Re-run: `python3 sim/comp_ct/trim_curve.py G129 LR1=68 LR2=170 rdeg=0.9Meg W3=8 W4=8 WP=8 LP=2`, then
 `COMP_SUB=build/trim/G129_sub.spice COMP_PRM="$(cat build/trim/G129_prm)" COMP_TAG=G129 python3
