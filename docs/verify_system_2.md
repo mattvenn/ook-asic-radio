@@ -25,14 +25,25 @@ plan, failing checks are recorded here and left for a design change; nothing in 
 
 **For Gate 3.** Sensitivity: **−92 dBm at 10–50 °C** (tile extraction, noisy pair and seeds agree), **−90 dBm**
 for every Monte Carlo chip and at 85 °C. Overload: detection dead time < 0.1 ms after a −10 dBm burst, servo
-disturbed ~2.8 ms; +6 dBm at the pads recovers fully. Power-up: ready ~3 ms after `rx_en` (~2 ms with a slow supply ramp). Open findings, none
-fixed (per the plan):
-1. Block and tile extractions disagree by 3.6 dB of chain gain (3.1); the tile is quoted, the block is the
-   pessimistic bound.
-2. 85 °C: ff with real bias is 4/12 at −92 dBm (3.4).
-3. VDPWR missing with VAPWR up puts both TX outputs at 3.3 V (3.6).
-4. From phase 2: comparator mismatch (~26 % of chips with a trim step too coarse for −92 dBm), `tx_ls_en` at
-   1.71 / 3.6 V, ss 1.71 V TX at the RX band's bottom edge.
+disturbed ~2.8 ms; +6 dBm at the pads recovers fully. Power-up: ready ~3 ms after `rx_en` (~2 ms with a slow supply ramp). Open findings: [Findings](#findings-phases-2-and-3) below, none fixed (per the plan).
+
+## Findings (phases 2 and 3)
+
+All findings and failures from [verify_supply_mc.md](verify_supply_mc.md) (phase 2) and this doc (phase 3),
+with what each one does to the design's performance. None was fixed (Matt, Gate 2 / 3); phase 4's full rerun
+happens only if one of these leads to a design change.
+
+| # | Finding | Detail | What this means |
+|:-:|---|---|---|
+| 1 | ❌ Comparator mismatch vs trim step | Offset σ ≈ 3 mV. ~26 % of chips (tt / fs) and ~48 % (sf 10 °C) land where the trim step is > 0.13 mV/LSB. ~2 % at tt run out of trim range. | A quarter to half of chips lose ~2 dB of sensitivity: −90 dBm instead of −92 dBm, ~20 % less range. The ~2 % that run out of trim can't cancel their comparator offset, so they receive badly or not at all. The biggest effect on yield. |
+| 2 | ❌ TX enable level shifter `tx_ls_en` | Fails at VDPWR 1.71 V / VAPWR 3.6 V at ss and fs (extracted): one output arm never turns on. At 1.71 / 3.3 V the TX loses 1.5 dB. | Some chips won't transmit, or transmit weakly, with VDPWR low and VAPWR high. At nominal supplies the TX is fine. Whether it matters depends on TT's real supply tolerances, which weren't looked up. |
+| 3 | ⚠️ TX frequency at the band edge | ss at 1.71 V gives 332 MHz on silicon, at the RX band's 330 MHz bottom edge; likely below it hot. | A slow chip on a low supply may transmit at or just outside what another chip's receiver accepts: chip-to-chip range drops or the link fails at that corner. (The TX is untrimmed, so it's never exactly on 433.92 MHz anyway.) |
+| 4 | ⚠️ Slow TX turn-off | 18 ns at ss 10 °C, 1.71 / 3.0 V. | No practical effect: a chip lasts ~100 µs, so 18 ns is ~0.02 % of it. |
+| 5 | ⚠️ Block vs tile extraction disagree | The two flows differ by 3.6 dB of chain gain at 434 MHz; the block flow adds 4–20 fF per stage node. Unresolved. | ~2 dB of uncertainty on sensitivity. If the tile flow is right (the noisy simulation agrees with it), −92 dBm holds. If the block flow is right, typical chips still reach −92 dBm, but chips with mismatch (#1) drop to −90 dBm. |
+| 6 | ⚠️ Sensitivity at 85 °C | ff with the real bias: detector slope drops to 5.9 mV/dB, only 4/12 model runs detect −92 dBm. | Hot fast chips lose ~2 dB: −90 dBm at 85 °C. Irrelevant at room / bench temperature. |
+| 7 | ⚠️ TX outputs high with VDPWR missing | VDPWR 0 / VAPWR 3.3 V: tx_p = tx_n = 3.3 V, ≤ 16 nA. | Harmless with the antenna: both sides at the same voltage, so no current and no transmission. It only matters if a board powers VAPWR alone and something on the TX pins expects them low. On TT both supplies come up together. |
+| 8 | ⏹ Closed loop through the extracted RF chain not run | ~10 000 s per simulated µs. | No simulation detects a burst end to end with the extracted RF chain. The extracted signal level and extracted baseband detection were each checked on their own, so this is a coverage gap, not a known problem. |
+| 9 | ℹ️ Not covered | Latch-up / substrate injection at +6 dBm not modelled. Supply ranges (±5 % / ±10 %) assumed, not TT's figures. | Unknowns, not known failures. Latch-up with a strong nearby transmitter is a bench check. If TT's real supply range is tighter, #2 and #3 may never occur in practice. |
 
 ## 3.1 Extracted chain sensitivity, noise-free (G3)
 
