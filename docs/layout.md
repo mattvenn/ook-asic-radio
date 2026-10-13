@@ -255,6 +255,27 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
     - Resistor ends run on **met2 lanes under the caps** to one column of met4 risers (sa, sb, VDD, vref) at x ≈ 24–27, where the sa/sb/vref tracks already are. Cref's top plate joins the vref riser on met4. Cl's two top plates rise straight to `d2`.
   - **Checks:** DRC (magic + KLayout) 0, antenna 0, LVS match; density ≤ 33 % per layer (m3, the MIM plates).
   - **Block test** (`sim/comp_ct/tb_comp_ct.py [--pex]`, tt): offset +0.795 → +0.560 mV, trim 0.0649 → 0.0656 mV/LSB, ±1 mV response 1.12/0.07 → 0.76/0.15 µs (schematic → extracted). v1 extracted: +0.56 mV, 0.0655, 0.71/0.16. The faster extracted rise isn't the out→d2 coupling (now 0); not chased.
+  - **v3, trim redesign H135 (2026-10-13, [verify_supply_mc.md](verify_supply_mc.md) 2.2): same footprint and pins except inp.**
+    Mirror halves 2/1 → 4/2 (Mp1/Mp2 W 8 L 2), trim halves W 1 → 4 (M3/M4 W 8), Rdeg 0.85 MΩ (30 × 3.8 µm), vref
+    tap `links[15]` → `links[7]` (1.35 V: lref1 68 / lref2 204; the generator asserts a bottom link).
+    - **`rows.build` lines each N device up behind the P device in the same list position**, so a longer P
+      device pushes the rest of the N row. L 2 edge dummies on the mirror pushed the whole block 1 µm east: the
+      mirror dummies are W 4 **L 1** (schematic `Mdp1` too).
+    - **Same-net stubs side by side:** with the L 2 mirror pitch a P drain stub (d1 / d2) comes down right
+      beside the N drain stub going up to the same track: met2 0.1 apart, via2 cuts 0.05–0.15 apart.
+      `merge_stubs()` bridges them on met2 and keeps one cut. (Its first version also cleared the second cut
+      of a pair on one merged stub; `Block.clear` takes cuts within 0.1, so it took both: LVS open.)
+    - The resistor band keeps its old depth (lanes 14.65 below the rail): the shorter Rdeg would otherwise
+      lift the bottom edge, and trim / ibias / out are placed from the bbox's lower-left.
+    - **inp pin:** the met4 riser now runs straight up over the VDD rail to a met4 pin on the N edge (own x
+      16.70), instead of turning east on met3 to x 37.85 through a gap in the rail. The router tags every metal
+      polygon touching a pin as that pin, so `avg` had landed on the near end of the met3 run and left ~22 µm
+      of it as a dead-end stub (STATUS 5a). Route `avg` 12.2 → 7.6 µm.
+    - Checks: DRC (magic + KLayout) 0, antenna 0, LVS match. **Block test** (CM 1.0 V, sch → pex): balance code
+      183.9 → 184.1 (tt), step 0.1344 → 0.1359 mV/LSB, within 1 code / 1.2 % at tt / ss / ff / sf / fs; ±1 mV
+      response 0.36–0.46 µs. Extracted with magic 8.3.642.
+    - The committed v2 GDS's bottom edge was −30.915; regenerated (v2 or v3) it is −30.925: the guard-ring
+      pcell in the 2026.09 image draws 0.01 µm wider.
 - **Row builder additions (for `comp_ct`):**
   - **`rows.dummy(fet, rail)`:** all strips and the gate on the rail. The gate strap joins the ring at a row end, or a met1 jumper in the gap to a neighbouring dummy (so dummies go at row ends or in adjacent pairs).
   - **Strip groups:** a run of one net's strips with no other signal net between gets its own bar and stub. A pair half `tail | d | tail` has two tail groups; one tail bar across `d` had shorted tail, d1 and d2.

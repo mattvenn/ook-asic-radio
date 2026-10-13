@@ -246,7 +246,11 @@ only). −92 dBm 100 % at tt / ss / fs / ss 10 / fs 50 / ff 50 / sf 27 CM 1.45, 
 fs 50 °C 0.135 (passes). But its +4σ code is **256 at tt** (180 ± 19), one past the DAC end. G129 also gained
 ff 50 °C (100 %, p95 0.135) and sf 27 °C CM 1.45 (99.5 %).
 
-**Recommendation: G129** is the only candidate that meets every pass condition: ≥ 95 % of chips at −92 dBm at
+**Decision (Matt, 2026-10-13): H135**, the least invasive (today's 32-segment string, tap moved). Implemented on
+branch `comp-trim`: schematic, layout (with the inp stub fix), tile and `gds/`; see docs/layout.md comp_ct v3.
+The analysis below led to it.
+
+**Recommendation at the time: G129** is the only candidate that meets every pass condition: ≥ 95 % of chips at −92 dBm at
 every corner and supply, where the lowest is 96 % at sf 10 °C / CM 1.45; the e2e at its p95 step on the worst
 corner; and no chip past the DAC end at 4σ, with 253 the worst (tt) against 255, so only a few codes spare.
 **Cost:** −94 dBm on the typical chip drops from 43/48 to 30/48 at tt, and from 16/48 to 2/48 at the worst

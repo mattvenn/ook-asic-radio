@@ -88,7 +88,7 @@ Run: `python3 sim/<dir>/tb_<block>.py [--pex] [corner]` (no flag = schematic, `-
 | `log_det` / `det_cell` | [tb_log_det](../sim/logdet/tb_log_det.py), [tb_det_cell](../sim/det_cell/tb_det_cell.py) | idle 1.52 → 1.49 V (contact resistance); same slope at high level. In the chain, the block extraction loses 2.4 dB at −90 dBm against the schematic; the tile extraction doesn't (open, [verify_system_2.md](verify_system_2.md) 3.1) |
 | `lpf_rc` | [tb_lpf_rc](../sim/lpf_rc/tb_lpf_rc.py) | −3 dB frequency, carrier ripple at 434 / 868 MHz, step response |
 | `avg_sc` | [tb_avg_sc](../sim/avg_sc/tb_avg_sc.py) | τ 0.42 ms; clock-coupling offset ~0.15 mV |
-| `comp_ct` | [tb_comp_ct](../sim/comp_ct/tb_comp_ct.py) | offset +0.56 mV; trim 0.066 mV/LSB |
+| `comp_ct` | [tb_comp_ct](../sim/comp_ct/tb_comp_ct.py) | H135 trim (2026-10-13), CM 1.0 V: balance code 184.1 (sch 183.9), trim 0.136 mV/LSB (sch 0.134); within 1 code / 1.2 % at all 5 corners |
 | `r2r` | [tb_r2r](../sim/dac/tb_r2r.py) | error ≤ 0.02 LSB |
 | `bias_gen` | [tb_bias_gen](../sim/bias/tb_bias_gen.py) | currents and vcm within 0.1 %, VDD 1.7–1.9 V, 10–50 °C |
 | `dbg_tg` | [tb_dbg_tg](../sim/dbg_tg/tb_dbg_tg.py) | on resistance; off isolation from the pad into det |
@@ -127,8 +127,10 @@ Run: `tools/osic bash sim/mixed/build_so.sh` (verilates the RTL), `tools/osic ba
   ring stays in the RX band, but ss at 1.71 V is at its bottom edge (332 MHz on silicon).
 - **Mismatch:** `--mc N` on `sim/comp_ct/tb_comp_ct.py` and `sim/avg_sc/tb_avg_sc.py`, and
   `sim/chain/mc_chain.py`, with the PDK's `<corner>_mm` models. The comparator offset (sigma ~3 mV, mostly
-  the pfet_lvt mirror) puts 26–34 % of chips where the trim step is too coarse for −92 dBm, 8–10 % at about
-  −88 dBm (`tb_comp_ct.py --mc 200 --step`, rerun 2026-10-13): open at Gate 2.
+  the pfet_lvt mirror) put 26–34 % of chips where the trim step was too coarse for −92 dBm, 8–10 % at about
+  −88 dBm (`tb_comp_ct.py --mc 200 --step`, rerun 2026-10-13). Fixed by the H135 trim redesign (2026-10-13,
+  [verify_supply_mc.md](verify_supply_mc.md) 2.2): ≥ 99 % of chips at −92 dBm at every 1.8 V corner, offset σ
+  2.2–3.1 mV.
 
 ## System on the extracted chip
 [verify_system_2.md](verify_system_2.md) (2026-10-12/13) has the tables. **Sensitivity: −92 dBm at 10–50 °C, −90 dBm
