@@ -7,16 +7,19 @@ Checks (pin order of the d_cosim .so, end to end):
   - the code starts at 128 after reset;
   - every settled change of v(trim) is exactly +-1 LSB (1.8/256 V): a reversed,
     shifted or swapped trim bus gives other step sizes;
-  - at least one settled step per servo tick (13 us), -3: fewer means a stuck bit.
+  - at least one settled step per servo tick (13 us), -3, not counting ticks with the code at 0 or 255
+    (the counter holds there, e.g. during an overload burst): fewer means a stuck bit.
     More is not a pin-order problem: the comparator toggling near a clock edge adds
     extra +-1 steps (2026-10-11: 1173 at -94 dBm vs 1169 ticks). They are counted and
     reported, not failed.
 Prints the servo's convergence and dither statistics, the comparator's duty
 cycle and the event / LED pins; plots det, lpf / avg, trim (code), comp.
 
-    python sim/mixed/plot_mixed.py <level>[_pex]
+    python sim/mixed/plot_mixed.py <level>[_pex][_sN]
+Seeded (_sN) and other tagged runs plot into build/mixed/, so they don't replace the committed plots.
 """
 import os
+import re
 import sys
 
 import numpy as np
@@ -55,14 +58,16 @@ def main(level):
     ts = np.arange(5e-6, t[-1], SAMPLE) + SAMPLE / 2          # for the plot / statistics
     code = np.interp(ts, t, trim) / LSB
     rx_en = np.interp(10e-6, t, g('v(rx_en_a)'))
+    rail = int(np.sum((np.round(code) <= 0) | (np.round(code) >= 255)))   # ticks at a rail: the counter holds
     print(f'{level} dBm, {t[-1] * 1e3:.2f} ms simulated, {n_ticks} servo ticks')
     big = np.abs(steps) > 1
     sizes = sorted(set(int(x) for x in steps[big]))
     print(f'  pin-order checks: rx_en = {rx_en:.2f} V (expect 1.8); first code {np.round(code[0]):.0f} '
-          f'(expect 128); {len(steps)} settled ladder steps for {n_ticks} ticks (expect >= {n_ticks - 3}); '
+          f'(expect 128); {len(steps)} settled ladder steps for {n_ticks} ticks, {rail} at a rail '
+          f'(expect >= {n_ticks - 3 - rail}); '
           f'{np.sum(big)} steps > 1 LSB (expect 0){", sizes " + str(sizes) if sizes else ""}')
     ok = (abs(rx_en - 1.8) < 0.1 and round(code[0]) == 128 and not np.any(big)
-          and len(steps) >= n_ticks - 3)
+          and len(steps) >= n_ticks - 3 - rail)
     extra = max(len(steps) - n_ticks, 0)
     print('  ->', f'PIN ORDER OK ({extra} extra +-1 steps)' if ok else 'PIN ORDER PROBLEM')
     c = np.round(code)
@@ -98,7 +103,8 @@ def main(level):
         a.grid(alpha=0.3)
     ax[0].set_title(f'mixed-signal: RTL trim servo -> r2r -> comp_ct, det {level} dBm', fontsize=10)
     fig.tight_layout()
-    out = os.path.join(ROOT, 'sim', 'plots', f'mixed_{level}.png')
+    committed = re.fullmatch(r'-?\d+(_pex)?', level)       # the committed plots; seeds / overload go to build/
+    out = os.path.join(ROOT, 'sim', 'plots' if committed else '../build/mixed', f'mixed_{level}.png')
     fig.savefig(out, dpi=100)
     print('wrote', out)
 

@@ -173,6 +173,17 @@ sky130A, run headless in Docker.
   `Pclm ... is not positive`; ngspice 46 (`2026.05`) is fine. Pin the image
   tag; `:latest` can resolve to an old cached image.
 - The OSDI load errors from the image's global spiceinit are harmless.
+- **ngspice 47 exits with status 1 after a Verilator/d_cosim run** (at the cosim teardown) even though the run
+  finished: the log and the raw are complete. Judge such runs by the raw file and the log's last lines, not
+  the exit code.
+- **Parallel runs that share a generated file race.** Scripts that write a fixed netlist name (`build/tb_tx.spice`,
+  xschem's `build/tb_radio_analog.spice`, a tied-off tile netlist) and then read it back can pick up another run's
+  half-written copy: run them one at a time, stagger the starts, or write per-run names (and rewrite a shared file
+  only when its content changes).
+- **Extract a block in its surroundings before trusting its parasitic loss.** In asic-radio the same magic
+  settings on the stand-alone `lna_chain` + `log_det` and on the whole tile gave chain gains 3.6 dB apart at
+  434 MHz: the stand-alone flow put 4–20 fF more on each stage node. A block bench driven from an ideal source
+  (−0.3 dB) showed neither; only the chain with the real loads did.
 
 ## Noise analysis recipes
 

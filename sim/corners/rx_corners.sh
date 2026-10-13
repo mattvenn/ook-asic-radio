@@ -14,6 +14,9 @@
 # lines). TBS="comp" runs only some testbenches. Analyse: python sim/corners/rx_corners.py
 # Supply: VDD=1.71 sets VDPWR (default 1.8); OUT=corners_v171 writes there instead (analyse with
 # CORNERS_DIR=build/corners_v171). NT=1 sets ngspice threads (default: .spiceinit's 8).
+# Bias: BIAS=real replaces the ideal sources (iref, vcm, detector / comparator currents) with the real
+# bias_gen (from real/tb_radio_analog.spice; netlist xschem/tb_radio_analog.sch into build/real first).
+# Its outputs a bench doesn't use are loaded with 100 k. Default BIAS=ideal.
 corners=${CORNERS:-"tt ss ff sf fs"}
 temps=${TEMPS:-"-20 27 85"}
 levels=${LEVELS:-"-110 -90 -80 -70 -60 -50 -40 -30"}
@@ -21,6 +24,20 @@ vdd=${VDD:-1.8}
 out=${OUT:-corners}
 nt=${NT:+set num_threads=$NT}
 mkdir -p $out
+bias=${BIAS:-ideal}
+# realbias <deck> <vdd node>: ideal bias sources out, bias_gen in (enabled), unused outputs loaded
+realbias() {
+  [ "$bias" = real ] || return 0
+  sed -i -e '/^Iref VDPWR ibias /d' -e '/^Vcm vcm GND /d' -e '/^Ibd VDPWR ibias_det /d' -e '/^Ib VDD ibias 1u$/d' $1
+  local chain=ibias det=ibias_det comp=ib_comp_nc vcm=vcm
+  if grep -q "comp_ct" $1; then chain=ib_chain_nc det=ib_det_nc comp=ibias vcm=vcm_nc; fi
+  if ! grep -q "ibias_det" $1; then det=ib_det_nc; fi
+  {
+    echo "xbias $2 $vcm $chain $det $comp $2 GND bias_gen rref=10k rdiv=200k rtail=250k wpu=2 cc=1p"
+    for n in $chain $det $comp; do case $n in *_nc) echo "R$n $n GND 100k";; esac; done
+    sed -n '/^\.subckt bias_gen /,/^\.ends/p' real/tb_radio_analog.spice
+  } >> $1
+}
 strip() { sed -e '/^\.control/,/^\.endc/d' -e '/^\.end$/d' -e "s/\(sky130\.lib\.spice\) tt/\1 $2/" \
   -e "s/^VDPWR VDPWR GND dc 1\.8 /VDPWR VDPWR GND dc $vdd /" -e "s/^VDD VDD GND 1\.8$/VDD VDD GND $vdd/" $1; }
 
@@ -28,6 +45,7 @@ for c in $corners; do
   # ---- chain
   f=$out/rx_chain_$c.spice
   strip tb_chain.spice $c > $f
+  realbias $f VDPWR
   cat >> $f <<CTL
 .options method=GEAR
 .control
@@ -52,6 +70,7 @@ CTL
   # ---- log detector CW transfer
   f=$out/rx_logdet_$c.spice
   strip tb_logdet.spice $c > $f
+  realbias $f VDPWR
   cat >> $f <<CTL
 .save v(det)
 .options method=GEAR
@@ -75,6 +94,7 @@ CTL
   # ---- comparator: offset vs CM (trim mid), trim transfer ends (CM 1.0)
   f=$out/rx_comp_$c.spice
   strip tb_comp.spice $c > $f
+  realbias $f VDD
   cat >> $f <<CTL
 .options method=GEAR
 .control

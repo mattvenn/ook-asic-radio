@@ -11,13 +11,17 @@ run's frequency / power into the 73 ohm dipole / supply currents.
     python3 sim/top/tb_tile.py --vdd=1.71 --vapwr=3.0 --corner=fs --temp=50 sch c
                                                       (supplies / MOS corner / temperature; files
                                                        tb_tile_<mode>_<tag>, e.g. _v171_a30_fs_50)
+    python3 sim/top/tb_tile.py --cw sch c rc          (noise-free CW det drop at the pads, trim held:
+                                                       one deck per level and mode, all in parallel)
 NT=1 in the environment sets ngspice's threads (default: .spiceinit's 8).
 Runs ngspice in build/ through tools/osic-mac (set OSIC=... for the Linux host). One at a time.
 """
+import math
 import os
 import re
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
@@ -61,7 +65,9 @@ def deck_for(src, mode):
     ncs = sorted(set(re.findall(r'\b(nc_\w+)', wrap.group(0))))
     ties = ''.join(f'Rtie_{n} {n} VGND 1G\n' for n in ncs)
     end = wrap.end() - len('.ends')
-    open(os.path.join(B, f'radio_analog_{mode}_tied.spice'), 'w').write(net[:end] + ties + net[end:])
+    tied, text = os.path.join(B, f'radio_analog_{mode}_tied.spice'), net[:end] + ties + net[end:]
+    if not os.path.exists(tied) or open(tied).read() != text:     # parallel runs: don't rewrite it under a reader
+        open(tied, 'w').write(text)
     inc = f'.include radio_analog_{mode}_tied.spice\n'
     return re.sub(r'^\.end\s*$', inc + '.end', deck, flags=re.M)
 
@@ -104,6 +110,41 @@ def run(src, mode):
     return res
 
 
+CW_LEVELS = [None, -100, -90, -80, -70]
+
+
+def cw_deck(src, mode, lvl):
+    """The tile deck with its .control replaced by one noise-free CW tone (None: no signal)."""
+    deck = conditions(deck_for(src, mode), mode)
+    det = 'xana.det' if mode == 'sch' else 'xana.x1.det'
+    ve = 0 if lvl is None else math.sqrt(8 * 73 * 1e-3 * 10 ** (lvl / 10))
+    nt = f'set num_threads={os.environ.get("NT", "1")}\n'
+    ctl = (f'.control\n{nt}alterparam vemf = {ve:.6e}\nreset\ntran 50p 1u 700n\n'
+           f'meas tran detavg avg v({det}) from=800n to=1u\necho RESULT cw $&detavg\n.endc\n')
+    return re.sub(r'^\.control\b.*?^\.endc\b[^\n]*\n', lambda _: ctl, deck, count=1, flags=re.S | re.M)
+
+
+def cw(src, modes):
+    def one(args):
+        mode, lvl = args
+        name = f'tb_tile_cw_{mode}{suffix()}_{"none" if lvl is None else -lvl}'
+        if src is not None:
+            with open(os.path.join(B, name + '.spice'), 'w') as fh:
+                fh.write(cw_deck(src, mode, lvl))
+            subprocess.run([OSIC, 'bash', '-c', f'cd build && ngspice -b {name}.spice > {name}.log 2>&1'],
+                           cwd=ROOT)
+        m = re.search(r'^RESULT cw (\S+)', open(os.path.join(B, name + '.log')).read(), re.M)
+        return float(m.group(1)) if m else float('nan')
+    tasks = [(md, lvl) for md in modes for lvl in CW_LEVELS]
+    with ThreadPoolExecutor(len(tasks)) as ex:
+        det = dict(zip(tasks, ex.map(one, tasks)))
+    print(f'CW det drop at the pads{suffix()}, noise-free, trim held, mV (det idle in brackets):')
+    print('  level ' + ''.join(f'{md:>10}' for md in modes))
+    print('  idle  ' + ''.join(f'  ({det[(md, None)]:.4f})' for md in modes))
+    for lvl in CW_LEVELS[1:]:
+        print(f'  {lvl:5d} ' + ''.join(f'{(det[(md, None)] - det[(md, lvl)]) * 1e3:10.2f}' for md in modes))
+
+
 def analyse(mode):
     path = os.path.join(B, f'tb_tile_{mode}{suffix()}_tx.raw')
     if not os.path.exists(path):
@@ -127,6 +168,9 @@ if __name__ == '__main__':
         if '=' in a and k in COND:
             COND[k] = a.split('=')[1] if k == 'corner' else float(a.split('=')[1])
     src = None if '--no-run' in args else netlist()
+    if '--cw' in args:
+        cw(src, modes)
+        sys.exit()
     for md in modes:
         if src is not None:
             for ln in run(src, md):

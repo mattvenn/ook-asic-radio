@@ -11,6 +11,9 @@ sim/logdet/noise_tran_results.txt). Writes build/det_<level>.inc (a PWL
 source 'Vdet det 0') and build/det_<level>.npz (chips, timing).
 
     python sim/rx/gen_det.py -94 -70
+    python sim/rx/gen_det.py --seed=3 -92        (other noise; files det_-92_s3.*)
+    python sim/rx/gen_det.py --overload=2 -90    (overload: a -10 dBm burst first (--strong=), then the
+                                                  -90 dBm burst 2 ms after its end; files det_-90_ov2.*)
 """
 import os
 import sys
@@ -36,36 +39,47 @@ def det_curve():
     return rows[:, 0], rows[:, 1]
 
 
-def main(levels):
+def main(levels, seed=42, gap_ms=None, strong=-10.0):
     chips = gold(CODE).astype(bool)
-    on = np.concatenate([np.zeros(LEAD, bool), np.repeat(chips, SPC), np.zeros(TAIL, bool)])
+    burst = np.repeat(chips, SPC)
+    on = np.concatenate([np.zeros(LEAD, bool), burst, np.zeros(TAIL, bool)])
+    first = np.zeros(len(on), bool)             # samples of the strong burst (overload schedule)
+    if gap_ms is not None:
+        first = np.concatenate([np.zeros(LEAD, bool), burst, np.zeros(int(gap_ms * 1000) + len(burst) + TAIL, bool)])
+        on = np.concatenate([np.zeros(LEAD + len(burst) + int(gap_ms * 1000), bool), burst, np.zeros(TAIL, bool)])
     pin, vdet = det_curve()
     up = int(B_RF / R)
     for lvl in levels:
-        rng = np.random.default_rng(42)
+        rng = np.random.default_rng(seed)
+        name = f'{int(lvl)}' + ('' if seed == 42 else f'_s{seed}') + ('' if gap_ms is None else f'_ov{gap_ms:g}')
         p_w = 10 ** ((lvl - 30) / 10)
+        amp = on * np.sqrt(p_w) + first * np.sqrt(10 ** ((strong - 30) / 10))
         n_var = rxm.KT * 10 ** (NF_DB / 10) * B_RF
         p = np.empty(len(on))
         for i in range(0, len(on), 1000):          # chunks: keep memory small
-            seg = on[i:i + 1000]
-            s = np.repeat(seg * np.sqrt(p_w), up).astype(np.complex64)
+            seg = amp[i:i + 1000]
+            s = np.repeat(seg, up).astype(np.complex64)
             x = s + (rng.standard_normal(len(s), dtype=np.float32) +
                      1j * rng.standard_normal(len(s), dtype=np.float32)) * np.float32(np.sqrt(n_var / 2))
             p[i:i + len(seg)] = rxm.block_mean(np.abs(x) ** 2, up)
         dbm = 10 * np.log10(p) + 30
         v = np.interp(dbm + SHIFT_DB, pin, vdet)
         t = np.arange(len(v)) / R
-        with open(os.path.join(ROOT, 'build', f'det_{int(lvl)}.inc'), 'w') as fh:
+        with open(os.path.join(ROOT, 'build', f'det_{name}.inc'), 'w') as fh:
             fh.write(f'* detector waveform, {lvl} dBm, code 0x{CODE:02X}, NF {NF_DB} dB / {B_RF/1e6:.0f} MHz\n')
             fh.write('Vdet det 0 pwl(\n')
             for k in range(0, len(t), 8):
                 fh.write('+ ' + ' '.join(f'{t[j]:.6e} {v[j]:.6f}' for j in range(k, min(k + 8, len(t)))) + '\n')
             fh.write('+ )\n')
-        np.savez(os.path.join(ROOT, 'build', f'det_{int(lvl)}.npz'), t=t, v=v, on=on, chips=chips,
+        np.savez(os.path.join(ROOT, 'build', f'det_{name}.npz'), t=t, v=v, on=on, first=first, chips=chips,
                  lead=LEAD, spc=SPC)
-        print(f'{lvl} dBm: det noise-only {np.median(v[:LEAD]):.4f} V, '
-              f'on-chips {np.median(v[on]):.4f} V, off-chips {np.median(v[LEAD:-TAIL][~on[LEAD:-TAIL]]):.4f} V')
+        print(f'{name} dBm: det noise-only {np.median(v[:LEAD]):.4f} V, '
+              f'on-chips {np.median(v[on]):.4f} V, off-chips {np.median(v[LEAD:-TAIL][~(on | first)[LEAD:-TAIL]]):.4f} V'
+              + ('' if gap_ms is None else f'; strong burst {strong:g} dBm, det {np.median(v[first]):.4f} V, '
+                 f'weak burst starts {np.argmax(on) / 1e3:.3f} ms, ends {len(on) / 1e3 - TAIL / 1e3:.3f} ms'))
 
 
 if __name__ == '__main__':
-    main([float(a) for a in sys.argv[1:]] or [-94, -70])
+    opt = dict(a[2:].split('=') for a in sys.argv[1:] if a.startswith('--') and '=' in a)
+    main([float(a) for a in sys.argv[1:] if not a.startswith('--')] or [-94, -70], int(opt.get('seed', 42)),
+         float(opt['overload']) if 'overload' in opt else None, float(opt.get('strong', -10)))

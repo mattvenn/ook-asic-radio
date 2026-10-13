@@ -13,13 +13,15 @@
 # Progress: tr '\r' '\n' < build/joined_<lvl>.log | grep Reference | tail -1
 # Output: build/joined_<lvl>.raw (10 ns grid via option interp), plot with
 #   sim/rx/plot_joined.py
+# PEX=1: lna_chain and log_det from layout/pex/ (files joined_<lvl>_pex.*). NT=4 sets ngspice threads.
 levels=${LEVELS:-"-70 -90"}
 tstop=${TSTOP:-400u}
 # noise: 2.76 nV/rtHz per arm (3.9 differential ~ NF 11 dB), white, 50 ps samples
 nz=$(python3 -c "import math; print(2.76e-9*math.sqrt(1/(2*50e-12)))")
 for lvl in $levels; do
   ve=$(python3 -c "import math; print(math.sqrt(8*73*1e-3*10**($lvl/10)))")
-  f=joined_$lvl.spice
+  name=joined_$lvl${PEX:+_pex}
+  f=$name.spice
   sed -e '/^\.control/,/^\.endc/d' -e '/^\.end$/d' \
       -e 's/^Vant_p emf_p acm .*/Bant_p emf_p acm V = v(key) * vemf\/2 * sin(2*pi*f0*time)/' \
       -e 's/^Vant_n emf_n acm .*/Bant_n emf_n acm V = -v(key) * vemf\/2 * sin(2*pi*f0*time)/' \
@@ -27,6 +29,19 @@ for lvl in $levels; do
       tb_logdet.spice > $f
   # baseband blocks: subcircuits from the tb_rx_bb netlist
   awk '/^\.subckt (lpf_rc|avg_sc|comp_ct)/,/^\.ends/' tb_rx_bb.spice >> $f
+  if [ -n "${PEX:-}" ]; then
+    python3 - $f <<'PY'
+import re, sys
+sys.path.insert(0, '../tools')
+from pexswap import swap
+f = sys.argv[1]
+d = swap(open(f).read(), ['lna_chain', 'log_det'])
+for blk in ('lna_chain', 'log_det'):      # the extracted subckts have no parameters
+    d, n = re.subn(rf'^(x\d+ [^\n]* {blk})\b[^\n]*\n(\+[^\n]*\n)*', r'\1\n', d, flags=re.M)
+    assert n == 1, blk
+open(f, 'w').write(d)
+PY
+  fi
   cat >> $f <<CTL
 * --- baseband half, joined to the real detector output 'det'
 * NB all clock/key edges are offset by 25 ps: trnoise puts a breakpoint every
@@ -44,14 +59,15 @@ Vkey key 0 pwl(0 0 60.000025u 0 60.010025u 1 164.000025u 1 164.010025u 0 268.000
 .save v(det) v(lpf) v(avg) v(comp) v(trim) v(key)
 .options method=GEAR interp
 .control
+${NT:+set num_threads=$NT}
 alterparam vemf=$ve
 reset
 tran 10n $tstop 0 50p
-write joined_$lvl.raw
+write $name.raw
 .endc
 .end
 CTL
   echo "start $lvl dBm: $(date)"
-  ngspice -b $f > joined_$lvl.log 2>&1
-  echo "done  $lvl dBm: $(date), $(grep -ci error joined_$lvl.log) errors"
+  ngspice -b $f > $name.log 2>&1
+  echo "done  $lvl dBm: $(date), $(grep -ci error $name.log) errors"
 done

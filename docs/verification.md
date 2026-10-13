@@ -54,7 +54,7 @@ Run: `python3 sim/<dir>/tb_<block>.py [--pex] [corner]` (no flag = schematic, `-
 | Block | Test | Schematic vs extracted layout |
 |---|---|---|
 | `lna_chain` | [chain/stability.sh](../sim/chain/stability.sh), [tb_amp_dp](../sim/amp_dp/tb_amp_dp.py), [tb_amp_dpc](../sim/amp_dpc/tb_amp_dpc.py) | gain −0.44 dB from the U fold; stable at all corners; output-to-input coupling 0 aF |
-| `log_det` / `det_cell` | [tb_log_det](../sim/logdet/tb_log_det.py), [tb_det_cell](../sim/det_cell/tb_det_cell.py) | idle 1.52 → 1.49 V (contact resistance); same slope |
+| `log_det` / `det_cell` | [tb_log_det](../sim/logdet/tb_log_det.py), [tb_det_cell](../sim/det_cell/tb_det_cell.py) | idle 1.52 → 1.49 V (contact resistance); same slope at high level. In the chain, the block extraction loses 2.4 dB at −90 dBm against the schematic; the tile extraction doesn't (open, [verify_system_2.md](verify_system_2.md) 3.1) |
 | `lpf_rc` | [tb_lpf_rc](../sim/lpf_rc/tb_lpf_rc.py) | −3 dB frequency, carrier ripple at 434 / 868 MHz, step response |
 | `avg_sc` | [tb_avg_sc](../sim/avg_sc/tb_avg_sc.py) | τ 0.42 ms; clock-coupling offset ~0.15 mV |
 | `comp_ct` | [tb_comp_ct](../sim/comp_ct/tb_comp_ct.py) | offset +0.56 mV; trim 0.066 mV/LSB |
@@ -83,7 +83,7 @@ Run: `tools/osic bash sim/mixed/build_so.sh` (verilates the RTL), `tools/osic ba
 - **Analog top** ([xschem/tb_radio_analog.sch](../xschem/tb_radio_analog.sch)): every analog block together: RX operating point and supply current, all-off current, detector at −60 dBm, and the TX.
 - **Extracted tile** ([sim/top/tb_tile.py](../sim/top/tb_tile.py)): `tb_radio_analog` on the routed tile's extraction ([layout/pex_tile.sh](../layout/pex_tile.sh)). With full RC on the power-fix layout (2026-10-11): RX 2.985 mA, all off 0.910 µA, det / lpf idle 1.491 V, det at −60 dBm 1.206 V (schematic 1.206), TX **+3.13 dBm** at 519 MHz (+3.47 / +2.67 dBm at 10 / 50 °C). The earlier c-mode DC shifts were a failed operating point (unconnected pin stubs; the runner now ties them off), and the TX loss was the level shifter, now resized ([history.md](history.md) "Extracted-tile sims"). Run: `python3 sim/top/tb_tile.py sch lvs c rc` (one per mode, rc ~1 h).
   - **TX split** ([sim/top/tb_tile_tx.py](../sim/top/tb_tile_tx.py)): the TX transient alone, with extracted C dropped or kept per net, extra C, scaled devices, or kn / kp / corner / temperature changes, e.g. `python3 sim/top/tb_tile_tx.py c 'c:drop=tx_top_0\.(a|b)'`.
-  - **Joined RX on the extracted tile** ([sim/top/tb_tile_joined.py](../sim/top/tb_tile_joined.py)): the joined RX stimulus into the whole extracted tile (c mode), trim held at the comparator's switching code. `python3 sim/top/tb_tile_joined.py scan`, then `run -90 400u <code>` (10+ h), `--no-run run -90` to analyse. On sim-0 this runs at ~2 µs/h (~8 days for 400 µs), so 2026-10-11 used a 30 µs on/off pair at −92 dBm instead ([verify_2026-10-11.md](verify_2026-10-11.md)). That checks the signal level on the extracted tile, not detection. Run the pair with `python3 sim/top/tb_tile_joined.py pair -92 [30u] [code] [seed]`: two runs in parallel, ~15 h each, keyed on at 1 µs, with and without the signal, and the same RF noise: one numpy waveform both runs read through an XSPICE `filesource`, because ngspice 47 doesn't repeat trnoise between runs, seed or not ([sim_learnings.md](sim_learnings.md)). `--no-run pair -92` prints the det / LPF off − on table.
+  - **Joined RX on the extracted tile** ([sim/top/tb_tile_joined.py](../sim/top/tb_tile_joined.py)): the joined RX stimulus into the whole extracted tile (c mode), trim held at the comparator's switching code. `python3 sim/top/tb_tile_joined.py scan`, then `run -90 400u <code>` (10+ h), `--no-run run -90` to analyse. On sim-0 this runs at ~2 µs/h (~8 days for 400 µs), so 2026-10-11 used a 30 µs on/off pair at −92 dBm instead ([verify_2026-10-11.md](verify_2026-10-11.md)). That checks the signal level on the extracted tile, not detection. Run the pair with `python3 sim/top/tb_tile_joined.py pair -92 [30u] [code] [seed]`: two runs in parallel, ~15 h each, keyed on at 1 µs, with and without the signal, and the same RF noise: one numpy waveform both runs read through an XSPICE `filesource`, because ngspice 47 doesn't repeat trnoise between runs, seed or not ([sim_learnings.md](sim_learnings.md)). `--no-run pair -92` prints the det / LPF off − on table. Result on the rebuilt tile (2026-10-12, shared noise, code 117): det off − on **1.36 mV** over 2–30 µs, model 1.14 mV ([verify_system_2.md](verify_system_2.md)).
 - **Power delivery** ([sim/power/](../sim/power)): supply resistance, IR drop, and coupling from the TX into the RX supplies on the routed tile ([power.md](power.md); commands in its "Re-running" section). Rerun 2026-10-11 on the final layout: R, IR, EM and |Z| match "After the fix". The keyed TX transient halved at the drivers (tx_drv_p 63 → 29 mV p-p), and the RX blocks see ≤ 0.22 mV at 434 MHz.
 - **Tile checks** ([layout/check_top.sh](../layout/check_top.sh)): magic and KLayout DRC 0, LVS "Circuits match uniquely", TT power-pin precheck pass. **Open:** magic's antenna check reports 7 violations on gates inside the digital macro. The GitHub actions ([.github/workflows](../.github/workflows)) re-run the TT GDS, docs and LVS checks on every push.
 
@@ -97,6 +97,25 @@ Run: `tools/osic bash sim/mixed/build_so.sh` (verilates the RTL), `tools/osic ba
 - **Mismatch:** `--mc N` on `sim/comp_ct/tb_comp_ct.py` and `sim/avg_sc/tb_avg_sc.py`, and
   `sim/chain/mc_chain.py`, with the PDK's `<corner>_mm` models. The comparator offset (sigma ~3 mV, mostly
   the pfet_lvt mirror) puts ~26 % of chips where the trim step is too coarse for −92 dBm: open at Gate 2.
+
+## System on the extracted chip
+[verify_system_2.md](verify_system_2.md) (2026-10-12/13) has the tables. **Sensitivity: −92 dBm at 10–50 °C, −90 dBm
+for every chip and at 85 °C.**
+- **CW sensitivity, extracted:** `python3 sim/chain/cw_drop.py [--blocks=… --levels=… --pex-only]` (block
+  extractions, noise-free) and `OSIC=tools/osic NT=1 python3 sim/top/tb_tile.py --cw sch c rc` (whole tile). The
+  tile is within 0.5 dB of the model; the block extractions are 2.4 dB lower (open: the two flows disagree).
+- **Closed loop on the extracted chain:** `PEX=1 NT=2 ../sim/rx/joined.sh` from `build/`. Too slow (~10 000 s per
+  simulated µs); not run to a burst.
+- **Seeds:** `python3 sim/rx/gen_det.py --seed=N <lvl>`, `python3 sim/mixed/gen_mixed.py --seed=N [--pex] <lvl> <tstop>`,
+  `python3 sim/mixed/plot_mixed.py <lvl>[_pex]_sN`. −92 dBm 5/5 on the schematic and on the extracted baseband.
+- **Corners with real bias:** `BIAS=real OUT=… sim/corners/rx_corners.sh`; extracted tile at a corner:
+  `OSIC=tools/osic NT=2 python3 sim/top/tb_tile.py --corner=ss --temp=10 rc`. At 85 °C ff, −92 dBm is 4/12 in e2e.
+- **Overload:** `python3 sim/rx/gen_det.py --overload=<gap ms> -90` + `gen_mixed.py --tag=ov<gap> -90 <tstop>`
+  (−10 dBm burst, then −90 dBm: detection dead time < 0.1 ms); `OSIC=tools/osic python3 sim/top/tb_pad_overload.py
+  --dbm=6 sch` (pads clamp at ±0.59 V, everything recovers).
+- **Power-up:** `OSIC=tools/osic NT=4 python3 sim/top/tb_powerup.py --ramp=10u|10m --corner= --temp= c`, and
+  `--off` for one supply missing. Ready ~3 ms after `rx_en`; with VDPWR missing and VAPWR up, tx_p = tx_n = 3.3 V
+  (open).
 
 ## Not covered by simulation
 - The pad and antenna model is rough, so absolute noise figure and out-of-band rejection are estimates.
