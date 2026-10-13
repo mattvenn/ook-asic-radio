@@ -148,6 +148,9 @@ of reset, and no TX output before `tx_en`.
 
 ## Phase 4: housekeeping, with the next tile rebuild
 
+**Not run (Matt, 2026-10-13):** phases 1–3 are done (verify_supply_mc.md, verify_system_2.md). The full rerun
+happens only if a design change comes out of the Gate 2 / 3 findings; 4.1 goes into that rebuild if there is one.
+
 **4.1 Decap hvi.5 (G11).** `lay.py` `write(flatten=True)` for `decap_vapwr_p1`–`p4`, as for the TX blocks in
 13c28aa. Then `layout/check.sh` on each part, and drop the caveat from verification.md. Do this in the final tile
 rebuild, followed by `check_top.sh`, `export_tt.sh` and the GitHub precheck.
