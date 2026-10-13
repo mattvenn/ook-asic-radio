@@ -143,7 +143,7 @@ def comp_ct():
     s.text(-200, 300, 'layout matching dummies (all terminals on the rail)', 0.4)
     taps = {'n': [], 'p': []}
     for nm, x, kind, W, L, vt, m in (('Mdn1', -100, 'n', 5, 1, 'lvt', 2), ('Mdn2', 100, 'n', 4, 1, 'lvt', 2),
-                                     ('Mdn3', 300, 'n', 2, 2, '', 1), ('Mdp1', 500, 'p', 4, 2, 'lvt', 2),
+                                     ('Mdn3', 300, 'n', 2, 2, '', 1), ('Mdp1', 500, 'p', 4, 1, 'lvt', 2),
                                      ('Mdp2', 700, 'p', 4, 1, 'lvt', 1)):
         rail = 'VSS' if kind == 'n' else 'VDD'
         d = mos(s, kind, x, 450, W=W, L=L, mult=m, name=nm, vt=vt, body=rail)

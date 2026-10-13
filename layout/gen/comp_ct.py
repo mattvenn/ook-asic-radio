@@ -1,7 +1,7 @@
 # comp_ct layout: continuous comparator (xschem/gen/comp.py:comp_ct).
-#   lvt NMOS pair M1/M2 (W 20 / L 1, nf 4) + lvt PMOS mirror Mp1/Mp2 (4 / 1); trim pair
-#   M3/M4 (lvt 2 / 1) with split tails Mta (4 / 2, nf 2) and Rdeg (xhigh, 2 MOhm); VDD/2
-#   reference Rr1/Rr2 (xhigh L 136) + Cref (10x10 MIM); Cl (22x22 MIM) on d2; stage 2
+#   lvt NMOS pair M1/M2 (W 20 / L 1, nf 4) + lvt PMOS mirror Mp1/Mp2 (8 / 2); trim pair
+#   M3/M4 (lvt 8 / 1) with split tails Mta (4 / 2, nf 2) and Rdeg (xhigh, 0.85 MOhm); vref
+#   (0.75 VDD) divider Rr1/Rr2 (xhigh L 68 / 204: one 32-segment string tapped 8 down) + Cref (10x10 MIM); Cl (22x22 MIM) on d2; stage 2
 #   Mp3 (lvt 4 / 1) + Mn3 (9.1 / 2, nf 2); output inverter; bias diode Mb, tail Mt1 (18.2 / 2, nf 4).
 #
 # Matching (docs/layout.md checklist): each pair split into halves placed A B B A
@@ -10,13 +10,14 @@
 # P row: [d] Mp1 Mp2 Mp2 Mp1 [d d] Mp3 Mip.
 # Run: tools/osic klayout -b -r layout/gen/comp_ct.py
 import os
+import pya
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lay import Block, Fet, box, snap, ring, write_ref, REPO   # noqa: E402
 from rows import Dev, Net, build, inverter_roles, dummy   # noqa: E402
 from passives import PolyRes, mim, CAPM_ENC_M3, BOT_PLATE_SPACE   # noqa: E402
 
-PARAMS = dict(w1=20, l1=1, mt1=10, rdeg=2e6, mta=2, lref=136, wcl=22)   # radio_analog's xcomp
+PARAMS = dict(w1=20, l1=1, mt1=10, rdeg=0.85e6, mta=2, lref1=68, lref2=204, wcl=22)   # radio_analog's xcomp
 NETS = {'inp': Net(), 'inn': Net(), 'trim': Net(io='R', pin=False), 'ibias': Net(io='R', pin=False),
         'out': Net(io='R', pin=False),
         'tail': Net(), 'd1': Net(), 'd2': Net(), 'sa': Net(), 'sb': Net(), 'vref': Net(), 'o2': Net()}
@@ -49,30 +50,33 @@ def make(passives=True, xp=None):
     def pair(g, d):                                     # S D S: tail on both sides
         return dev('n', half, l1, 'lvt', g, d, nf=2, roles=['tail', d, 'tail'])
 
-    def trim(g, d, s):
-        return dev('n', 1.0, 1.0, 'lvt', g, d, roles=[s, d])
+    def trim(g, d, s):                                  # each half W/2 of M3/M4's W 8
+        return dev('n', 4.0, 1.0, 'lvt', g, d, roles=[s, d])
 
-    def mirror(d):
-        return dev('p', 2.0, 1.0, 'lvt', 'd1', d)
+    def mirror(d):                                      # each half W/2 of Mp1/Mp2's W 8 L 2
+        return dev('p', 4.0, 2.0, 'lvt', 'd1', d)
 
     # core first (main pair, then the trim pair on the same d1/d2), then bias + stage 2 +
     # inverter: d1/d2 stay short and out/o2 stay away from them. The L 2 bias devices are
     # folded into 4.55 um fingers (Mt1, Mn3; W corrected for the bin), not unit copies.
     N = ([dmy('n', w1 / 4, l1, 'lvt'), pair('inp', 'd1'), pair('inn', 'd2'), pair('inn', 'd2'), pair('inp', 'd1'),
-          dmy('n', w1 / 4, l1, 'lvt'), dmy('n', 1, 1, 'lvt'),
+          dmy('n', w1 / 4, l1, 'lvt'), dmy('n', 4, 1, 'lvt'),
           trim('vref', 'd1', 'sa'), trim('trim', 'd2', 'sb'), trim('trim', 'd2', 'sb'), trim('vref', 'd1', 'sa'),
-          dmy('n', 1, 1, 'lvt'), dmy('n', 2, 2, '')]
+          dmy('n', 4, 1, 'lvt'), dmy('n', 2, 2, '')]
          + [dev('n', 2, 2, '', 'ibias', 'ibias'),                          # Mb (diode)
             dev('n', 1.82 * P_['mt1'], 2, '', 'ibias', 'tail', nf=4),      # Mt1 (W bin, see comp.py)
             dev('n', 2 * P_['mta'], 2, '', 'ibias', 'sa', nf=P_['mta']),    # Mta_sa
             dev('n', 2 * P_['mta'], 2, '', 'ibias', 'sb', nf=P_['mta']),    # Mta_sb
             mn3 := dev('n', 9.1, 2, '', 'ibias', 'o2', nf=2),               # Mn3
             min_ := dev('n', 1, 0.15, '', 'o2', 'out')])                    # Min
-    P = ([dmy('p', 2, 1, 'lvt'), mirror('d1'), mirror('d2'), mirror('d2'), mirror('d1'), dmy('p', 2, 1, 'lvt'),
+    # mirror dummies L 1 (not the halves' L 2): build() lines each N device up behind the P device in the same
+    # place, so an L 2 edge dummy would push the whole N row (and the block) 1 um east
+    P = ([dmy('p', 4, 1, 'lvt'), mirror('d1'), mirror('d2'), mirror('d2'), mirror('d1'), dmy('p', 4, 1, 'lvt'),
           dmy('p', 4, 1, 'lvt'),
           dev('p', 4, 1, 'lvt', 'd2', 'o2', xmin=xp[0]),                      # Mp3
           dev('p', 2, 0.15, '', 'o2', 'out', xmin=xp[1])])                  # Mip
     build(b, P, N, NETS, rail_h=1.5)
+    merge_stubs(b)
     b.mn3, b.min_ = mn3, min_
     if passives:
         add_passives(b, P_)
@@ -80,17 +84,45 @@ def make(passives=True, xp=None):
     return b
 
 
+def merge_stubs(b):
+    """Same-net met2 stubs that land side by side on one track (a P drain coming down beside an N
+    drain going up: d1 / d2 with the L 2 mirror halves, 2026-10-13) leave a met2 gap < 0.14 and / or
+    via2 cuts < 0.2 apart. Bridge the met2 across the track and keep one of the two cuts. (Cuts
+    0.2 or more apart on one stub, a via array, are left alone.)"""
+    g = b.rows
+    dbu = b.ly.dbu
+    m2 = pya.Region(b.cell.shapes(b.li('m2')))
+    cuts = pya.Region(b.cell.shapes(b.li('via2')))
+    for n, tr in g['tracks'].items():
+        x0, x1 = g['xs'][n]
+        band = pya.Region(pya.DBox(x0, tr['y0'], x1, tr['y1']).to_itype(dbu))
+        cs = sorted((c.bbox().to_dtype(dbu) for c in cuts.interacting(band).each()), key=lambda c: c.left)
+        for a, c in zip(cs, cs[1:]):
+            # each cut's own stub: the met2 shape under it, clipped to the track
+            sa = (m2.interacting(pya.Region(a.to_itype(dbu))) & band).bbox().to_dtype(dbu)
+            sc = (m2.interacting(pya.Region(c.to_itype(dbu))) & band).bbox().to_dtype(dbu)
+            # (sa == sc: the two stubs overlap, one met2 shape; it only needs the cut spacing)
+            if sa != sc and (sc.left - sa.right < 0.14 or c.left - a.right < 0.2):
+                # one met2 piece over both cuts' landings, so either cut serves both stubs
+                b.rect('m2', box(sa.left, max(sa.bottom, sc.bottom), sc.right, min(sa.top, sc.top)))
+            if c.left - a.right < 0.2:
+                b.clear(('via2',), c.enlarged(-0.09, -0.09))   # (clear takes cuts within 0.1: just c)
+
+
 # Pins (floorplan matt layout 5, layout/floorplan/pins.md; the block is placed MYR90, so its
 # own N edge faces west, E south, S east). Own-frame targets (lower-left = 0, 0):
-PIN_X = {'inp': 37.85, 'inn': 42.45}          # N edge: inn = lpf (lpf_rc out, below), inp = avg (avg_sc out, above)
+PIN_X = {'inn': 42.45}                        # N edge: inn = lpf (lpf_rc out, below). inp = avg (avg_sc out, above):
+                                              # its pin is where its riser meets the N edge (add_pins)
 PIN_Y = {'ibias': 22.47, 'trim': 19.47}       # E edge, toward bias_gen (corridor) / Ctrim n
 OUT_X = 72.45                                 # S edge at the east end, toward the macro
 
 
 def add_pins(b):
-    """inp / inn: a met4 riser from the track's east end up past the tracks above it, met3
-    east under the VDD rail (empty there), up through a gap in the rail's met3 to the N edge.
-    inn's horizontal runs below inp's (inp's pin is west of inn's, so they don't cross).
+    """inn: a met4 riser from the track's east end up past the tracks above it, met3 east under
+    the VDD rail (empty there), up through a gap in the rail's met3 to the N edge.
+    inp: its met4 riser runs on up over the rail to a met4 pin on the N edge. (Until 2026-10-13 it
+    turned east on met3 to a pin at x 37.85 like inn's; the top-level avg route landed on that met3
+    run's west end, near the riser, and left the rest, ~22 um to the pin, as a dead-end stub.)
     out / trim / ibias: their tracks run east (io 'R'); each drops down its own met4 column
     at the east end (no met4 there): ibias on the outside, stopping at its pin; trim inside
     it, turning east to the edge below ibias's end; out innermost, on down to the S edge.
@@ -101,7 +133,12 @@ def add_pins(b):
     ox, oy, R, top = bb.left, bb.bottom, bb.right, bb.top
     yrail = g['ytop']                                     # VDD rail bottom
     ych = max(tt['y1'] for tt in t.values())              # top of the channel
-    for n, yh in (('inn', ych + 1.5), ('inp', ych + 2.5)):
+    tr, xe = t['inp'], xs['inp'][1] + 0.1
+    col = box(xe - 0.5, tr['y0'], xe, top)
+    b.via('via3', box(col.left, tr['y0'], col.right, tr['y1']))
+    b.rect('m4', col)
+    b.pin('m4', box(col.left, top - 0.5, col.right, top), 'inp')
+    for n, yh in (('inn', ych + 1.5),):
         tr, xe = t[n], xs[n][1] + 0.1                      # track's east end
         col = box(xe - 0.5, tr['y0'], xe, yh + 0.5)
         b.via('via3', box(col.left, tr['y0'], col.right, tr['y1']))
@@ -159,10 +196,13 @@ def add_passives(b, P_):
     t = g['tracks']
     grw, m = 0.4, 0.6
     inner_top = yr - grw
-    # --- resistors: Rdeg 30 segments, Rr1+Rr2 32 (a multiple of 4: the middle link,
-    # vref, is a bottom one), ~9 um each, side by side across the band
+    # --- resistors: Rdeg 30 segments, Rr1+Rr2 32 (8.5 um each; vref is links[7], a bottom
+    # link: after 8 segments from VDD, so Rr1 = 8 and Rr2 = 24 segments), side by side across the band
     rdeg = PolyRes(b, P_['rdeg'] / 7.37e3, 30, pad_w=0.5)
-    rr = PolyRes(b, 2 * P_['lref'], 32, pad_w=0.5)
+    rr = PolyRes(b, P_['lref1'] + P_['lref2'], 32, pad_w=0.5)
+    ntap = round(32 * P_['lref1'] / (P_['lref1'] + P_['lref2']))
+    assert ntap % 2 == 0 and abs(ntap * (P_['lref1'] + P_['lref2']) / 32 - P_['lref1']) < 1e-6, \
+        'vref must be a bottom link: lref1 an even number of the 32 segments'
     xl = 0.2 + grw + m
     for r, x in ((rdeg, xl), (rr, None)):
         if x is None:
@@ -171,11 +211,13 @@ def add_passives(b, P_):
         r.place(x - (r._bbox.left - r._poly.left), top - (r._poly.top - r._poly.bottom))
     # --- met2 lanes below the bottom heads, one per net, to the riser column
     LW, LP = 0.4, 0.8
-    yh = min(rdeg.bbox.bottom, rr.bbox.bottom)
+    # lanes 14.65 below the rail, where the 2 MOhm Rdeg's heads put them before 2026-10-13: the band, the
+    # footprint and the pins placed from the bbox's lower-left (trim, ibias, out) don't move
+    yh = min(rdeg.bbox.bottom, rr.bbox.bottom, yr - 14.65)
     nets = ('sa', 'sb', 'VDD', 'vref')
     lane = {n: yh - 0.5 - k * LP for k, n in enumerate(nets)}          # lane centre y
     rx = {n: snap(23.9 + k * 1.0) for k, n in enumerate(nets)}         # riser left x (0.6 wide)
-    tap = rr.links[15]                                                  # between segments 15 and 16
+    tap = rr.links[ntap - 1]                                            # after segment ntap - 1 (bottom)
     heads = {'sa': rdeg.ends[0], 'sb': rdeg.ends[1], 'VDD': rr.ends[0],
              'vref': box(tap.center().x - 0.25, tap.bottom, tap.center().x + 0.25, tap.top)}
     risers = {}
@@ -237,4 +279,4 @@ if __name__ == '__main__':
     passives = os.environ.get('PASSIVES', '1') != '0'      # PASSIVES=0: transistors only
     make(passives).write(os.path.join(REPO, 'layout', 'comp_ct.gds'))
     # reference: parameters substituted; without the passives while they aren't drawn
-    write_ref('comp_ct', 'comp_ct', dict(PARAMS, rdeg=2e6), drop=None if passives else r'^X(R|C)')
+    write_ref('comp_ct', 'comp_ct', PARAMS, drop=None if passives else r'^X(R|C)')

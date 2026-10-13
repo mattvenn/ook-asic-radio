@@ -316,7 +316,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 | vref | 28.60 | 30.11 |  |
 | d2 | 36.90 | 31.71 |  |
 | VDD | 37.00 | 40.41 |  |
-| inp | 37.85 | 40.91 |  |
+| inp | 16.70 | 40.91 | moved 2026-10-13 (met4, the riser's top: the inp dead-end stub fix, STATUS 5a) |
 | sa | 40.30 | 32.52 |  |
 | inn | 42.45 | 40.91 |  |
 | sb | 44.45 | 29.31 |  |

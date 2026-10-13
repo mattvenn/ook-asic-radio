@@ -3,8 +3,10 @@
 VDD 1.8, ibias 1 uA (as bias_gen), inp = 1.0 V + vd, inn = 1.0 V, Cl load on out 10 fF.
   offset: DC sweep of vd at trim 0.9 V (mid code) -> vd where out crosses 0.9 V;
   trim gain: the same at trim 0.9 + 64 LSB (1.8 / 256 per LSB) -> mV per LSB;
-  response: vd steps -1 mV -> +1 mV at 20 us, back at 60 us -> out delays (0.9 V).
-(xschem tb_comp, schematic: offset +0.5..+1.8 mV over CM, trim ~0.07-0.1 mV/LSB, 0.36 us at 1 mV.)
+  response: at the balance trim (where the threshold is 0, from the two points above), vd steps
+            -1 mV -> +1 mV at 20 us, back at 60 us -> out delays (0.9 V).
+(H135 trim, 2026-10-13, CM 1.0 V: offset at trim mid -7.2..-7.9 mV, balance code 182-185, trim 0.131-0.139
+mV/LSB, 0.36-0.46 us at 1 mV over tt/ss/ff/sf/fs, extracted within 1 code / 1.2 % of the schematic.)
 --pex swaps in layout/pex/comp_ct.spice.
 
     python sim/comp_ct/tb_comp_ct.py [--pex] [corner]
@@ -71,13 +73,17 @@ Co out 0 10f
 dc Vdif -20m 20m 0.02m
 meas dc off0 when v(out)=0.9 cross=1
 echo RES off0=$&off0
+set o0 = "$&off0"
 reset
 alter Vt dc = {t1:.5f}
 dc Vdif -40m 40m 0.02m
 meas dc off1 when v(out)=0.9 cross=1
 echo RES off1=$&off1
+set o1 = "$&off1"
 reset
-alter Vt dc = 0.9
+let vbal = 0.9 - $o0 * {t1 - 0.9:.5f} / ($o1 - $o0)
+echo RES vbal=$&vbal
+alter Vt dc = $&vbal
 tran 20n 100u 0
 meas tran tup TRIG v(inp) VAL=1.0 RISE=1 TARG v(out) VAL=0.9 CROSS=1 TD=19u
 meas tran tdn TRIG v(inp) VAL=1.0 FALL=1 TD=50u TARG v(out) VAL=0.9 CROSS=1 TD=59u
@@ -217,5 +223,6 @@ if __name__ == '__main__':
     r = run(corner, pex)
     gain = (r['off1'] - r['off0']) / 64
     print(f'comp_ct {corner} {"pex" if pex else "sch"}: offset {r["off0"] * 1e3:+.3f} mV (trim mid), '
-          f'trim {gain * 1e3:+.4f} mV/LSB, +-1 mV response up/down '
+          f'trim {gain * 1e3:+.4f} mV/LSB, balance code {r.get("vbal", float("nan")) / LSB:.1f}, '
+          f'+-1 mV response up/down '
           f'{r.get("tup", float("nan")) * 1e6:.2f}/{r.get("tdn", float("nan")) * 1e6:.2f} us')
