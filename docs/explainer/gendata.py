@@ -288,7 +288,8 @@ def main():
                'logdet': logdet(), 'bb': [b for b in map(baseband, BB_LEVELS) if b],
                'model': model_sweep(), 'layout_jpg': layout_jpg(), 'text': words()}
     blob = base64.b64encode(gzip.compress(json.dumps(payload, separators=(',', ':')).encode(), 9)).decode()
-    html = open(os.path.join(HERE, 'template.html')).read().replace('/*__PAYLOAD__*/', blob)
+    brand = base64.b64encode(open(os.path.join(HERE, 'brand_header.jpg'), 'rb').read()).decode()   # Zero to ASIC header art
+    html = open(os.path.join(HERE, 'template.html')).read().replace('/*__PAYLOAD__*/', blob).replace('/*__BRAND__*/', brand)
     out = os.path.join(ROOT, 'docs', 'explainer.html')
     open(out, 'w').write(html)
     for line in report:

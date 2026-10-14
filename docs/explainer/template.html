@@ -8,10 +8,11 @@
 <style>
 :root{
   color-scheme: dark;
-  --bg:#0d1216; --panel:#151c22; --panel2:#1b242c; --line:#2a3741; --text:#e8eef2; --muted:#9db0bc; --faint:#6f8491;
-  --rx:#3cc4a8; --rx-bg:#10251f; --tx:#f0954a; --tx-bg:#2a1a0e; --bias:#9cc65c; --dac:#b48cff; --dig:#b9c3cb; --dig-bg:#1e252b;
-  --sig:#5ad1e6; --sig2:#ffd166; --ok:#7be0a4; --bad:#ff7b6b; --thr:#ff7b6b;
-  --sans:"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg:#0c0818; --panel:#150f26; --panel2:#1e1636; --line:#382c5a; --text:#f1edf8; --muted:#b4a9cf; --faint:#81749e;
+  --rx:#3cc4a8; --rx-bg:#10251f; --tx:#f0954a; --tx-bg:#2a1a0e; --bias:#9cc65c; --dac:#b48cff; --dig:#b9c3cb; --dig-bg:#1d1829;
+  --sig:#5cc8da; --sig2:#ffd166; --ok:#7be0a4; --bad:#ff7b6b; --thr:#ff7b6b;
+  --sans:"Avenir Next", Avenir, "Nunito Sans", "Segoe UI", ui-sans-serif, system-ui, -apple-system, sans-serif;   /* Zero to ASIC brand font */
+  --z2a-cyan:#5cc8da; --z2a-purple:#7a3bbf; --z2a-magenta:#d9409f;   /* sampled from the Zero to ASIC header art (brand_header.jpg) */
   --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 *{box-sizing:border-box}
@@ -20,8 +21,12 @@ body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
 a{color:var(--sig)}
 button{font:inherit; color:inherit}
 :focus-visible{outline:3px solid var(--sig); outline-offset:2px}
-header{display:grid; grid-template-columns:auto minmax(22rem,1fr) minmax(0,30rem) auto;   /* 22rem: the longest breadcrumb, Link › Chip › bit slicer (digital) */ align-items:center; gap:.75rem 1.5rem; padding:.35rem 1.25rem; border-bottom:1px solid var(--line); background:var(--panel)}
-.brand{display:flex; flex-direction:column; gap:.1rem; min-width:0}
+header{position:relative; display:grid; grid-template-columns:auto minmax(22rem,1fr) minmax(0,30rem) auto;   /* 22rem: the longest breadcrumb, Link › Chip › bit slicer (digital) */ align-items:center; gap:.75rem 1.5rem; padding:.35rem 1.25rem; border-bottom:0; background:linear-gradient(90deg, rgba(12,8,24,.55) 0%, rgba(12,8,24,.8) 22%, rgba(12,8,24,.88) 100%), var(--brandimg, none) center 40%/cover, var(--panel)}
+header::after{content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:linear-gradient(90deg, var(--z2a-cyan), var(--z2a-purple) 50%, var(--z2a-magenta))}
+.brand{display:flex; align-items:center; gap:.6rem; min-width:0; color:var(--text); text-decoration:none}
+.brand svg{width:2.3rem; height:2.3rem; flex:none}
+.brand span{display:flex; flex-direction:column; line-height:1.15}
+.brand small{font-size:.72rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--z2a-cyan)}
 .brand b{font-size:1.3rem; letter-spacing:-.01em}
 nav.crumbs{display:flex; align-items:center; gap:.35rem; flex-wrap:nowrap; white-space:nowrap; overflow:hidden; min-width:0; font-size:1.15rem}
 nav.crumbs button{background:none; border:0; padding:.15rem .45rem; border-radius:6px; color:var(--muted); cursor:pointer; min-height:34px}
@@ -43,11 +48,11 @@ main{flex:1; display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; pad
 .stage > .inner{display:flex; flex-direction:column; gap:1rem}
 .stage h1{margin:0; font-size:1.55rem; line-height:1.2; letter-spacing:-.01em}
 .layoutimg{display:block; width:100%; height:auto; aspect-ratio:4932/2258; border-radius:6px}
-.editable{outline:1px dashed #6f8491; outline-offset:2px; border-radius:3px; cursor:text; white-space:pre-wrap; min-width:4ch; display:inline-block}
+.editable{outline:1px dashed #81749e; outline-offset:2px; border-radius:3px; cursor:text; white-space:pre-wrap; min-width:4ch; display:inline-block}
 div.editable, h1.editable, h2.editable{display:block}
 .editable:focus{outline:2px solid var(--sig)}
 .edbody{margin-top:1rem; line-height:1.5}
-.capbar{position:fixed; left:0; right:0; bottom:0; z-index:30; padding:.55rem 1rem; background:#0b0f12; border-top:1px solid #2a3741; font-size:.95rem}
+.capbar{position:fixed; left:0; right:0; bottom:0; z-index:30; padding:.55rem 1rem; background:#0a0615; border-top:1px solid #382c5a; font-size:.95rem}
 .capbar .editable{display:inline; min-width:20ch}
 .capbar .capl, #edstat{color:var(--muted); margin:0 .5rem}
 .stage .lede{margin:0; color:var(--muted); max-width:52rem}
@@ -72,8 +77,8 @@ svg text{font-family:var(--sans)}
 .blk span{font-size:.78rem; color:var(--muted)}
 .blk svg{width:100%; height:2.6rem; display:block}
 .blk.tx{background:var(--tx-bg); border-color:#6a4426} .blk.rx{background:var(--rx-bg); border-color:#24594d}
-.blk.dig{background:var(--dig-bg); border-color:#3a4650} .blk.dac{background:#1d1630; border-color:#4b3a78} .blk.bias{background:#18210f; border-color:#46602a}
-.blk.pin{background:#0b0f12; border-color:#3a4650; flex:0 1 7rem; min-width:6.5rem}
+.blk.dig{background:var(--dig-bg); border-color:#433860} .blk.dac{background:#1d1630; border-color:#4b3a78} .blk.bias{background:#18210f; border-color:#46602a}
+.blk.pin{background:#0a0615; border-color:#433860; flex:0 1 7rem; min-width:6.5rem}
 .blk:hover{border-color:var(--sig)}
 .blk[aria-pressed=true]{outline:3px solid var(--sig); outline-offset:1px}
 .arrow{align-self:center; color:var(--faint); font-size:1.2rem; flex:0 0 auto}
@@ -118,7 +123,7 @@ svg.dg{display:block; width:100%; height:auto}
 .links a.secondary{border:1px solid var(--line); color:var(--text)}
 .links a:hover{filter:brightness(1.1)}
 .fig{display:flex; flex-direction:column; gap:.3rem}
-.xref{display:inline; background:none; border:0; padding:0; font:inherit; color:var(--sig); cursor:pointer; text-decoration:underline; text-decoration-color:#5ad1e666; text-underline-offset:3px}
+.xref{display:inline; background:none; border:0; padding:0; font:inherit; color:var(--sig); cursor:pointer; text-decoration:underline; text-decoration-color:#5cc8da66; text-underline-offset:3px}
 .xref:hover{text-decoration-color:var(--sig)}
 .diprow{display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap}
 .dips{display:inline-flex; gap:.35rem; padding:.45rem .6rem; background:#b5302a; border-radius:6px}
@@ -126,7 +131,7 @@ svg.dg{display:block; width:100%; height:auto}
 .dip i{display:block; flex:none; width:1.1rem; height:1.1rem; background:#2a2a2a; border-radius:2px; transform:translateY(1.1rem)}   /* the lever moves; the switch keeps its size */
 .dip.on i{transform:none} .dip span{font-size:.7rem; color:#333; font-family:var(--mono)}
 .dipval{font-family:var(--mono); font-size:1.1rem}
-.mbar{position:relative; height:1.1rem; background:#0a0e11; border:1px solid var(--line); border-radius:6px}
+.mbar{position:relative; height:1.1rem; background:#090612; border:1px solid var(--line); border-radius:6px}
 .mfill{position:absolute; inset:0 auto 0 0; border-radius:5px; background:var(--muted)} .mfill.ok{background:var(--ok)} .mfill.bad{background:var(--bad)}
 .mthr{position:absolute; top:-.35rem; bottom:-.35rem; border-left:2px dashed var(--thr)} .mthr span{position:absolute; top:-1.15rem; left:-.7rem; font-size:.75rem; color:var(--thr)}
 .mstate{border:1px solid var(--line); border-radius:8px; padding:.3rem .6rem; font-family:var(--mono); font-size:.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--faint)}
@@ -143,7 +148,7 @@ svg.dg{display:block; width:100%; height:auto}
 .legend{display:flex; flex-wrap:wrap; gap:.25rem 1rem; font-size:.8rem; color:var(--muted)}
 .legend i{display:inline-block; width:.9rem; height:.2rem; border-radius:2px; vertical-align:middle; margin-right:.35rem}
 .plot{position:relative}
-.plot svg{max-width:100%; height:auto; display:block; background:#0a0e11; border-radius:8px}
+.plot svg{max-width:100%; height:auto; display:block; background:#090612; border-radius:8px}
 svg.strip{max-width:100%; height:auto; display:block}
 .plot .hov{position:absolute; top:.4rem; right:.5rem; font-family:var(--mono); font-size:.72rem; color:var(--text); background:rgba(13,18,22,.85); padding:.15rem .4rem; border-radius:4px; pointer-events:none; white-space:pre; text-align:right}
 .segrow{display:flex; align-items:center; gap:.75rem; flex-wrap:wrap} .segrow > span{color:var(--muted); font-size:.85rem}
@@ -169,7 +174,7 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
 </head>
 <body>
 <header>
-  <div class="brand"><b>433 MHz OOK radio</b></div>
+  <a class="brand" href="https://www.zerotoasiccourse.com" title="Zero to ASIC course"><svg viewBox="0 0 3401.5 3401.6" aria-hidden="true"><g fill="currentColor" transform="matrix(1.3333333,0,0,-1.3333333,1322.7806,2078.743)"><g transform="matrix(5,0,0,5,-1133.86,-1133.8572)"><path transform="translate(338.1049,200.4037)" d="m 0,0 66.389,-22.676 -214.282,-56.036 15.083,29.348 h -110.97 l 131.522,261.79 H -274.566 C -296.924,174.5 -309.75,130.285 -309.75,83.061 c 0,-111.623 71.706,-206.523 171.573,-241.105 l 36.387,72.291 73.68,29.884 -57.325,-114.332 c 10.101,-1.237 20.385,-1.857 30.803,-1.857 61.288,0 117.509,21.622 161.506,57.626 L 57.358,113.964 Z"/><path transform="translate(283.4731,538.5829)" d="M 0,0 C -66.422,0 -126.907,-25.385 -172.292,-66.974 H 35.485 l -131.84,-261.941 h 47.291 l 11.221,22.308 42.174,-14.398 127.86,254.031 73.127,-339.567 c 31.288,42.342 49.784,94.716 49.784,151.423 C 255.102,-114.231 140.887,0 0,0"/></g></g></svg><span><small>Zero to ASIC</small><b>433 MHz OOK radio</b></span></a>
   <nav class="crumbs" aria-label="Level" id="crumbs"></nav>
   <div class="dist">
     <label for="dist">Received power</label>
@@ -186,7 +191,7 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
 <main id="main"><div class="loading">Loading simulation data…</div></main>
 <div class="capbar" id="capbar" hidden></div>
 <footer>
-  <span><a href="https://github.com/mattvenn/ook-asic-radio/blob/main/docs/how_it_works.md">More details</a> · <a href="https://github.com/mattvenn/ook-asic-radio">github.com/mattvenn/ook-asic-radio</a></span>
+  <span><a href="https://www.zerotoasiccourse.com">Zero to ASIC course</a> · <a href="https://github.com/mattvenn/ook-asic-radio">github.com/mattvenn/ook-asic-radio</a></span>
 </footer>
 <div class="help" id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helph">
   <div>
@@ -206,6 +211,8 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
 </div>
 <script>
 const PAYLOAD = "/*__PAYLOAD__*/";
+const BRAND_JPG = "/*__BRAND__*/";   // Zero to ASIC header art behind the top bar (brand_header.jpg)
+if (BRAND_JPG.length > 20) document.documentElement.style.setProperty('--brandimg', `url(data:image/jpeg;base64,${BRAND_JPG})`);
 const REPO = 'https://github.com/mattvenn/ook-asic-radio/blob/main/';
 const DOC = REPO + 'docs/how_it_works.md#';
 const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.sch';
@@ -299,15 +306,15 @@ function plot(opts) {
   (opts.bands || []).forEach(b => g += `<rect x="${sx(b.x0)}" y="${T}" width="${sx(b.x1) - sx(b.x0)}" height="${H - T - Bm}" fill="${b.color}"/>`);
   const xt = opts.xlog ? [0.1, 1, 10, 100, 1000].filter(v => tx(v) >= x0 - 1e-9 && tx(v) <= x1 + 1e-9) : ticks(x0, x1, 6);
   const yt = opts.ylog ? [1e-4, 1e-3, 1e-2, 0.1, 1, 10, 100, 1000].filter(v => ty(v) >= y0 && ty(v) <= y1) : ticks(y0, y1, 4);
-  xt.forEach(v => g += `<line x1="${sx(v)}" x2="${sx(v)}" y1="${T}" y2="${H - Bm}" stroke="#1f2a32"/><text x="${sx(v)}" y="${H - Bm + F + 4}" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.xfmt ? opts.xfmt(v) : fmt(v)}</text>`);
-  yt.forEach(v => g += `<line x1="${L}" x2="${W - R}" y1="${sy(v)}" y2="${sy(v)}" stroke="#1f2a32"/><text x="${L - 8}" y="${sy(v) + F * .36}" fill="${opts.ycolor || '#8a9ca8'}" font-size="${F}" text-anchor="end">${opts.yfmt ? opts.yfmt(v) : fmt(v)}</text>`);
+  xt.forEach(v => g += `<line x1="${sx(v)}" x2="${sx(v)}" y1="${T}" y2="${H - Bm}" stroke="#271e40"/><text x="${sx(v)}" y="${H - Bm + F + 4}" fill="#9f94bb" font-size="${F}" text-anchor="middle">${opts.xfmt ? opts.xfmt(v) : fmt(v)}</text>`);
+  yt.forEach(v => g += `<line x1="${L}" x2="${W - R}" y1="${sy(v)}" y2="${sy(v)}" stroke="#271e40"/><text x="${L - 8}" y="${sy(v) + F * .36}" fill="${opts.ycolor || '#9f94bb'}" font-size="${F}" text-anchor="end">${opts.yfmt ? opts.yfmt(v) : fmt(v)}</text>`);
   if (opts.y2lim) {
-    ticks(opts.y2lim[0], opts.y2lim[1], 4).forEach(v => g += `<text x="${W - R + 8}" y="${sy2(v) + F * .36}" fill="${opts.y2color || '#8a9ca8'}" font-size="${F}">${fmt(v)}</text>`);
-    if (opts.y2l) g += `<text x="${W - 4}" y="${T + F}" fill="${opts.y2color || '#8a9ca8'}" font-size="${F}" text-anchor="end">${opts.y2l}</text>`;
+    ticks(opts.y2lim[0], opts.y2lim[1], 4).forEach(v => g += `<text x="${W - R + 8}" y="${sy2(v) + F * .36}" fill="${opts.y2color || '#9f94bb'}" font-size="${F}">${fmt(v)}</text>`);
+    if (opts.y2l) g += `<text x="${W - 4}" y="${T + F}" fill="${opts.y2color || '#9f94bb'}" font-size="${F}" text-anchor="end">${opts.y2l}</text>`;
   }
-  if (opts.xl) g += `<text x="${(L + W - R) / 2}" y="${H - 6}" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.xl}</text>`;
-  if (opts.yl && opts.yl.length <= 3) g += `<text x="4" y="${T + F}" fill="${opts.ycolor || '#8a9ca8'}" font-size="${F}">${opts.yl}</text>`;
-  else if (opts.yl) g += `<text transform="translate(${F + 2} ${(T + H - Bm) / 2}) rotate(-90)" fill="#8a9ca8" font-size="${F}" text-anchor="middle">${opts.yl}</text>`;
+  if (opts.xl) g += `<text x="${(L + W - R) / 2}" y="${H - 6}" fill="#9f94bb" font-size="${F}" text-anchor="middle">${opts.xl}</text>`;
+  if (opts.yl && opts.yl.length <= 3) g += `<text x="4" y="${T + F}" fill="${opts.ycolor || '#9f94bb'}" font-size="${F}">${opts.yl}</text>`;
+  else if (opts.yl) g += `<text transform="translate(${F + 2} ${(T + H - Bm) / 2}) rotate(-90)" fill="#9f94bb" font-size="${F}" text-anchor="middle">${opts.yl}</text>`;
   (opts.hl || []).forEach(h => g += `<line x1="${L}" x2="${W - R}" y1="${sy(h.y)}" y2="${sy(h.y)}" stroke="${h.color}" stroke-dasharray="6 5" stroke-width="1.5"/>` + (h.label ? `<text x="${h.left ? L + 6 : W - R - 6}" y="${sy(h.y) - 6}" fill="${h.color}" font-size="${F}" text-anchor="${h.left ? 'start' : 'end'}">${h.label}</text>` : ''));
   (opts.vl || []).forEach(h => g += `<line x1="${sx(h.x)}" x2="${sx(h.x)}" y1="${T}" y2="${H - Bm}" stroke="${h.color}" stroke-width="2"/>` + (h.label ? `<text x="${sx(h.x) + (sx(h.x) > W - 90 ? -6 : 6)}" y="${h.bottom ? H - Bm - 6 : T + F + 2}" fill="${h.color}" font-size="${F}" text-anchor="${sx(h.x) > W - 90 ? 'end' : 'start'}">${h.label}</text>` : ''));
   const sy1 = sy;
@@ -352,10 +359,10 @@ function strip(rows, opts = {}) {
   let g = `<svg class="strip" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${opts.aria || 'bit strip'}">`;
   rows.forEach((r, k) => {
     const y = 2 + k * (ch + gap);
-    g += `<text x="${L - 8}" y="${y + ch / 2 + F * .36}" fill="#9db0bc" font-size="${F}" text-anchor="end">${r.label}</text>`;
+    g += `<text x="${L - 8}" y="${y + ch / 2 + F * .36}" fill="#b4a9cf" font-size="${F}" text-anchor="end">${r.label}</text>`;
     for (let i = 0; i < n; i++) {
       const bad = r.cmp && r.cmp[i] !== r.bits[i];
-      const fill = bad ? 'var(--bad)' : r.bits[i] ? r.color : '#1c262e';
+      const fill = bad ? 'var(--bad)' : r.bits[i] ? r.color : '#241a3b';
       g += `<rect x="${(L + i * cw).toFixed(2)}" y="${y}" width="${Math.max(cw - (n > 200 ? 0 : 1), 0.6).toFixed(2)}" height="${ch}" fill="${fill}"${opts.ph === i ? ' stroke="#fff" stroke-width="2"' : ''}/>`;
     }
   });
@@ -453,8 +460,8 @@ function figPath() {
   for (let l = -1; l <= Math.log10(DB) + 1e-9; l += 0.02) { fit.x.push(Math.pow(10, l)); fit.y.push(benchP(Math.pow(10, l))); old.x.push(Math.pow(10, l)); old.y.push(benchP(Math.pow(10, l)) - TX_DB); }
   for (let l = Math.log10(DB); l <= 2.5; l += 0.02) { two.x.push(Math.pow(10, l)); two.y.push(pathP(Math.pow(10, l))); }
   return fig('received power vs distance', plot({series: [
-      {d: old, color: '#9db0bc', label: 'bench, old 1.8 V transmitter', w: 1.5, dash: '5 4'},
-      {d: {x: p.d_m, y: p.p_dbm}, color: '#e8eef2', label: 'measured', pts: true},
+      {d: old, color: '#b4a9cf', label: 'bench, old 1.8 V transmitter', w: 1.5, dash: '5 4'},
+      {d: {x: p.d_m, y: p.p_dbm}, color: '#f1edf8', label: 'measured', pts: true},
       {d: fit, color: 'var(--sig)', label: `new transmitter: bench + ${TX_DB} dB`, w: 2},
       {d: two, color: 'var(--sig2)', label: `two-ray, boards ${HGT} m up`, w: 2}],
     xlog: true, xlim: [0.1, 300], xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
@@ -472,7 +479,7 @@ function figGold() {
     fig(k === 127 ? 'code 127 is LFSR 1 alone' : `the Gold code is LFSR 1 xor LFSR 2, with LFSR 2 started ${N(k, 3, 'left')} bits later`,
       strip([{bits: m1, label: 'LFSR 1', color: 'var(--dig)'}, {bits: k === 127 ? new Uint8Array(127) : m2s, label: 'LFSR 2', color: 'var(--dig)'}, {bits: code, label: 'code', color: 'var(--tx)'}], {h: 26}), 'model/gold.py');
 }
-const TXL = {key: ['enable (key)', '#9db0bc'], ring: ['ring', 'var(--tx)'], a: ['latch A', 'var(--tx)'], b: ['latch B', 'var(--sig2)'],
+const TXL = {key: ['enable (key)', '#b4a9cf'], ring: ['ring', 'var(--tx)'], a: ['latch A', 'var(--tx)'], b: ['latch B', 'var(--sig2)'],
   drv_p: ['driver p (ua[3])', 'var(--tx)'], drv_n: ['driver n (ua[4])', 'var(--sig2)'], dipole: ['across the dipole', 'var(--sig)']};
 function figTx(keys, zoom = '_z') {
   if (!D.tx) return NODATA('TX');
@@ -512,7 +519,7 @@ function figChain() {
       {d: {x, y}, color: 'var(--rx)', w: 2}, {d: {x, y}, color: 'var(--rx)', pts: true}],   // the tone transient only: the log_det CW sweep gave the same points
     ylog: true, ylim: [0.01, 3000], yfmt: v => v >= 1 ? v + '' : v, xfmt: i => (n[i] || {}).label || '', yl: 'mV peak (log)', h: 260}), runsNote(br, 'rx_rf_tone'));
   h += '<p>Each stage multiplies the signal until the last stages limit at ~1 V: that limiting is what the log detector uses.</p>';
-  const cols = ['#e8eef2', '#9db0bc'].concat(STAGE_COLS);   // antenna, pad, then stages 1-6 in log_det's colours
+  const cols = ['#f1edf8', '#b4a9cf'].concat(STAGE_COLS);   // antenna, pad, then stages 1-6 in log_det's colours
   h += fig(`10 ns at every stage, ${DBM(prx())}`, plot({series: n.map((v, i) => ({d: v.d, color: cols[i], label: v.label, w: 1.3})), xl: 'time (ns)', yl: 'mV', h: 240, ylim: tly()}), runsNote(br, 'rx_rf_tone'));
   return h;
 }
@@ -550,7 +557,7 @@ function bb() {   // the run nearest the slider: for sampled bits, which can't b
   if (!D.bb.length) return null;
   return D.bb.reduce((a, b) => Math.abs(b.lvl - prx()) < Math.abs(a.lvl - prx()) ? b : a);
 }
-const BBL = {det: ['det (1 µs blocks)', '#6f8491', 0.8], lpf: ['after lpf_rc', 'var(--sig)', 1.6], avg: ['slow average', 'var(--sig2)', 2.6]};
+const BBL = {det: ['det (1 µs blocks)', '#81749e', 0.8], lpf: ['after lpf_rc', 'var(--sig)', 1.6], avg: ['slow average', 'var(--sig2)', 2.6]};
 /* one y range over every simulated level, so stepping down in power shows the signal shrinking */
 const BBY = {};
 function bbRange(keys, scale = 1000) {
@@ -608,15 +615,15 @@ function slicerFig(i) {
   const bp = d.best, wc = i >= bp ? bp + 8 * Math.floor((Math.min(i, SL_N - 1) - bp) / 8) : -1;
   const ws = wc - 8 >= bp && i - wc < 4 ? wc - 8 : wc;   // a finished vote stays in the close-up for 4 more samples so its result can be read
   let g = `<svg class="strip" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="comparator samples and the four slicers' votes">`;
-  const lab = (y, t, col = '#9db0bc', w = 400) => `<text x="${L - 8}" y="${y}" fill="${col}" font-size="${F}" text-anchor="end" font-weight="${w}">${t}</text>`;
+  const lab = (y, t, col = '#b4a9cf', w = 400) => `<text x="${L - 8}" y="${y}" fill="${col}" font-size="${F}" text-anchor="end" font-weight="${w}">${t}</text>`;
   // sent bits, then the samples (red outline: the sample disagrees with what was sent)
   g += lab(rowH * .72, 'sent');
-  for (let k = 0; k < SL_N; k++) g += `<rect x="${x(k).toFixed(1)}" y="2" width="${(cw + .3).toFixed(1)}" height="${rowH - 6}" fill="${d.tru[k] ? 'var(--tx)' : '#1c262e'}"/>`;
+  for (let k = 0; k < SL_N; k++) g += `<rect x="${x(k).toFixed(1)}" y="2" width="${(cw + .3).toFixed(1)}" height="${rowH - 6}" fill="${d.tru[k] ? 'var(--tx)' : '#241a3b'}"/>`;
   const y1 = rowH + 2;
   g += lab(y1 + rowH * .72, 'samples');
   for (let k = 0; k < SL_N; k++) {
     const seen = k <= i, bad = d.smp[k] !== d.tru[k];
-    g += `<rect x="${(x(k) + 1).toFixed(1)}" y="${y1}" width="${Math.max(1, cw - 2).toFixed(1)}" height="${rowH - 6}" fill="${!seen ? '#11181d' : d.smp[k] ? 'var(--rx)' : '#1c262e'}" ${seen && bad ? 'stroke="var(--bad)" stroke-width="1.5"' : ''}/>`;
+    g += `<rect x="${(x(k) + 1).toFixed(1)}" y="${y1}" width="${Math.max(1, cw - 2).toFixed(1)}" height="${rowH - 6}" fill="${!seen ? '#160f27' : d.smp[k] ? 'var(--rx)' : '#241a3b'}" ${seen && bad ? 'stroke="var(--bad)" stroke-width="1.5"' : ''}/>`;
   }
   if (ws >= 0 && ws + 8 <= SL_N) g += `<rect x="${x(ws).toFixed(1)}" y="${y1 - 2}" width="${(8 * cw).toFixed(1)}" height="${rowH - 2}" fill="none" stroke="var(--sig)" stroke-width="2" rx="2"/>`;
   if (i >= 0 && i < SL_N) g += `<rect x="${x(i).toFixed(1)}" y="0" width="${cw.toFixed(1)}" height="${2 * rowH}" fill="none" stroke="#fff" stroke-width="1.5"/>`;
@@ -624,21 +631,21 @@ function slicerFig(i) {
   const score = [];
   [0, 2, 4, 6].forEach((ph, r) => {
     const y = 2 * rowH + 8 + r * phH; let right = 0, n = 0;
-    g += lab(y + phH * .55, `phase ${ph}`, ph === bp ? 'var(--sig)' : '#9db0bc', ph === bp ? 700 : 400);
+    g += lab(y + phH * .55, `phase ${ph}`, ph === bp ? 'var(--sig)' : '#b4a9cf', ph === bp ? 700 : 400);
     for (let st = ph; st + 8 <= SL_N; st += 8) {
       const xa = x(st) + 2, xb = x(st + 8) - 2, done = st + 7 <= i;
-      g += `<path d="M ${xa} ${y + 4} V ${y} H ${xb} V ${y + 4}" fill="none" stroke="#4a5a66" stroke-width="1.2"/>`;
+      g += `<path d="M ${xa} ${y + 4} V ${y} H ${xb} V ${y + 4}" fill="none" stroke="#5a4c78" stroke-width="1.2"/>`;
       if (!done) continue;
       let c = 0, t = 0; for (let k = st; k < st + 8; k++) { c += d.smp[k]; t += d.tru[k]; }
       const v = c > 4 || (c === 4 && d.smp[st + 7]) ? 1 : 0, straddle = t === 4, ok = !straddle && v === (t > 4 ? 1 : 0);   // judged against the bit that fills most of the window
       n++; if (ok) right++;
-      g += `<rect x="${xa}" y="${y + 6}" width="${xb - xa}" height="${phH - 12}" rx="3" fill="${v ? 'var(--rx)' : '#1c262e'}" stroke="${straddle ? '#6f8491' : ok ? 'var(--ok)' : 'var(--bad)'}" stroke-width="1.5"/>`;
-      if (xb - xa > F * 3) g += `<text x="${(xa + xb) / 2}" y="${y + 6 + (phH - 12) / 2 + F * .35}" font-size="${Math.round(F * .8)}" text-anchor="middle" fill="${v ? '#05181c' : '#9db0bc'}">${c}/8 → ${v}</text>`;
+      g += `<rect x="${xa}" y="${y + 6}" width="${xb - xa}" height="${phH - 12}" rx="3" fill="${v ? 'var(--rx)' : '#241a3b'}" stroke="${straddle ? '#81749e' : ok ? 'var(--ok)' : 'var(--bad)'}" stroke-width="1.5"/>`;
+      if (xb - xa > F * 3) g += `<text x="${(xa + xb) / 2}" y="${y + 6 + (phH - 12) / 2 + F * .35}" font-size="${Math.round(F * .8)}" text-anchor="middle" fill="${v ? '#05181c' : '#b4a9cf'}">${c}/8 → ${v}</text>`;
     }
     score.push([right, n]);
     const xn = W - Rr + 8 + F * 2.6;   // the count ends here, 'right' starts just after: it stays put as the digits change
-    if (n) g += `<text x="${xn}" y="${y + phH * .55}" font-size="${F}" fill="#9db0bc" text-anchor="end" style="font-variant-numeric:tabular-nums">${right}/${n}</text>` +
-      `<text x="${xn + F * .35}" y="${y + phH * .55}" font-size="${F}" fill="#9db0bc">right</text>`;
+    if (n) g += `<text x="${xn}" y="${y + phH * .55}" font-size="${F}" fill="#b4a9cf" text-anchor="end" style="font-variant-numeric:tabular-nums">${right}/${n}</text>` +
+      `<text x="${xn + F * .35}" y="${y + phH * .55}" font-size="${F}" fill="#b4a9cf">right</text>`;
   });
   return g + '</svg>';
 }
@@ -653,7 +660,7 @@ function figScore(withSweep = true) {
   const bands = [0, 1, 2].map(k => ({x0: k * m.period, x1: k * m.period + 127, color: '#f0954a14'}));
   let h = fig(`score after every bit, ${DBM(prx())}: peaks at the end of each burst`, plot({series: [{d: {x, y}, color: 'var(--dig)', label: 'score', w: 1.5}],
     ylim: [40, 130], xl: 'bits since the send started', yl: 'score /127', h: 260, bands,
-    hl: [{y: m.thresh, color: 'var(--thr)', label: 'detect ≥ 97'}, {y: 63.5, color: '#6f8491', label: 'chance'}]}), 'model/ link model');
+    hl: [{y: m.thresh, color: 'var(--thr)', label: 'detect ≥ 97'}, {y: 63.5, color: '#81749e', label: 'chance'}]}), 'model/ link model');
   if (withSweep) h += figSweep();
   return h;
 }
@@ -683,9 +690,9 @@ function linkScene(focus = null) {
   const board = (x, label, sub, color, lvl, pin, side) => `
     <g class="hit" role="button" tabindex="0" data-go="${lvl}" aria-label="Open the ${label.toLowerCase()}">
       <rect class="hl${focus === 'ook' && lvl === 'chip:tx' ? ' on' : ''}" x="${x - 150}" y="38" width="300" height="76" rx="10" fill="#123024" stroke="#2f6b4f" stroke-width="2"/>
-      <rect x="${x - 138}" y="48" width="72" height="56" rx="5" fill="#0b0f12" stroke="${color}" stroke-width="2"/>
+      <rect x="${x - 138}" y="48" width="72" height="56" rx="5" fill="#0a0615" stroke="${color}" stroke-width="2"/>
       <text x="${x - 102}" y="83" fill="${color}" font-size="20" text-anchor="middle" font-weight="600">${label}</text>
-      <text x="${x - 54}" y="81" fill="#e8eef2" font-size="14">${sub}</text>
+      <text x="${x - 54}" y="81" fill="#f1edf8" font-size="14">${sub}</text>
       <path d="M ${x + side * 150} 72 H ${x + side * 168} V 34 M ${x + side * 150} 80 H ${x + side * 168} V 118" fill="none" stroke="#c8d3da" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </g>`;
   let waves = '';
@@ -696,14 +703,14 @@ function linkScene(focus = null) {
       <rect class="hl${focus === 'air' ? ' on' : ''}" x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10" fill="#ffffff04" stroke="#ffffff10"/>
       <clipPath id="gapclip"><rect x="${tx + 180}" y="26" width="${rx - tx - 360}" height="100" rx="10"/></clipPath>
       <g id="waves" clip-path="url(#gapclip)" data-x0="${tx + 168}" data-x1="${rx - 168}" data-cy="76" data-d="${d}">${waves}</g>
-      ${focus ? '' : `<text x="600" y="20" fill="#9db0bc" font-size="16" text-anchor="middle">≈ ${fmtd(d)} apart (${distSrc(d)}) · ${nlt} wavelength${nlt === '1.0' ? '' : 's'}</text>`}
+      ${focus ? '' : `<text x="600" y="20" fill="#b4a9cf" font-size="16" text-anchor="middle">≈ ${fmtd(d)} apart (${distSrc(d)}) · ${nlt} wavelength${nlt === '1.0' ? '' : 's'}</text>`}
     </g>
     ${board(tx, 'TX', 'switches the carrier on/off', 'var(--tx)', 'chip:tx', 'ua[3] / ua[4]', 1)}
     ${board(rx, 'RX', 'measures RF energy', 'var(--rx)', 'chip:rx', 'ua[0] / ua[1]', -1)}
     <g class="hit" role="button" tabindex="0" data-block="led" aria-label="The LED: 2 of 3 bursts confirm a send">
       <rect class="hl" x="${rx + 76}" y="10" width="68" height="28" rx="6" fill="#ffffff00"/>
-      <circle id="led" cx="${rx + 128}" cy="24" r="10" fill="#2a3741" stroke="#000"/>
-      <text x="${rx + 112}" y="29" fill="#9db0bc" font-size="12" text-anchor="end">LED</text>
+      <circle id="led" cx="${rx + 128}" cy="24" r="10" fill="#382c5a" stroke="#000"/>
+      <text x="${rx + 112}" y="29" fill="#b4a9cf" font-size="12" text-anchor="end">LED</text>
     </g>
   </svg>`;
 }
@@ -750,7 +757,7 @@ function focusPage(id) {
 
 
 // ------------------------------------------------------------------ system diagram (from the floorplan tool's "Block diagram" view, layout/floorplan/page/page.html; the debug tap dbg_tg / ua[2] left out)
-const DGC = {rx: '#3fc1ad', late: '#ef6ab8', rxin: '#5aa9ef', clk: '#fb8a4a', en: '#d9b44a', bias: '#9acd4c', tx: '#f2a23a', trim: '#a78bfa', dig: '#94a3b8', pad: '#e8eef2'};
+const DGC = {rx: '#3fc1ad', late: '#ef6ab8', rxin: '#5aa9ef', clk: '#fb8a4a', en: '#d9b44a', bias: '#9acd4c', tx: '#f2a23a', trim: '#a78bfa', dig: '#94a3b8', pad: '#f1edf8'};
 const DG = {
   // [id, name, sub, x, y, w, h, group]
   blocks: [
@@ -811,7 +818,7 @@ function dgSVG(opts = {}) {
   const cols = Object.assign({}, DGC); STAGE_COLS.forEach((c, i) => cols['s' + i] = c);   // the chain's taps in the stage colours used on lna_chain and log_det
   o.push(`<defs>${Object.entries(cols).map(([k, c]) => `<marker id="dga-${k}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="${c}"/></marker>`).join('')}</defs>`);
   const TAPS = ['o1', 'o2', 'o3', 'o4', 'o5', 'out'];
-  o.push(`<line x1="8" y1="326" x2="950" y2="326" stroke="#2a3741" stroke-dasharray="4 4"/>`);
+  o.push(`<line x1="8" y1="326" x2="950" y2="326" stroke="#382c5a" stroke-dasharray="4 4"/>`);
   o.push(`<text x="12" y="12" font-size="13" font-weight="700" fill="${DGC.rx}" letter-spacing="1" opacity="${!hl || DGHALF.rx.some(on) ? 1 : DIM}">RX</text>`);
   o.push(`<text x="12" y="344" font-size="13" font-weight="700" fill="${DGC.tx}" letter-spacing="1" opacity="${!hl || DGHALF.tx.some(on) ? 1 : DIM}">TX</text>`);
   for (const w of DG.wires) {
@@ -834,11 +841,11 @@ function dgSVG(opts = {}) {
     const col = DGC[g], pad = g === 'pad', lit = pad ? padOn(id) : on(id), sel = hl && lit && !pad && id !== 'macro', bid = DG2B[id];
     o.push(`<g opacity="${lit ? 1 : DIM}"${bid ? ` class="hit dgb" role="button" tabindex="0" data-block="${bid}" aria-label="${nm(bid)}"` : ''}>`);
     o.push(`<rect class="hl" x="${x}" y="${y}" width="${w}" height="${h}" rx="${pad ? 0 : 3}" fill="${col}" fill-opacity="${pad ? .9 : sel ? .3 : .12}" stroke="${col}" stroke-width="${sel ? 3 : 1.4}"/>`);
-    if (pad) o.push(`<text x="${x + w / 2}" y="${y + 15}" font-size="10" text-anchor="middle" fill="#0a0e11" font-family="var(--mono)">${name}</text>` + (opts.small ? '' : `<text x="${x + w / 2}" y="${y - 4}" font-size="9" text-anchor="middle" fill="#9db0bc" font-family="var(--mono)">${sub}</text>`));
-    else if (id === 'macro') o.push(`<text x="${x + w / 2}" y="${y + 120}" font-size="11" font-weight="600" text-anchor="middle" fill="#e8eef2">radio_digital</text><text x="${x + w / 2}" y="${y + 134}" font-size="9" text-anchor="middle" fill="#9db0bc" font-family="var(--mono)">macro</text>`);
+    if (pad) o.push(`<text x="${x + w / 2}" y="${y + 15}" font-size="10" text-anchor="middle" fill="#090612" font-family="var(--mono)">${name}</text>` + (opts.small ? '' : `<text x="${x + w / 2}" y="${y - 4}" font-size="9" text-anchor="middle" fill="#b4a9cf" font-family="var(--mono)">${sub}</text>`));
+    else if (id === 'macro') o.push(`<text x="${x + w / 2}" y="${y + 120}" font-size="11" font-weight="600" text-anchor="middle" fill="#f1edf8">radio_digital</text><text x="${x + w / 2}" y="${y + 134}" font-size="9" text-anchor="middle" fill="#b4a9cf" font-family="var(--mono)">macro</text>`);
     else {
-      o.push(`<text x="${x + 8}" y="${y + 16}" font-size="13" font-weight="600" fill="#e8eef2">${name}</text>`);
-      if (sub && h > 26) o.push(`<text x="${x + 8}" y="${y + 30}" font-size="10" fill="#9db0bc" font-family="var(--mono)">${sub}</text>`);
+      o.push(`<text x="${x + 8}" y="${y + 16}" font-size="13" font-weight="600" fill="#f1edf8">${name}</text>`);
+      if (sub && h > 26) o.push(`<text x="${x + 8}" y="${y + 30}" font-size="10" fill="#b4a9cf" font-family="var(--mono)">${sub}</text>`);
     }
     o.push('</g>');
   }
@@ -846,12 +853,12 @@ function dgSVG(opts = {}) {
     const lit = on(id), sel = hl && lit;
     o.push(`<g opacity="${lit ? 1 : DIM}" class="hit dgb" role="button" tabindex="0" data-block="${DG2B[id]}" aria-label="${nm(DG2B[id])}">
       <rect class="hl" x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${DGC.dig}" fill-opacity="${sel ? .35 : .15}" stroke="${DGC.dig}" stroke-width="${sel ? 3 : 1}"/>
-      <text x="${x + w / 2}" y="${y + h / 2 + 4}" font-size="11" text-anchor="middle" fill="#e8eef2">${name}</text></g>`);
+      <text x="${x + w / 2}" y="${y + h / 2 + 4}" font-size="11" text-anchor="middle" fill="#f1edf8">${name}</text></g>`);
   }
   const chainOn = on('xchain') ? 1 : DIM, detOn = on('xdet') ? 1 : DIM;
   for (let i = 0; i < 6; i++) {
     const x0 = 115 + i * 50;
-    o.push(`<g opacity="${chainOn}" pointer-events="none"><path d="M${x0} 118 L${x0} 162 L${x0 + 34} 140 Z" fill="#0a0e11" stroke="${STAGE_COLS[i]}" stroke-width="1.6"/><text x="${x0 + 10}" y="144" font-size="10" fill="#e8eef2" font-family="var(--mono)">${i + 1}</text><line x1="${x0 + 34}" y1="140" x2="${x0 + 50}" y2="140" stroke="${DGC.rx}" stroke-width="1.2"/></g>`);
+    o.push(`<g opacity="${chainOn}" pointer-events="none"><path d="M${x0} 118 L${x0} 162 L${x0 + 34} 140 Z" fill="#090612" stroke="${STAGE_COLS[i]}" stroke-width="1.6"/><text x="${x0 + 10}" y="144" font-size="10" fill="#f1edf8" font-family="var(--mono)">${i + 1}</text><line x1="${x0 + 34}" y1="140" x2="${x0 + 50}" y2="140" stroke="${DGC.rx}" stroke-width="1.2"/></g>`);
     o.push(`<text x="${157 + i * 50 + 3}" y="292" font-size="9" fill="${STAGE_COLS[i]}" font-family="var(--mono)" opacity="${detOn}" pointer-events="none">t${i + 1}</text>`);
   }
   o.push(`<path d="M100 121 H108 V161 M100 161 H108 M108 140 H115" fill="none" stroke="${DGC.rxin}" opacity="${chainOn}"/>`);
@@ -1029,7 +1036,7 @@ const anim = {
     // the LED toggles (rd_rx.v): a send whose second detection lands flips it, on one send and off the next; it never goes off by itself
     { const pk = burstPeaks(r), second = [0, 1, 2].filter(k => pk[k] >= m.thresh)[1];
       if (r.toggled && second != null && pos >= second * m.period + 127 && this._flipped !== this._send) { this._flipped = this._send; this.led = !this.led; } }
-    const led = $('led'); if (led) led.setAttribute('fill', this.led ? 'var(--ok)' : '#2a3741');
+    const led = $('led'); if (led) led.setAttribute('fill', this.led ? 'var(--ok)' : '#382c5a');
     const cs = $('codestrip');
     if (cs && (this._pos !== ib || this._lvl !== r.lvl || !cs.firstChild)) {
       this._pos = ib; this._lvl = r.lvl; this._b = b;

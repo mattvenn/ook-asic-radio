@@ -16,6 +16,7 @@ The chip page and the per-block maps draw the system diagram from the floorplan 
 ## Sources
 | View | Source |
 |---|---|
+| top bar: Zero to ASIC brand | `brand_header.jpg`: the Zero to ASIC header art (`brands/zerotoasic/www_header.jpeg`), cropped to a strip, 960 px JPEG; `gendata.py` puts it in place of `/*__BRAND__*/`. The logo is inline SVG in `template.html`; colours (`--z2a-*`, violet-grey neutrals) and the Avenir Next font come from the same brand kit |
 | opening page: whole-design layout | `layout.jpg`: the GitHub `gds` action's `gds_render` artifact (`gds_render.png`), scaled to 1200 px wide JPEG. Refresh it from a recent run after a layout change |
 | received power → estimated distance | `bench/data/sweep2/ota.csv` fit (−44 dBm at 1 m, 1/d^1.89, measured 10 cm–4 m with the old ttsky25b transmitter), shifted up by the new transmitter's simulated power (`TX_DB` = +3.5 − (−8.5) = 12 dB) up to the ground-reflection breakpoint (5.8 m for both boards 1 m up at 433.92 MHz), then the two-ray model (40 dB/decade). Constants in `template.html` (`HGT`, `DB`) |
 | TX ring, level-shifter A/B, drivers, dipole | `build/tb_tx_ab.raw` from `xschem/tb_tx.sch` (tt, schematic) |
