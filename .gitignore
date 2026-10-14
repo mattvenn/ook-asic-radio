@@ -30,3 +30,6 @@ verilog/test/sim_build_gl/
 verilog/test/results_gl.xml
 test/sim_build_gl
 test/results_gl.xml
+
+# tile extraction outputs (layout/pex_tile.sh), regenerated per run, too big to commit
+layout/pex/radio_analog_*.spice
