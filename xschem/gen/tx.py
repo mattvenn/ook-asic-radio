@@ -96,6 +96,10 @@ def tx_ls():
     s.text(-500, -460, 'tx_ls: 1.8 -> 3.3 V level shifter (R2R DAC dac_drive, skewed core)\n'
            'in -> thin inverter (wpi/wni) -> ctrl; core NMOS kn x 0.42, PMOS kp x 0.42, L 0.5 thick. '
            'A = in, B = not in', 0.4)
+    prm = lambda p: ', '.join(f'{k} {v}' for k, v in p.items())
+    s.text(-500, -370, 'Placed 3 times in tx_top at two sizes, so each value note (= m x W / L) has one line per size:\n'
+           f'  (tx_ls)     xls: ring -> driver arms, switches at the carrier: {prm(LS_PARAMS)}\n'
+           f'  (tx_ls_en)  xlse_p / xlse_n: the arm enables, static: {prm(LS_EN_PARAMS)}', 0.3)
     XL = -500
     # input inverter (the ring's calibrated load when wpi/wni = 9/3)
     p1, n1, g1, d1 = inv(s, -300, 0, dict(W="'wpi'", L=0.15, name='Mi1p', body='VDD'),

@@ -7,6 +7,9 @@ S {}
 E {}
 T {tx_ls: 1.8 -> 3.3 V level shifter (R2R DAC dac_drive, skewed core)
 in -> thin inverter (wpi/wni) -> ctrl; core NMOS kn x 0.42, PMOS kp x 0.42, L 0.5 thick. A = in, B = not in} -500 -460 0 0 0.4 0.4 {}
+T {Placed 3 times in tx_top at two sizes, so each value note (= m x W / L) has one line per size:
+  (tx_ls)     xls: ring -> driver arms, switches at the carrier: kn 14, kp 8, wpi 9, wni 3
+  (tx_ls_en)  xlse_p / xlse_n: the arm enables, static: kn 1, kp 1, wpi 1, wni 0.42} -500 -370 0 0 0.3 0.3 {}
 T {= 1 x 9 / 0.15 (tx_ls)
 = 1 x 1 / 0.15 (tx_ls_en)} -295 -37 0 0 0.25 0.25 {}
 T {= 1 x 3 / 0.15 (tx_ls)
