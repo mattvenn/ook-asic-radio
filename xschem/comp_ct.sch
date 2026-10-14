@@ -7,6 +7,8 @@ S {}
 E {}
 T {comp_ct: continuous comparator, out = 1 when inp > inn + trim offset
 lvt NMOS pair + lvt PMOS mirror; degenerated trim pair (trim vs vref); PMOS CS; inverter} -1000 -560 0 0 0.4 0.4 {}
+T {M1/M2: W = w1 = 20 um
+L = l1 = 1 um, nf = 4} 15 -195 0 0 0.25 0.25 {}
 T {Rdeg = 0.85Meg
 L = 115.3 um} -235 -22 0 0 0.3 0.3 {}
 T {vref divider (defaults):

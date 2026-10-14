@@ -73,6 +73,7 @@ def comp_ct():
     s.bus((0, -20), (200, -20), [(100, -20)])
     s.route((100, -20), mt.pin('D'))
     s.label((100, -20), 'tail', right=True)
+    s.text(15, -195, f"M1/M2: W = w1 = {COMP_PARAMS['w1']} um\nL = l1 = {COMP_PARAMS['l1']} um, nf = 4", 0.25)
     # PMOS mirror load (lvt, L 1): diode on d1
     mp1 = mos(s, 'p', 20, -300, W=8, L=2, name='Mp1', vt='lvt', body='VDD', flip=1)
     mp2 = mos(s, 'p', 180, -300, W=8, L=2, name='Mp2', vt='lvt', body='VDD')
