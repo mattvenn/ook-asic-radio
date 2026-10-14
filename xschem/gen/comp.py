@@ -73,6 +73,7 @@ def comp_ct():
     s.bus((0, -20), (200, -20), [(100, -20)])
     s.route((100, -20), mt.pin('D'))
     s.label((100, -20), 'tail', right=True)
+    s.text(95, 145, f"W = 0.455 x mt1 = {0.455 * COMP_PARAMS['mt1']:.2f} um\n(mt1 = {COMP_PARAMS['mt1']})", 0.25)
     s.text(15, -195, f"M1/M2: W = w1 = {COMP_PARAMS['w1']} um\nL = l1 = {COMP_PARAMS['l1']} um, nf = 4", 0.25)
     # PMOS mirror load (lvt, L 1): diode on d1
     mp1 = mos(s, 'p', 20, -300, W=8, L=2, name='Mp1', vt='lvt', body='VDD', flip=1)
@@ -92,6 +93,7 @@ def comp_ct():
         t = mos(s, 'n', x + (20 if fl else -20), 100, W=2, L=2, mult="'mta'", name=f'Mta_{sn}', body='VSS',
                 flip=fl)
         s.label(t.pin('G'), 'ibias', right=bool(fl))
+        s.text(330 if fl else -230, 145, f"mult = mta = {COMP_PARAMS['mta']}", 0.25)
         s.bus(m.pin('S'), t.pin('D'), [(x, 30)])
         s.label((x, 30), sn, right=bool(fl))
         ta.append((m, t))
@@ -124,6 +126,9 @@ def comp_ct():
     cl = s.place('sky130_fd_pr/cap_mim_m3_1.sym', 600, -210, name='Cl', model='cap_mim_m3_1',
                  W="'wcl'", L="'wcl/2'", MF='2', spiceprefix='X')   # 2 x (wcl x wcl/2): fits the layout's band
     s.connect(cl, c1='VSS')
+    w = COMP_PARAMS['wcl']
+    s.text(572, -167, f"Cl = 2 x {w} x {w / 2:g} um\n(wcl = {w}): {2 * (w * w / 2 * 2e-15 + 1.5 * w * 0.38e-15) * 1e12:.2f} pF",
+           0.25)
     # stage 2: PMOS CS (same W/L as the load) + NMOS sink (5 x unit); out2 low when inp > inn
     mp = mos(s, 'p', 830, -300, W=4, L=1, name='Mp3', vt='lvt', body='VDD')
     s.bus((200, -240), (810, -240), [cl.pin('c0')])

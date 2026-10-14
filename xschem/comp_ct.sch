@@ -7,14 +7,20 @@ S {}
 E {}
 T {comp_ct: continuous comparator, out = 1 when inp > inn + trim offset
 lvt NMOS pair + lvt PMOS mirror; degenerated trim pair (trim vs vref); PMOS CS; inverter} -1000 -560 0 0 0.4 0.4 {}
+T {W = 0.455 x mt1 = 4.55 um
+(mt1 = 10)} 95 145 0 0 0.25 0.25 {}
 T {M1/M2: W = w1 = 20 um
 L = l1 = 1 um, nf = 4} 15 -195 0 0 0.25 0.25 {}
+T {mult = mta = 2} -230 145 0 0 0.25 0.25 {}
+T {mult = mta = 2} 330 145 0 0 0.25 0.25 {}
 T {Rdeg = 0.85Meg
 L = 115.3 um} -235 -22 0 0 0.3 0.3 {}
 T {vref divider (defaults):
 Rr1 L = lref1 = 68 um
 Rr2 L = lref2 = 204 um
 vref = VDD x 204/272 = 1.35 V} -1000 -350 0 0 0.3 0.3 {}
+T {Cl = 2 x 22 x 11 um
+(wcl = 22): 0.99 pF} 572 -167 0 0 0.25 0.25 {}
 T {layout matching dummies (all terminals on the rail)} -200 300 0 0 0.4 0.4 {}
 N -860 70 -860 40 {}
 N -1000 40 -900 40 {}
