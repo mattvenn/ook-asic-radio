@@ -11,7 +11,7 @@ bare-wire dipole antennas and no external components. It should get to roughly 8
 - **RX:** a 6-stage NMOS differential-pair limiting chain with a successive-detection log detector, and one comparator with an averaged, trimmed threshold. A digital Gold-code correlator detects the transmitter's code and toggles an LED.
 
 Docs:
-- [Interactive explainer](https://raw.githack.com/mattvenn/ook-asic-radio/main/docs/explainer.html): click through the link, TX and RX chains with simulated waveforms ([source](docs/explainer)).
+- [Interactive explainer](https://mattvenn.github.io/ook-asic-radio/docs/explainer.html): click through the link, TX and RX chains with simulated waveforms ([source](docs/explainer)).
 - [docs/how_it_works.md](docs/how_it_works.md): **start here**: theory, specs, schematics and layout.
 - [docs/verification.md](docs/verification.md): testing and verification, with links to every test.
 - [PLAN.md](PLAN.md): the design plan and the measurements behind each decision.

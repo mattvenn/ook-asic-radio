@@ -27,6 +27,17 @@ jobs:
           verilog_path: src/project.v
           pdk: sky130A
 
+      # The viewer job deploys the gds_render artifact as the Pages site, so the
+      # explainer rides along: <pages>/docs/explainer.html
+      - name: Add the explainer to the Pages site
+        uses: actions/upload-artifact@v7
+        with:
+          name: gds_render
+          path: |
+            gds_render.png
+            docs/explainer.html
+          overwrite: true
+
   precheck:
     needs: gds
     runs-on: ubuntu-24.04

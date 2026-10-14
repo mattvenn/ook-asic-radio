@@ -2,7 +2,7 @@
 
 Generates the self-contained [`../explainer.html`](../explainer.html) (one file, no network, ~550 kB with the layout image) from the simulations, bench data and link model in this repo. Same pattern as [metastability_explorer](https://github.com/mattvenn/metastability_explorer): `template.html` holds the page, and `gendata.py` replaces its `/*__PAYLOAD__*/` token with the data (traces resampled, quantized to 1 byte, gzipped, base64). The browser inflates it with `DecompressionStream('gzip')`.
 
-Open it from the repo: <https://raw.githack.com/mattvenn/ook-asic-radio/main/docs/explainer.html> (githack serves the committed file as a page; GitHub Pages on this repo is the TT GDS viewer).
+Open it from the repo: <https://mattvenn.github.io/ook-asic-radio/docs/explainer.html> (the gds workflow adds the committed file to the gds_render artifact, which the TT viewer job deploys as the Pages site).
 
 ## Run
 ```

@@ -4,7 +4,7 @@ A 433 MHz radio link on six Tiny Tapeout tiles (3×2, sky130). Two demo boards r
 
 This page covers the idea, the measurements and models that set the specs, each schematic, and the layout. For test instructions see [info.md](info.md).
 
-To click through it instead, with simulated waveforms at each block: [interactive explainer](https://raw.githack.com/mattvenn/ook-asic-radio/main/docs/explainer.html).
+To click through it instead, with simulated waveforms at each block: [interactive explainer](https://mattvenn.github.io/ook-asic-radio/docs/explainer.html).
 
 ## Overview
 
