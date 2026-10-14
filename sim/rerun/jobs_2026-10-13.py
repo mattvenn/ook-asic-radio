@@ -38,17 +38,20 @@ J(dict(name='pinout', cmd='python3 tools/check_pinout.py', threads=1, est=5))
 J(dict(name='rtl', cmd=waitpid(465627) + '! grep -q "<failure" verilog/test/results.xml && grep -c "<testcase" verilog/test/results.xml',
        threads=1, est=720, lock='cocotb'))
 J(dict(name='gl_models', cmd="tools/osic bash -c 'mkdir -p build/gl_models && cp $PDK_ROOT/$PDK/libs.ref/sky130_fd_sc_hd/verilog/"
-       "primitives.v $PDK_ROOT/$PDK/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v build/gl_models/'", threads=1, est=5))
-J(dict(name='gl', cmd="bash -c 'cd verilog/test && make COCOTB_CONFIG=cocotb-config GL=1 SIM_BUILD=sim_build_gl "
+       "primitives.v $PDK_ROOT/$PDK/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v build/gl_models/'; "
+       "test -s build/gl_models/primitives.v -a -s build/gl_models/sky130_fd_sc_hd.v", threads=1, est=5))
+# (tools/osic's exit status isn't reliable here: judge by the files. ': ' below re-queues the jobs skipped
+#  when gl_models first failed: the scheduler reruns a failed / skipped job whose command changed)
+J(dict(name='gl', cmd=": ; bash -c 'cd verilog/test && make COCOTB_CONFIG=cocotb-config GL=1 SIM_BUILD=sim_build_gl "
        "COCOTB_RESULTS_FILE=results_gl.xml' && ! grep -q '<failure' verilog/test/results_gl.xml",
        threads=1, est=2100, lock='cocotb', deps=['gl_models']))
 J(dict(name='formal_prove', cmd=waitpid(446674) + 'grep -q PASS formal/radio_digital_prove/status', threads=2, est=1800))
 J(dict(name='tt_rtl', cmd="bash -c 'cd test && make COCOTB_CONFIG=cocotb-config' && ! grep -q '<failure' test/results.xml",
        threads=1, est=120, lock='ttcocotb'))
-J(dict(name='tt_gl', cmd="bash -c 'cd test && make COCOTB_CONFIG=cocotb-config GL=1 SIM_BUILD=sim_build_gl "
+J(dict(name='tt_gl', cmd=": ; bash -c 'cd test && make COCOTB_CONFIG=cocotb-config GL=1 SIM_BUILD=sim_build_gl "
        "COCOTB_RESULTS_FILE=results_gl.xml' && ! grep -q '<failure' test/results_gl.xml",
        threads=1, est=240, lock='ttcocotb', deps=['tt_rtl', 'gl_models']))
-J(dict(name='vectors', cmd='python3 model/export_vectors.py && git diff --exit-code --stat verilog/test/vectors',
+J(dict(name='vectors', cmd=': ; python3 model/export_vectors.py && git diff --exit-code --stat verilog/test/vectors',
        threads=1, est=300, deps=['rtl', 'gl']))
 J(dict(name='e2e_default', cmd='python3 model/e2e.py --out ../build/rerun/e2e_default.png', threads=1, est=1800))
 for tag, a in (('tt', '--nf 11 --slope 13.4 --offset-mv 1.26 --trim-mv 0.127'),
@@ -67,7 +70,7 @@ TBS = {'amp_dp': 'sim/amp_dp/tb_amp_dp.py', 'amp_dpc': 'sim/amp_dpc/tb_amp_dpc.p
        'log_det': 'sim/logdet/tb_log_det.py', 'lpf_rc': 'sim/lpf_rc/tb_lpf_rc.py', 'avg_sc': 'sim/avg_sc/tb_avg_sc.py',
        'r2r': 'sim/dac/tb_r2r.py', 'bias_gen': 'sim/bias/tb_bias_gen.py', 'dbg_tg': 'sim/dbg_tg/tb_dbg_tg.py',
        'tx_ring': 'sim/tx/tb_tx_ring.py', 'tx_drv': 'sim/tx/tb_tx_drv.py', 'comp_ct': 'sim/comp_ct/tb_comp_ct.py'}
-LOCK = {'bias_gen': 'tbbias', 'tx_drv': 'tbtx'}
+LOCK = {'bias_gen': 'tbbias'}
 for b, sc in TBS.items():
     for pex in (False, True):
         J(dict(name=f'tb_{b}' + ('_pex' if pex else ''), cmd=f'{O} python3 {sc} {"--pex " if pex else ""}tt', threads=8, est=300,
@@ -115,17 +118,26 @@ for t in (10, 50):
     for c in CORNERS:
         J(dict(name=f'tile_tx_{c}{t}', cmd=f'{O} NT=2 python3 sim/top/tb_tile_tx.py sch:corner={c},temp={t}', threads=2, est=300,
                stagger=TB))
-# TX bench: build/tb_tx.spice is shared, so one at a time (lock tbtx)
-J(dict(name='tx_corners', cmd='NT=1 python3 sim/tx/tb_tx.py tt ss ff sf fs', threads=1, est=600, lock='tbtx'))
-J(dict(name='tx_corners_pex', cmd='NT=1 python3 sim/tx/tb_tx.py --pex tt ss ff sf fs', threads=1, est=1800, lock='tbtx',
+# TX bench: each run rewrites build/tb_tx.spice once at start (the same netlist), then writes decks / raws
+# tagged by corner, extraction and supply: stagger the starts. The extracted supply rows run one process
+# per corner (one 5-corner process took 146 min; 2026-10-13 18:55).
+TX = ('tbtx', 60)
+J(dict(name='tx_corners', cmd='NT=1 python3 sim/tx/tb_tx.py tt ss ff sf fs', threads=1, est=600, stagger=TX))
+J(dict(name='tx_corners_pex', cmd='NT=1 python3 sim/tx/tb_tx.py --pex tt ss ff sf fs', threads=1, est=1800, stagger=TX,
        deps=['pex_tx_drv']))
+for va in ('3.0', '3.3'):           # started as one 5-corner process before the split: keep them whole
+    J(dict(name=f'tx_pex_v1.71_{va}', cmd=f'NT=1 python3 sim/tx/tb_tx.py --pex --pex-ring --vdd=1.71 --vapwr={va} tt ss ff sf fs',
+           threads=1, est=2.5 * H, stagger=TX, deps=['pex_tx_drv', 'pex_tx_ring']))
 for vd in ('1.71', '1.8', '1.89'):
     for va in ('3.0', '3.3', '3.6'):
         if (vd, va) != ('1.8', '3.3'):
             J(dict(name=f'tx_v{vd}_{va}', cmd=f'NT=1 python3 sim/tx/tb_tx.py --vdd={vd} --vapwr={va} tt ss ff sf fs', threads=1,
-                   est=300, lock='tbtx'))
-        J(dict(name=f'tx_pex_v{vd}_{va}', cmd=f'NT=1 python3 sim/tx/tb_tx.py --pex --pex-ring --vdd={vd} --vapwr={va} tt ss ff sf fs',
-               threads=1, est=H, lock='tbtx', deps=['pex_tx_drv', 'pex_tx_ring']))
+                   est=300, stagger=TX))
+        if (vd, va) in (('1.71', '3.0'), ('1.71', '3.3')):
+            continue
+        for c in CORNERS:
+            J(dict(name=f'tx_pex_v{vd}_{va}_{c}', cmd=f'NT=1 python3 sim/tx/tb_tx.py --pex --pex-ring --vdd={vd} --vapwr={va} {c}',
+                   threads=1, est=1800, stagger=TX, deps=['pex_tx_drv', 'pex_tx_ring']))
 for args in ('--vdd=1.71 --vapwr=3.0', '--vdd=1.89 --vapwr=3.6', '--vdd=1.71 --vapwr=3.0 --corner=ss --temp=10',
              '--vdd=1.71 --vapwr=3.6 --corner=ss --temp=10', '--vdd=1.71 --vapwr=3.0 --corner=fs --temp=50',
              '--vdd=1.89 --vapwr=3.6 --corner=ff --temp=85'):
@@ -166,6 +178,12 @@ for n in range(1, 6):
     mixed(f'-94_pex_s{n}', f'--pex --seed={n} -94', 3 * H)
 for g, ts in (('0.1', '28.7m'), ('0.25', '28.9m'), ('0.5', '29.1m'), ('1', '29.6m'), ('2', '30.6m'), ('5', '33.6m')):
     mixed(f'-90_ov{g}', f'--tag=ov{g} -90 {ts}', 2400)
+# H135: the 0.1 / 0.25 ms gaps missed the weak burst (2026-10-13 23:5x); bracket the new dead time
+J(dict(name='gen_det_ov', cmd='for g in 0.3 0.4; do python3 sim/rx/gen_det.py --overload=$g -90; done', threads=1, est=120))
+for g, ts in (('0.3', '28.9m'), ('0.4', '29.0m')):
+    J(dict(name=f'mixed_-90_ov{g}', cmd=f'python3 sim/mixed/gen_mixed.py --tag=ov{g} -90 {ts} && (tools/osic bash -c "cd build/mixed && '
+           f'ngspice -b mixed_-90_ov{g}.cir > mixed_-90_ov{g}.log 2>&1"; true) && python3 sim/mixed/plot_mixed.py -90_ov{g}',
+           threads=1, est=8 * H, deps=['gen_det_ov'], stagger=('mixed', 10)))   # est: run soon
 # swapped trim bits must FAIL the ladder check
 J(dict(name='mixed_-70swap', cmd="sed '/^adut/s/trim_out_1 trim_out_0/trim_out_0 trim_out_1/; s/^write mixed_-70.raw/write mixed_-70swap.raw/' "
        "build/mixed/mixed_-70.cir > build/mixed/mixed_-70swap.cir && (tools/osic bash -c 'cd build/mixed && ngspice -b mixed_-70swap.cir "
@@ -188,10 +206,11 @@ CW = ['', '--levels=-84,-82,-80,-78,-76,-74,-72', '--blocks=lna_chain --levels=-
 for i, a in enumerate(CW):            # never two cw_drop at once; tb_logdet.spice: after the rx_corners runs
     J(dict(name=f'cw_drop_{i}', cmd=f'python3 sim/chain/cw_drop.py {a}', threads=10, est=1800, lock='cwdrop',
            deps=['pex_lna_chain', 'pex_log_det'] + RXC))
-J(dict(name='tile_scan', cmd=f'{O} NT=4 python3 sim/top/tb_tile_joined.py scan', threads=4, est=300, stagger=TB))
+J(dict(name='tile_scan', cmd=f'{O} NT=4 python3 sim/top/tb_tile_joined.py scan', threads=4, est=8 * H, stagger=TB))   # est: priority (tile_pair, 7 h, waits on it)
 J(dict(name='tile_pair', cmd=f"code=$(grep -o 'comp flips between codes \\[([0-9]*, [0-9]*)' build/rerun/logs/tile_scan.log | head -1 | grep -o '[0-9]*)' "
-       f"| tr -d ')'); echo code $code; {O} NT=4 python3 sim/top/tb_tile_joined.py pair -92 30u $code 1 && "
-       f"{O} python3 sim/top/tb_tile_joined.py --no-run pair -92", threads=8, est=7 * H, deps=['tile_scan'], stagger=TB))
+       f"| tr -d ')'); echo code $code; {O} NT=2 python3 sim/top/tb_tile_joined.py pair -92 30u $code 1 && "
+       f"{O} python3 sim/top/tb_tile_joined.py --no-run pair -92", threads=4, est=9 * H, deps=['tile_scan'], stagger=TB))
+# (NT 2 x 2 runs: at 8 threads it never found 8 free while 4-thread jobs kept filling the gaps)
 
 # ======== power-up and pad overload (tb_tile.netlist() at start: stagger)
 J(dict(name='pwrup_sch', cmd=f'{O} NT=4 python3 sim/top/tb_powerup.py --ramp=10u --corner=tt --temp=27 sch', threads=4, est=900, stagger=TB))

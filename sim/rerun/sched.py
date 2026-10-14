@@ -10,7 +10,8 @@ A job file (Python) defines JOBS = [dict(name=, cmd=, threads=, est=, deps=[...]
 A job starts when its deps are done, its lock is free, the threads of the running jobs plus its own stay
 within --budget, and the 1-minute load average is below --load (so work running outside the scheduler
 counts too). Each job's output goes to <out>/logs/<name>.log; <out>/status.json has every job's state,
-exit code, start and end. The job file is re-read when it changes, so jobs can be appended while it runs;
+exit code, start and end. A restarted scheduler adopts jobs an earlier instance left running (state
+'exited' when they end: their exit status is lost, judge them by their logs). The job file is re-read when it changes, so jobs can be appended while it runs;
 a failed job whose command changed runs again. It exits once nothing is running or waiting and
 <jobs>.final exists. A restart skips jobs already OK.
 
@@ -24,6 +25,7 @@ import runpy
 import subprocess
 import time
 
+H_RESERVE = 3600                                          # jobs this long (s) reserve their threads
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 
 
@@ -32,6 +34,15 @@ def load_status(path):
         return json.load(open(path))
     except (OSError, ValueError):
         return {}
+
+
+def alive(pid):
+    """A job's process is the leader of its own session (start_new_session); bash may have exec'd the
+    command, so don't match on the name."""
+    try:
+        return os.getsid(pid) == pid
+    except OSError:
+        return False
 
 
 def show(out):
@@ -58,6 +69,8 @@ def main():
     jobs, mtime = {}, None
     run = {}                                              # name -> Popen
     last = {}                                             # stagger group -> last start time
+    adopted = {n: s0['pid'] for n, s0 in st.items()       # still running from an earlier instance
+               if s0.get('state') == 'run' and s0.get('pid') and alive(s0['pid'])}
 
     def reload():
         """(Re)read the job file: jobs can be added while the scheduler runs. Running / finished jobs
@@ -70,13 +83,14 @@ def main():
                 assert d in new, f"{j['name']}: unknown dep {d}"
         for n in new:                                     # new, unfinished, or failed with a changed command
             s0 = st.get(n, {})
-            if n not in run and (s0.get('state') not in ('ok', 'fail', 'skip')
+            if n not in run and n not in adopted and (s0.get('state') not in ('ok', 'fail', 'skip', 'exited')
                                  or (s0.get('state') in ('fail', 'skip') and s0.get('cmd') != new[n]['cmd'])):
                 st[n] = dict(state='wait', threads=new[n]['threads'])
         for n in list(st):                                # dropped from the file: forget it unless running
-            if n not in new and n not in run and st[n]['state'] == 'wait':
+            if n not in new and n not in run and n not in adopted and st[n]['state'] == 'wait':
                 del st[n]
-        jobs = {**{n: jobs[n] for n in run}, **new}
+        jobs = {**{n: jobs[n] for n in run}, **{n: dict(threads=st[n]['threads'], deps=[], lock=None, est=0, cmd='')
+                                                 for n in adopted if n not in new}, **new}
         mtime = os.path.getmtime(a.jobs)
 
     def save():
@@ -87,7 +101,14 @@ def main():
         print(time.strftime('%H:%M:%S'), msg, flush=True)
 
     reload()
+    for n, pid in adopted.items():
+        log(f'adopted {n} (pid {pid}, started by an earlier instance)')
     while True:
+        for n, pid in list(adopted.items()):
+            if not alive(pid):                            # its exit status isn't ours to read: judge by its log
+                st[n].update(state='exited', rc=None, end=time.time())
+                del adopted[n]
+                log(f'exited {n} (adopted; check its log)')
         if os.path.getmtime(a.jobs) != mtime:
             try:
                 reload()
@@ -100,26 +121,34 @@ def main():
                 st[n].update(state='ok' if rc == 0 else 'fail', rc=rc, end=time.time())
                 del run[n]
                 log(f'{"done" if rc == 0 else "FAIL"} {n} (rc {rc}, {(st[n]["end"] - st[n]["start"]) / 60:.1f} min)')
-        # a failed dep fails its dependents
+        # a failed dep fails its dependents; a skipped job waits again once its deps have recovered
         for n, j in jobs.items():
+            if st[n]['state'] == 'skip' and not any(st[d]['state'] in ('fail', 'skip') for d in j['deps']):
+                st[n].update(state='wait')
+                log(f'requeue {n} (its deps recovered)')
             if st[n]['state'] == 'wait' and any(st[d]['state'] in ('fail', 'skip') for d in j['deps']):
                 st[n].update(state='skip', rc=None)
                 log(f'skip {n} (a dep failed)')
         ready = [n for n, j in jobs.items() if st[n]['state'] == 'wait'
-                 and all(st[d]['state'] == 'ok' for d in j['deps'])]
+                 and all(st[d]['state'] in ('ok', 'exited') for d in j['deps'])]
         ready.sort(key=lambda n: -jobs[n]['est'])
+        reserved = 0                                      # threads held back for a longer job that didn't fit
         for n in ready:
             j = jobs[n]
-            used = sum(jobs[m]['threads'] for m in run)
-            if used + j['threads'] > a.budget and run:
+            used = sum(jobs[m]['threads'] for m in run) + sum(st[m]['threads'] for m in adopted) + reserved
+            if used + j['threads'] > a.budget and (run or adopted):
+                # don't let shorter jobs keep filling the gap it is waiting for (2026-10-13: an 8-thread
+                # job starved behind 4-thread ones): hold its threads unless it can never fit
+                if j['est'] >= H_RESERVE and j['threads'] <= a.budget:
+                    reserved += j['threads']
                 continue
-            if j['lock'] and any(jobs[m]['lock'] == j['lock'] for m in run):
+            if j['lock'] and any(jobs[m]['lock'] == j['lock'] for m in list(run) + list(adopted) if m in jobs):
                 continue
             if j.get('stagger') and time.time() - last.get(j['stagger'][0], 0) < j['stagger'][1]:
                 continue
             ext = max(0.0, os.getloadavg()[0] - used)    # load from work outside the scheduler
-            if run and used + j['threads'] + ext > a.load:
-                break
+            if (run or adopted) and used + j['threads'] + ext > a.load:
+                continue                                  # a smaller job may still fit (was break: stalled)
             fh = open(os.path.join(a.out, 'logs', n + '.log'), 'w')
             run[n] = subprocess.Popen(['bash', '-c', j['cmd']], cwd=ROOT, stdout=fh, stderr=subprocess.STDOUT,
                                       start_new_session=True)
@@ -128,7 +157,7 @@ def main():
                 last[j['stagger'][0]] = time.time()
             log(f'start {n} ({j["threads"]} thr, est {j["est"] / 60:.0f} min; running {used + j["threads"]})')
         save()
-        if not run and not any(s['state'] == 'wait' for s in st.values()) and os.path.exists(a.jobs + '.final'):
+        if not run and not adopted and not any(s['state'] == 'wait' for s in st.values()) and os.path.exists(a.jobs + '.final'):
             break                                         # touch <jobs>.final when no more jobs will be added
         time.sleep(10)
     log('all done: ' + ', '.join(f'{k} {sum(1 for s in st.values() if s["state"] == k)}'
