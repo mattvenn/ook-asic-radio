@@ -8,6 +8,7 @@ E {}
 T {radio_analog: all analog blocks, real bias (bias_gen on rx_en)
 RX: rx_p/n -> lna_chain -> log_det -> lpf_rc -> avg_sc / comp_ct (+ r2r trim) -> comp_out; det -> dbg_tg -> dbg. TX: tx_top -> tx_p/n
 signal paths are wired; supplies, bias currents, clocks and enables are labelled} -900 -760 0 0 0.4 0.4 {}
+T {C = 1pF (22 x 22 um)} 1316 460 0 0 0.25 0.25 {}
 N -120 -220 -240 -220 {}
 N -120 -180 -240 -180 {}
 N 120 -140 380 -140 {}

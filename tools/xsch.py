@@ -321,6 +321,102 @@ def mim(sch, x, y, c, mf=1, rot=0, flip=0, name=None):
                      model='cap_mim_m3_1', W=side, L=side, MF=str(mf), spiceprefix='X')
 
 
+# --- value notes: the evaluated value of every parameterised device, drawn next to it, so the
+# sheet reads without looking the parameters up
+SPICE_SUFFIX = {'t': 1e12, 'g': 1e9, 'meg': 1e6, 'k': 1e3, 'm': 1e-3, 'u': 1e-6, 'n': 1e-9, 'p': 1e-12, 'f': 1e-15}
+NUM = r'(?<![a-z_\d.])(\d+\.?\d*(?:[eE][-+]?\d+)?|\.\d+(?:[eE][-+]?\d+)?)(meg|[tgkmunpf])?(?![a-z_])'
+
+
+def spice_num(v):
+    """'4k', '0.85Meg', '1e-12', 20 -> float."""
+    if isinstance(v, (int, float)):
+        return float(v)
+    m = re.fullmatch(NUM, v.strip().lower())
+    if not m:
+        raise ValueError(f'not a spice number: {v!r}')
+    return float(m.group(1)) * SPICE_SUFFIX.get(m.group(2), 1)
+
+
+def ev(expr, params):
+    """Evaluate a device property ('w1', "'max((rl-278)/230.3,0.5)'", '2') with params."""
+    e = str(expr).strip('"\' ').lower()
+    e = re.sub(NUM, lambda m: repr(spice_num(m.group(0))), e)
+    env = {k.lower(): spice_num(v) for k, v in params.items()}
+    return float(eval(e, {'__builtins__': {}, 'sqrt': lambda x: x ** 0.5, 'max': max, 'min': min,
+                                           'int': int, 'abs': abs}, env))
+
+
+def eng(v):
+    """3 significant figures, with an SI suffix outside 0.01..1000: 1000 -> '1k', 6e-13 -> '600f'."""
+    if 0.01 <= abs(v) < 1000 or v == 0:
+        return f'{v:.3g}'
+    for s, f in (('M', 1e6), ('k', 1e3), ('', 1), ('m', 1e-3), ('u', 1e-6), ('n', 1e-9), ('p', 1e-12), ('f', 1e-15)):
+        if abs(v) >= f * 0.9995:
+            return f'{v / f:.3g}{s}'
+    return f'{v:.3g}'
+
+
+def _value_note(it, params):
+    """Note text for one instance, or None if none of its shown values is parameterised."""
+    p, sym = it.props, it.sym
+    if not any("'" in str(p.get(k, '')) for k in ('W', 'L', 'nf', 'mult', 'MF', 'value')) and \
+            not (sym.endswith('.sym') and '/' not in sym and any("'" in str(v) for v in p.values())):
+        return None
+    if 'fet' in sym:                   # same order as the symbol's own 'mult x W / L' label
+        m, w, l = (ev(p.get(k, 1), params) for k in ('mult', 'W', 'L'))
+        nf = ev(p.get('nf', 1), params)
+        return f'= {m:g} x {w:.3g} / {l:.3g}' + (f', nf {nf:g}' if "'" in str(p.get('nf', '')) else '')
+    if '_po_' in sym:                  # R from the fitted R(L) the generators size with
+        kind, w = re.search(r'res_(x?high)_po_(\w+)\.sym', sym).groups()
+        b, a = POLY[(kind, w)]
+        lv, mult = ev(p['L'], params), ev(p.get('mult', 1), params)
+        return f'R = {eng((a + b * lv) / mult)} (L {lv:.3g} um)'
+    if 'cap_mim' in sym:
+        w, l, mf = (ev(p.get(k, 1), params) for k in ('W', 'L', 'MF'))
+        size = f'{w:.3g} x {l:.3g} um' if mf == 1 else f'{mf:g} x {w:.3g} x {l:.3g} um'
+        return f'C = {eng(mf * w * l * MIM_F_PER_UM2)}F ({size})'
+    if sym.startswith('devices/'):     # capa / res / sources: their value
+        v = eng(ev(p['value'], params))
+        return {'devices/capa.sym': f'C = {v}F', 'devices/res.sym': f'R = {v}'}.get(sym, f'= {v}')
+    # a subcircuit of this repo: the parameters it is given
+    vals = [f'{k} {eng(ev(v, params))}' for k, v in p.items() if k != 'name' and "'" in str(v)]
+    return '\n'.join(', '.join(vals[i:i + 3]) for i in range(0, len(vals), 3))
+
+
+def value_notes(sch, params, at=None, skip=(), size=0.25):
+    """Write the evaluated value of every parameterised device next to it (call before
+    write()). params: {name: value} the sheet's parameters as used on the chip, or a list
+    of (tag, params) when the block is used with several sets (one line per set). at:
+    {instance name: (dx, dy)} moves a note (offset from the instance origin) off something
+    it lands on; skip: instances to leave alone."""
+    sets = params if isinstance(params, list) else [(None, params)]
+    at = at or {}
+    for it in list(sch.items):
+        name = it.props.get('name')
+        if name in skip:
+            continue
+        notes = [(tag, _value_note(it, prm)) for tag, prm in sets]
+        if not notes[0][1]:
+            continue
+        if len({n for _, n in notes}) == 1:
+            text = notes[0][1]
+        else:
+            text = '\n'.join(f'{n} ({tag})' for tag, n in notes)
+        if name in at:
+            dx, dy = at[name]
+        elif 'fet' in it.sym or 'cap_mim' in it.sym or '_po_' in it.sym:
+            # under the symbol's own labels (right of the device, left when flipped)
+            wid = max(len(t) for t in text.split('\n')) * 27 * size
+            dx, dy = (-25 - wid, 38) if it.flip else (25, 38)
+            if '_po_' in it.sym and it.rot % 2:
+                dx, dy = -30, -50
+        elif it.sym.startswith('devices/'):
+            dx, dy = 15, 30
+        else:
+            dx, dy = -60, 15                # inside a box symbol, under its name
+        sch.text(it.x + dx, it.y + dy, text, size)
+
+
 def stdcell(sch, cell, x, y, vdd='VDD', vss='VSS', name=None, flip=0):
     """Place a sky130_fd_sc_hd cell (inv_2, nand2_2, ...) on supplies vdd/vss."""
     return sch.place(f'sky130_stdcells/{cell}.sym', x, y, flip=flip, name=name or sch._name('x'),

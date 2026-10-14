@@ -24,7 +24,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mim, ports, write_symbol
+from xsch import Sch, mim, ports, value_notes, write_symbol
 from frontend import antenna_pad
 import chain
 
@@ -112,6 +112,7 @@ def radio_analog():
     s.connect(da, VAPWR='VAPWR', VGND='VGND')
     dd = s.place('decap_vdpwr.sym', 650, 800, name='xdecd')
     s.connect(dd, VDPWR='VDPWR', VGND='VGND')
+    value_notes(s, {}, at={'Ctrim': (16, 70)})
     s.write(os.path.join(XDIR, 'radio_analog.sch'))
     write_symbol(os.path.join(XDIR, 'radio_analog.sym'), left=ANA_IF_IN, right=['comp_out'] + ANA_PADS,
                  top=['VDPWR', 'VAPWR'], bottom=['VGND'], width=240)

@@ -30,7 +30,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, inv, mim, mos, poly_r, ports, write_symbol
+from xsch import Sch, inv, mim, mos, poly_r, ports, write_symbol, value_notes
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
 BIAS_PARAMS = {'rref': '10k', 'rdiv': '200k', 'rtail': '250k', 'wpu': 2, 'cc': '1p'}
@@ -156,6 +156,7 @@ def bias_gen():
     vdd.append(p.pin('S'))
     s.rail(YV, XL, 1300, vdd, 'VDD', port=True)
     s.rail(YS, XL, 500, vss, 'VSS', port=True)
+    value_notes(s, BIAS_PARAMS, at={'Cc': (5, -50), 'Cvcm': (100, -14), 'Cvref': (100, -14), 'Mdum': (25, 55)})
     s.write(os.path.join(XDIR, 'bias_gen.sch'))
     write_symbol(os.path.join(XDIR, 'bias_gen.sym'), left=['en'], right=['vcm'] + [o for o, _ in OUTS],
                  top=['VDD'], bottom=['VSS'], params=BIAS_PARAMS)

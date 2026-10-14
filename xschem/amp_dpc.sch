@@ -7,6 +7,14 @@ S {}
 E {}
 T {amp_dpc: NMOS diff pair, resistor loads, split tail + cs between sources
 params: w l rl (pair, load), mt (total tail multiplier, mt/2 per side), cs} -200 -560 0 0 0.4 0.4 {}
+T {R = 4k (L 7.38 um)} 25 -282 0 0 0.25 0.25 {}
+T {= 1 x 20 / 0.15} 5 -112 0 0 0.25 0.25 {}
+T {= 3 x 6 / 0.5} 5 48 0 0 0.25 0.25 {}
+T {R = 4k (L 7.38 um)} 425 -282 0 0 0.25 0.25 {}
+T {= 1 x 20 / 0.15} 293.75 -112 0 0 0.25 0.25 {}
+T {= 3 x 6 / 0.5} 307.25 48 0 0 0.25 0.25 {}
+T {C = 300fF (12.1 x 12.1 um)} 110 -118 0 0 0.25 0.25 {}
+T {C = 300fF (12.1 x 12.1 um)} 110 -12 0 0 0.25 0.25 {}
 N 0 -120 0 -30 {}
 N 0 -30 0 -20 {}
 N 0 -290 0 -240 {}

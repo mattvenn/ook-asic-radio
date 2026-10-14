@@ -24,7 +24,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, inv, mos, ports, write_symbol
+from xsch import Sch, inv, mos, ports, write_symbol, value_notes
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
 TG_PARAMS = {'wn': 2, 'wp': 4}
@@ -54,6 +54,7 @@ def dbg_tg():
     s.port((XL, -30), 'a')
     s.bus(mp.pin('S'), (XR, 30), [mn.pin('S')])
     s.port((XR, 30), 'b', right=True)
+    value_notes(s, TG_PARAMS)
     s.write(os.path.join(XDIR, 'dbg_tg.sch'))
     write_symbol(os.path.join(XDIR, 'dbg_tg.sym'), left=['a', 'en'], right=['b'], top=['VDD'],
                  bottom=['VSS'], params=TG_PARAMS)

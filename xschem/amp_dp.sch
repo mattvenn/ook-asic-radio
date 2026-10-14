@@ -7,6 +7,11 @@ S {}
 E {}
 T {amp_dp: NMOS diff pair, resistor loads, tail gate from pin nb
 params: w l rl (pair, load), mt (tail multiplier of unit W=wt, L=0.5)} -200 -560 0 0 0.4 0.4 {}
+T {R = 1k (L 3.14 um)} 25 -282 0 0 0.25 0.25 {}
+T {= 1 x 80 / 0.15} 5 -112 0 0 0.25 0.25 {}
+T {R = 1k (L 3.14 um)} 425 -282 0 0 0.25 0.25 {}
+T {= 1 x 80 / 0.15} 293.75 -112 0 0 0.25 0.25 {}
+T {= 20 x 6 / 0.5} 205 48 0 0 0.25 0.25 {}
 N 0 -290 0 -240 {}
 N 0 -240 0 -180 {}
 N 0 -240 -200 -240 {}

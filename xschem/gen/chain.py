@@ -25,14 +25,15 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mim, mos, poly_r, ports, write_symbol
+from xsch import Sch, mim, mos, poly_r, ports, write_symbol, value_notes
 from frontend import antenna_pad
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
 NSTAGES = 6
 
-AMP_PARAMS = {'w': 20, 'l': 0.15, 'rl': '4k', 'wt': 6, 'mt': 5, 'mm': 0}   # mm: test mismatch, 0 in silicon
-AMPC_PARAMS = dict(AMP_PARAMS, mt=6, cs='0.6p')
+# defaults = the chip's values (stage 1 / stages 2-6), so the sheets' value notes are the chip's
+AMP_PARAMS = {'w': 80, 'l': 0.15, 'rl': '1k', 'wt': 6, 'mt': 20, 'mm': 0}   # mm: test mismatch, 0 in silicon
+AMPC_PARAMS = {'w': 20, 'l': 0.15, 'rl': '4k', 'wt': 6, 'mt': 6, 'mm': 0, 'cs': '0.6p'}
 CHAIN_PARAMS = {'w1': 80, 'rl1': '1k', 'mt1': 20, 'w2': 20, 'rl2': '4k', 'mt2': 6,
                 'cs': '0.6p', 'cin': '2p', 'rb': '20k', 'mm': 0}
 
@@ -78,6 +79,7 @@ def amp_dp():
     s.route(mt.pin('G'), (-200, 10))
     s.port((-200, 10), 'nb')
     s.rail(100, -200, 400, [mt.pin('S')], 'VSS', port=True)
+    value_notes(s, AMP_PARAMS)
     s.write(os.path.join(XDIR, 'amp_dp.sch'))
     write_symbol(os.path.join(XDIR, 'amp_dp.sym'), left=['inp', 'inn', 'nb'],
                  right=['outp', 'outn'], top=['VDD'], bottom=['VSS'], params=AMP_PARAMS)
@@ -108,6 +110,7 @@ def amp_dpc():
     s.port((-200, 10), 'nb')
     s.label(tails[1].pin('G'), 'nb', right=True)
     s.rail(100, -200, 400, [t.pin('S') for t in tails], 'VSS', port=True)
+    value_notes(s, AMPC_PARAMS, at={'Cs_a': (-10, -58), 'Cs_b': (-170, 48)})
     s.write(os.path.join(XDIR, 'amp_dpc.sch'))
     write_symbol(os.path.join(XDIR, 'amp_dpc.sym'), left=['inp', 'inn', 'nb'],
                  right=['outp', 'outn'], top=['VDD'], bottom=['VSS'], params=AMPC_PARAMS)
@@ -172,6 +175,7 @@ def lna_chain(n=NSTAGES):
                 s.port((x + tx, ty), net, right=True)
     s.rail(YV, XL, (n - 1) * 400, vdd, 'VDD', port=True)
     s.rail(YS, XL, (n - 1) * 400, vss, 'VSS', port=True)
+    value_notes(s, CHAIN_PARAMS)
     s.write(os.path.join(XDIR, 'lna_chain.sch'))
     write_symbol(os.path.join(XDIR, 'lna_chain.sym'), left=['inp', 'inn', 'ibias', 'vcm'],
                  right=['outp', 'outn'] + taps, top=['VDD'], bottom=['VSS'], params=CHAIN_PARAMS,

@@ -37,9 +37,10 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mos, ports, write_symbol
+from xsch import Sch, mos, ports, write_symbol, value_notes
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
+AVG_PARAMS = {'ncs': 1, 'nca': 2, 'wcs': 7}
 COMP_PARAMS = {'w1': 20, 'l1': 1, 'mt1': 10, 'rdeg': '0.85Meg', 'mta': 2, 'lref1': 68, 'lref2': 204, 'wcl': 22}
 
 
@@ -234,9 +235,10 @@ def avg_sc():
     s.route((650, -30), ca.pin('c0'))
     s.port((850, -30), 'out', right=True)
     s.rail(190, -50, 650, [cs.pin('c1'), ca.pin('c1')], 'VSS')
+    value_notes(s, AVG_PARAMS)
     s.write(os.path.join(XDIR, 'avg_sc.sch'))
     write_symbol(os.path.join(XDIR, 'avg_sc.sym'), left=['in', 'phi1', 'phi2'], right=['out'],
-                 top=['VDD'], bottom=['VSS'], params={'ncs': 1, 'nca': 2, 'wcs': 7})
+                 top=['VDD'], bottom=['VSS'], params=AVG_PARAMS)
 
 
 COMP_CODE = """

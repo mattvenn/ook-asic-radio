@@ -7,6 +7,18 @@ S {}
 E {}
 T {tx_ls: 1.8 -> 3.3 V level shifter (R2R DAC dac_drive, skewed core)
 in -> thin inverter (wpi/wni) -> ctrl; core NMOS kn x 0.42, PMOS kp x 0.42, L 0.5 thick. A = in, B = not in} -500 -460 0 0 0.4 0.4 {}
+T {= 1 x 9 / 0.15 (tx_ls)
+= 1 x 1 / 0.15 (tx_ls_en)} -295 -37 0 0 0.25 0.25 {}
+T {= 1 x 3 / 0.15 (tx_ls)
+= 1 x 0.42 / 0.15 (tx_ls_en)} -295 113 0 0 0.25 0.25 {}
+T {= 1 x 5.88 / 0.5 (tx_ls)
+= 1 x 0.42 / 0.5 (tx_ls_en)} 190 88 0 0 0.25 0.25 {}
+T {= 1 x 5.88 / 0.5 (tx_ls)
+= 1 x 0.42 / 0.5 (tx_ls_en)} 645 88 0 0 0.25 0.25 {}
+T {= 1 x 3.36 / 0.5 (tx_ls)
+= 1 x 0.42 / 0.5 (tx_ls_en)} 212.75 -112 0 0 0.25 0.25 {}
+T {= 1 x 3.36 / 0.5 (tx_ls)
+= 1 x 0.42 / 0.5 (tx_ls_en)} 605 -112 0 0 0.25 0.25 {}
 N -340 -75 -340 0 {}
 N -340 0 -340 75 {}
 N -300 -45 -300 0 {}

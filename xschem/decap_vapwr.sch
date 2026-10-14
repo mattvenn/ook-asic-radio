@@ -6,6 +6,8 @@ V {}
 S {}
 E {}
 T {decap_vapwr: n units of MOS cap (gate VAPWR; S/D/B VGND; 2 x W10/L5, thick g5v0d10v5) + 10x10 um MIM above (top plate VAPWR)} -300 -260 0 0 0.4 0.4 {}
+T {= 200 x 10 / 5} 25 38 0 0 0.25 0.25 {}
+T {C = 20.6pF (100 x 10 x 10 um)} 129.25 38 0 0 0.25 0.25 {}
 N -20 0 -20 -100 {}
 N 20 -30 180 -30 {}
 N 180 -30 180 30 {}

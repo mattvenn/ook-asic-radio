@@ -7,6 +7,8 @@ S {}
 E {}
 T {dbg_tg: transmission gate a <-> b, on when en = 1
 thin 1.8 V devices (keep the pad side within 0..1.8 V); local inverter for enb} -400 -260 0 0 0.4 0.4 {}
+T {= 1 x 2 / 0.15} 110.5 38 0 0 0.25 0.25 {}
+T {= 1 x 4 / 0.15} -109.5 38 0 0 0.25 0.25 {}
 N -40 225 -40 300 {}
 N -40 300 -40 375 {}
 N 0 255 0 300 {}

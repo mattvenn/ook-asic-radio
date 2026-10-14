@@ -22,7 +22,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mos, ports, write_symbol
+from xsch import Sch, mos, ports, write_symbol, value_notes
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
 
@@ -40,6 +40,7 @@ def decap(name, sup, vt, n):
     s.route(m.pin('D'), (180, -30), (180, 30), m.pin('S'))
     s.rail(-100, -300, 350, [(-20, -100), c.pin('c0')], sup, port=True)
     s.rail(100, -300, 350, [m.pin('S'), c.pin('c1')], 'VGND', port=True)
+    value_notes(s, {'n': n})
     s.write(os.path.join(XDIR, f'{name}.sch'))
     write_symbol(os.path.join(XDIR, f'{name}.sym'), top=[sup], bottom=['VGND'], params={'n': n}, width=120)
 

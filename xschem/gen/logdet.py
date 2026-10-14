@@ -19,7 +19,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mim, mos, poly_r, ports, write_symbol
+from xsch import Sch, mim, mos, poly_r, ports, write_symbol, value_notes
 from frontend import antenna_pad
 import chain
 
@@ -62,6 +62,7 @@ def det_cell():
     s.port((300, -220), 'out', right=True)
     s.rail(-260, XL, 480, vbs, 'vb', port=True)
     s.rail(120, XL, 400, bots, 'VSS', port=True)
+    value_notes(s, CELL_PARAMS, at={'Cc_p': (-185, 35), 'Cc_n': (12, 35)})
     s.write(os.path.join(XDIR, 'det_cell.sch'))
     write_symbol(os.path.join(XDIR, 'det_cell.sym'), left=['inp', 'inn', 'vb'],
                  right=['out'], bottom=['VSS'], params=CELL_PARAMS)
@@ -107,6 +108,7 @@ def log_det(n=NTAPS):
     s.port((XR + 100, YD), 'det', right=True)
     s.rail(YV, XL, XR, [r.pin('P'), c.pin('c1')], 'VDD', port=True)
     s.rail(YS, XL, vss[-1][0], vss, 'VSS', port=True)
+    value_notes(s, DET_PARAMS, at={'Mbias': (85, -37)})
     s.write(os.path.join(XDIR, 'log_det.sch'))
     write_symbol(os.path.join(XDIR, 'log_det.sym'), left=taps + ['ibias_det'],
                  right=['det'], top=['VDD'], bottom=['VSS'], params=DET_PARAMS, width=200)

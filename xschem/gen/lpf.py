@@ -21,7 +21,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, ports, write_symbol
+from xsch import Sch, ports, write_symbol, value_notes
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
 LPF_PARAMS = {'lr': 400, 'nc': 2}
@@ -42,6 +42,7 @@ def lpf_rc():
     s.bus(r.pin('P'), (400, -150), [c.pin('c0')])
     s.port((400, -150), 'out', right=True)
     s.rail(0, -300, 200, [c.pin('c1')], 'VSS', port=True)
+    value_notes(s, LPF_PARAMS, at={'C1': (12, 40)})
     s.write(os.path.join(XDIR, 'lpf_rc.sch'))
     write_symbol(os.path.join(XDIR, 'lpf_rc.sym'), left=['in'], right=['out'], bottom=['VSS'],
                  params=LPF_PARAMS)

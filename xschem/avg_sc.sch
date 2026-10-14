@@ -7,6 +7,8 @@ S {}
 E {}
 T {avg_sc: switched-cap average, tau = cavg / (cs * f_phi)
 phi1: cs <- in, phi2: cs -> out (cavg). cs = ncs x wcs x wcs um, cavg = nca x 30x30 um MIM} -600 -300 0 0 0.4 0.4 {}
+T {C = 101fF (7 x 7 um)} 75 138 0 0 0.25 0.25 {}
+T {C = 3.71pF (2 x 30 x 30 um)} 675 138 0 0 0.25 0.25 {}
 N -340 330 -340 405 {}
 N -340 405 -340 480 {}
 N -300 360 -300 405 {}

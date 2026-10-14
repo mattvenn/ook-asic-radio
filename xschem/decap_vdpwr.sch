@@ -6,6 +6,8 @@ V {}
 S {}
 E {}
 T {decap_vdpwr: n units of MOS cap (gate VDPWR; S/D/B VGND; 2 x W10/L5, thin 01v8) + 10x10 um MIM above (top plate VDPWR)} -300 -260 0 0 0.4 0.4 {}
+T {= 60 x 10 / 5} 25 38 0 0 0.25 0.25 {}
+T {C = 6.18pF (30 x 10 x 10 um)} 136 38 0 0 0.25 0.25 {}
 N -20 0 -20 -100 {}
 N 20 -30 180 -30 {}
 N 180 -30 180 30 {}

@@ -7,6 +7,22 @@ S {}
 E {}
 T {lna_chain: 6 diff-pair stages; stage 1 sized for noise, 2..6 cap-degenerated
 tail current of stage i = mt x ibias (one reference diode); taps o<i>p/n = stage outputs} -1000 -400 0 0 0.4 0.4 {}
+T {C = 2pF (31.2 x 31.2 um)} -625 -32 0 0 0.25 0.25 {}
+T {R = 20k (L 19.1 um)} -325 -32 0 0 0.25 0.25 {}
+T {C = 2pF (31.2 x 31.2 um)} -625 68 0 0 0.25 0.25 {}
+T {R = 20k (L 19.1 um)} -325 68 0 0 0.25 0.25 {}
+T {w 80, rl 1k, mt 20
+mm 0} -60 15 0 0 0.25 0.25 {}
+T {w 20, rl 4k, mt 6
+cs 600f, mm 0} 340 15 0 0 0.25 0.25 {}
+T {w 20, rl 4k, mt 6
+cs 600f, mm 0} 740 15 0 0 0.25 0.25 {}
+T {w 20, rl 4k, mt 6
+cs 600f, mm 0} 1140 15 0 0 0.25 0.25 {}
+T {w 20, rl 4k, mt 6
+cs 600f, mm 0} 1540 15 0 0 0.25 0.25 {}
+T {w 20, rl 4k, mt 6
+cs 600f, mm 0} 1940 15 0 0 0.25 0.25 {}
 N -1000 100 -900 100 {}
 N -900 100 -840 100 {}
 N -900 100 -900 150 {}

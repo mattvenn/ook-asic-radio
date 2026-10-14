@@ -34,11 +34,12 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, inv, mos, ports, stdcell, write_symbol
+from xsch import Sch, inv, mos, ports, stdcell, write_symbol, value_notes
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
 NINV = 22
 LS_PARAMS = {'kn': 14, 'kp': 8, 'wpi': 9, 'wni': 3}
+LS_EN_PARAMS = {'kn': 1, 'kp': 1, 'wpi': 1, 'wni': 0.42}   # the arm enables (tx_ls_en)
 DRV_N = [0.42, 1.68, 6.72, 26.88, 48]        # inverter taper after the NAND (x4, final N 48)
 
 
@@ -83,6 +84,7 @@ def tx_ring():
         s.label((cx, y), f'r{i}', right=not top)
     s.rail(100, -300, -100 + (half - 1) * 200 + 100, rails[100], 'VSS')
     s.rail(400, -500, -100 + (NINV - half - 1) * 200 - 100 + 200, rails[400], 'VSS', port=True)
+    value_notes(s, {'cw': '3.2f'})
     s.write(os.path.join(XDIR, 'tx_ring.sch'))
     write_symbol(os.path.join(XDIR, 'tx_ring.sym'), left=['en'], right=['out'], top=['VDD'],
                  bottom=['VSS'], params={'cw': '3.2f'})
@@ -127,6 +129,7 @@ def tx_ls():
     s.rail(-200, XL, 0, [p1.pin('S'), p2.pin('S')], 'VDD', port=True)
     s.rail(-260, XL, 600, [m11.pin('S'), m12.pin('S')], 'VAPWR', port=True)
     s.rail(180, XL, 600, [n1.pin('S'), n2.pin('S'), m9.pin('S'), m10.pin('S')], 'VSS', port=True)
+    value_notes(s, [('tx_ls', LS_PARAMS), ('tx_ls_en', LS_EN_PARAMS)], at={'M9': (-190, 38), 'M10': (25, 38)})
     s.write(os.path.join(XDIR, 'tx_ls.sch'))
     write_symbol(os.path.join(XDIR, 'tx_ls.sym'), left=['in'], right=['A', 'B'], top=['VDD', 'VAPWR'],
                  bottom=['VSS'], params=LS_PARAMS)
@@ -208,7 +211,7 @@ def tx_top():
     s.route(ls.pin('B'), (300, 20), (300, 180), (400, 180))
     s.label(ls.pin('B'), 'b', right=True)
     for side, y in (('p', 300), ('n', 600)):
-        e = s.place('tx_ls.sym', 0, y, name=f'xlse_{side}', kn=1, kp=1, wpi=1, wni=0.42)
+        e = s.place('tx_ls.sym', 0, y, name=f'xlse_{side}', **LS_EN_PARAMS)
         s.connect(e, **sup, A=f'enh_{side}', B=f'enhb_{side}')
         vapwr(e)
         s.route((-600, y - 20), e.pin('in'))

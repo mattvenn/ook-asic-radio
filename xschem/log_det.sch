@@ -7,6 +7,22 @@ S {}
 E {}
 T {log_det: 6 det_cells summed into rdet || cdet; vb from a replica diode
 taps t<i>p/n: chain stage outputs, last = chain output} -700 -460 0 0 0.4 0.4 {}
+T {= 1 x 1 / 0.15} -315 -37 0 0 0.25 0.25 {}
+T {R = 10k (L 9.08 um)} -355 138 0 0 0.25 0.25 {}
+T {R = 8k (L 15.9 um)} 2325 -182 0 0 0.25 0.25 {}
+T {C = 1pF (22 x 22 um)} 2625 -182 0 0 0.25 0.25 {}
+T {wd 1, rs 10k, cc 100f
+rb 200k} -60 15 0 0 0.25 0.25 {}
+T {wd 1, rs 10k, cc 100f
+rb 200k} 340 15 0 0 0.25 0.25 {}
+T {wd 1, rs 10k, cc 100f
+rb 200k} 740 15 0 0 0.25 0.25 {}
+T {wd 1, rs 10k, cc 100f
+rb 200k} 1140 15 0 0 0.25 0.25 {}
+T {wd 1, rs 10k, cc 100f
+rb 200k} 1540 15 0 0 0.25 0.25 {}
+T {wd 1, rs 10k, cc 100f
+rb 200k} 1940 15 0 0 0.25 0.25 {}
 N -700 -60 -440 -60 {}
 N -440 -60 -380 -60 {}
 N -440 -60 -440 0 {}
