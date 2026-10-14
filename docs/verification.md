@@ -2,7 +2,7 @@
 
 How we check that the chip does what [how_it_works.md](how_it_works.md) says. Every check traces back to one reference, the bit-exact Python model in [`model/`](../model).
 
-**Last full run: 2026-10-11 on `main` @ 91786fa, results in [verify_2026-10-11.md](verify_2026-10-11.md).** Everything below was rerun and matches, except where noted.
+**Last full run: 2026-10-13/14 on branch `comp-trim` (H135 comparator, inp stub fix, flattened decaps), results in [verify_2026-10-13.md](verify_2026-10-13.md); run it with `sim/rerun/sched.py sim/rerun/jobs_2026-10-13.py` (~10 h on sim-0). Previous: 2026-10-11 on `main` @ 91786fa, [verify_2026-10-11.md](verify_2026-10-11.md).** Everything below was rerun and matches, except where noted.
 
 ```
 model (Python) ──vectors──► RTL ──► gate level ──► mixed signal (RTL + transistor-level analog)
