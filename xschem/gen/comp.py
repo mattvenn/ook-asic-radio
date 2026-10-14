@@ -47,7 +47,7 @@ def comp_ct():
     s = Sch()
     s.pin_order = ['VDD', 'VSS', 'ibias', 'inp', 'inn', 'trim', 'out']
     s.text(-1000, -560, 'comp_ct: continuous comparator, out = 1 when inp > inn + trim offset\n'
-           'lvt NMOS pair + lvt PMOS mirror; degenerated trim pair (trim vs VDD/2); PMOS CS; inverter', 0.4)
+           'lvt NMOS pair + lvt PMOS mirror; degenerated trim pair (trim vs vref); PMOS CS; inverter', 0.4)
     XL, XR, YV, YS = -1000, 1150, -400, 200
     # bias: ibias into a diode (unit W 2, L 2); tails are multiples of it (gates labelled ibias)
     md = mos(s, 'n', -880, 100, W=2, L=2, name='Mb', body='VSS')
@@ -101,12 +101,17 @@ def comp_ct():
     s.connect(r, B='VSS')
     s.route((-250, 30), r.pin('M'))
     s.route(r.pin('P'), (450, 30))
+    rd = float(COMP_PARAMS['rdeg'].replace('Meg', 'e6'))
+    s.text(-235, -22, f"Rdeg = {COMP_PARAMS['rdeg']}\nL = {rd / 7.37e3:.1f} um", 0.3)
     # vref for the trim pair (xhigh poly divider + MIM decoupling)
     rr = []
     for nm, y, lr in (('Rr1', -250, "'lref1'"), ('Rr2', -40, "'lref2'")):
         rr.append(s.place('sky130_fd_pr/res_xhigh_po_0p35.sym', -700, y, name=nm, L=lr,
                           model='res_xhigh_po_0p35', mult='1', spiceprefix='X'))
         s.connect(rr[-1], B='VSS')
+    l1, l2 = COMP_PARAMS['lref1'], COMP_PARAMS['lref2']
+    s.text(-1000, -350, f'vref divider (defaults):\nRr1 L = lref1 = {l1} um\nRr2 L = lref2 = {l2} um\n'
+           f'vref = VDD x {l2}/{l1 + l2} = {1.8 * l2 / (l1 + l2):.2f} V', 0.3)
     cr = s.place('sky130_fd_pr/cap_mim_m3_1.sym', -800, -40, name='Cref', model='cap_mim_m3_1',
                  W='10', L='10', MF='1', spiceprefix='X')
     s.bus(rr[0].pin('M'), rr[1].pin('P'), [(-700, -100)])

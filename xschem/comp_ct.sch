@@ -6,7 +6,13 @@ V {}
 S {}
 E {}
 T {comp_ct: continuous comparator, out = 1 when inp > inn + trim offset
-lvt NMOS pair + lvt PMOS mirror; degenerated trim pair (trim vs VDD/2); PMOS CS; inverter} -1000 -560 0 0 0.4 0.4 {}
+lvt NMOS pair + lvt PMOS mirror; degenerated trim pair (trim vs vref); PMOS CS; inverter} -1000 -560 0 0 0.4 0.4 {}
+T {Rdeg = 0.85Meg
+L = 115.3 um} -235 -22 0 0 0.3 0.3 {}
+T {vref divider (defaults):
+Rr1 L = lref1 = 68 um
+Rr2 L = lref2 = 204 um
+vref = VDD x 204/272 = 1.35 V} -1000 -350 0 0 0.3 0.3 {}
 T {layout matching dummies (all terminals on the rail)} -200 300 0 0 0.4 0.4 {}
 N -860 70 -860 40 {}
 N -1000 40 -900 40 {}
