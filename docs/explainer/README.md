@@ -1,6 +1,6 @@
 # Interactive explainer: source
 
-Generates the self-contained [`../explainer.html`](../explainer.html) (one file, no network, ~550 kB with the layout image) from the simulations, bench data and link model in this repo. Same pattern as [metastability_explorer](https://github.com/mattvenn/metastability_explorer): `template.html` holds the page, and `gendata.py` replaces its `/*__PAYLOAD__*/` token with the data (traces resampled, quantized to 1 byte, gzipped, base64). The browser inflates it with `DecompressionStream('gzip')`.
+Generates the self-contained [`../explainer.html`](../explainer.html) (one file, ~600 kB with the layout image; the only network use is Google Analytics and the newsletter sign-up, below) from the simulations, bench data and link model in this repo. Same pattern as [metastability_explorer](https://github.com/mattvenn/metastability_explorer): `template.html` holds the page, and `gendata.py` replaces its `/*__PAYLOAD__*/` token with the data (traces resampled, quantized to 1 byte, gzipped, base64). The browser inflates it with `DecompressionStream('gzip')`.
 
 Open it from the repo: <https://mattvenn.github.io/ook-asic-radio/docs/explainer.html> (the gds workflow adds the committed file to the gds_render artifact, which the TT viewer job deploys as the Pages site).
 
@@ -33,3 +33,7 @@ The chip page and the per-block maps draw the system diagram from the floorplan 
 - Type into the page: `python3 docs/explainer/edit.py`, open <http://localhost:8000/>, press `e`. Headings, subtitles, page text and the tour caption (bar at the bottom) become editable; each edit saves to `text.md` and `explainer.html` is rebuilt in the background. `e` again shows the result. Commit `text.md` and `explainer.html` afterwards.
 
 **Everything else** (figures, tour order, the block diagram) is in `template.html`: `B` (each page's plot and links), `TOUR` (order), `fig*` functions. Rebuild with `gendata.py` after editing.
+
+## Analytics and newsletter
+- **Google Analytics 4**: `GA_ID` in `template.html` is the stream zerotoasiccourse.com reports to (`G-2HQ02ESFZB`, set inside its tag manager `GTM-PL32RC6`). It loads only on a real web host, so not from `file:`, localhost or `edit.py`. Events: `explainer_step` (`page`, `step`), `explainer_power` (`dbm`, on slider release), `explainer_dip`, `explainer_zoom`, `newsletter_shown` / `newsletter_subscribe` (`result`) / `newsletter_dismiss` (`how`). To see the parameters in GA reports, register them as custom dimensions (Admin › Custom definitions).
+- **Newsletter box**: after `NL_AFTER` (5) interactions (a new page, a slider release, a DIP or zoom click) the page offers the Zero to ASIC newsletter once. Closing it or subscribing keeps it away for `NL_QUIET_DAYS` (30) in that browser (`localStorage`). It posts to the same Mailchimp list, interest groups and tag as the website's form, through Mailchimp's JSONP endpoint, so the reader stays on the page. The footer's Newsletter link opens it any time, and `?nl` in the URL opens it on load for testing.

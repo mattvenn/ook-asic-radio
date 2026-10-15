@@ -168,6 +168,18 @@ svg.strip{max-width:100%; height:auto; display:block}
   .arrow{display:none} .blk, .blk.pin{flex:1 1 calc(50% - .4rem); min-width:0}
   .dist{margin-left:0} .dist input{width:100%} .stage, .detail{padding:.8rem}
 }
+.nl{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:1rem; z-index:6}
+.nl[hidden]{display:none}
+.nl form{position:relative; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1.25rem 1.5rem; max-width:30rem; width:100%}
+.nl form::before{content:""; position:absolute; left:0; right:0; top:0; height:3px; border-radius:14px 14px 0 0; background:linear-gradient(90deg, var(--z2a-cyan), var(--z2a-purple) 50%, var(--z2a-magenta))}
+.nl h2{margin:0 0 .4rem} .nl p{margin:.4rem 0; color:var(--muted)}
+.nl .row{display:flex; gap:.5rem; margin:.8rem 0 .4rem; flex-wrap:wrap}
+.nl input[type=email]{flex:1 1 12rem; min-width:0; font:inherit; padding:.45rem .6rem; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text)}
+.nl button{border-radius:8px; padding:.45rem .9rem; cursor:pointer; border:1px solid var(--line); background:var(--panel2)}
+.nl button.go{background:var(--z2a-purple); border-color:var(--z2a-purple); color:#fff; font-weight:600}
+.nl .msg{min-height:1.3em; font-size:.9rem} .nl .msg.ok{color:var(--ok)} .nl .msg.bad{color:var(--bad)}
+.nl .later{background:none; border:0; color:var(--faint); padding:.2rem 0; text-decoration:underline}
+.nl .hp{position:absolute; left:-5000px}
 footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:flex; justify-content:flex-end; flex-wrap:wrap; gap:.5rem}
 .loading{padding:3rem; color:var(--muted)}
 </style>
@@ -191,8 +203,21 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
 <main id="main"><div class="loading">Loading simulation data…</div></main>
 <div class="capbar" id="capbar" hidden></div>
 <footer>
-  <span><a href="https://www.zerotoasiccourse.com">Zero to ASIC course</a> · <a href="https://github.com/mattvenn/ook-asic-radio">github.com/mattvenn/ook-asic-radio</a></span>
+  <span><a href="https://www.zerotoasiccourse.com/?utm_source=radio_explainer">Zero to ASIC course</a> · <a href="https://www.zerotoasiccourse.com/newsletter/?utm_source=radio_explainer" id="nlfoot">Newsletter</a> · <a href="https://github.com/mattvenn/ook-asic-radio">github.com/mattvenn/ook-asic-radio</a></span>
 </footer>
+<div class="nl" id="nl" hidden role="dialog" aria-modal="true" aria-labelledby="nlh">
+  <form id="nlform" novalidate>
+    <h2 id="nlh">Enjoying the radio?</h2>
+    <p>Get the Zero to ASIC newsletter: interviews, videos and news from the world of open source silicon, projects like Tiny Tapeout, and special offers for the course. Unsubscribe any time.</p>
+    <div class="row">
+      <input type="email" id="nlemail" name="EMAIL" placeholder="you@example.com" autocomplete="email" required aria-label="Email address">
+      <button type="submit" class="go" id="nlgo">Subscribe</button>
+    </div>
+    <input class="hp" type="text" name="b_5d5a474f6c30e153ec17de7b5_eada08e6e4" tabindex="-1" value="" aria-hidden="true">
+    <div class="msg" id="nlmsg" aria-live="polite"></div>
+    <button type="button" class="later" id="nlclose">No thanks</button>
+  </form>
+</div>
 <div class="help" id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helph">
   <div>
     <h2 id="helph">Keys</h2>
@@ -213,6 +238,66 @@ footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:fl
 const PAYLOAD = "/*__PAYLOAD__*/";
 const BRAND_JPG = "/*__BRAND__*/";   // Zero to ASIC header art behind the top bar (brand_header.jpg)
 if (BRAND_JPG.length > 20) document.documentElement.style.setProperty('--brandimg', `url(data:image/jpeg;base64,${BRAND_JPG})`);
+
+// ------------------------------------------------------------------ analytics + newsletter
+/* Google Analytics 4: only on a real web host (not file:, not localhost / edit.py), and only once GA_ID is set.
+   Events: explainer_step (page, step), explainer_power (dbm), explainer_dip, explainer_zoom, newsletter_shown / _subscribe / _dismiss */
+const GA_ID = 'G-2HQ02ESFZB';   // the GA4 web stream that zerotoasiccourse.com sends to (through its tag manager, GTM-PL32RC6)
+const GA_ON = !!GA_ID && /^https?:$/.test(location.protocol) && !/^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname);
+window.dataLayer = window.dataLayer || [];
+function gtag() { dataLayer.push(arguments); }
+if (GA_ON) {
+  const s = document.createElement('script'); s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID; document.head.appendChild(s);
+  gtag('js', new Date()); gtag('config', GA_ID);
+}
+const track = (ev, p = {}) => { if (GA_ON) gtag('event', ev, p); };
+
+/* after NL_AFTER interactions (a new page, a slider release, a DIP or zoom click) offer the newsletter, once;
+   closing it or subscribing keeps it away for NL_QUIET_DAYS (per browser). ?nl in the URL shows it straight away (testing) */
+const NL_AFTER = 5, NL_QUIET_DAYS = 30;
+const NL_MC = 'https://zerotoasiccourse.us7.list-manage.com/subscribe/post-json?u=5d5a474f6c30e153ec17de7b5&id=eada08e6e4&f_id=006046e4f0';
+const nl = {n: 0, open: false};
+const nlGet = () => { try { return +localStorage.getItem('nl_quiet_until') || 0; } catch (e) { return 0; } };
+const nlQuiet = () => { try { localStorage.setItem('nl_quiet_until', Date.now() + NL_QUIET_DAYS * 864e5); } catch (e) {} };
+function interacted(ev, p) {
+  track(ev, p);
+  if (++nl.n === NL_AFTER) setTimeout(nlShow, 600);   // a moment after the click, so it doesn't land on top of the new page mid-read
+}
+function nlShow(force) {
+  if (nl.open || S.edit || (!force && nlGet() > Date.now())) return;
+  nl.open = true; $('nl').hidden = false; $('nlmsg').textContent = ''; $('nlmsg').className = 'msg';
+  $('nlemail').focus(); track('newsletter_shown', {after: nl.n});
+}
+function nlHide(why) {
+  if (!nl.open) return;
+  nl.open = false; $('nl').hidden = true; nlQuiet();
+  if (why) track('newsletter_dismiss', {how: why});
+}
+/* Mailchimp's JSONP endpoint, so the reader stays on the page; same list, interest groups and tag as the website's form */
+function nlSubmit(e) {
+  e.preventDefault();
+  const email = $('nlemail').value.trim(), msg = $('nlmsg');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.className = 'msg bad'; msg.textContent = 'Please enter a valid email address.'; return; }
+  if ($('nlform').querySelector('.hp').value) return;   // the bot trap was filled in
+  const cb = 'nlcb' + Date.now(), sc = document.createElement('script');
+  const q = new URLSearchParams({EMAIL: email, tags: '3895983', 'group[81839][1]': '', 'group[81839][2]': '', 'group[81839][8]': '', c: cb});
+  const done = (ok, text) => {
+    clearTimeout(t); delete window[cb]; sc.remove(); $('nlgo').disabled = false;
+    msg.className = 'msg ' + (ok ? 'ok' : 'bad'); msg.textContent = text;
+    track('newsletter_subscribe', {result: ok ? 'ok' : 'error'});
+    if (ok) { nlQuiet(); setTimeout(() => nlHide(), 2500); }
+  };
+  const fallback = 'Could not reach the sign-up form. You can subscribe at zerotoasiccourse.com/newsletter.';
+  const t = setTimeout(() => done(false, fallback), 10000);
+  window[cb] = r => {
+    const text = (new DOMParser().parseFromString(r.msg || '', 'text/html').body.textContent || '').replace(/^\d+ - /, '');
+    if (r.result === 'success') done(true, 'Thanks! Check your inbox to confirm.');
+    else done(false, /already subscribed/i.test(text) ? 'You are already subscribed, thanks!' : text || fallback);
+  };
+  sc.onerror = () => done(false, fallback);
+  sc.src = NL_MC + '&' + q; $('nlgo').disabled = true; msg.className = 'msg'; msg.textContent = 'Subscribing…';
+  document.head.appendChild(sc);
+}
 const REPO = 'https://github.com/mattvenn/ook-asic-radio/blob/main/';
 const DOC = REPO + 'docs/how_it_works.md#';
 const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.sch';
@@ -957,6 +1042,8 @@ function build() {
   let onTour = at(TOUR[S.step]);
   if (!onTour) { const i = TOUR.findIndex(at); if (i >= 0) { S.step = i; onTour = true; } }
   if (onTour) history.replaceState(null, '', '#step=' + S.step);
+  const pk = pageId();   // analytics: a new page counts once, however it was reached (render runs again on resizes and the slider)
+  if (pk !== nl.page) { const ev = {page: pk, step: onTour ? S.step + 1 : 0}; if (nl.page == null) track('explainer_step', ev); else interacted('explainer_step', ev); nl.page = pk; }
   $('stepno').textContent = `${onTour ? S.step + 1 : '–'} / ${TOUR.length}`;
   const cb = $('capbar'); cb.hidden = !S.edit;
   if (S.edit && !cb.contains(document.activeElement)) cb.innerHTML = `<b>EDIT</b> <span class="capl">tour caption${onTour ? ' (step ' + (S.step + 1) + ')' : ''}:</span> ${ed(pageId(), 'cap', 'span', '', '')} <span id="edstat">${edStat}</span> <span class="capl">e: done</span>`;
@@ -1048,9 +1135,9 @@ const anim = {
 // ------------------------------------------------------------------ events
 document.addEventListener('click', e => {
   const lz = e.target.closest('[data-ldzoom]');
-  if (lz) { S.ldZoom = lz.dataset.ldzoom === '1'; render(); return; }
+  if (lz) { S.ldZoom = lz.dataset.ldzoom === '1'; render(); interacted('explainer_zoom', {zoom: S.ldZoom ? 1 : 0}); return; }
   const dip = e.target.closest('[data-dip]');
-  if (dip) { const k = S.dip == null ? D.code : S.dip; S.dip = k ^ (1 << +dip.dataset.dip); render(); return; }
+  if (dip) { const k = S.dip == null ? D.code : S.dip; S.dip = k ^ (1 << +dip.dataset.dip); render(); interacted('explainer_dip', {code: S.dip}); return; }
   const st = e.target.closest('[data-step]');
   if (st) { setStep(+st.dataset.step); return; }
   const t = e.target.closest('[data-go],[data-block]');
@@ -1063,6 +1150,7 @@ document.addEventListener('click', e => {
 });
 const digits = {n: null, t: 0};
 document.addEventListener('keydown', e => {
+  if (nl.open) { if (e.key === 'Escape') nlHide('esc'); return; }   // the newsletter box: typing an email must not drive the tour
   if (e.target.isContentEditable) {   // typing in edit mode: no shortcuts; Enter ends a one-line field, Esc leaves the field
     if (e.key === 'Escape' || (e.key === 'Enter' && e.target.dataset.f !== 'body')) { e.preventDefault(); e.target.blur(); }
     return;
@@ -1107,7 +1195,11 @@ document.addEventListener('input', e => {
 $('dist').addEventListener('input', e => { S.p = -e.target.value; render(); $('dist').focus(); });
 $('dist').addEventListener('pointerdown', () => { S.dragging = true; });
 addEventListener('pointerup', () => { if (S.dragging) { S.dragging = false; anim.reset(); anim._si = null; } });
-$('dist').addEventListener('change', () => { S.dragging = false; anim.reset(); anim._si = null; });   // keyboard or release: start the sweep from chip 1
+$('dist').addEventListener('change', () => { S.dragging = false; anim.reset(); anim._si = null; interacted('explainer_power', {dbm: Math.round(prx())}); });   // keyboard or release: start the sweep from chip 1
+$('nlform').addEventListener('submit', nlSubmit);
+$('nlclose').onclick = () => nlHide('button');
+$('nl').addEventListener('click', e => { if (e.target === $('nl')) nlHide('backdrop'); });
+$('nlfoot').addEventListener('click', e => { e.preventDefault(); nlShow(true); });
 $('prev').onclick = () => setStep(S.step - 1);
 $('next').onclick = nextStep;
 let resizeT; addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (D) render(); }, 100); });
@@ -1119,6 +1211,7 @@ load().then(async d => {
   if (location.protocol.startsWith('http')) { const t = await fetch('text.json').then(r => r.ok ? r.json() : null).catch(() => null); if (t) TEXT = t; }   // edit.py: the file as it is now
   const m = location.hash.match(/step=(\d+)/);
   setStep(m ? +m[1] : 0);
+  if (/[?&]nl\b/.test(location.search)) nlShow(true);
   if (document.fonts) document.fonts.ready.then(() => { COL.key = ''; render(); });   // re-fit once the web fonts have their real size
   requestAnimationFrame(t => anim.frame(t));
 }).catch(err => { $('main').innerHTML = `<div class="nodata">Could not load the embedded data (${err}). This page needs a browser with DecompressionStream (Chrome 80+, Firefox 113+, Safari 16.4+).</div>`; });
