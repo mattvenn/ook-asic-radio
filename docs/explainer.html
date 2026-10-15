@@ -192,6 +192,7 @@ svg.strip{max-width:100%; height:auto; display:block}
 .nl .msg{min-height:1.3em; font-size:.9rem} .nl .msg.ok{color:var(--ok)} .nl .msg.bad{color:var(--bad)}
 .nl .later{background:none; border:0; color:var(--faint); padding:.2rem 0; text-decoration:underline}
 .nl .hp{position:absolute; left:-5000px}
+.nl .msg .go{display:block; margin:.45rem 0 .3rem}
 footer{padding:0 1.25rem .6rem; color:var(--faint); font-size:.78rem; display:flex; justify-content:flex-end; flex-wrap:wrap; gap:.5rem}
 .loading{padding:3rem; color:var(--muted)}
 </style>
@@ -303,12 +304,28 @@ function nlSubmit(e) {
   const t = setTimeout(() => done(false, fallback), 10000);
   window[cb] = r => {
     const text = (new DOMParser().parseFromString(r.msg || '', 'text/html').body.textContent || '').replace(/^\d+ - /, '');
+    if (/captcha/i.test(text)) {   // Mailchimp wants a captcha, which JSONP can't show: finish on its own page, from a real click
+      clearTimeout(t); delete window[cb]; sc.remove(); $('nlgo').disabled = false; track('newsletter_subscribe', {result: 'captcha'});
+      msg.className = 'msg'; msg.innerHTML = 'One more step: Mailchimp needs to check you\'re not a robot. <button type="button" class="go" id="nlmc">Continue ↗</button>';
+      $('nlmc').onclick = () => nlPost(email);
+      return;
+    }
     if (r.result === 'success') done(true, 'Thanks! Check your inbox to confirm.');
     else done(false, /already subscribed/i.test(text) ? 'You are already subscribed, thanks!' : text || fallback);
   };
   sc.onerror = () => done(false, fallback);
+  nl.fields = q;
   sc.src = NL_MC + '&' + q; $('nlgo').disabled = true; msg.className = 'msg'; msg.textContent = 'Subscribing…';
   document.head.appendChild(sc);
+}
+/* the website's plain form post, in a new tab: Mailchimp shows its captcha there and finishes the sign-up */
+function nlPost(email) {
+  const f = document.createElement('form');
+  f.method = 'post'; f.target = '_blank'; f.action = NL_MC.replace('/post-json?', '/post?');
+  for (const [k, v] of nl.fields) if (k !== 'c') { const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = k === 'EMAIL' ? email : v; f.appendChild(i); }
+  document.body.appendChild(f); f.submit(); f.remove();
+  track('newsletter_subscribe', {result: 'mailchimp_page'}); nlQuiet();
+  $('nlmsg').className = 'msg ok'; $('nlmsg').textContent = 'Finish in the Mailchimp tab, then check your inbox to confirm. Thanks!';
 }
 const REPO = 'https://github.com/mattvenn/ook-asic-radio/blob/main/';
 const DOC = REPO + 'docs/how_it_works.md#';
