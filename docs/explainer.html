@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OOK Radio Explainer</title>
 <meta name="description" content="Interactive explainer for a 433 MHz on-off keyed radio on six Tiny Tapeout tiles (3×2, sky130): link, transmitter and receiver, with simulated waveforms.">
+<!-- social preview: the page lives at zerotoasiccourse.com/radio/ (docs/explainer/publish.sh), og-image.png next to it -->
+<link rel="canonical" href="https://zerotoasiccourse.com/radio/">
+<meta property="og:title" content="A radio on a tiny open-source chip">
+<meta property="og:description" content="Explore a 433 MHz radio on a Tiny Tapeout chip, from the transistors to the received bits, with simulated waveforms.">
+<meta property="og:image" content="https://zerotoasiccourse.com/radio/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The radio explainer: the chip layout and the opening page">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://zerotoasiccourse.com/radio/">
+<meta property="og:site_name" content="Zero to ASIC course">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 :root{
   color-scheme: dark;
@@ -1208,7 +1220,7 @@ $('helpclose').onclick = () => { $('help').hidden = true; };
 
 load().then(async d => {
   D = d; D.bb = D.bb || []; TEXT = D.text || {};
-  if (location.protocol.startsWith('http')) { const t = await fetch('text.json').then(r => r.ok ? r.json() : null).catch(() => null); if (t) TEXT = t; }   // edit.py: the file as it is now
+  if (/^(localhost|127\.)/.test(location.hostname)) { const t = await fetch('text.json').then(r => r.ok ? r.json() : null).catch(() => null); if (t) TEXT = t; }   // edit.py: the file as it is now
   const m = location.hash.match(/step=(\d+)/);
   setStep(m ? +m[1] : 0);
   if (/[?&]nl\b/.test(location.search)) nlShow(true);
