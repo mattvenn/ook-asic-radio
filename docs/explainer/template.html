@@ -267,7 +267,7 @@ const track = (ev, p = {}) => { if (GA_ON) gtag('event', ev, p); };
 
 /* after NL_AFTER interactions (a new page, a slider release, a DIP or zoom click) offer the newsletter, once;
    closing it or subscribing keeps it away for NL_QUIET_DAYS (per browser). ?nl in the URL shows it straight away (testing) */
-const NL_AFTER = 5, NL_QUIET_DAYS = 30;
+const NL_AFTER = 10, NL_QUIET_DAYS = 30;
 const NL_MC = 'https://zerotoasiccourse.us7.list-manage.com/subscribe/post-json?u=5d5a474f6c30e153ec17de7b5&id=eada08e6e4&f_id=006046e4f0';
 const nl = {n: 0, open: false};
 const nlGet = () => { try { return +localStorage.getItem('nl_quiet_until') || 0; } catch (e) { return 0; } };
