@@ -84,7 +84,7 @@ Run: `python3 sim/<dir>/tb_<block>.py [--pex] [corner]` (no flag = schematic, `-
 
 | Block | Test | Schematic vs extracted layout |
 |---|---|---|
-| `lna_chain` | [chain/stability.sh](../sim/chain/stability.sh), [tb_amp_dp](../sim/amp_dp/tb_amp_dp.py), [tb_amp_dpc](../sim/amp_dpc/tb_amp_dpc.py) | gain −0.44 dB from the U fold; stable at all corners; output-to-input coupling 0 aF |
+| `lna_chain` | [chain/stability.sh](../sim/chain/stability.sh), [tb_amp_dp](../sim/amp_dp/tb_amp_dp.py), [tb_amp_dpc](../sim/amp_dpc/tb_amp_dpc.py) | gain −0.44 dB from the U fold; stable at all corners; output-to-input coupling 0 aF. Stability rerun 2026-10-17 with the real VDPWR decap (`decap_vdpwr` subckt, 10.6 pF; before, an ideal 30 pF): tt, ss 10 °C and ss 10 °C 1.89 V all decay (growth ≤ 3e-10) up to 0.1 fF, 1 fF rings (0.992–0.996), gain / peaks identical to 30 pF to 0.01 dB ([stability_2026-10-17.md](stability_2026-10-17.md)) |
 | `log_det` / `det_cell` | [tb_log_det](../sim/logdet/tb_log_det.py), [tb_det_cell](../sim/det_cell/tb_det_cell.py) | idle 1.52 → 1.49 V (contact resistance); same slope at high level. In the chain, the block extraction loses 2.4 dB at −90 dBm against the schematic; the tile extraction doesn't (open, [verify_system_2.md](verify_system_2.md) 3.1) |
 | `lpf_rc` | [tb_lpf_rc](../sim/lpf_rc/tb_lpf_rc.py) | −3 dB frequency, carrier ripple at 434 / 868 MHz, step response |
 | `avg_sc` | [tb_avg_sc](../sim/avg_sc/tb_avg_sc.py) | τ 0.42 ms; clock-coupling offset ~0.15 mV |
@@ -95,7 +95,7 @@ Run: `python3 sim/<dir>/tb_<block>.py [--pex] [corner]` (no flag = schematic, `-
 | `tx_ring` | [tb_tx_ring](../sim/tx/tb_tx_ring.py) | 530 MHz extracted, ~459 MHz expected on silicon |
 | `tx_ls` | [tb_tx_ls](../sim/tx/tb_tx_ls.py) | kn 14 / kp 8 (2026-10-10): A duty 43.4 → 36.4 %, arm duty 41.4 / 48.3 % (schematic 45.7 / 50.5 %) |
 | `tx_drv` | [tb_tx_drv](../sim/tx/tb_tx_drv.py) | output power −0.32 dB |
-| decaps | [decap_ac.sh](../sim/decap/decap_ac.sh) | capacitance flat to 434 MHz |
+| decaps | [decap_ac.sh](../sim/decap/decap_ac.sh) | as laid out (2026-10-17): VAPWR 42.6 pF, ESR 0.010 Ω; VDPWR 10.6 pF, ESR 0.18 Ω; flat to 434 MHz (planned 50 / 30 pF, reduced to fit) |
 
 Every block layout is also DRC and LVS clean (`tools/osic bash layout/check.sh <block>`: magic DRC as the TT precheck runs it, antenna, KLayout DRC, LVS). The `decap_vapwr` parts are written flattened (since 2026-10-13, as the TX blocks), so they are clean on their own too, not only in the tile.
 
