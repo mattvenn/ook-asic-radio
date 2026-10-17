@@ -80,7 +80,8 @@ jobs:
             rc=0; GDS=$PWD/gds/tt_um_mattvenn_radio.gds bash layout/check_top.sh lvs || rc=$?
             tail -40 build/lvs/top/lvs.report
             grep -q "Final result: Circuits match uniquely" build/lvs/top/lvs.report
-            # netgen reports a match even with property errors (W / L / m differences): fail on those too
-            if grep -q "Property errors were found" build/lvs/top/lvs.report; then
+            # netgen reports a match even with property errors (W / L / m differences; "Property errors were
+            # found" for the top cell, "with property errors" / "cells had property errors" in subcells)
+            if grep -qi "property errors" build/lvs/top/lvs.report; then
               grep -B2 -A6 "Property errors\|delta=" build/lvs/top/lvs.report | head -60; exit 1; fi
             exit $rc
