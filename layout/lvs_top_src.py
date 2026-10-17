@@ -8,7 +8,8 @@ The xschem netlist of xschem/tt_um_mattvenn_radio.sch (LVS mode, top as a subckt
 - Ctrim as the ctrim_1p cell;
 - xdig (radio_digital) re-ordered to the port order of macros/radio_digital/radio_digital.pnl.v
   (xschem orders it by the symbol's pins; netgen reads the verilog's).
-The decaps (decap_vapwr / decap_vdpwr) come from layout/ref/ when those exist.
+The decaps (decap_vapwr / decap_vdpwr) stay the xschem ones (xschem/gen/decap.py lists the laid-out
+devices), so the layout is checked against the schematic's values, not against layout/ref/.
 
     python3 layout/lvs_top_src.py     (after the xschem netlist is in build/lvs/top/)
 """
@@ -19,7 +20,7 @@ REPO = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 OUT = os.path.join(REPO, 'build/lvs/top')
 SCH = os.path.join(OUT, 'tt_um_mattvenn_radio.spice')
 REFS = ['bias_gen', 'lna_chain', 'log_det', 'lpf_rc', 'avg_sc', 'comp_ct', 'dbg_tg', 'tx_ring', 'tx_ls',
-        'tx_ls_en', 'ctrim_1p', 'decap_vapwr', 'decap_vdpwr']
+        'tx_ls_en', 'ctrim_1p']
 KEEP = ['tt_um_mattvenn_radio', 'radio_analog', 'tx_top', 'r2r', 'tx_drv', 'decap_vapwr', 'decap_vdpwr']
 
 

@@ -1,6 +1,6 @@
 #!/bin/bash
-# AC check of the supply decap blocks (xschem/gen/decap.py): is decap_vapwr
-# ~50 pF and decap_vdpwr ~30 pF, and what is their series R at 434 MHz?
+# AC check of the supply decap blocks (xschem/gen/decap.py, as laid out; planned was
+# ~50 pF on VAPWR and ~30 pF on VDPWR): their C and series R at 434 MHz.
 # Takes the subcircuits from the tb_radio_analog netlist, drives each with
 # a DC supply + 1 V AC and reports C = Im(I)/(2 pi f) and ESR = Re(1/Y) at
 # 1 / 100 / 434 MHz, at the nominal supply and +-10 %, plus one 10 x 10 um
@@ -14,9 +14,9 @@ f=decap_ac.spice
   awk '/^\.subckt decap_v/,/^\.ends/' tb_radio_analog.spice
   echo ".param va=3.3 vd=1.8"
   echo "Va a 0 dc 'va' ac 1"
-  echo "xa a 0 decap_vapwr n=100"
+  echo "xa a 0 decap_vapwr"
   echo "Vd d 0 dc 'vd' ac 1"
-  echo "xd d 0 decap_vdpwr n=30"
+  echo "xd d 0 decap_vdpwr"
   echo "* one MIM unit alone (10 x 10 um)"
   echo "Vm m 0 dc 1.8 ac 1"
   echo "XCm m 0 sky130_fd_pr__cap_mim_m3_1 W=10 L=10 MF=1 m=1"

@@ -114,4 +114,9 @@ EOF
 elif [ -s $B.spice ]; then
   netgen -batch lvs "${B}_lay.spice $B" "$B.spice $B" $SETUP lvs.report > netgen.log 2>&1
 fi
-[ -s $B.spice ] && echo "== LVS" && grep -E "Circuits match|do not match|Netlists match|Final result" lvs.report | tail -3
+if [ -s $B.spice ]; then
+  echo "== LVS"; grep -E "Circuits match|do not match|Netlists match|Final result|Property errors" lvs.report | tail -4
+  # netgen still says "Circuits match uniquely" when device properties (W, L, m) differ
+  if grep -q "Final result: Circuits match uniquely" lvs.report && ! grep -q "Property errors were found" lvs.report
+  then echo "LVS PASS"; else echo "LVS FAIL"; exit 1; fi
+fi
