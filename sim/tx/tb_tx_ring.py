@@ -3,7 +3,8 @@
 en steps high at 1 ns; out drives the main level shifter (schematic tx_ls, its input
 inverter 9/3 is the ring's designed load). Measures the oscillation frequency over the
 last 10 periods of 40 ns, out duty, and VDD current. --pex swaps in layout/pex/tx_ring.spice.
-Silicon estimate: x0.866 (the ttsky25b ring's measured / extracted-tt ratio, STATUS).
+Silicon estimate: x0.845 (the ttsky25b rings' measured / block-extracted tt ratio; x0.866 is
+for a whole-tile extraction, docs/sim_learnings.md).
 
     python sim/tx/tb_tx_ring.py [--pex] [corner] [cw=3.2f]
 """
@@ -87,5 +88,5 @@ if __name__ == '__main__':
     corner = next((a for a in args if not a.startswith('-') and '=' not in a), 'tt')
     r = run(corner, pex, cw)
     print(f'tx_ring {corner} {"pex" if pex else "sch cw=" + cw}: {r["f"] / 1e6:.1f} MHz '
-          f'(x0.866 -> ~{r["f"] * 0.866 / 1e6:.0f} MHz on silicon), out duty {r["duty"] * 100:.1f} %, '
+          f'(x0.845 -> ~{r["f"] * 0.845 / 1e6:.0f} MHz on silicon), out duty {r["duty"] * 100:.1f} %, '
           f'I(VDD) {r["ivd"] * 1e3:.2f} mA (ring + level shifter)')

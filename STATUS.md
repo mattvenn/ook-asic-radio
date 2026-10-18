@@ -17,7 +17,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
   - Detector: successive-detection log detector → 14 kHz RC LPF (2.95 MΩ / 3.7 pF).
   - Comparator side: switched-cap average (τ ~0.45 ms) → continuous comparator; trim from the reused R2R ladder, driven by the RTL servo.
   - **Confirmed three ways:** the fully joined transistor-level run (antenna → comparator) matches the split model. Corners 10–50 °C give a worst case of **≈ −92…−93 dBm**. And the **mixed-signal run** (RTL servo → real `r2r` → real `comp_ct`) detects −70 and −92 dBm bursts, on the schematic and the extracted baseband (−94 dBm is at the edge: detected extracted, missed schematic with ngspice 47; 2026-10-11).
-- **TX:** xschem blocks, +4.14…+4.26 dBm at all corners (+3.75…+4.55 over 10–50 °C; extracted tile rc +2.67…+3.47 dBm), both arms low when off, single-ended fallback (`tx_en_n`). VAPWR decap ~50 pF.
+- **TX:** xschem blocks, +4.14…+4.26 dBm at all corners (+3.75…+4.55 over 10–50 °C; extracted tile rc +2.67…+3.47 dBm), both arms low when off, single-ended fallback (`tx_en_n`). VAPWR decap ~43 pF as laid out (42.6 pF, `decap_ac.sh`; target 50, see step 5).
 - **Digital:** **clock-gated** (`rd_cg.v`, one `sky130_fd_sc_hd__dlclkp_1` per 127-bit chip register), hardened with LibreLane at **200 × 220 µm** (2026-10-09; was 260 × 190).
   - Signoff clean (DRC, LVS, antenna 0; timing met at all corners).
   - **RTL suite 15/15 and gate-level suite 15/15** on the hardened netlist (`make GL=1`).
