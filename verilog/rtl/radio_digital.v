@@ -39,7 +39,7 @@
 //   tx_en_n     out_n arm enable (tx_top en_n) = tx_en unless single-ended.
 //               A disabled arm is parked low.
 //   rx_en       RX analog power enable (role = RX)
-//   dbg_en      det -> ua[4] transmission gate enable (debug strap)
+//   dbg_en      det -> ua[2] transmission gate enable (debug strap)
 //   sc_phi1/2   non-overlapping switched-cap clocks, one cycle per sample
 //
 // Timing vs test/vectors/README.md: sample i is processed at the clock edge
