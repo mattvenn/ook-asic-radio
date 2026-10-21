@@ -7,6 +7,7 @@ cd build
 for lvl in "$@"; do
   ve=$(python3 -c "import math; print(math.sqrt(8*73*1e-3*10**($lvl/10)))")   # same antenna EMF formula as rf.sh
   sed -e "s/^alterparam vemf=.*/alterparam vemf=$ve/" -e "s/^write $run.raw/write ${run}_$lvl.raw/" $run.spice > ${run}_$lvl.spice
-  (ngspice -b ${run}_$lvl.spice > ${run}_$lvl.log 2>&1; echo "$run $lvl dBm: $(grep -ci error ${run}_$lvl.log) errors") &
+  # one at a time: each ngspice already uses num_threads (8, .spiceinit); 9 at once ran ~100x slower on an 8-core box
+  ngspice -b ${run}_$lvl.spice > ${run}_$lvl.log 2>&1
+  echo "$run $lvl dBm: $(grep -ci error ${run}_$lvl.log) errors"
 done
-wait

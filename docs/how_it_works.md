@@ -21,14 +21,14 @@ The transmitter switches a 433 MHz carrier on and off, and that is all it does. 
 
 Because of that, the transmitter needs no crystal or PLL. It is a free-running ring of inverters, and if it lands anywhere in 330–560 MHz the receiver still works. 433 MHz was chosen for its ecosystem: cheap SDRs, `rtl_433`, and garage remotes as test signals.
 
-**dBm** is power on a log scale: 0 dBm = 1 mW, and every −10 dB is 10× less power (−30 dBm = 1 µW). Voltage changes more slowly: −20 dB is 10× less voltage. The transmitter puts out about +4 dBm. At 1 m the receiver sees about −44 dBm, and it can still detect a signal at about −92 dBm. That is 48 dB lower: ~60,000× less power, or ~250× less voltage.
+**dBm** is power on a log scale: 0 dBm = 1 mW, and every −10 dB is 10× less power (−30 dBm = 1 µW). Voltage changes more slowly: −20 dB is 10× less voltage. The transmitter puts out about +4 dBm. At 1 m the receiver sees about −32 dBm (the bench measurement, −44 dBm with the old 1.8 V transmitter, plus the new one's 12 dB), and it can still detect a signal at about −92 dBm. That is 60 dB lower: a million times less power, or 1,000× less voltage. On the same path model that is about 80 m.
 
 ### Finding a signal weaker than the noise
 Near the sensitivity limit, "carrier on" moves the detector output by only ~1 mV, and the noise is about as large. A single on/off decision there is barely better than a coin flip. So we don't send single bits:
 
 - Each 7-bit code (DIP switches) selects a **[Gold code](https://en.wikipedia.org/wiki/Gold_code)**: a fixed, noise-like pattern of 127 on/off slots called *chips*. One chip is 104 µs, so one burst is 13.2 ms.
 - The receiver makes one 1-bit decision per chip and compares the last 127 decisions with its own code's pattern. The **score** is how many match. Chance gives ~64 out of 127; **≥ 97 counts as a detection** (6σ above chance).
-- At −94 dBm the comparator is right only ~75 % of the time, but that is still enough to score ~106.
+- At −92 dBm the comparator is right only ~80 % of the time, but that is still enough to score ~104.
 - The TX sends the burst 3 times. The RX toggles the LED only if 2 of the 3 bursts arrive with the right spacing, then ignores the code for ~1 s. Other codes, remote controls and noise don't toggle it.
 
 ### Where the threshold goes
@@ -56,7 +56,7 @@ These were measured on an existing chip (ttsky25b) that has a ring oscillator, u
 ### Models
 - `bench/scheme_compare.py` compared three signalling schemes on the same receiver model with noise, fading and a bursty interferer. Gold-127 correlation won in every case, so it is what the chip uses.
   ![scheme comparison](../bench/data/scheme_compare.png)
-- `model/` holds a bit-exact Python model of the whole link. It is the reference that the RTL is tested against. End to end, every send is detected down to −94 dBm in noise and −90 dBm with ±10 dB fading, and there are zero false toggles.
+- `model/` holds a bit-exact Python model of the whole link. It is the reference that the RTL is tested against. End to end with the H135 comparator at tt, every send is detected at −92 dBm in noise (48/48) and about half at −94 dBm (27/48) ([verify_2026-10-13.md](verify_2026-10-13.md)). With ±10 dB fading (default model settings), every send gets through down to −90 dBm. There are zero false toggles.
   ![end to end](../model/e2e.png)
 
 ### Resulting specs (simulated, transistor level)
@@ -65,7 +65,7 @@ These were measured on an existing chip (ttsky25b) that has a ring oscillator, u
 |---|---|
 | TX power into the dipole | +4.1 to +4.3 dBm schematic, all process corners; +3.1 to +3.4 dBm extracted |
 | TX frequency | ~460 MHz expected on silicon (untrimmed ring; RX accepts 330–560 MHz) |
-| RX sensitivity | −94 dBm typical, ≈ −92 dBm worst case |
+| RX sensitivity | −92 dBm for ≥ 99 % of chips at every corner, 10–50 °C (with mismatch, Monte Carlo); −94 dBm about half the time on a typical chip |
 | RX chain | ~80 dB gain, noise figure ≈ 11 dB |
 | Log detector slope | ~13 mV per dB, over ~70 dB |
 | Operating temperature | 10–50 °C |

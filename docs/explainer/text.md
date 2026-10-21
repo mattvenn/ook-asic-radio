@@ -8,14 +8,14 @@ cap: My first radio chip: transmitter and receiver in six Tiny Tapeout tiles, wi
 
 My first semiconductor radio, and one of the first radios on a Tiny Tapeout shuttle. The transmitter and the receiver share six tiles, about 0.1 mm² of silicon.
 
-It's designed to use the minimum of external components: an external 10 MHz clock and two 16.5 cm long wires for the antenna. It should work to around 80–90 metres in good conditions.
+It's designed to use the minimum of external components: an external 10 MHz clock and two 16.5 cm long wires for the antenna. It should work to around 80 metres in good conditions.
 
 The design can either transmit or receive, so two demo boards are needed to demonstrate. Pressing reset on one toggles the LED on the other.
 
 ## air
 name: Predicting range
 short: Range
-cap: With the new transmitter the receiver should see about −32 dBm at 1 m. At ~90 m it is down to −94 dBm: over a million times weaker, below its own noise.
+cap: With the new transmitter the receiver should see about −32 dBm at 1 m. At ~80 m it is down to −92 dBm: over a million times weaker, below its own noise.
 
 On the bench, I used an earlier [ring oscillator design](https://tinytapeout.com/chips/ttsky25b/tt_um_mattvenn_analog_ring_osc) as a transmitter. I used 14.5 cm wire dipoles held parallel and measured the received signal with a scope. The results are the white dots on the graph.
 
@@ -23,7 +23,7 @@ That transmitter was weak: a 1.8 V pad with only about 200 mV of swing, −8.5 d
 
 Further out the reflection off the ground is expected to cancel more and more of the direct path. With both boards 1 m above the ground that takes over near 6 m, and the two-ray model then loses 40 dB per decade.
 
-The receiver has a sensitivity of about −94 dBm, so I'm expecting a range of about 90 m.
+The receiver has a sensitivity of about −92 dBm, so I'm expecting a range of about 80 m.
 
 ## ook
 name: Trick 1: keep the radio simple

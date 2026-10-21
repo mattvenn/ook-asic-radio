@@ -23,7 +23,9 @@ The chip page and the per-block maps draw the system diagram from the floorplan 
 | RX antenna → 6 stages → det (−60 dBm tone, keyed) | `build/rx_rf_tone.raw`, `rx_rf_key.raw` from `sim/rx/rf.sh` |
 | log detector transfer, per-tap amplitude | `sim/logdet/taps.txt`, `transfer_cw.txt` |
 | baseband det → lpf → avg → comparator, trim (−70 / −94 dBm) | `build/rx_bb_<lvl>.raw` from `sim/rx/gen_det.py` + `sim/rx/bb.sh` |
-| sent vs received chips, score, 2-of-3 (follows the received-power slider) | `model/` link model at 2 dB steps, −110 to −26 dBm: one send of code 0x5A, NF 11 dB / 450 MHz noise, 2 mV offset, 0.07 mV trim, 0.3 mV comparator noise at 13 mV/dB, bit-exact `radio.RxDigital` |
+| sent vs received chips, score, 2-of-3, LED rate (follows the received-power slider) | `model/` link model at 2 dB steps, −110 to −26 dBm: 12 sends of code 0x5A per level, tt with the H135 comparator as `e2e_h135_tt` in `sim/rerun/jobs_2026-10-13.py` (NF 11 dB / 450 MHz noise, 13.4 mV/dB, 1.26 mV offset, 0.127 mV trim, 0.3 mV comparator noise), bit-exact `radio.RxDigital`. The LED readouts show how many of the 12 toggled; the page replays one send per level, one whose outcome is the majority's. `MODEL` in `gendata.py`; the sweep (~2 min on 8 cores) is cached in `build/explainer_model.json` and reruns when `MODEL` changes |
+| sensitivity line, margin (`SENS` in `template.html`) | −92 dBm: ≥ 99 % of chips at every corner, 10–50 °C (`docs/verify_2026-10-13.md`); the model sweep gives 12/12 at −92 and 7/12 at −94 dBm |
+| block page sizes, opening-page totals | `sizes.json` from `tools/osic python3 docs/explainer/sizes.py`: analog = each `layout/*.gds` bounding box, times how many `layout/floorplan/floorplan.json` places; digital = cells per RTL module after a yosys synthesis with the hierarchy kept (sky130_fd_sc_hd tt), and the hardened macro's cells from `macros/radio_digital/radio_digital.nl.v` (fill, tap, decap and diode cells not counted). Rerun after a layout or RTL change |
 
 `sims.sh` stubs `pyvisa` (pulled in through `bench/scope.py`) so `gen_det.py` runs in the osic image.
 

@@ -78,7 +78,7 @@ svg text{font-family:var(--sans)}
 .ro{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:.6rem .8rem}
 .ro small{display:block; color:var(--muted); font-size:.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .ro b{display:block; font-family:var(--mono); font-size:1.25rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.ro b.good{color:var(--ok)} .ro b.bad{color:var(--bad)}
+.ro b.good{color:var(--ok)} .ro b.mid{color:var(--sig2)} .ro b.bad{color:var(--bad)}
 .striphit{border:1px solid transparent; border-radius:10px; padding:.4rem .5rem; margin:-.4rem -.5rem}
 .striphit:hover, .striphit:focus-visible{border-color:var(--sig)} .striphit[aria-pressed=true]{border-color:var(--sig); border-width:1px}
 .chain{display:flex; flex-direction:column; gap:.9rem}
@@ -99,6 +99,7 @@ svg text{font-family:var(--sans)}
 .focus .side h2{margin:0; font-family:var(--mono); font-weight:500; font-size:1.45rem}
 .focus .side .top{display:flex; justify-content:space-between; gap:1rem; align-items:flex-start}
 .focus .side .sub{color:var(--muted); margin:.15rem 0 0}
+.focus .side .stat{color:var(--faint); font-family:var(--mono); font-size:.8rem; margin:.35rem 0 0}
 .focus .side p{margin:0}
 .fplots{display:flex; flex-direction:column; gap:.9rem; min-width:0}
 @media (min-width:1001px){   /* block pages fill the screen; the links sit at the foot of the text column */
@@ -332,7 +333,7 @@ const DOC = REPO + 'docs/how_it_works.md#';
 const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.sch';
 // 3D view of the block's layout, as linked from layout/README.md (the GDS has the same name as the schematic)
 const GDS = (n, dir = 'layout') => 'https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/' + dir + '/' + n + '.gds';
-const SENS = -94;
+const SENS = -92, SENS_T = '−' + -SENS + ' dBm';   // ≥ 99 % of chips at every corner, 10–50 °C (docs/verify_2026-10-13.md); −94 dBm is a best case
 let D = null;                       // decoded payload
 const S = {level: 'link', focus: null, block: null, p: -56,   // -56 dBm: ~10 m on the path model (new TX), where the page opens
            step: 0, playing: true};
@@ -384,6 +385,8 @@ function run() {             // model run nearest the received power
   if (!r._s) { r._s = bytes(r.scores); r._c = unpack(r.chips, 127); }
   return r;
 }
+/* the model runs D.model.sends sends per level; r.ok of them toggled the LED (run() is one of them, as the majority went) */
+const ledRate = r => `<b class="${r.ok === D.model.sends ? 'good' : r.ok ? 'mid' : 'bad'}">${r.ok}/${D.model.sends} sends</b>`;
 const interp = (x, xs, ys) => { let i = 1; while (i < xs.length - 1 && xs[i] < x) i++; const u = (x - xs[i - 1]) / (xs[i] - xs[i - 1]); return ys[i - 1] + (ys[i] - ys[i - 1]) * Math.max(0, Math.min(1, u)); };
 const GOLD = () => D._gold || (D._gold = Uint8Array.from(D.gold, c => +c));
 const fmtd = d => d < 1 ? (d * 100).toFixed(0) + ' cm' : d < 10 ? d.toFixed(1) + ' m' : d.toFixed(0) + ' m';
@@ -525,13 +528,13 @@ const B = {
     plot: () => figCode()},
   code: {lvl: 'link', anchor: 'finding-a-signal-weaker-than-the-noise',
     plot: () => figScore()},
-  gold: {lvl: 'tx', rtl: 'rd_gold', anchor: 'digital-radio_digital-macro', color: 'dig',
+  gold: {lvl: 'tx', rtl: 'rd_gold', anchor: 'digital-radio_digital-macro', color: 'dig', mods: ['rd_gold', 'rd_tx'],
     plot: () => figGold()},
   tx_ring: {lvl: 'tx', anchor: 'transmitter', sch: 'tx_ring', color: 'tx',
     plot: () => figTx(['key', 'ring'], '_on')},
-  tx_ls: {lvl: 'tx', anchor: 'transmitter', sch: 'tx_ls', color: 'tx',
+  tx_ls: {lvl: 'tx', anchor: 'transmitter', sch: 'tx_ls', color: 'tx', cells: {tx_ls: 1, tx_ls_en: 2},
     plot: () => figTx(['a', 'b'])},
-  tx_drv: {lvl: 'tx', anchor: 'transmitter', sch: 'tx_drv', color: 'tx',
+  tx_drv: {lvl: 'tx', anchor: 'transmitter', sch: 'tx_drv', color: 'tx', cells: {tx_drv: 2},
     plot: () => figTx(['drv_p', 'drv_n', 'dipole'])},
   lna_chain: {lvl: 'rx', anchor: 'receiver-amplifier-chain', sch: 'lna_chain', color: 'rx',
     plot: () => figChain()},
@@ -543,7 +546,7 @@ const B = {
     plot: () => figBB(['lpf', 'avg'])},
   comp_ct: {lvl: 'rx', anchor: 'receiver-detector-filter-threshold', sch: 'comp_ct', color: 'rx',
     plot: () => figComp()},
-  r2r: {lvl: 'rx', rtl: 'rd_rx', anchor: 'where-the-threshold-goes', sch: 'r2r', color: 'dac',
+  r2r: {lvl: 'rx', rtl: 'rd_rx', anchor: 'where-the-threshold-goes', sch: 'r2r', color: 'dac', cells: {r2r: 1, ctrim_1p: 1},
     plot: () => figTrim()},
   slicer: {lvl: 'rx', rtl: 'rd_corr', anchor: 'finding-a-signal-weaker-than-the-noise', color: 'dig',
     plot: () => figSlicer()},
@@ -555,11 +558,40 @@ const B = {
     plot: () => ''},
 };
 
+// ------------------------------------------------------------------ block sizes (docs/explainer/sizes.json, from sizes.py)
+const KUM = u => (u / 1000).toFixed(u < 1000 ? 2 : 1) + 'k µm²';
+const CELLS = n => n.toLocaleString('en') + ' standard cells';
+const MOD_NOTE = {rd_corr: 'the bit slicer and the correlator together', rd_rx: 'trim servo, detections, 2 of 3 and the LED'};
+/* analog pages: the block's layout area (cells: {gds cell: how many the tile has}, default one of sch);
+   digital pages: the RTL module's cells after synthesis (mods, default rtl) */
+function sizeLine(id) {
+  const b = B[id], z = D.sizes;
+  if (!z) return '';
+  if (b.sch) {
+    const cells = Object.entries(b.cells || {[b.sch]: 1}), a = cells.reduce((t, [c, n]) => t + z.analog[c].um2 * n, 0);
+    const one = z.analog[cells[0][0]];
+    const how = cells.length === 1 && cells[0][1] === 1 ? `${one.w.toFixed(0)} × ${one.h.toFixed(0)} µm`
+      : cells.map(([c, n]) => (n > 1 ? n + ' × ' : '') + c).join(' + ');
+    return `<p class="stat">Area: ${KUM(a)} (${how})</p>`;
+  }
+  if (b.rtl) {
+    const mods = b.mods || [b.rtl], n = mods.reduce((t, m) => t + z.digital[m], 0);
+    const how = mods.length > 1 ? mods.map(m => `${m} ${z.digital[m]}`).join(', ') : mods[0] + (MOD_NOTE[mods[0]] ? ': ' + MOD_NOTE[mods[0]] : '');
+    return `<p class="stat">Digital: ${CELLS(n)} after synthesis (${how})</p>`;
+  }
+  return '';
+}
+
 // ------------------------------------------------------------------ figures
 function figLayout() {
   if (!D.layout_jpg) return NODATA('layout image');
+  const z = D.sizes, t = z && z.tile, mc = z && z.macro;
+  const totals = z ? `<div class="readouts">
+    <div class="ro" title="${KUM(t.circuits_um2)} of circuits + ${KUM(t.decap_um2)} of decoupling capacitors (layout bounding boxes)"><small>analog (incl. ${KUM(t.decap_um2)} decap)</small><b>${KUM(t.circuits_um2 + t.decap_um2)}</b></div>
+    <div class="ro" title="${CELLS(z.digital.radio_digital)} after synthesis; place and route adds ${mc.hold_buffers} hold buffers, the clock tree and other buffers (fill, tap and decap cells not counted)"><small>digital (${mc.size.w.toFixed(0)} × ${mc.size.h.toFixed(0)} µm)</small><b>${CELLS(mc.cells)}</b></div>
+  </div>` : '';
   return fig('the whole design: 3 × 2 Tiny Tapeout tiles, 493 × 226 µm',
-    `<img class="layoutimg" src="data:image/jpeg;base64,${D.layout_jpg}" alt="The chip layout: analog blocks on the left, the digital block on the right">`, 'GitHub gds action render') +
+    totals + `<img class="layoutimg" src="data:image/jpeg;base64,${D.layout_jpg}" alt="The chip layout: analog blocks on the left, the digital block on the right">`, 'GitHub gds action render') +
     `<div class="links"><a class="primary" href="${GDS('tt_um_mattvenn_radio', 'gds')}" target="_blank" rel="noopener">Open in 3D viewer ↗</a></div>` +
     '<p>Left: the analog, the transmitter and receiver blocks and their decoupling capacitors. Right: the digital, which makes the code, scores what the receiver hears and trims the comparator.</p>';
 }
@@ -579,7 +611,7 @@ function figPath() {
       {d: fit, color: 'var(--sig)', label: `new transmitter: bench + ${TX_DB} dB`, w: 2},
       {d: two, color: 'var(--sig2)', label: `two-ray, boards ${HGT} m up`, w: 2}],
     xlog: true, xlim: [0.1, 300], xl: 'distance (m)', yl: 'received power (dBm)', ylim: [-110, -10], h: 300,
-    hl: [{y: SENS, color: 'var(--thr)', label: 'sensitivity ≈ −94 dBm', left: true}], vl: [{x: Math.max(0.1, Math.min(300, dist())), color: '#fff'}],
+    hl: [{y: SENS, color: 'var(--thr)', label: `sensitivity ≈ ${SENS_T}`, left: true}], vl: [{x: Math.max(0.1, Math.min(300, dist())), color: '#fff'}],
     bands: [{x0: 4, x1: 300, color: '#ffffff08'}]}), 'bench/data/sweep2/ota.csv') + `<p>Measured from 10 cm to 4 m with the old transmitter (dashed, dots). The solid line adds the new transmitter's simulated ${TX_DB} dB. Further out (shaded) is a model: flat ground, line of sight, no walls or bodies. Real range will vary.</p>`;
 }
 /* the Gold code page: seven DIP switches pick the code; code k = M1 xor M2 shifted by k bits (model/gold.py, as the RTL makes it) */
@@ -780,7 +812,7 @@ function figScore(withSweep = true) {
 }
 function figSweep() {
   const m = D.model, x = m.levels, y = m.runs.map(r => r.events.length ? Math.max(...r.events) : Math.max(...bytes(r.scores)));
-  return fig('best score vs received power (one send per level)', plot({series: [{d: {x, y}, color: 'var(--dig)', label: 'peak score', w: 2}, {d: {x, y}, color: 'var(--dig)', pts: true}],
+  return fig(`best score vs received power (one of the ${m.sends} sends per level)`, plot({series: [{d: {x, y}, color: 'var(--dig)', label: 'peak score', w: 2}, {d: {x, y}, color: 'var(--dig)', pts: true}],
     xl: 'received power (dBm)', yl: 'peak score', ylim: [50, 130], h: 220, hl: [{y: m.thresh, color: 'var(--thr)', label: '97'}],
     vl: [{x: Math.max(-110, Math.min(-26, prx())), color: '#fff'}]}), 'model/ link model');   // the slider's power (the slider and the axis say the value)
 }
@@ -792,12 +824,13 @@ function figLed() {
     <div class="ro"><small>detection 1 (score)</small><b>${ev(0)}</b></div>
     <div class="ro"><small>detection 2 (score)</small><b>${ev(1)}</b></div>
     <div class="ro"><small>detection 3 (score)</small><b>${ev(2)}</b></div>
-    <div class="ro"><small>LED</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'stays'}</b></div>
+    <div class="ro"><small>LED toggles</small>${ledRate(r)}</div>
   </div>` + figScore(false);
 }
 
 // ------------------------------------------------------------------ levels
 function linkScene(focus = null) {
+  const rate = run();   // how many of the model's sends at this power toggle the LED (the animation replays one of them)
   const d = dist(), p = prx(), lo = Math.log10(dist(-25)), hi = Math.log10(dist(-110)),   // the slider's whole range, on a log scale
     gap = 400 + Math.max(0, Math.min(1, (Math.log10(d) - lo) / (hi - lo))) * 490, tx = 600 - gap / 2, rx = 600 + gap / 2;
   /* vertical, parallel dipoles on the facing sides: the link is broadside to both (a dipole has a null along its own axis) */
@@ -825,6 +858,7 @@ function linkScene(focus = null) {
       <rect class="hl" x="${rx + 76}" y="10" width="68" height="28" rx="6" fill="#ffffff00"/>
       <circle id="led" cx="${rx + 128}" cy="24" r="10" fill="#382c5a" stroke="#000"/>
       <text x="${rx + 112}" y="29" fill="#b4a9cf" font-size="12" text-anchor="end">LED</text>
+      <text x="${rx + 70}" y="29" fill="${rate.ok === D.model.sends ? 'var(--ok)' : rate.ok ? 'var(--sig2)' : 'var(--bad)'}" font-size="12" text-anchor="end">${rate.ok}/${D.model.sends} sends toggle it</text>
     </g>
   </svg>`;
 }
@@ -837,9 +871,9 @@ function levelLink() {
     <div class="ro"><small>TX power (sim)</small><b>+${TX_DBM} dBm</b></div>
     <div class="ro"><small>≈ distance (${dist() > DB ? 'two-ray' : dist() > 4 ? 'extrapolated' : 'bench'})</small><b>${fmtd(dist())}</b></div>
     <div class="ro"><small>received</small><b>${p.toFixed(0)} dBm</b></div>
-    <div class="ro"><small>margin to −94 dBm</small><b class="${margin >= 0 ? 'good' : 'bad'}">${margin >= 0 ? '+' : ''}${margin.toFixed(0)} dB</b></div>
+    <div class="ro"><small>margin to ${SENS_T}</small><b class="${margin >= 0 ? 'good' : 'bad'}">${margin >= 0 ? '+' : ''}${margin.toFixed(0)} dB</b></div>
     <div class="ro"><small>correlator</small><b id="live">–</b></div>
-    <div class="ro"><small>LED (2 of 3 bursts)</small><b class="${r.toggled ? 'good' : 'bad'}">${r.toggled ? 'toggles' : 'missed'}</b></div>
+    <div class="ro"><small>LED toggles (2 of 3 bursts)</small>${ledRate(r)}</div>
   </div>
   <div class="hit striphit" role="button" tabindex="0" data-block="ook" aria-pressed="${S.block === 'ook'}" aria-label="On-off keying: the idea, bit by bit"><div id="codestrip">${codeStrip(anim._b || 0, anim._pos || 0)}</div></div>`;
 }
@@ -861,7 +895,7 @@ function focusPage(id) {
   useGeo('stage');
   return `<div class="focus">
     <div class="side">
-      <div>${ed(id, 'name', 'h2', 'id="dh"', nm(id))}${ed(id, 'sub', 'p', 'class="sub"', T(id, 'sub'))}${S.edit ? `<p class="sub">breadcrumb: ${ed(id, 'short', 'span', '', '')}</p>` : ''}</div>
+      <div>${ed(id, 'name', 'h2', 'id="dh"', nm(id))}${ed(id, 'sub', 'p', 'class="sub"', T(id, 'sub'))}${sizeLine(id)}${S.edit ? `<p class="sub">breadcrumb: ${ed(id, 'short', 'span', '', '')}</p>` : ''}</div>
       ${S.edit ? ed(id, 'body', 'div', '', '') : prose(T(id, 'body'))}
       <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">More details ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}${b.rtl ? `<a class="secondary" href="${REPO}verilog/rtl/${b.rtl}.v" target="_blank" rel="noopener">RTL ↗</a>` : ''}</div>
     </div>

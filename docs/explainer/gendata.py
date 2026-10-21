@@ -212,50 +212,93 @@ def baseband(lvl):
     }
 
 
-def model_sweep():
-    """Link model at 2 dB steps: one send (3 bursts) of code 0x5A in receiver noise
-    (NF 11 dB over 450 MHz), log detector, comparator with 2 mV offset, 0.07 mV trim
-    steps and 0.3 mV noise at 13 mV/dB, then the bit-exact digital."""
+# Link model settings: tt with the H135 comparator, as e2e_h135_tt in sim/rerun/jobs_2026-10-13.py
+# (docs/verify_2026-10-13.md: -94 dBm 27/48, -92 dBm 48/48).
+MODEL = {'nf_db': 11.0, 'brf': 450e6, 'slope_mv_db': 13.4, 'offset_mv': 1.26, 'trim_mv': 0.127, 'noise_mv': 0.3,
+         'levels': list(range(-110, -24, 2)), 'sends': 12, 'seed': 7}
+MODEL_CACHE = os.path.join(B, 'explainer_model.json')   # the sweep takes ~2 min: rerun only when MODEL changes
+
+
+def model_send(job):
+    """One send (3 bursts) of CODE at one level: did the LED toggle, plus what the page draws for it."""
     import e2e
     import radio
     import scheme_compare as ch
-    import rx_eval as r
-    ch.rxm.NF_DB, ch.B_RF = 11.0, 450e6
-    rng = np.random.default_rng(7)
-    on = e2e.send_onoff(CODE)
-    levels = list(range(-110, -24, 2))   # the slider's whole range, -110 to -26 dBm
-    res = []
-    for lvl in levels:
-        v = e2e.run_record(on, 10 ** ((lvl - 30) / 10), 'noise', rng)
-        afe = radio.AfeModel(offset_db=2 / 13, trim_lsb_db=0.07 / 13, noise_db=0.3 / 13, rng=rng)
-        rx = radio.RxDigital(CODE)
-        trim = rx.trim
-        scores, comps = [], []
-        for x in v:
-            c = afe.compare(x, trim)
-            trim = rx.step(c)
-            comps.append(c)
-            if rx.n % radio.S == 0:
-                scores.append(rx.last_score)
-        # per-chip decision of burst 1 at the best phase: majority of the 8 samples
-        comps = np.array(comps)
-        lead = e2e.LEAD_CHIPS * radio.S
-        best = None
-        for off in range(radio.S):
-            seg = comps[lead + off: lead + off + 127 * radio.S]
-            if len(seg) < 127 * radio.S:
-                continue
-            chips = (seg.reshape(127, radio.S).sum(1) > radio.S // 2).astype(np.uint8)
-            m = int(np.sum(chips == radio.tx_chips(CODE)[:127]))
-            if best is None or m > best[0]:
-                best = (m, chips, seg)
-        res.append({'lvl': lvl, 'scores': base64.b64encode(np.array(scores, np.uint8).tobytes()).decode(),
-                    'events': [int(s) for _, s in rx.events], 'toggled': len(rx.toggles) == 1,
-                    'chips': base64.b64encode(np.packbits(best[1]).tobytes()).decode(),
-                    'chip_ok': best[0]})
-    report.append(f'model   model/ link sweep {levels[0]}..{levels[-1]} dBm')
-    return {'levels': levels, 'runs': res, 'lead_chips': e2e.LEAD_CHIPS, 'period': radio.PERIOD,
-            'thresh': radio.THRESH}
+    lvl, seed = job
+    m = MODEL
+    ch.rxm.NF_DB, ch.B_RF = m['nf_db'], m['brf']
+    rng = np.random.default_rng(seed)
+    v = e2e.run_record(e2e.send_onoff(CODE), 10 ** ((lvl - 30) / 10), 'noise', rng)
+    s = m['slope_mv_db']
+    afe = radio.AfeModel(offset_db=m['offset_mv'] / s, trim_lsb_db=m['trim_mv'] / s, noise_db=m['noise_mv'] / s, rng=rng)
+    rx = radio.RxDigital(CODE)
+    trim = rx.trim
+    scores, comps = [], []
+    for x in v:
+        c = afe.compare(x, trim)
+        trim = rx.step(c)
+        comps.append(c)
+        if rx.n % radio.S == 0:
+            scores.append(rx.last_score)
+    # per-chip decision of burst 1 at the best phase: majority of the 8 samples
+    comps = np.array(comps)
+    lead = e2e.LEAD_CHIPS * radio.S
+    best = None
+    for off in range(radio.S):
+        seg = comps[lead + off: lead + off + 127 * radio.S]
+        if len(seg) < 127 * radio.S:
+            continue
+        chips = (seg.reshape(127, radio.S).sum(1) > radio.S // 2).astype(np.uint8)
+        n = int(np.sum(chips == radio.tx_chips(CODE)[:127]))
+        if best is None or n > best[0]:
+            best = (n, chips)
+    return {'lvl': lvl, 'scores': base64.b64encode(np.array(scores, np.uint8).tobytes()).decode(),
+            'events': [int(sc) for _, sc in rx.events], 'toggled': len(rx.toggles) == 1,
+            'chips': base64.b64encode(np.packbits(best[1]).tobytes()).decode(), 'chip_ok': best[0]}
+
+
+def model_sweep():
+    """Link model at 2 dB steps: MODEL['sends'] sends of code 0x5A per level in receiver noise, log detector,
+    comparator with offset, trim steps and noise, then the bit-exact digital. Per level: how many sends
+    toggled the LED, and one send for the page to replay (the first whose outcome is the majority's)."""
+    import e2e
+    import radio
+    key = json.dumps(MODEL, sort_keys=True)
+    try:
+        c = json.load(open(MODEL_CACHE))
+        if c['key'] != key:
+            raise ValueError
+        runs = c['runs']
+        src = 'cached ' + os.path.relpath(MODEL_CACHE, ROOT)
+    except (OSError, ValueError, KeyError):
+        from multiprocessing import Pool
+        jobs = [(lvl, MODEL['seed'] * 100003 + i * 1009 + j) for i, lvl in enumerate(MODEL['levels'])
+                for j in range(MODEL['sends'])]
+        with Pool() as pool:
+            sends = pool.map(model_send, jobs)
+        runs = []
+        for i, lvl in enumerate(MODEL['levels']):
+            lv = sends[i * MODEL['sends']:(i + 1) * MODEL['sends']]
+            ok = sum(r['toggled'] for r in lv)
+            major = ok * 2 >= len(lv)
+            runs.append(dict(next(r for r in lv if r['toggled'] == major), ok=ok))
+        os.makedirs(B, exist_ok=True)
+        json.dump({'key': key, 'runs': runs}, open(MODEL_CACHE, 'w'))
+        src = f'{len(jobs)} sends'
+    lv = MODEL['levels']
+    report.append(f'model   model/ link sweep {lv[0]}..{lv[-1]} dBm, {MODEL["sends"]} sends per level ({src})')
+    return {'levels': lv, 'runs': runs, 'sends': MODEL['sends'], 'lead_chips': e2e.LEAD_CHIPS,
+            'period': radio.PERIOD, 'thresh': radio.THRESH}
+
+
+def sizes():
+    """Block areas and cell counts: docs/explainer/sizes.json, from sizes.py (run in the osic image)."""
+    path = os.path.join(HERE, 'sizes.json')
+    if not os.path.exists(path):
+        report.append('MISSING docs/explainer/sizes.json (run docs/explainer/sizes.py)')
+        return None
+    report.append('sizes   docs/explainer/sizes.json')
+    return json.load(open(path))
 
 
 def words():
@@ -286,7 +329,7 @@ def main():
     import gold as G   # the two LFSR sequences: code k = M1 xor M2 shifted by k (k = 127: M1 alone), as in model/gold.py
     payload = {'code': CODE, 'gold': gold_chips(), 'm1': ''.join(map(str, G.M1)), 'm2': ''.join(map(str, G.M2)), 'path': path_loss(), 'tx': tx(), 'rx_rf': rx_rf(),
                'logdet': logdet(), 'bb': [b for b in map(baseband, BB_LEVELS) if b],
-               'model': model_sweep(), 'layout_jpg': layout_jpg(), 'text': words()}
+               'model': model_sweep(), 'sizes': sizes(), 'layout_jpg': layout_jpg(), 'text': words()}
     blob = base64.b64encode(gzip.compress(json.dumps(payload, separators=(',', ':')).encode(), 9)).decode()
     brand = base64.b64encode(open(os.path.join(HERE, 'brand_header.jpg'), 'rb').read()).decode()   # Zero to ASIC header art
     html = open(os.path.join(HERE, 'template.html')).read().replace('/*__PAYLOAD__*/', blob).replace('/*__BRAND__*/', brand)
