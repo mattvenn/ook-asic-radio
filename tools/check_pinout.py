@@ -31,13 +31,16 @@ MACRO = os.path.join(REPO, 'macros/radio_digital')
 # TT pin -> (info.yaml label, block port(s) it lands on). uio: (label, direction, ports).
 PINOUT = {
     'ui': [(f'code bit {i}', [('xdig', f'ui_in[{i}]')]) for i in range(7)]
-    + [('role (1 = TX, 0 = RX)', [('xdig', 'ui_in[7]')])],
+    + [('role, latched at reset (1 = TX, 0 = RX)', [('xdig', 'ui_in[7]')])],
     'uo': [(f'segment {c}', [('xdig', f'uo_out[{i}]')]) for i, c in enumerate('abcdefg')]
-    + [('dp: LED toggle (RX)', [('xdig', 'uo_out[7]')])],
-    'uio': [('mode select (strap)', 'in'), ('mode select (strap)', 'in'),
-            ('raw TX key in / data UART', 'in'), ('raw RX comparator out', 'out'),
-            ('debug: burst detected', 'out'), ('debug: toggle event', 'out'),
-            ('debug: trim direction', 'out'), ('debug: TX active', 'out')],
+    + [('dp: LED toggle (RX) / TX key / raw bit', [('xdig', 'uo_out[7]')])],
+    'uio': [('mode strap bit 0 (at reset; 01 = raw)', 'in'), ('mode strap bit 1 (at reset)', 'in'),
+            ('raw TX key in / debug strap at reset (det on ua[2])', 'in'),
+            ('raw RX comparator out / monopole strap at reset', 'out'),
+            ('burst detected / strap magic 0 at reset', 'out'),
+            ('toggle event / strap magic 1 at reset', 'out'),
+            ('trim direction / strap magic 0 at reset', 'out'),
+            ('TX active / strap magic 1 at reset', 'out')],
     'ua': [('RX dipole +', [('xana', 'rx_p')]), ('RX dipole -', [('xana', 'rx_n')]),
            ('debug: detector output', [('xana', 'dbg')]), ('TX dipole +', [('xana', 'tx_p')]),
            ('TX dipole -', [('xana', 'tx_n')]), ('', [])],
