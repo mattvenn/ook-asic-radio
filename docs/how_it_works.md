@@ -59,17 +59,77 @@ These were measured on an existing chip (ttsky25b) that has a ring oscillator, u
 - `model/` holds a bit-exact Python model of the whole link. It is the reference that the RTL is tested against. End to end with the H135 comparator at tt, every send is detected at −92 dBm in noise (48/48) and about half at −94 dBm (27/48) ([verify_2026-10-13.md](verify_2026-10-13.md)). With ±10 dB fading (default model settings), every send gets through down to −90 dBm. There are zero false toggles.
   ![end to end](../model/e2e.png)
 
-### Resulting specs (simulated, transistor level)
+### Specs
 
-| Spec | Value |
-|---|---|
-| TX power into the dipole | +4.1 to +4.3 dBm schematic, all process corners; +3.1 to +3.4 dBm extracted |
-| TX frequency | ~460 MHz expected on silicon (untrimmed ring; RX accepts 330–560 MHz) |
-| RX sensitivity | −92 dBm for ≥ 99 % of chips at every corner, 10–50 °C (with mismatch, Monte Carlo); −94 dBm about half the time on a typical chip |
-| RX chain | ~80 dB gain, noise figure ≈ 11 dB |
-| Log detector slope | ~13 mV per dB, over ~70 dB |
-| Operating temperature | 10–50 °C |
-| Clock | 10 MHz from the demo board |
+Every number says where it comes from:
+- **Schematic:** transistor-level simulation of the xschem schematic.
+- **Extracted:** simulation of the layout with its parasitics (PEX). Where both exist, the extracted number is the one to expect.
+- **Silicon est.:** an extracted number scaled by a factor measured on an earlier chip.
+- **Mixed-signal:** the RTL (Verilog) driving a transistor-level baseband.
+- **Model:** the bit-exact Python model of the link (`model/`).
+- **Bench:** measured on real hardware (the earlier ttsky25b chip).
+- **RTL:** fixed by the digital design, exact by construction.
+
+None of this has been measured on this chip yet: see [bringup.md](bringup.md).
+
+**Transmitter**
+
+| Spec | Value | From |
+|---|---|---|
+| Frequency | ~448 MHz typical; 332–545 MHz over process corners and supply | Silicon est.: extracted × 0.866 / × 0.845, the factors from the ttsky25b rings (518 MHz measured, 598 simulated). STATUS.md, [verify_supply_mc.md](verify_supply_mc.md) |
+| Power into the dipole (73 Ω) | +3.1 dBm typical (+2.7 at 50 °C, +3.5 at 10 °C) | Extracted (whole tile, RC). [verify_2026-10-11.md](verify_2026-10-11.md) |
+| | +4.1 to +4.3 dBm at all corners | Schematic |
+| Power vs VAPWR | −1.2 / +1.1 dB at 3.0 / 3.6 V | Schematic |
+| Phase between the arms | within 1.2° | Schematic (PLAN.md) |
+| On / off time | a few ns | Schematic (PLAN.md) |
+| VAPWR current, keyed on | 6.65 mA average (18.4 mA peak) per arm, ~13 mA for both; ~0 when off | Schematic currents ([power.md](power.md)) |
+| Off state | both arms driven low | Schematic, by design |
+| Weak point | the arm enable (`tx_ls_en`) fails at VDPWR 1.71 V with VAPWR 3.6 V (ss, fs) | Extracted ([verify_supply_mc.md](verify_supply_mc.md)) |
+
+**Receiver**
+
+| Spec | Value | From |
+|---|---|---|
+| Sensitivity, at the pins | −92 dBm | Mixed-signal: 6/6 on the schematic and 6/6 on the extracted baseband ([verify_2026-10-13.md](verify_2026-10-13.md)) |
+| | for ≥ 99 % of chips at every 1.8 V corner, 10–50 °C | Schematic Monte Carlo of the comparator alone (200 mismatch samples per corner); each sample's trim step mapped to dBm with the model. Not extracted ([verify_supply_mc.md](verify_supply_mc.md) "Trim redesign candidates") |
+| | −94 dBm about half the time on a typical chip | Model (27/48 sends) and mixed-signal (2/6) |
+| | −90 dBm at 85 °C (outside the verified range) | Schematic ([verify_system_2.md](verify_system_2.md)) |
+| Input band | 330–560 MHz, covering the TX ring's spread | Schematic (chain gain) |
+| Chain gain at 434 MHz | 73–81 dB over corners and temperature (76.7 nominal) | Schematic; each extracted stage is 0.2–0.45 dB below its schematic |
+| Noise figure | 9.4–12 dB | Schematic |
+| Detector slope | 10–14 mV per dB, falling with power, over ~70 dB | Schematic |
+| Detector at idle | 1.49 V | Extracted (1.50–1.54 V schematic corners) |
+| Detector at −60 dBm | 1.21 V | Extracted (whole tile) |
+| Envelope filter | 14 kHz RC low-pass | Schematic |
+| Slow average | τ 0.42 ms | Extracted (0.45 ms schematic) |
+| Trim step | 0.136–0.147 mV per LSB, 8 bits | Schematic corners; 0.136 extracted |
+| Overload | −10 dBm is fine; a weak signal is missed for 0.25–0.3 ms after it | Mixed-signal ([verify_2026-10-13.md](verify_2026-10-13.md)) |
+| VDPWR current | 2.99 mA | Extracted (whole tile); 2.84–2.91 mA schematic corners |
+
+**Link**
+
+| Spec | Value | From |
+|---|---|---|
+| Chip | 104 µs (8 comparator samples, 13 µs apart) | RTL |
+| Burst | 127-chip Gold code, 13.2 ms; 128 codes from 7 switches | RTL |
+| One send | 3 bursts, each followed by 64 off chips: 59.6 ms | RTL |
+| Detection | score ≥ 97 of 127 chips, 2 of the 3 bursts at the right spacing; then the code is ignored for ~1 s | RTL |
+| Signal at 1 m | ~−32 dBm | Bench path loss (−44 dBm at 1 m with the old 1.8 V ring) + 12 dB for the new TX |
+| Range | ~80 m, line of sight | Estimate: −92 dBm sensitivity on the bench path loss (1/d^1.89) |
+| With fading (±10 dB) | every send gets through down to −90 dBm | Model |
+| False toggles | 0 | Model |
+| Raw mode (RP2350 data) | a few kbps, DC-balanced coding (Manchester) | Estimate from the filter and the average time constant |
+
+**General**
+
+| Spec | Value | From |
+|---|---|---|
+| Supplies | VDPWR 1.8 V; VAPWR 3.3 V for the TX output stage | Design |
+| Clock | 10 MHz from the demo board | RTL |
+| Temperature | 10–50 °C verified | Schematic and extracted corners |
+| Area | 3×2 tiles (493 × 226 µm); the digital macro is 200 × 220 µm | Layout |
+| Digital timing | met at all 9 corners | Signoff STA (`openlane/radio_digital/signoff/`) |
+| Antenna | per board, two ~16.5 cm wires (a dipole); no other parts | Design |
 
 *Corners* are the PDK's fast and slow transistor models. A design that works at all corners and temperatures should work on any chip from the run.
 

@@ -16,19 +16,7 @@ Order matters: each stage only uses parts the earlier stages have already checke
 
 ## Reference values
 
-| Item | Expected | Source |
-|---|---|---|
-| TX frequency | ~448 MHz (anything in 330–560 MHz works) | STATUS.md step 1 (tile RC 519 MHz × 0.866) |
-| TX power into the dipole | +3.1 to +3.4 dBm (extracted), +4.1 to +4.3 dBm (schematic) | how_it_works.md |
-| TX VAPWR current, keyed on | ~13 mA (6.65 mA average per arm), ~0 when off | docs/power.md |
-| RX VDPWR current | ~3.0 mA (2.985 mA, extracted tile) | verify_2026-10-11.md |
-| Detector `det` at idle | ~1.49 V (extracted) | STATUS.md, log_det |
-| Detector slope | ~13 mV/dB over ~70 dB, falls with power (1.21 V at −60 dBm) | how_it_works.md, verify_2026-10-11.md |
-| RX sensitivity | −92 dBm at the pins (≥ 99 % of chips), −94 dBm best case | verify_2026-10-13.md |
-| Path loss with the dipoles | ~−32 dBm at 1 m, ~1/d^1.89, ~80 m range | how_it_works.md |
-| Chip | 104 µs (130 clocks × 8 samples at 10 MHz) | radio_digital.v |
-| One send | 3 × (127 chips on/off + 64 chips off) = 59.6 ms | rd_tx.v |
-| After a toggle | the RX ignores its code for ~1 s, and shows the quality digit for ~1.7 s | rd_rx.v |
+The expected values come from the spec list in [how_it_works.md](how_it_works.md#specs), which says for each one whether it comes from the schematic, the extracted layout, a model or a bench measurement. The tests below quote the ones they need.
 
 **Pin limits:** `ua[2]` uses thin-oxide devices, so keep it within 0–1.8 V. Never connect a TX pin (`ua[3]`/`ua[4]`, 3.3 V push-pull) straight into an RF input. Always use a DC block, and attenuate to below the input's limit (RTL-SDR: below about +10 dBm, so use ≥ 20 dB). Never connect a TX pin to an RX pin without ≥ 40 dB in between.
 
@@ -102,7 +90,7 @@ One board, RX role (`ui_in[7]` = 0). Do R1–R3 with no antenna fitted.
 | R8 | Comparator vs power | Generator pulse-modulated: a square wave of 2 chips period (4.8 kHz), stepping down from −60 dBm. The RP2350 samples `uio[3]` and scores it against the known square | ~100 % correct at strong signal, ~80 % at the sensitivity limit (−92 dBm at the pins) | |
 | R9 | Code-mode detection | Generator with arbitrary modulation (or another board's raw TX keyed with the pattern, see L1): 3 bursts of `gold(code)` with the T9 timing. Step the level down | LED toggles; the quality digit falls with level; record the lowest level that toggles ≥ 19/20 | |
 | R10 | Wrong code / noise | As R9 with a different code, and with the key fob held near the board | no toggle, ever | |
-| R11 | Overload | −10 dBm keyed | `uio[3]` follows the keying, detection still works; recovers within ~1.3 ms after a strong burst ends | |
+| R11 | Overload | −10 dBm keyed | `uio[3]` follows the keying, detection still works; a weak signal is missed for only 0.25–0.3 ms after a strong burst ends | |
 | R12 | False-toggle soak | Antenna fitted, overnight, RP2350 counting `uio[5]` | 0 toggles | |
 
 Without a signal generator: do R1–R5 and R10–R12. Leave sensitivity to L1, which uses a measured TX as the source. The key fob gives a quick check that `det` and `uio[3]` respond at all.
