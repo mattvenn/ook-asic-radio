@@ -10,6 +10,8 @@ bare-wire dipole antennas and no external components. It should get to roughly 8
 - **TX:** an on-chip ring oscillator at ~433 MHz, keyed on and off (OOK), with antiphase drivers into a dipole.
 - **RX:** a 6-stage NMOS differential-pair limiting chain with a successive-detection log detector, and one comparator with an averaged, trimmed threshold. A digital Gold-code correlator detects the transmitter's code and toggles an LED.
 
+> **Radio regulations.** This is an experimental, uncertified transmitter. Its free-running ring oscillator is not tuned: it can land anywhere in about 330–560 MHz (~448 MHz typical), mostly outside the narrow 433.05–434.79 MHz licence-exempt band, and its square-wave output has strong harmonics. That range includes frequencies used by aviation, emergency services and the 406 MHz distress beacons. Power is low (about +3 dBm, 2 mW, into the dipole), but transmitting over the air may need an amateur radio licence (the 70 cm band is 420–450 MHz in the US, 430–440 MHz in the UK and much of Europe), and where the chip lands outside the amateur band it may not be legal at all. Measure the frequency with an SDR first, keep transmissions short, and prefer the cabled link test ([docs/bringup.md](docs/bringup.md)). Receiving is fine. You are responsible for following your local rules.
+
 Docs:
 - [Interactive explainer](https://mattvenn.github.io/ook-asic-radio/docs/explainer.html): click through the link, TX and RX chains with simulated waveforms ([source](docs/explainer)).
 - [docs/how_it_works.md](docs/how_it_works.md): **start here**: theory, specs, schematics and layout.
