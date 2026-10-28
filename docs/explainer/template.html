@@ -10,9 +10,9 @@
 <meta property="og:title" content="A radio on a tiny open-source chip">
 <meta property="og:description" content="Explore a 433 MHz radio on a Tiny Tapeout chip, from the transistors to the received bits, with simulated waveforms.">
 <meta property="og:image" content="https://zerotoasiccourse.com/radio/og-image.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The radio chip's layout: analog transmitter and receiver on the left, digital on the right">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="The radio chip's layout, titled OOK Radio: analog transmitter and receiver on the left, digital on the right">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://zerotoasiccourse.com/radio/">
 <meta property="og:site_name" content="Zero to ASIC course">
@@ -103,7 +103,7 @@ svg text{font-family:var(--sans)}
 .focus .side p{margin:0}
 .fplots{display:flex; flex-direction:column; gap:.9rem; min-width:0}
 @media (min-width:1001px){   /* block pages fill the screen; the links sit at the foot of the text column */
-  .stage > .inner{min-height:100%} .stage > .inner > .focus{flex:1; align-items:stretch} .focus .side .links{margin-top:auto; padding-top:.5rem}
+  .stage > .inner{min-height:100%} .stage > .inner > .focus{flex:1; align-items:stretch} .focus .side .links{margin-top:auto; padding-top:.5rem} .focus .side .links.cta{margin-top:0; padding-top:0}
 }
 svg.dg{display:block; width:100%; height:auto}
 .chippage{display:flex; flex-direction:column; gap:1rem}
@@ -520,7 +520,9 @@ const ed = (id, f, tag, attrs, html) => {
 
 // ------------------------------------------------------------------ blocks
 const B = {
-  intro: {lvl: 'link', scene: false, anchor: 'how-it-works',
+  intro: {lvl: 'link', scene: false, anchor: 'how-it-works', more: false,
+    cta: [['Read the article', 'https://zerotoasiccourse.com/post/ai_codesigned_radio/'],
+          ['Watch the video', 'https://www.youtube.com/watch?v=c53n4mH_RYg']],
     plot: () => figLayout()},
   air: {lvl: 'link', anchor: 'bench-measurements-phase-0',
     plot: () => figPath()},
@@ -897,7 +899,8 @@ function focusPage(id) {
     <div class="side">
       <div>${ed(id, 'name', 'h2', 'id="dh"', nm(id))}${ed(id, 'sub', 'p', 'class="sub"', T(id, 'sub'))}${sizeLine(id)}${S.edit ? `<p class="sub">breadcrumb: ${ed(id, 'short', 'span', '', '')}</p>` : ''}</div>
       ${S.edit ? ed(id, 'body', 'div', '', '') : prose(T(id, 'body'))}
-      <div class="links"><a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">More details ↗</a>${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}${b.rtl ? `<a class="secondary" href="${REPO}verilog/rtl/${b.rtl}.v" target="_blank" rel="noopener">RTL ↗</a>` : ''}</div>
+      ${b.cta ? `<div class="links cta">${b.cta.map(([t, u]) => `<a class="primary" href="${u}" target="_blank" rel="noopener">${t} ↗</a>`).join('')}</div>` : ''}
+      <div class="links">${b.more === false ? '' : `<a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">More details ↗</a>`}${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}${b.rtl ? `<a class="secondary" href="${REPO}verilog/rtl/${b.rtl}.v" target="_blank" rel="noopener">RTL ↗</a>` : ''}</div>
     </div>
     <div class="fplots"${COL.pz < 1 ? ` style="zoom:${COL.pz}"` : ''}>${isLink && b.scene !== false ? linkScene(id) : ''}${plots || ''}</div>
   </div>`;
