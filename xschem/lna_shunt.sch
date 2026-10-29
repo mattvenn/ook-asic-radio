@@ -7,11 +7,11 @@ S {}
 E {}
 T {lna_shunt: low-gain strap across stage 2 outputs (a = o2p, b = o2n)
 g = 0: PMOS on, Rh + Ron + Rh loads the stage (~11 dB less chain gain); g = VDD: off
-params: rh (each Rh, high_po_1p41), wsw (PMOS W, L 0.15), rg (gate R, high_po_0p35)} -200 -360 0 0 0.4 0.4 {}
-T {R = 393 (L 0.5 um)} -30 -150 0 0 0.25 0.25 {}
-T {R = 393 (L 0.5 um)} 370 -150 0 0 0.25 0.25 {}
-T {= 1 x 15 / 0.15} 225 -12 0 0 0.25 0.25 {}
-T {R = 20k (L 19.1 um)} 225 188 0 0 0.25 0.25 {}
+params: rh (each Rh, high_po_1p41), wsw (PMOS W, L 0.15), rg (gate R, xhigh_po_0p35)} -200 -360 0 0 0.4 0.4 {}
+T {R = 421 (L 0.621 um)} -30 -150 0 0 0.25 0.25 {}
+T {R = 421 (L 0.621 um)} 370 -150 0 0 0.25 0.25 {}
+T {= 1 x 18 / 0.15} 225 -12 0 0 0.25 0.25 {}
+T {R = 20k (L 2.71 um)} 225 188 0 0 0.25 0.25 {}
 C {devices/iopin.sym} -200 300 0 0 {name=p13
 lab=VDD}
 C {devices/iopin.sym} -200 330 0 0 {name=p14
@@ -39,7 +39,7 @@ C {devices/lab_pin.sym} 400 -120 0 1 {name=p2
 sig_type=std_logic
 lab=VSS}
 C {sky130_fd_pr/pfet3_01v8.sym} 200 -50 1 0 {name=Msw
-nf=3
+nf=6
 mult=1
 ad="'int((nf+1)/2) * W/nf * 0.29'"
 pd="'2*int((nf+1)/2) * (W/nf + 0.29)'"
@@ -76,9 +76,9 @@ lab=sb}
 C {devices/lab_pin.sym} 200 -70 0 1 {name=p9
 sig_type=std_logic
 lab=gi}
-C {sky130_fd_pr/res_high_po_0p35.sym} 200 150 0 0 {name=Rg
-L='max((rg-963)/995,0.5)'
-model=res_high_po_0p35
+C {sky130_fd_pr/res_xhigh_po_0p35.sym} 200 150 0 0 {name=Rg
+L='max((rg-0)/7379,0.5)'
+model=res_xhigh_po_0p35
 mult=1
 spiceprefix=X}
 C {devices/lab_pin.sym} 200 120 0 1 {name=p10

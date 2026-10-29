@@ -40,7 +40,7 @@ NSTAGES = 6
 # defaults = the chip's values (stage 1 / stages 2-6), so the sheets' value notes are the chip's
 AMP_PARAMS = {'w': 80, 'l': 0.15, 'rl': '1k', 'wt': 6, 'mt': 20, 'mm': 0}   # mm: test mismatch, 0 in silicon
 AMPC_PARAMS = {'w': 20, 'l': 0.15, 'rl': '4k', 'wt': 6, 'mt': 6, 'mm': 0, 'cs': '0.6p'}
-SHUNT_PARAMS = {'rh': 393, 'wsw': 15, 'rg': '20k'}
+SHUNT_PARAMS = {'rh': 421, 'wsw': 18, 'rg': '20k'}
 CHAIN_PARAMS = {'w1': 80, 'rl1': '1k', 'mt1': 20, 'w2': 20, 'rl2': '4k', 'mt2': 6,
                 'cs': '0.6p', 'cin': '2p', 'rb': '20k', 'mm': 0}
 
@@ -128,16 +128,16 @@ def lna_shunt():
     s.pin_order = ['VDD', 'VSS', 'a', 'b', 'g']
     s.text(-200, -360, 'lna_shunt: low-gain strap across stage 2 outputs (a = o2p, b = o2n)\n'
            'g = 0: PMOS on, Rh + Ron + Rh loads the stage (~11 dB less chain gain); g = VDD: off\n'
-           'params: rh (each Rh, high_po_1p41), wsw (PMOS W, L 0.15), rg (gate R, high_po_0p35)', 0.4)
+           'params: rh (each Rh, high_po_1p41), wsw (PMOS W, L 0.15), rg (gate R, xhigh_po_0p35)', 0.4)
     ra = poly_r(s, 0, -100, 'rh', 'high', '1p41', rot=1, name='Rh_a')
     rb = poly_r(s, 400, -100, 'rh', 'high', '1p41', rot=1, name='Rh_b')
     for r in (ra, rb):
         s.connect(r, B='VSS')
-    m = mos(s, 'p', 200, -50, W="'wsw'", L=0.15, nf=3, name='Msw', rot=1, body='VDD')
+    m = mos(s, 'p', 200, -50, W="'wsw'", L=0.15, nf=6, name='Msw', rot=1, body='VDD')
     s.connect(ra, P='a', M='sa')
     s.connect(rb, P='sb', M='b')
     s.connect(m, S='sa', D='sb', G='gi')
-    rg = poly_r(s, 200, 150, 'rg', 'high', '0p35', name='Rg')
+    rg = poly_r(s, 200, 150, 'rg', 'xhigh', '0p35', name='Rg')
     s.connect(rg, P='gi', M='g', B='VSS')
     ports(s, -200, 300, ['VDD', 'VSS', 'a', 'b', 'g'])
     value_notes(s, SHUNT_PARAMS)

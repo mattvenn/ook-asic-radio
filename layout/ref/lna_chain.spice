@@ -1,7 +1,8 @@
 * lna_chain: xschem/lna_chain.sch with {'w1': 80, 'rl1': 1000.0, 'mt1': 20, 'w2': 20, 'rl2': 4000.0, 'mt2': 6, 'cs': 6e-13, 'cin': 2e-12, 'rb': 20000.0, 'mm': 0} (layout/gen/lna_chain.py)
-** sch_path: /foss/designs/ook/xschem/lna_chain.sch
-.subckt lna_chain inp inn ibias vcm outp outn o1p o1n o2p o2n o3p o3n o4p o4n o5p o5n VDD VSS
-*.PININFO VDD:B VSS:B ibias:B vcm:B inp:B inn:B outp:B outn:B o1p:B o1n:B o2p:B o2n:B o3p:B o3n:B o4p:B o4n:B o5p:B o5n:B
+** sch_path: /Users/mattvenn/asic/ook-asic-radio-shunt/xschem/lna_chain.sch
+.subckt lna_chain inp inn ibias vcm lna_lo_n outp outn o1p o1n o2p o2n o3p o3n o4p o4n o5p o5n VDD VSS
+*.PININFO VDD:B VSS:B ibias:B vcm:B lna_lo_n:B inp:B inn:B outp:B outn:B o1p:B o1n:B o2p:B o2n:B o3p:B o3n:B o4p:B o4n:B o5p:B
+*+ o5n:B
 XMref ibias ibias VSS VSS sky130_fd_pr__nfet_01v8 L=0.5 W=6 nf=2
 XCin_p g1p inp sky130_fd_pr__cap_mim_m3_1 W=31.1588 L=31.1588
 XRb_p g1p vcm VSS sky130_fd_pr__res_high_po_0p35 L=19.1327 mult=1
@@ -13,16 +14,22 @@ xa3 o2p o2n ibias o3p o3n VDD VSS amp_dpc
 xa4 o3p o3n ibias o4p o4n VDD VSS amp_dpc
 xa5 o4p o4n ibias o5p o5n VDD VSS amp_dpc
 xa6 o5p o5n ibias outp outn VDD VSS amp_dpc
+xsh o2p o2n lna_lo_n VDD VSS lna_shunt
 .ends
 
 * expanding   symbol:  amp_dp.sym # of pins=7
-** sym_path: /foss/designs/ook/xschem/amp_dp.sym
-** sch_path: /foss/designs/ook/xschem/amp_dp.sch
+** sym_path: /Users/mattvenn/asic/ook-asic-radio-shunt/xschem/amp_dp.sym
+** sch_path: /Users/mattvenn/asic/ook-asic-radio-shunt/xschem/amp_dp.sch
 
 
 * expanding   symbol:  amp_dpc.sym # of pins=7
-** sym_path: /foss/designs/ook/xschem/amp_dpc.sym
-** sch_path: /foss/designs/ook/xschem/amp_dpc.sch
+** sym_path: /Users/mattvenn/asic/ook-asic-radio-shunt/xschem/amp_dpc.sym
+** sch_path: /Users/mattvenn/asic/ook-asic-radio-shunt/xschem/amp_dpc.sch
+
+
+* expanding   symbol:  lna_shunt.sym # of pins=5
+** sym_path: /Users/mattvenn/asic/ook-asic-radio-shunt/xschem/lna_shunt.sym
+** sch_path: /Users/mattvenn/asic/ook-asic-radio-shunt/xschem/lna_shunt.sch
 
 * amp_dp: xschem/amp_dp.sch with {'w': 80, 'l': 0.15, 'rl': 1000.0, 'wt': 6, 'mt': 20, 'mm': 0} (lay.write_ref)
 ** sch_path: /foss/designs/ook/xschem/amp_dp.sch
@@ -49,3 +56,9 @@ XCs_a sn sp sky130_fd_pr__cap_mim_m3_1 W=12.0678 L=12.0678
 XCs_b sp sn sky130_fd_pr__cap_mim_m3_1 W=12.0678 L=12.0678
 .ends
 
+.subckt lna_shunt a b g VDD VSS
+XRh_a sa a VSS sky130_fd_pr__res_high_po_1p41 L=0.62 mult=1
+XRh_b b sb VSS sky130_fd_pr__res_high_po_1p41 L=0.62 mult=1
+XMsw sb gi sa VDD sky130_fd_pr__pfet_01v8 L=0.15 W=18 nf=6
+XRg g gi VSS sky130_fd_pr__res_xhigh_po_0p35 L=2.71039 mult=1
+.ends

@@ -3,7 +3,7 @@ v {xschem version=3.4.5 file_version=1.2
 G {}
 K {type=subcircuit
 format="@name @pinlist @symname rh=@rh wsw=@wsw rg=@rg"
-template="name=x1 rh=393 wsw=15 rg=20k"
+template="name=x1 rh=421 wsw=18 rg=20k"
 }
 V {}
 S {}

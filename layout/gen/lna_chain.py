@@ -42,6 +42,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pya                                                          # noqa: E402
 from lay import Block, Fet, REPO, box, ring, snap, _si             # noqa: E402
+from amp_dpc import VW, BAR                                         # noqa: E402
 from passives import PolyRes, mim, CAPM_ENC_M3, BOT_PLATE_SPACE   # noqa: E402
 
 PARAMS = dict(w1=80, rl1=1e3, mt1=20, w2=20, rl2=4e3, mt2=6, cs=0.6e-12, cin=2e-12, rb=20e3, mm=0)
@@ -217,6 +218,91 @@ def front(b, cells, pin):
     return dict(x_dp=x_dp, xs=xs, W=xs[1] + cells['amp_dpc'].dbbox().width(), o1=o1, T2=T['amp_dpc'])
 
 
+SHUNT = dict(rh_l=0.62, wsw=18, nf=6, rg=20e3)   # xschem/gen/chain.py lna_shunt: 1p41 421 ohm (L 0.62, the pcell's shortest), W 18 / L 0.15, xhigh 20k
+
+
+def shunt(b, Xe, mo, c_o2, W):
+    """lna_shunt (the low-gain strap) at the turn end of the moat, by the o2 columns:
+    west to east Rg (xhigh 0.35, the gate R), Msw (PMOS, own n-tap ring on VDD), Rh_a (o2p) and
+    Rh_b (o2n) (high_po 1.41, one segment each). o2n: a met2 stub from its column; o2p: met1 under
+    the o2n column. The strap (lna_lo_n) comes in at the block's east edge on met2, crosses the
+    turn's columns on met3 at the bottom of the moat and drops to Rg. Returns the zone's west
+    edge and the PMOS ring's VDD riser x (the moat's n-stripe and its VDD m3 end / pass there)."""
+    X1 = Xe + 0.2                                   # devices stay west of the o2n column (Xe + 0.9)
+    yb = mo.bottom + 0.9                            # zone bottom (the strap runs below it)
+    rh = {}
+    x = X1
+    for q in ('b', 'a'):                            # Rh_b nearest the columns
+        r = PolyRes(b, SHUNT['rh_l'], 1, w=1.41, typ='sky130_fd_pr__res_high_po_1p41', pitch=3.0, pad_w=1.41)
+        r.place(x - 0.2 - 1.41, yb + 0.2)
+        rh[q] = r
+        x = r.bbox.left - 1.0                       # rpm.2: 0.84
+    f = Fet(b, 'p', SHUNT['wsw'], 0.15, nf=SHUNT['nf'], vt='', bulk='guard ring')
+    f.place(x - 0.9 - 3.92, yb + 0.945)            # its n-well: diff - 0.92 .. diff + 3.92 (x), from yb up
+    f.commit()
+    nw_left = f.diff.left - 0.92
+    rg = PolyRes(b, SHUNT['rg'] / 7379.0, 1)        # xhigh 0.35: R = 7379 * L
+    rg.place(nw_left - 0.8 - 0.81, yb + 0.2)
+    # S strips (even) -> sa bar (low) -> Rh_a's bottom head; D strips (odd) -> sb bar (high) -> Rh_b's
+    s0, d0 = f.diff.bottom + 0.2, f.diff.top - 0.2 - BAR
+    for k, st in enumerate(f.strips):
+        y0 = s0 if k % 2 == 0 else d0
+        xc = st.center().x
+        bb = box(xc - VW / 2, y0, xc + VW / 2, y0 + BAR)
+        b.rect('m1', bb)
+        b.via('via1', bb, enc=(0.075, 0.085))
+    xl = f.strips[0].center().x - VW / 2
+    for y0, q in ((s0, 'a'), (d0, 'b')):
+        hd = rh[q].ends[0]                          # bottom head
+        xc = hd.center().x
+        b.rect('m2', box(xl, y0, xc + 0.15, y0 + BAR))
+        vb = box(xc - 0.15, hd.bottom + 0.05, xc + 0.15, hd.bottom + 0.45)
+        b.via('via1', vb, enc=(0.075, 0.085))
+        b.rect('m2', box(xc - 0.15, vb.bottom, xc + 0.15, y0 + BAR))
+    # top heads: Rh_b -> o2n (met2 stub east), Rh_a -> o2p (met1 above Rh_b, under the o2n column)
+    tb_, ta = rh['b'].ends[1], rh['a'].ends[1]
+    xc = tb_.center().x
+    vb = box(xc - 0.15, tb_.top - 0.45, xc + 0.15, tb_.top - 0.05)
+    b.via('via1', vb, enc=(0.075, 0.085))
+    b.rect('m2', box(vb.left, vb.bottom, c_o2['n'][1], vb.top))
+    ym = max(tb_.top, ta.top) + 0.5
+    xa = ta.center().x
+    b.rect('m1', box(xa - 0.15, ta.bottom, xa + 0.15, ym + 0.3))
+    b.rect('m1', box(xa - 0.15, ym, c_o2['p'][1], ym + 0.3))
+    vp = box(c_o2['p'][0], ym - 0.05, c_o2['p'][1], ym + 0.35)
+    b.rect('m2', vp)
+    b.via('via1', vp, enc=(0.085, 0.055))
+    # gate: met1 bar over the pads, out west past the ring (li only there) and up to Rg's top head
+    gy0, gy1 = min(q.bottom for q in f.pads), max(q.top for q in f.pads)
+    hg = rg.ends[1]
+    b.rect('m1', box(hg.center().x - 0.15, gy0, f.pads[-1].right, gy1))
+    b.rect('m1', box(hg.center().x - 0.15, gy0, hg.center().x + 0.15, hg.top))
+    # PMOS ring -> VDD: met1 + mcon on the ring's top bar, met2 riser (returned) to the moat's VDD m3
+    bar = box(f.ring.left + 0.3, f.hole.top, f.ring.right - 0.3, f.ring.top)     # the tap bar (0.17)
+    top = box(bar.left, bar.bottom - 0.16, bar.right, bar.top + 0.06)         # met1 over it, 0.17 clear of the pads
+    b.rect('m1', top)
+    b.via('mcon', bar, enc=(0.06, 0.0))
+    xv = top.center().x
+    rv = box(xv - 0.25, top.bottom, xv + 0.25, top.top)
+    b.via('via1', rv, enc=(0.085, 0.035))
+    # strap: met2 in at the east edge (below the zone), via2, met3 west over the turn's columns, down to Rg
+    ys = (mo.bottom + 0.1, mo.bottom + 0.5)
+    xj = c_o2['n'][0] + 3.95                        # between the o1n column (Xe + 4.7) and the VSS column
+    b.rect('m2', box(xj, ys[0], W, ys[1]))
+    vj = box(xj, ys[0], xj + 0.4, ys[1])
+    b.via('via2', vj, enc=(0.085, 0.065))
+    hs = rg.ends[0]
+    xs = hs.center().x
+    b.rect('m3', box(xs - 0.2, ys[0], xj + 0.4, ys[1]))
+    vs = box(xs - 0.2, ys[0], xs + 0.2, ys[1])
+    b.via('via2', vs, enc=(0.085, 0.065))
+    b.rect('m2', box(xs - 0.2, ys[0], xs + 0.2, hs.bottom + 0.45))
+    vh = box(xs - 0.15, hs.bottom + 0.05, xs + 0.15, hs.bottom + 0.45)
+    b.via('via1', vh, enc=(0.075, 0.085))
+    b.pin('m2', box(W - 0.5, ys[0], W, ys[1]), 'lna_lo_n')
+    return dict(x0=rg.bbox.left, xv=xv, yv0=top.bottom, yv1=top.top, f=f)
+
+
 def make():
     b = Block('lna_chain')
     ly = b.ly
@@ -336,7 +422,8 @@ def make():
     # ---- moat: p-tap ring (VSS, at the VSS column only) with an n-well / n-tap stripe (VDD)
     mo = box(0.125 + GRW, Hc + 0.4 + GRW, c_vss[1] - GRW, Y_F - 0.4 - GRW)   # ring inner (its psdm reaches x = 0)
     ring(b, mo, 'p', GRW)
-    ni = box(mo.left + 1.1, mo.center().y - 1.4, Xe - 1.5, mo.center().y + 1.4)
+    sh = shunt(b, Xe, mo, c_o2, W)
+    ni = box(mo.left + 1.1, mo.center().y - 1.4, sh['x0'] - 1.5, mo.center().y + 1.4)
     ring(b, ni, 'n', GRW)
     b.rect('nwell', box(ni.left - GRW - 0.4, ni.bottom - GRW - 0.4, ni.right + GRW + 0.4, ni.top + GRW + 0.4))
     yv = (ni.center().y - 0.5, ni.center().y + 0.5)
@@ -346,6 +433,10 @@ def make():
     b.via('via1', tie)
     b.via('via2', tie, enc=(0.085, 0.065))
     b.rect('m3', box(tie.left, yv[0], c_vdd[1], yv[1]))
+    xv = sh['xv']                                       # the shunt PMOS's ring: met2 riser up to it
+    rb0, rb1 = min(sh['yv0'], yv[0]), max(sh['yv1'], yv[1])
+    b.rect('m2', box(xv - 0.25, rb0, xv + 0.25, rb1))
+    b.via('via2', box(xv - 0.25, yv[0], xv + 0.25, yv[1]), enc=(0.085, 0.065))
 
     # ---- supplies: each row's rails run to the east columns and meet only there
     fr_vss, fr_vdd = pt('amp_dpc', 'VSS', T2), pt('amp_dpc', 'VDD', T2)
@@ -374,19 +465,27 @@ def write_ref():
                     'xschem/lna_chain.sch'], cwd=REPO, capture_output=True)
     src = open(os.path.join(tmp, 'lna_chain.spice')).read()
     src = re.sub(r'\n\+', ' ', src)
-    for c in ('amp_dp', 'amp_dpc'):
+    for c in ('amp_dp', 'amp_dpc', 'lna_shunt'):
         src = re.sub(rf'^\.subckt {c}\s.*?^\.ends[^\n]*\n', '', src, flags=re.S | re.M)
     env = dict(PARAMS, sqrt=math.sqrt, max=max)
     out = []
     for ln in src.splitlines():
         if ln.startswith('.subckt lna_chain'):
             ln = re.sub(r'\s+\w+=\S+', '', ln)
-        if re.match(r'^xa\d', ln):
+        if re.match(r'^x(a\d|sh)\s', ln):
             ln = re.sub(r'\s+\w+=\S+', '', ln)
         ln = re.sub(r"(\w+)='([^']+)'", lambda m: f'{m.group(1)}={eval(_si(m.group(2)), {}, env):.6g}', ln)
         out.append(ln)
     for c in ('amp_dp', 'amp_dpc'):
         out.append(open(os.path.join(REPO, 'layout', 'ref', c + '.spice')).read())
+    # lna_shunt (drawn flat in this block), with the values evaluated
+    rh_l = SHUNT['rh_l']
+    out += ['.subckt lna_shunt a b g VDD VSS',
+            f'XRh_a sa a VSS sky130_fd_pr__res_high_po_1p41 L={rh_l:.6g} mult=1',
+            f'XRh_b b sb VSS sky130_fd_pr__res_high_po_1p41 L={rh_l:.6g} mult=1',
+            f"XMsw sb gi sa VDD sky130_fd_pr__pfet_01v8 L=0.15 W={SHUNT['wsw']} nf={SHUNT['nf']}",
+            f"XRg g gi VSS sky130_fd_pr__res_xhigh_po_0p35 L={SHUNT['rg'] / 7379.0:.6g} mult=1",
+            '.ends']
     with open(os.path.join(REPO, 'layout', 'ref', 'lna_chain.spice'), 'w') as fh:
         fh.write(f'* lna_chain: xschem/lna_chain.sch with {PARAMS} (layout/gen/lna_chain.py)\n' + '\n'.join(out) + '\n')
 
