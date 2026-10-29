@@ -35,12 +35,14 @@ fi
 cnode=${CNODE:-pad_p}   # where the coupling lands (e.g. o1p: stage 2 input)
 corner=${CORNER:-tt}; temp=${TEMP:-27}   # e.g. CORNER=ss TEMP=10: the highest-gain case
 vsup=${VSUP:-1.8}                         # board supply, e.g. VSUP=1.89
+vglo=${VGLO:-1.8}                         # lna_lo_n strap: 1.8 full gain, VGLO=0 low gain (lna_shunt on)
 for cs in $cases; do
   l=${cs%:*}; c=${cs#*:}
   tag=${l}_$c; [ "$cnode" != pad_p ] && tag=${tag}_$cnode
   [ "$corner/$temp" != tt/27 ] && tag=${tag}_${corner}_$temp
   [ "$vsup" != 1.8 ] && tag=${tag}_v$vsup
   [ "$cdec" != real ] && tag=${tag}_cdec$cdec
+  [ "$vglo" != 1.8 ] && tag=${tag}_glo$vglo
   f=stab_$tag.spice
   sed -e '/^\.control/,/^\.endc/d' -e '/^\.end$/d' \
       -e "s/^VDPWR VDPWR GND .*/Vsup vsup GND $vsup\nRsup vsup vs1 0.5/" \
@@ -49,6 +51,7 @@ for cs in $cases; do
       -e 's/^\.param vemf=.*/.param vemf=0/' \
       -e 's/^\.param vcmi=.*/.param vcmi=0 fcmi=10e6/' \
       -e "s/\(sky130\.lib\.spice\) tt/\1 $corner/" \
+      -e "s/^\.param vglo=.*/.param vglo=$vglo/" \
       tb_chain.spice > $f
   echo ".temp $temp" >> $f
   if [ "$l" = 0 ]; then

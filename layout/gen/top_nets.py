@@ -107,6 +107,11 @@ def nets():
     # ua[2] debug: west along the bottom gap and up outside the chain (never across it)
     out.append(N('dbg', 'xtx.xdrv_n.out' if False else 'xdbg.b', 'ua[2]', via=[(12.0, 79.0), (12.0, 3.4)],
                  zones=[blk(*CHAIN)], margin=8))
+    # LNA low-gain strap (lna_lo_n, DC, latched at reset): along the very bottom of the tile from the
+    # macro, up the tile's west edge outside the chain (west of dbg) and in at the chain's west
+    # edge, at the bottom of the moat by the o2 turn (lna_shunt). Never across the chain.
+    out.append(N('lna_lo', 'macro.lna_lo_n', 'xchain.lna_lo_n', via=[(279.0, 1.2), (10.6, 1.2), (10.6, 54.66)],
+                 layers=['m1', 'm2', 'm3'], zones=[blk(CHAIN[0] + 0.6, *CHAIN[1:])], margin=6, label='lna_lo_n'))
     out.append(N('rx_en', 'macro.rx_en', 'xbias.en', margin=8, label='rx_en'))
     # enables: west across xdeca part 1 at their own height (below every TT pin, so the TT
     # staircase over part 1 crosses nothing), up the x 239-242 gap, west on met2 along the bottom
