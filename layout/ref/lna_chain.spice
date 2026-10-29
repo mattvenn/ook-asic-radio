@@ -61,4 +61,5 @@ XRh_a sa a VSS sky130_fd_pr__res_high_po_1p41 L=0.62 mult=1
 XRh_b b sb VSS sky130_fd_pr__res_high_po_1p41 L=0.62 mult=1
 XMsw sb gi sa VDD sky130_fd_pr__pfet_01v8 L=0.15 W=18 nf=6
 XRg g gi VSS sky130_fd_pr__res_xhigh_po_0p35 L=2.71039 mult=1
+XMcap VDD gi VDD VDD sky130_fd_pr__pfet_01v8 L=5 W=5 nf=1
 .ends

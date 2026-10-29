@@ -18,7 +18,7 @@ detector) and its testbench:
               the taps for the successive-detection log detector.
               lna_lo_n (active low): the low-gain strap, a switched shunt
               across stage 2's outputs (lna_shunt).
-  lna_shunt : o2p - Rh - PMOS - Rh - o2n, gate through Rg from pin g. On (g = 0)
+  lna_shunt : o2p - Rh - PMOS - Rh - o2n, gate through Rg (+ Mcap to VDD, ~40 MHz) from pin g. On (g = 0)
               it loads stage 2 for ~11 dB less chain gain (the fallback if the
               chain oscillates); off, it costs ~0.2 dB. Sizing:
               sim/chain/lna_lo.sh (docs/handoff_lna_lo.md).
@@ -128,7 +128,7 @@ def lna_shunt():
     s.pin_order = ['VDD', 'VSS', 'a', 'b', 'g']
     s.text(-200, -360, 'lna_shunt: low-gain strap across stage 2 outputs (a = o2p, b = o2n)\n'
            'g = 0: PMOS on, Rh + Ron + Rh loads the stage (~11 dB less chain gain); g = VDD: off\n'
-           'params: rh (each Rh, high_po_1p41), wsw (PMOS W, L 0.15), rg (gate R, xhigh_po_0p35)', 0.4)
+           'params: rh (each Rh, high_po_1p41), wsw (PMOS W, L 0.15), rg (gate R, xhigh_po_0p35); Mcap ~210 fF', 0.4)
     ra = poly_r(s, 0, -100, 'rh', 'high', '1p41', rot=1, name='Rh_a')
     rb = poly_r(s, 400, -100, 'rh', 'high', '1p41', rot=1, name='Rh_b')
     for r in (ra, rb):
@@ -139,6 +139,9 @@ def lna_shunt():
     s.connect(m, S='sa', D='sb', G='gi')
     rg = poly_r(s, 200, 150, 'rg', 'xhigh', '0p35', name='Rg')
     s.connect(rg, P='gi', M='g', B='VSS')
+    # gate filter cap: PMOS W 5 / L 5 (~210 fF) gi -> VDD, with Rg a ~40 MHz low-pass on the strap
+    mc = mos(s, 'p', 450, 150, W=5, L=5, nf=1, name='Mcap', body='VDD')
+    s.connect(mc, G='gi', S='VDD', D='VDD')
     ports(s, -200, 300, ['VDD', 'VSS', 'a', 'b', 'g'])
     value_notes(s, SHUNT_PARAMS)
     s.write(os.path.join(XDIR, 'lna_shunt.sch'))

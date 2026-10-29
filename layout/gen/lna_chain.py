@@ -218,12 +218,12 @@ def front(b, cells, pin):
     return dict(x_dp=x_dp, xs=xs, W=xs[1] + cells['amp_dpc'].dbbox().width(), o1=o1, T2=T['amp_dpc'])
 
 
-SHUNT = dict(rh_l=0.62, wsw=18, nf=6, rg=20e3)   # xschem/gen/chain.py lna_shunt: 1p41 421 ohm (L 0.62, the pcell's shortest), W 18 / L 0.15, xhigh 20k
+SHUNT = dict(rh_l=0.62, wsw=18, nf=6, rg=20e3)   # xschem/gen/chain.py lna_shunt: 1p41 421 ohm (L 0.62, the pcell's shortest), W 18 / L 0.15, xhigh 20k, Mcap W 5 / L 5
 
 
 def shunt(b, Xe, mo, c_o2, W):
     """lna_shunt (the low-gain strap) at the turn end of the moat, by the o2 columns:
-    west to east Rg (xhigh 0.35, the gate R), Msw (PMOS, own n-tap ring on VDD), Rh_a (o2p) and
+    west to east Mcap (PMOS gate cap gi -> VDD, ~210 fF: with Rg a ~40 MHz low-pass), Rg (xhigh 0.35, the gate R), Msw (PMOS, own n-tap ring on VDD), Rh_a (o2p) and
     Rh_b (o2n) (high_po 1.41, one segment each). o2n: a met2 stub from its column; o2p: met1 under
     the o2n column. The strap (lna_lo_n) comes in at the block's east edge on met2, crosses the
     turn's columns on met3 at the bottom of the moat and drops to Rg. Returns the zone's west
@@ -243,6 +243,11 @@ def shunt(b, Xe, mo, c_o2, W):
     nw_left = f.diff.left - 0.92
     rg = PolyRes(b, SHUNT['rg'] / 7379.0, 1)        # xhigh 0.35: R = 7379 * L
     rg.place(nw_left - 0.8 - 0.81, yb + 0.2)
+    # Mcap: PMOS W 5 / L 5 gate cap (gi -> VDD), west of Rg in its own n-tap ring
+    fc = Fet(b, 'p', 5, 5, nf=1, vt='', bulk='guard ring')
+    ncr = fc.bbox.right - fc.diff.right                                  # diff to the cell's (n-well) edge
+    fc.place(rg.bbox.left - 1.0 - ncr - fc.diff.width(), yb + (fc.diff.bottom - fc.bbox.bottom))
+    fc.commit()
     # S strips (even) -> sa bar (low) -> Rh_a's bottom head; D strips (odd) -> sb bar (high) -> Rh_b's
     s0, d0 = f.diff.bottom + 0.2, f.diff.top - 0.2 - BAR
     for k, st in enumerate(f.strips):
@@ -277,6 +282,19 @@ def shunt(b, Xe, mo, c_o2, W):
     hg = rg.ends[1]
     b.rect('m1', box(hg.center().x - 0.15, gy0, f.pads[-1].right, gy1))
     b.rect('m1', box(hg.center().x - 0.15, gy0, hg.center().x + 0.15, hg.top))
+    # Mcap: gate pad -> gi (Rg's top head); S / D strips + its ring's bottom bar -> VDD (met1, mcon),
+    # met2 riser (returned) to the moat's VDD m3
+    pc = fc.pads[0]
+    b.rect('m1', box(pc.left, pc.bottom, hg.center().x + 0.15, pc.top))
+    b.rect('m1', box(hg.center().x - 0.15, min(pc.bottom, gy0), hg.center().x + 0.15, max(pc.top, hg.top)))
+    cb = box(fc.ring.left + 0.3, fc.ring.bottom, fc.ring.right - 0.3, fc.hole.bottom)       # the tap bar
+    cm = box(cb.left, cb.bottom - 0.06, cb.right, cb.top + 0.16)
+    b.rect('m1', cm)
+    b.via('mcon', cb, enc=(0.06, 0.0))
+    for st in fc.strips:
+        b.rect('m1', box(st.left, cm.bottom, st.right, st.bottom + 0.1))
+    xcv = fc.strips[-1].center().x
+    b.via('via1', box(xcv - 0.25, cm.bottom, xcv + 0.25, cm.top), enc=(0.085, 0.035))
     # PMOS ring -> VDD: met1 + mcon on the ring's top bar, met2 riser (returned) to the moat's VDD m3
     bar = box(f.ring.left + 0.3, f.hole.top, f.ring.right - 0.3, f.ring.top)     # the tap bar (0.17)
     top = box(bar.left, bar.bottom - 0.16, bar.right, bar.top + 0.06)         # met1 over it, 0.17 clear of the pads
@@ -300,7 +318,7 @@ def shunt(b, Xe, mo, c_o2, W):
     vh = box(xs - 0.15, hs.bottom + 0.05, xs + 0.15, hs.bottom + 0.45)
     b.via('via1', vh, enc=(0.075, 0.085))
     b.pin('m2', box(W - 0.5, ys[0], W, ys[1]), 'lna_lo_n')
-    return dict(x0=rg.bbox.left, xv=xv, yv0=top.bottom, yv1=top.top, f=f)
+    return dict(x0=fc.bbox.left, xv=xv, yv0=top.bottom, yv1=top.top, xcv=xcv, ycv0=cm.bottom, ycv1=cm.top, f=f)
 
 
 def make():
@@ -423,7 +441,7 @@ def make():
     mo = box(0.125 + GRW, Hc + 0.4 + GRW, c_vss[1] - GRW, Y_F - 0.4 - GRW)   # ring inner (its psdm reaches x = 0)
     ring(b, mo, 'p', GRW)
     sh = shunt(b, Xe, mo, c_o2, W)
-    ni = box(mo.left + 1.1, mo.center().y - 1.4, sh['x0'] - 1.5, mo.center().y + 1.4)
+    ni = box(mo.left + 1.1, mo.center().y - 1.4, sh['x0'] - 2.2, mo.center().y + 1.4)   # nwell.2a: 1.27 to Mcap's
     ring(b, ni, 'n', GRW)
     b.rect('nwell', box(ni.left - GRW - 0.4, ni.bottom - GRW - 0.4, ni.right + GRW + 0.4, ni.top + GRW + 0.4))
     yv = (ni.center().y - 0.5, ni.center().y + 0.5)
@@ -434,9 +452,9 @@ def make():
     b.via('via2', tie, enc=(0.085, 0.065))
     b.rect('m3', box(tie.left, yv[0], c_vdd[1], yv[1]))
     xv = sh['xv']                                       # the shunt PMOS's ring: met2 riser up to it
-    rb0, rb1 = min(sh['yv0'], yv[0]), max(sh['yv1'], yv[1])
-    b.rect('m2', box(xv - 0.25, rb0, xv + 0.25, rb1))
-    b.via('via2', box(xv - 0.25, yv[0], xv + 0.25, yv[1]), enc=(0.085, 0.065))
+    for xr, r0, r1 in ((xv, sh['yv0'], sh['yv1']), (sh['xcv'], sh['ycv0'], sh['ycv1'])):   # Msw, Mcap
+        b.rect('m2', box(xr - 0.25, min(r0, yv[0]), xr + 0.25, max(r1, yv[1])))
+        b.via('via2', box(xr - 0.25, yv[0], xr + 0.25, yv[1]), enc=(0.085, 0.065))
 
     # ---- supplies: each row's rails run to the east columns and meet only there
     fr_vss, fr_vdd = pt('amp_dpc', 'VSS', T2), pt('amp_dpc', 'VDD', T2)
@@ -485,6 +503,7 @@ def write_ref():
             f'XRh_b b sb VSS sky130_fd_pr__res_high_po_1p41 L={rh_l:.6g} mult=1',
             f"XMsw sb gi sa VDD sky130_fd_pr__pfet_01v8 L=0.15 W={SHUNT['wsw']} nf={SHUNT['nf']}",
             f"XRg g gi VSS sky130_fd_pr__res_xhigh_po_0p35 L={SHUNT['rg'] / 7379.0:.6g} mult=1",
+            'XMcap VDD gi VDD VDD sky130_fd_pr__pfet_01v8 L=5 W=5 nf=1',
             '.ends']
     with open(os.path.join(REPO, 'layout', 'ref', 'lna_chain.spice'), 'w') as fh:
         fh.write(f'* lna_chain: xschem/lna_chain.sch with {PARAMS} (layout/gen/lna_chain.py)\n' + '\n'.join(out) + '\n')
