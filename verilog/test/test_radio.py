@@ -291,6 +291,30 @@ async def test_debug_strap(dut):
 
 
 @cocotb.test()
+async def test_lna_lo_strap(dut):
+    """Magic 1011 on uio[7:4] at reset -> lna_lo_n = 0 (low LNA gain); 1010, other
+    nibbles or no strap -> 1 (full gain). 1011 enables the other straps exactly like
+    1010 (raw mode, debug), and later uio activity doesn't change it."""
+    start_clock(dut)
+    for role, uio, lo, dbg in ((0, 0b1011_0000, 1, 0), (1, 0b1011_0100, 1, 1), (0, 0b1010_0100, 0, 1),
+                               (0, 0b0000_0000, 0, 0), (0, 0b0001_0000, 0, 0), (0, 0b1111_0100, 0, 0),
+                               (1, 0b0011_0100, 0, 0)):
+        await reset(dut, role=role, code=5, uio=uio)
+        for v in (0, 0b1_0000, 0xff):
+            dut.uio_in.value = v
+            await FallingEdge(dut.clk)
+            assert int(dut.lna_lo_n.value) == 1 - lo, f'role {role} uio {uio:08b}'
+            assert int(dut.dbg_en.value) == dbg, f'role {role} uio {uio:08b}'
+    # 1011 + mode 01 -> raw TX, like 1010
+    await reset(dut, role=1, code=5, uio=0b1011_0001)
+    for v in (1, 0):
+        dut.uio_in.value = v << 2
+        await Timer(1, unit='ns')
+        assert int(dut.tx_en.value) == v
+    assert int(dut.lna_lo_n.value) == 0
+
+
+@cocotb.test()
 async def test_sc_phases(dut):
     """sc_phi1/sc_phi2 non-overlapping, one cycle per 130-clock sample."""
     start_clock(dut)

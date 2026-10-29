@@ -32,8 +32,8 @@ XDIR = os.path.normpath(os.path.join(HERE, '..'))
 NT = chain.NSTAGES
 DIG_IN = ['clk', 'rst_n', 'ui_in[7:0]', 'uio_in[7:0]', 'comp_in']
 DIG_OUT = ['uo_out[7:0]', 'uio_out[7:0]', 'uio_oe[7:0]', 'trim_out[7:0]', 'tx_en', 'tx_en_n', 'rx_en',
-           'dbg_en', 'sc_phi1', 'sc_phi2']
-ANA_IF_IN = ['rx_en', 'tx_en', 'tx_en_n', 'dbg_en', 'sc_phi1', 'sc_phi2', 'trim[7:0]']
+           'dbg_en', 'lna_lo_n', 'sc_phi1', 'sc_phi2']
+ANA_IF_IN = ['rx_en', 'tx_en', 'tx_en_n', 'dbg_en', 'lna_lo_n', 'sc_phi1', 'sc_phi2', 'trim[7:0]']
 ANA_PADS = ['tx_p', 'tx_n', 'rx_p', 'rx_n', 'dbg']
 
 
@@ -45,13 +45,14 @@ def radio_analog():
            'det -> dbg_tg -> dbg. TX: tx_top -> tx_p/n\n'
            'signal paths are wired; supplies, bias currents, clocks and enables are labelled', 0.4)
     # label-only ports (supplies and the digital's control inputs)
-    ports(s, -900, -600, ['VDPWR', 'VAPWR', 'VGND', 'rx_en', 'dbg_en', 'sc_phi1', 'sc_phi2', 'trim[7:0]'])
+    ports(s, -900, -600, ['VDPWR', 'VAPWR', 'VGND', 'rx_en', 'dbg_en', 'lna_lo_n', 'sc_phi1', 'sc_phi2', 'trim[7:0]'])
     b = s.place('bias_gen.sym', -500, 450, name='xbias')
     s.connect(b, en='rx_en', vcm='vcm', ib_chain='ib_chain', ib_det='ib_det', ib_comp='ib_comp',
               VDD='VDPWR', VSS='VGND')
     taps = {f'o{i}{sd}': f'o{i}{sd}' for i in range(1, NT) for sd in 'pn'}
     c = s.place('lna_chain.sym', 0, 0, name='xchain')
-    s.connect(c, ibias='ib_chain', vcm='vcm', outp='out_p', outn='out_n', VDD='VDPWR', VSS='VGND', **taps)
+    s.connect(c, ibias='ib_chain', vcm='vcm', lna_lo_n='lna_lo_n', outp='out_p', outn='out_n', VDD='VDPWR',
+              VSS='VGND', **taps)
     for pin, net in (('inp', 'rx_p'), ('inn', 'rx_n')):
         q = c.pin(pin)
         s.route(q, (q[0] - 120, q[1]))
@@ -153,7 +154,8 @@ def tt_top():
     s.connect(an, rx_en='rx_en', comp_out='comp', VDPWR='VDPWR', VGND='VGND',
               rx_p='ua[0]', rx_n='ua[1]', dbg='ua[2]', tx_p='ua[3]', tx_n='ua[4]', **{'trim[7:0]': 'trim[7:0]'})
     # digital -> analog control wires (straight, or one jog each, staggered so none cross)
-    for pin, jx in (('tx_en', None), ('tx_en_n', None), ('dbg_en', 0), ('sc_phi1', 40), ('sc_phi2', 80)):
+    for pin, jx in (('tx_en', None), ('tx_en_n', None), ('dbg_en', 0), ('lna_lo_n', 20), ('sc_phi1', 40),
+                    ('sc_phi2', 80)):
         a, b = dg.pin(pin), an.pin(pin)
         if jx is None:
             s.route(a, b)
@@ -215,7 +217,7 @@ def tb_radio_analog():
     antenna_pad(s)                                     # VDPWR source, RX dipole -> pad_p / pad_n
     va = s.place('devices/vsource.sym', -1100, -420, name='VA', value='3.3')
     s.connect(va, p='VAPWR', m='GND')
-    for nm, net, val in (('Vrx', 'rx_en', "'ven_rx'"), ('Vdbg', 'dbg_en', "'vdbg'"),
+    for nm, net, val in (('Vrx', 'rx_en', "'ven_rx'"), ('Vdbg', 'dbg_en', "'vdbg'"), ('Vglo', 'lna_lo_n', "'vglo'"),
                          ('Vtx', 'tx_en', '"pwl(0 0 5n 0 5.05n \'ven_tx\' 60n \'ven_tx\' 60.05n 0)"'),
                          ('Vtxn', 'tx_en_n', '"pwl(0 0 5n 0 5.05n \'ven_tx\' 60n \'ven_tx\' 60.05n 0)"'),
                          ('Vphi1', 'sc_phi1', '"pulse(0 1.8 0 10n 10n 6.09u 13u)"'),
@@ -227,7 +229,8 @@ def tb_radio_analog():
                     value='1.8' if (135 >> i) & 1 else '0')
         s.connect(v, p=f'trim[{i}]', m='GND')
     x = s.place('radio_analog.sym', 0, 0, name='xana')
-    s.connect(x, rx_en='rx_en', tx_en='tx_en', tx_en_n='tx_en_n', dbg_en='dbg_en', sc_phi1='sc_phi1',
+    s.connect(x, rx_en='rx_en', tx_en='tx_en', tx_en_n='tx_en_n', dbg_en='dbg_en', lna_lo_n='lna_lo_n',
+              sc_phi1='sc_phi1',
               sc_phi2='sc_phi2', comp_out='comp', VDPWR='VDPWR', VAPWR='VAPWR', VGND='GND',
               tx_p='tx_p', tx_n='tx_n', rx_p='pad_p', rx_n='pad_n', dbg='dbg', **{'trim[7:0]': 'trim[7:0]'})
     # TX pins -> pad models -> dipole; debug pin -> pad model -> scope

@@ -24,47 +24,50 @@ T {ibias} -95 -146 0 0 0.2 0.2 {}
 L 7 -120 -100 -100 -100 {}
 B 5 -122.5 -102.5 -117.5 -97.5 {name=vcm dir=inout sim_pinnumber=4}
 T {vcm} -95 -106 0 0 0.2 0.2 {}
+L 7 -120 -60 -100 -60 {}
+B 5 -122.5 -62.5 -117.5 -57.5 {name=lna_lo_n dir=inout sim_pinnumber=5}
+T {lna_lo_n} -95 -66 0 0 0.2 0.2 {}
 L 7 100 -220 120 -220 {}
-B 5 117.5 -222.5 122.5 -217.5 {name=outp dir=inout sim_pinnumber=5}
+B 5 117.5 -222.5 122.5 -217.5 {name=outp dir=inout sim_pinnumber=6}
 T {outp} 95 -226 0 1 0.2 0.2 {}
 L 7 100 -180 120 -180 {}
-B 5 117.5 -182.5 122.5 -177.5 {name=outn dir=inout sim_pinnumber=6}
+B 5 117.5 -182.5 122.5 -177.5 {name=outn dir=inout sim_pinnumber=7}
 T {outn} 95 -186 0 1 0.2 0.2 {}
 L 7 100 -140 120 -140 {}
-B 5 117.5 -142.5 122.5 -137.5 {name=o1p dir=inout sim_pinnumber=7}
+B 5 117.5 -142.5 122.5 -137.5 {name=o1p dir=inout sim_pinnumber=8}
 T {o1p} 95 -146 0 1 0.2 0.2 {}
 L 7 100 -100 120 -100 {}
-B 5 117.5 -102.5 122.5 -97.5 {name=o1n dir=inout sim_pinnumber=8}
+B 5 117.5 -102.5 122.5 -97.5 {name=o1n dir=inout sim_pinnumber=9}
 T {o1n} 95 -106 0 1 0.2 0.2 {}
 L 7 100 -60 120 -60 {}
-B 5 117.5 -62.5 122.5 -57.5 {name=o2p dir=inout sim_pinnumber=9}
+B 5 117.5 -62.5 122.5 -57.5 {name=o2p dir=inout sim_pinnumber=10}
 T {o2p} 95 -66 0 1 0.2 0.2 {}
 L 7 100 -20 120 -20 {}
-B 5 117.5 -22.5 122.5 -17.5 {name=o2n dir=inout sim_pinnumber=10}
+B 5 117.5 -22.5 122.5 -17.5 {name=o2n dir=inout sim_pinnumber=11}
 T {o2n} 95 -26 0 1 0.2 0.2 {}
 L 7 100 20 120 20 {}
-B 5 117.5 17.5 122.5 22.5 {name=o3p dir=inout sim_pinnumber=11}
+B 5 117.5 17.5 122.5 22.5 {name=o3p dir=inout sim_pinnumber=12}
 T {o3p} 95 14 0 1 0.2 0.2 {}
 L 7 100 60 120 60 {}
-B 5 117.5 57.5 122.5 62.5 {name=o3n dir=inout sim_pinnumber=12}
+B 5 117.5 57.5 122.5 62.5 {name=o3n dir=inout sim_pinnumber=13}
 T {o3n} 95 54 0 1 0.2 0.2 {}
 L 7 100 100 120 100 {}
-B 5 117.5 97.5 122.5 102.5 {name=o4p dir=inout sim_pinnumber=13}
+B 5 117.5 97.5 122.5 102.5 {name=o4p dir=inout sim_pinnumber=14}
 T {o4p} 95 94 0 1 0.2 0.2 {}
 L 7 100 140 120 140 {}
-B 5 117.5 137.5 122.5 142.5 {name=o4n dir=inout sim_pinnumber=14}
+B 5 117.5 137.5 122.5 142.5 {name=o4n dir=inout sim_pinnumber=15}
 T {o4n} 95 134 0 1 0.2 0.2 {}
 L 7 100 180 120 180 {}
-B 5 117.5 177.5 122.5 182.5 {name=o5p dir=inout sim_pinnumber=15}
+B 5 117.5 177.5 122.5 182.5 {name=o5p dir=inout sim_pinnumber=16}
 T {o5p} 95 174 0 1 0.2 0.2 {}
 L 7 100 220 120 220 {}
-B 5 117.5 217.5 122.5 222.5 {name=o5n dir=inout sim_pinnumber=16}
+B 5 117.5 217.5 122.5 222.5 {name=o5n dir=inout sim_pinnumber=17}
 T {o5n} 95 214 0 1 0.2 0.2 {}
 L 7 -70 -270 -70 -250 {}
-B 5 -72.5 -272.5 -67.5 -267.5 {name=VDD dir=inout sim_pinnumber=17}
+B 5 -72.5 -272.5 -67.5 -267.5 {name=VDD dir=inout sim_pinnumber=18}
 T {VDD} -76 -245 0 0 0.2 0.2 {}
 L 7 -70 250 -70 270 {}
-B 5 -72.5 267.5 -67.5 272.5 {name=VSS dir=inout sim_pinnumber=18}
+B 5 -72.5 267.5 -67.5 272.5 {name=VSS dir=inout sim_pinnumber=19}
 T {VSS} -76 230 0 0 0.2 0.2 {}
 T {@symname} -40 -6 0 0 0.3 0.3 {}
 T {@name} 70 -270 0 0 0.2 0.2 {}
