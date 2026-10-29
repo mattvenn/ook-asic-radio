@@ -26,7 +26,7 @@ Base it on `bench/fw/ringkey.py`. It already selects a project with the shuttle 
 
 - `PROJECT = 'tt_um_mattvenn_radio'`, with a 10 MHz project clock.
 - **Strapped reset** (raw / debug / monopole modes). The straps are read on the first clock edge after `rst_n` goes high, and `uio[7:3]` become outputs on the second. So use the clock to make the hand-over clean:
-  1. Clock running. Hold reset. The RP2350 drives `uio[7:4]` = `1010`, `uio[1:0]` = mode, `uio[2]` = debug, `uio[3]` = monopole.
+  1. Clock running. Hold reset. The RP2350 drives `uio[7:4]` = `1010` (or `1011`: the same straps plus LNA low gain), `uio[1:0]` = mode, `uio[2]` = debug, `uio[3]` = monopole.
   2. Stop the clock. Release reset. Pulse the clock once: the straps are latched.
   3. Set the RP2350's `uio[7:3]` to inputs. Then restart the clock: the chip turns its outputs on.
 
@@ -50,6 +50,7 @@ Generate test patterns from the model: `model/gold.py` `gold(k)` gives the 127-c
 | D4 | `uio[7:3]` direction after reset | outputs (`uio_oe` = `11111000`); `uio[2:0]` inputs | |
 | D5 | Strapped reset, raw mode (`1010`, mode `01`) | display `r` | |
 | D6 | Reset without the `1010` pattern, mode `01` on `uio[1:0]` | normal mode (`-` or `t`): the straps are ignored | |
+| D6b | Strapped reset `1011`, mode `01` | display `r`, as D5 (`1011` = the same straps + LNA low gain; the gain itself is checked in R13) | |
 | D7 | Change `ui_in[6:0]` in TX role | `uio[7]` high for 59.6 ms, display `1` `2` `3` then `t`; no send if the code changes back within ~50 ms | |
 
 If D1 fails, check that the project is selected (the board's carrier detect may fail: force the shuttle, as `ringkey.py` does) and that the clock is running.
@@ -80,6 +81,7 @@ One board, RX role (`ui_in[7]` = 0). Do R1–R3 with no antenna fitted.
 
 | # | Test | How | Expected | Result |
 |---|---|---|---|---|
+| R0 | Chain oscillation check | No antenna, then with the antenna. Debug strap (`1010`, `uio[2]` = 1), `ua[2]` on a scope; VDPWR current; an SDR or a near-field probe over the chip, 300–700 MHz | `ua[2]` near its idle level (R3), no tone. **Oscillation looks like:** `ua[2]` pinned well below idle (as if a strong signal were present, ~1.2 V or lower), `uio[3]` stuck, extra supply current, a tone on the probe. If so, reset with `1011` (+ `uio[2]` = 1): the LNA low-gain strap cuts ~10 dB; repeat this test | |
 | R1 | Idle | Scope `uio[3]` (comparator) and `uio[6]` (trim direction) | both toggle, roughly 50 % duty: the servo dithers the threshold around the noise | |
 | R2 | RX current | VDPWR, RX vs TX role idle | ~3 mA difference | |
 | R3 | Detector, idle | Debug strap (`1010`, `uio[2]` = 1). 1 MΩ probe on `ua[2]` | ~1.49 V, quiet | |
@@ -92,6 +94,7 @@ One board, RX role (`ui_in[7]` = 0). Do R1–R3 with no antenna fitted.
 | R10 | Wrong code / noise | As R9 with a different code, and with the key fob held near the board | no toggle, ever | |
 | R11 | Overload | −10 dBm keyed | `uio[3]` follows the keying, detection still works; a weak signal is missed for only 0.25–0.3 ms after a strong burst ends | |
 | R12 | False-toggle soak | Antenna fitted, overnight, RP2350 counting `uio[5]` | 0 toggles | |
+| R13 | LNA low-gain strap | Debug strap with `1011` vs `1010`. R3 idle level, and the R6 curve at a few levels | `1011`: idle `ua[2]` slightly higher (less chain noise reaches the detector); the R6 curve shifted ~10 dB to higher input (9.5–10.4 dB extracted). Sensitivity (R9 / L1) about −88 dBm vs −93 (model estimate, docs/handoff_lna_lo.md) | |
 
 Without a signal generator: do R1–R5 and R10–R12. Leave sensitivity to L1, which uses a measured TX as the source. The key fob gives a quick check that `det` and `uio[3]` respond at all.
 

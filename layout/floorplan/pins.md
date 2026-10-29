@@ -33,6 +33,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 
 | pin | x | y | |
 |---|---|---|---|
+| lna_lo_n | 199.75 | 3.06 | added 2026-10-29 |
 | rx_en | 199.75 | 7.14 | moved |
 | comp_in | 199.75 | 86.02 | moved |
 | trim_out[7] | 199.75 | 94.18 | moved |
