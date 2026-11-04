@@ -53,6 +53,8 @@ def base(src):
     d = d.replace('pulse(0 1.8 0 10n 10n 6.09u 13u)', 'pulse(0 1.8 25p 10n 10n 6.09u 13u)')
     d = d.replace('pulse(0 1.8 6.5u 10n 10n 6.09u 13u)', 'pulse(0 1.8 6.500025u 10n 10n 6.09u 13u)')
     d = re.sub(r'^\.save .*$', SAVE, d, count=1, flags=re.M)
+    if os.environ.get('NT'):      # else build/.spiceinit's 8 threads
+        d = re.sub(r'^\.control$', f'.control\nset num_threads={os.environ["NT"]}', d, count=1, flags=re.M)
     return d
 
 
