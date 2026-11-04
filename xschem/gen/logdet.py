@@ -152,11 +152,13 @@ def tb_logdet():
     x1 = s.place('lna_chain.sym', -300, -150, name='x1', w1="'w1'", rl1="'rl1'", mt1="'mt1'",
                  w2="'w2'", rl2="'rl2'", mt2="'mt2'", cs="'cs'", cin="'cin'", rb="'rb'", mm="'mm'")
     s.connect(x1, inp='pad_p', inn='pad_n', ibias='ibias', vcm='vcm', outp='out_p', outn='out_n',
-              VDD='VDPWR', VSS='GND', **taps)
+              VDD='VDPWR', VSS='GND', lna_lo_n='glo', **taps)
     ib = s.place('devices/isource.sym', -500, 250, name='Iref', value="'iref'")
     s.connect(ib, p='VDPWR', m='ibias')
     vcm = s.place('devices/vsource.sym', -300, 250, name='Vcm', value="'vcm_dc'")
     s.connect(vcm, p='vcm', m='GND')
+    vg = s.place('devices/vsource.sym', -100, 250, name='Vglo', value="'vglo'")    # strap: .param vglo (1.8 = off)
+    s.connect(vg, p='glo', m='GND')
     x2 = s.place('log_det.sym', 500, -150, name='x2', wd="'wd'", rs="'rs'", cc="'ccd'", rb="'rbd'",
                  rdet="'rdet'", cdet="'cdet'")
     nets = {f't{i}{sd}': f'o{i}{sd}' for i in range(1, NTAPS) for sd in 'pn'}
