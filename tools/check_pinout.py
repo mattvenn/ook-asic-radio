@@ -242,7 +242,7 @@ def write_verilog(nets, path):
 `timescale 1ns / 1ps
 
 module radio_analog (
-    input  wire rx_en, tx_en, tx_en_n, dbg_en, sc_phi1, sc_phi2,
+    input  wire rx_en, tx_en, tx_en_n, dbg_en, lna_lo_n, sc_phi1, sc_phi2,
     input  wire [7:0] trim,
     output wire comp_out,
     inout  wire tx_p, tx_n, rx_p, rx_n, dbg,
