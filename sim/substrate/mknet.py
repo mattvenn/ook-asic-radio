@@ -5,7 +5,9 @@
 #   bulks on rb_p/n and on the port of the device whose drain they load; each net's VSUBS cap split
 #   over ports / VSS by vsubs_map.json; the solved port network (Y, taps = VSS) as resistors,
 #   conductances multiplied by --gscale.
-# The subckt has the schematic's port order (inp inn ibias vcm outp outn o1p o1n ... o5n VDD VSS).
+# The subckt has the schematic's port order (inp inn ibias vcm lna_lo_n outp outn o1p o1n ... o5n VDD VSS).
+# lna_shunt (the low-gain strap across o2p / o2n): its pfets keep their n-well bulk (VDD); its poly
+# resistors (no substrate port of their own, ~100 um from the input) have their bulk on VSS.
 import argparse, json, os, re, numpy as np
 D = os.path.dirname(os.path.abspath(__file__))
 ap = argparse.ArgumentParser()
@@ -20,7 +22,7 @@ ap.add_argument('--cut', action='store_true')   # drop the links between the lat
 a = ap.parse_args()
 g = json.load(open(f'{D}/geom.json')); meta = g['meta']
 vmap = json.load(open(f'{D}/vsubs_map.json'))
-PORTS = 'inp inn ibias vcm outp outn o1p o1n o2p o2n o3p o3n o4p o4n o5p o5n VDD VSS'.split()
+PORTS = 'inp inn ibias vcm lna_lo_n outp outn o1p o1n o2p o2n o3p o3n o4p o4n o5p o5n VDD VSS'.split()
 
 # kpex netlist: join continuation lines
 lines = []
@@ -54,16 +56,22 @@ for ln in lines:
     if f[0].startswith('M'):
         d, gt, s, b, model = f[1:6]
         p = {k: v for k, v in (x.split('=') for x in f[6:])}
-        port = find_mos(d, gt, s); nf = meta[port]['nf']
-        out.append(f"X{port} {d} {gt} {s} {bulk(port)} {model} L={num(p['L']) * 1e6:.4g} W={num(p['W']) * 1e6:.4g} nf={nf} "
+        if 'pfet' in model:        # lna_shunt: Msw W 18 nf 6, Mcap W 5 nf 1 (combined by the LVS)
+            nf = 6 if abs(num(p['W']) - 18e-6) < 1e-9 else 1
+            port, bb = 'sh_' + f[0][1:].replace('$', 'm'), b
+        else:
+            port = find_mos(d, gt, s); nf = meta[port]['nf']; bb = bulk(port)
+        out.append(f"X{port} {d} {gt} {s} {bb} {model} L={num(p['L']) * 1e6:.4g} W={num(p['W']) * 1e6:.4g} nf={nf} "
                    f"ad={num(p['AD']) * 1e12:.4g} as={num(p['AS']) * 1e12:.4g} pd={num(p['PD']) * 1e6:.4g} ps={num(p['PS']) * 1e6:.4g} mult=1")
     elif f[0].startswith('R'):
         n1, n2, b, val, model = f[1:6]
         p = {k: v for k, v in (x.split('=') for x in f[6:])}
         if 'g1p' in (n1, n2): port = 'rb_p'
         elif 'g1n' in (n1, n2): port = 'rb_n'
-        else: port = drain_port[n2 if n1 == 'VDD' else n1]
-        out.append(f"X{f[0][1:].replace('$', 'r')} {n1} {n2} {bulk(port)} {model} L={num(p['L']) * 1e6:.4g} mult=1")
+        else: port = drain_port.get(n2 if n1 == 'VDD' else n1)
+        if port is None:           # lna_shunt's resistors (its nets aren't any nfet's drain / source)
+            assert {n1, n2} & {'o2p', 'o2n', 'lna_lo_n'}, ln
+        out.append(f"X{f[0][1:].replace('$', 'r')} {n1} {n2} {'VSS' if port is None else bulk(port)} {model} L={num(p['L']) * 1e6:.4g} mult=1")
     elif f[0] == 'C':          # MIM devices
         ccount += 1; out.append(f'Cmim{ccount} {f[1]} {f[2]} {f[3]}')
     elif f[0].startswith('Cext'):

@@ -56,6 +56,8 @@ for d in top.each_device():
     elif 'cap_mim' in cls:
         if not n.startswith('cin'): continue
         r = pick(capm, pts); kind = 'cap'
+    else:
+        continue          # pfets (lna_shunt's Msw / Mcap): in their n-well, insulating in this model
     if kind == 'cap':
         cap_later.append((n, r, d)); continue
     if (r & used).area(): print('WARNING overlapping port', n)
