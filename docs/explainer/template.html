@@ -153,6 +153,13 @@ svg.dg{display:block; width:100%; height:auto}
 .bursts{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.5rem; margin-bottom:.5rem}
 .burst{border:1px solid var(--line); border-radius:8px; padding:.3rem .6rem; font-size:.85rem; font-family:var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .burst.now{border-color:var(--tx); color:var(--tx)} .burst.ok{border-color:var(--ok); color:var(--ok)} .burst.bad{border-color:var(--bad); color:var(--bad)} .burst.later{color:var(--faint)}
+.dsctl{display:flex; align-items:center; gap:.6rem 1.25rem; flex-wrap:wrap; font-size:.9rem; color:var(--muted)}
+.dsctl label{display:flex; align-items:center; gap:.6rem; white-space:nowrap}
+.dsctl label b{font-family:var(--mono); font-weight:500; color:var(--text); display:inline-block; width:2ch; text-align:right}
+.dsctl input{accent-color:var(--dig); width:11rem; max-width:40vw}
+.dsctl button{min-height:34px; padding:0 .8rem; border-radius:8px; border:1px solid var(--line); background:var(--panel2); cursor:pointer}
+.dsctl button:hover{border-color:var(--sig)}
+#dsfig{display:flex; flex-direction:column; gap:.9rem}
 .num{display:inline-block; white-space:nowrap; font-variant-numeric:tabular-nums}
 .fig .ft{font-size:.85rem; color:var(--muted); display:flex; justify-content:space-between; gap:1rem}
 /* plot titles stay on one line, so a number changing width can't rewrap them: no padding needed in titles */
@@ -553,8 +560,8 @@ const B = {
     plot: () => figPath()},
   ook: {lvl: 'link', anchor: 'on-off-keying-ook',
     plot: () => figCode()},
-  code: {lvl: 'link', anchor: 'finding-a-signal-weaker-than-the-noise',
-    plot: () => figScore()},
+  code: {lvl: 'link', anchor: 'finding-a-signal-weaker-than-the-noise', scene: false,
+    plot: () => figDespread()},
   gold: {lvl: 'tx', rtl: 'rd_gold', anchor: 'digital-radio_digital-macro', color: 'dig', mods: ['rd_gold', 'rd_tx'],
     plot: () => figGold()},
   tx_ring: {lvl: 'tx', anchor: 'transmitter', sch: 'tx_ring', color: 'tx',
@@ -627,6 +634,78 @@ function figCode() {
   return fig(`code 0x${D.code.toString(16).toUpperCase()}: sent, and decided at ${DBM(prx())}`,
     strip([{bits: g, label: 'sent', color: 'var(--tx)'}, {bits: r._c, label: 'received', color: 'var(--rx)', cmp: g}], {aria: 'sent and received bits'}),
     'model/ link model, one burst') + `<p>Wrong bits are red. ${N(r.chip_ok + '/127', 7)} right: ${r.chip_ok < 97 ? 'below 97, not a detection.' : '97 or more, a detection.'}</p>`;
+}
+/* the code page: despreading. The receiver multiplies each decided bit (+1 on, -1 off) by its own copy of the code and adds them up:
+   lined up, every right bit adds 1 and the sum climbs to 127; wrong bits are random and only wander ~sqrt(n). score = matches = (127 + sum) / 2.
+   The comparator input is drawn as the signal (+-1 around the slow average) plus Gaussian noise whose spread makes as many bits wrong
+   as the link model gets wrong at the slider's power (sigma = 1 / Qinv(errors / 127)); the code is the board's own Gold code. */
+const DS_SHOW = 64;   // bits drawn in the top rows
+const rng = seed => () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+function dsNoise() {
+  const k = S.dsSeed || 1;
+  if (D._dsn && D._dsn.k === k) return D._dsn.n;
+  const r = rng(k * 7919), n = new Float32Array(127);
+  for (let i = 0; i < 127; i++) { let u = 0; while (!u) u = r(); n[i] = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+  D._dsn = {k, n}; return n;
+}
+const Qf = x => { const t = 1 / (1 + 0.3275911 * x / Math.SQRT2), e = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429)))) * Math.exp(-x * x / 2); return x >= 0 ? e / 2 : 1 - e / 2; };
+const Qinv = p => { let lo = 0, hi = 10; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (Qf(m) > p) lo = m; else hi = m; } return (lo + hi) / 2; };
+const dsSigma = r => { const ber = (127 - r.chip_ok) / 127; return ber <= 0 ? 0.15 : 1 / Qinv(Math.min(ber, 0.49)); };
+const DS_K = 0.6, DS_TOP = Math.asinh(6 / DS_K), dsC = v => Math.asinh(v / DS_K) / DS_TOP;   // compressed axis: +-1 near half height, +-6 at the edge (beyond clips)
+function dsRow(label, vals, colOf, kind, h = 70) {
+  const F = GEO.f, W = GEO.w, L = Math.round(F * 6), H = Math.round(h * Math.max(.6, GEO.ph)), mid = H / 2, n = vals.length, cw = (W - L - 4) / n;
+  const y = v => mid - Math.max(-1, Math.min(1, dsC(v))) * (mid - 4), rd = Math.max(1.8, Math.min(3.2, cw * .32));
+  let g = `<svg class="strip" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${label}">`;
+  g += `<text x="${L - 8}" y="${mid + F * .36}" fill="#b4a9cf" font-size="${F}" text-anchor="end">${label}</text>`;
+  if (kind === 'dots') g += [1, -1].map(v => `<line x1="${L}" x2="${W - 4}" y1="${y(v)}" y2="${y(v)}" stroke="#382c5a" stroke-dasharray="4 4"/><text x="${L + 2}" y="${y(v) + (v > 0 ? -3 : F)}" fill="#81749e" font-size="${F * .75}">${v > 0 ? '+1' : '−1'}</text>`).join('');
+  g += `<line x1="${L}" x2="${W - 4}" y1="${mid}" y2="${mid}" stroke="#4a3d70"/>`;
+  vals.forEach((v, i) => {
+    const cx = L + (i + .5) * cw, c = colOf(i);
+    if (kind === 'dots') g += `<line x1="${cx.toFixed(1)}" x2="${cx.toFixed(1)}" y1="${mid}" y2="${y(v).toFixed(1)}" stroke="${c}" stroke-opacity=".35"/><circle cx="${cx.toFixed(1)}" cy="${y(v).toFixed(1)}" r="${rd.toFixed(1)}" fill="${c}"/>`;
+    else { const bw = Math.max(1.2, cw * .7), bh = mid - 3; g += `<rect x="${(cx - bw / 2).toFixed(1)}" y="${(v > 0 ? mid - bh : mid).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${c}"/>`; }
+  });
+  return g + '</svg>';
+}
+function dsFig() {
+  const g = GOLD(), r = run(), o = S.dsOff || 0, sg = dsSigma(r), nz = dsNoise(), th = D.model.thresh;
+  const sent = Array.from(g, b => b ? 1 : -1), rx = sent.map((s, i) => s + sg * nz[i]), dec = rx.map(v => v > 0 ? 1 : -1);
+  const copy = sent.map((_, i) => sent[(i + o) % 127]), prod = dec.map((d, i) => d * copy[i]);
+  const k = DS_SHOW, wrong = dec.filter((d, i) => d !== sent[i]).length;
+  const x = [], A = [], P = [], sig = [], lo = [], hi = [];
+  let a = 0, p = 0;
+  for (let i = 0; i <= 127; i++) {
+    if (i) { a += prod[i - 1]; p += dec[i - 1]; }
+    x.push(i); A.push(a); P.push(p); sig.push(i); hi.push(2 * Math.sqrt(i)); lo.push(-2 * Math.sqrt(i));
+  }
+  const score = (127 + a) / 2, det = score >= th;
+  return fig(`comparator input, first ${k} bits: the signal ±1 plus noise, ${DBM(prx())}`,
+      dsRow('received', rx.slice(0, k), i => dec[i] === sent[i] ? 'var(--sig)' : 'var(--bad)', 'dots', 90), 'noise: model/ link model') +
+    fig(`the receiver's copy of the code${o ? `, shifted ${o} bit${o > 1 ? 's' : ''}` : ''}: green where the decision agrees (+1), red where it doesn't (−1)`,
+      dsRow('code copy', copy.slice(0, k), i => prod[i] > 0 ? 'var(--ok)' : 'var(--bad)', 'bars', 60), `code 0x${D.code.toString(16).toUpperCase()}`) +
+    fig(`running sum over the 127 bits: ${N(score.toFixed(0), 3)} of 127 agree`, plot({series: [
+        {band: {x, lo, hi}, color: '#ff7b6b', op: .12, label: 'noise alone wanders (±2σ)'},
+        {d: {x, y: sig}, color: 'var(--tx)', dash: '6 5', w: 1.5, label: 'signal alone'},
+        {d: {x, y: P}, color: '#81749e', w: 1.6, label: 'sum without the code'},
+        {d: {x, y: A}, color: 'var(--ok)', w: 2.6, label: 'sum with the code'}],
+      ylim: [-135, 135], xlim: [0, 127], xl: 'bits received', yl: 'running sum', h: 260,
+      hl: [{y: 2 * th - 127, color: 'var(--thr)', label: `score ${th}: detect`, left: true}, {y: 0, color: '#81749e', label: 'chance (score ~64)'}]}), 'score = (127 + sum) / 2') +
+    `<div class="readouts">
+      <div class="ro"><small>noise per bit (σ, signal = 1)</small><b>${sg < 1 ? sg.toFixed(2) : sg.toFixed(1)}</b></div>
+      <div class="ro"><small>bits decided wrong</small><b>${wrong} / 127</b></div>
+      <div class="ro"><small>score (agree of 127)</small><b class="${det ? 'good' : 'bad'}">${score.toFixed(0)}</b></div>
+      <div class="ro"><small>correlator</small><b class="${det ? 'good' : 'bad'}">${o && !det ? 'misaligned' : det ? 'detected' : 'lost in noise'}</b></div>
+    </div>`;
+}
+function figDespread() {
+  if (!D.model) return NODATA('link model');
+  const o = S.dsOff || 0;
+  return `<div class="dsctl"><label>shift the code copy by <b id="dsov">${o}</b> bits <input type="range" id="dsoff" min="0" max="10" step="1" value="${o}" aria-label="shift the receiver's code copy, in bits"></label>` +
+    `<button type="button" data-dsnew>New noise</button></div><div id="dsfig">${dsFig()}</div>`;
+}
+function dsRedraw() {
+  const el = $('dsfig'); if (!el) return;
+  useGeo('detail'); el.innerHTML = dsFig(); useGeo('stage'); wirePlots(el);
+  const ov = $('dsov'); if (ov) ov.textContent = S.dsOff || 0;
 }
 function figPath() {
   const p = D.path, fit = {x: [], y: []}, old = {x: [], y: []}, two = {x: [], y: []};
@@ -1251,6 +1330,7 @@ document.addEventListener('click', e => {
   if (lz) { S.ldZoom = lz.dataset.ldzoom === '1'; render(); interacted('explainer_zoom', {zoom: S.ldZoom ? 1 : 0}); return; }
   const dip = e.target.closest('[data-dip]');
   if (dip) { const k = S.dip == null ? D.code : S.dip; S.dip = k ^ (1 << +dip.dataset.dip); render(); interacted('explainer_dip', {code: S.dip}); return; }
+  if (e.target.closest('[data-dsnew]')) { S.dsSeed = (S.dsSeed || 1) + 1; dsRedraw(); interacted('explainer_noise', {}); return; }
   const st = e.target.closest('[data-step]');
   if (st) { setStep(+st.dataset.step); return; }
   const t = e.target.closest('[data-go],[data-block]');
@@ -1305,6 +1385,8 @@ document.addEventListener('input', e => {
   (TEXT[el.dataset.id] = TEXT[el.dataset.id] || {})[el.dataset.f] = v; (dirty[el.dataset.id] = dirty[el.dataset.id] || {})[el.dataset.f] = v;
   setStat('editing…'); clearTimeout(saveT); saveT = setTimeout(saveText, 700);
 });
+document.addEventListener('input', e => { if (e.target.id === 'dsoff') { S.dsOff = +e.target.value; dsRedraw(); } });   // the code page: shift the code copy
+document.addEventListener('change', e => { if (e.target.id === 'dsoff') interacted('explainer_shift', {bits: S.dsOff}); });
 $('dist').addEventListener('input', e => { S.p = -e.target.value; render(); $('dist').focus(); });
 $('dist').addEventListener('pointerdown', () => { S.dragging = true; });
 addEventListener('pointerup', () => { if (S.dragging) { S.dragging = false; anim.reset(); anim._si = null; } });

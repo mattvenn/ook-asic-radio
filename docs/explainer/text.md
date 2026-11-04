@@ -42,16 +42,18 @@ Near the limit, a 1 hardly stands out from the noise and many bits come out wron
 ## code
 name: Trick 2: send a pattern, not a bit
 short: The code
-sub: A 127-bit Gold code, checked by correlation
-cap: Trick 2: send a 127-bit pattern. Noise matches ~64; 97 is a detection, even with a quarter of the bits wrong.
+sub: A 127-bit Gold code, found by adding up agreements
+cap: Trick 2: send a 127-bit pattern and add up where it agrees. The signal grows with every bit, the noise only with its square root.
 
 The transmitter sends a fixed pattern of 127 bits, a [[gold|Gold code]] picked by the DIP switches, three times.
 
-The receiver doesn't need every bit right. After each bit it [[corr|counts how many of the last 127 match]] the pattern it expects.
+The receiver keeps its own copy. It multiplies each bit it decided (+1 on, −1 off) by its copy: +1 where they agree, −1 where they don't. Then it [[corr|adds them up]].
 
-With no signal, the bits are random and about half match by luck: around 64. A detection needs 97 or more. That is far more than noise produces, yet still lets about a quarter of the bits be wrong.
+Lined up, every right bit adds 1, so the sum climbs towards 127. The wrong bits are random, and random ±1s mostly cancel: after 127 bits they have only wandered about 11 either way.
 
-The [[led|LED]] toggles when two of the three bursts are detected.
+A score (bits that agree) of 97 or more is a detection, six times further than noise alone gets, yet a quarter of the bits can still be wrong. Move the boards apart to add noise.
+
+Shift the copy by even one bit and it agrees by chance only: a Gold code looks nothing like itself shifted. The [[led|LED]] toggles when two of the three bursts are detected.
 
 ## link
 name: All together
