@@ -14,6 +14,9 @@ source 'Vdet det 0') and build/det_<level>.npz (chips, timing).
     python sim/rx/gen_det.py --seed=3 -92        (other noise; files det_-92_s3.*)
     python sim/rx/gen_det.py --overload=2 -90    (overload: a -10 dBm burst first (--strong=), then the
                                                   -90 dBm burst 2 ms after its end; files det_-90_ov2.*)
+    python sim/rx/gen_det.py --gain=-10.2 --nf=11.7 --tag=lo -88   (LNA low-gain strap: signal and noise both
+                                                  --gain dB lower at the detector, NF --nf; files det_-88_lo.*;
+                                                  set --gain so det noise-only matches noise_tran.sh VGLO=0)
 """
 import os
 import sys
@@ -39,7 +42,7 @@ def det_curve():
     return rows[:, 0], rows[:, 1]
 
 
-def main(levels, seed=42, gap_ms=None, strong=-10.0):
+def main(levels, seed=42, gap_ms=None, strong=-10.0, gain=0.0, nf=NF_DB, tag=''):
     chips = gold(CODE).astype(bool)
     burst = np.repeat(chips, SPC)
     on = np.concatenate([np.zeros(LEAD, bool), burst, np.zeros(TAIL, bool)])
@@ -51,10 +54,11 @@ def main(levels, seed=42, gap_ms=None, strong=-10.0):
     up = int(B_RF / R)
     for lvl in levels:
         rng = np.random.default_rng(seed)
-        name = f'{int(lvl)}' + ('' if seed == 42 else f'_s{seed}') + ('' if gap_ms is None else f'_ov{gap_ms:g}')
+        name = f'{int(lvl)}' + ('' if seed == 42 else f'_s{seed}') + ('' if gap_ms is None else f'_ov{gap_ms:g}') + \
+            (f'_{tag}' if tag else '')
         p_w = 10 ** ((lvl - 30) / 10)
         amp = on * np.sqrt(p_w) + first * np.sqrt(10 ** ((strong - 30) / 10))
-        n_var = rxm.KT * 10 ** (NF_DB / 10) * B_RF
+        n_var = rxm.KT * 10 ** (nf / 10) * B_RF
         p = np.empty(len(on))
         for i in range(0, len(on), 1000):          # chunks: keep memory small
             seg = amp[i:i + 1000]
@@ -63,10 +67,10 @@ def main(levels, seed=42, gap_ms=None, strong=-10.0):
                      1j * rng.standard_normal(len(s), dtype=np.float32)) * np.float32(np.sqrt(n_var / 2))
             p[i:i + len(seg)] = rxm.block_mean(np.abs(x) ** 2, up)
         dbm = 10 * np.log10(p) + 30
-        v = np.interp(dbm + SHIFT_DB, pin, vdet)
+        v = np.interp(dbm + SHIFT_DB + gain, pin, vdet)
         t = np.arange(len(v)) / R
         with open(os.path.join(ROOT, 'build', f'det_{name}.inc'), 'w') as fh:
-            fh.write(f'* detector waveform, {lvl} dBm, code 0x{CODE:02X}, NF {NF_DB} dB / {B_RF/1e6:.0f} MHz\n')
+            fh.write(f'* detector waveform, {lvl} dBm, code 0x{CODE:02X}, NF {nf} dB / {B_RF/1e6:.0f} MHz, gain {gain:+g} dB\n')
             fh.write('Vdet det 0 pwl(\n')
             for k in range(0, len(t), 8):
                 fh.write('+ ' + ' '.join(f'{t[j]:.6e} {v[j]:.6f}' for j in range(k, min(k + 8, len(t)))) + '\n')
@@ -82,4 +86,5 @@ def main(levels, seed=42, gap_ms=None, strong=-10.0):
 if __name__ == '__main__':
     opt = dict(a[2:].split('=') for a in sys.argv[1:] if a.startswith('--') and '=' in a)
     main([float(a) for a in sys.argv[1:] if not a.startswith('--')] or [-94, -70], int(opt.get('seed', 42)),
-         float(opt['overload']) if 'overload' in opt else None, float(opt.get('strong', -10)))
+         float(opt['overload']) if 'overload' in opt else None, float(opt.get('strong', -10)),
+         float(opt.get('gain', 0)), float(opt.get('nf', NF_DB)), opt.get('tag', ''))

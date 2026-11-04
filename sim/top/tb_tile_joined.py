@@ -112,7 +112,7 @@ def pair_deck(src, level, tstop, code, seed, on):
     d = d.replace(f'Vkey key 0 {PAIR_KEY}', f'Vkey key 0 {PAIR_KEY}\nanz %v([nzp nzn]) nzsrc\n'
                   f'.model nzsrc filesource (file="{os.path.basename(nz)}" amploffset=[0 0] amplscale=[1 1] '
                   'timeoffset=0 timescale=1 timerelative=false amplstep=false)')
-    name = f'tile_pair_{level}_{"on" if on else "off"}'
+    name = f'tile_pair_{level}{tb_tile.strap_sfx()}_{"on" if on else "off"}'
     if not on:
         d = re.sub(r'^alterparam vemf = \S+$', 'alterparam vemf = 0', d, count=1, flags=re.M)
     return name, d.replace(f'write tile_joined_{level}.raw', f'write {name}.raw')
@@ -122,7 +122,7 @@ def analyse_pair(level):
     import numpy as np
     r = {}
     for k in ('on', 'off'):
-        v = dict(read_raw(os.path.join(B, f'tile_pair_{level}_{k}.raw'))[0]['vars'])
+        v = dict(read_raw(os.path.join(B, f'tile_pair_{level}{tb_tile.strap_sfx()}_{k}.raw'))[0]['vars'])
         r[k] = {n: np.real(v[n]) for n in ('time', 'v(xana.x1.det)', 'v(xana.x1.lpf)')}
     t = r['on']['time']
     tg = r['off']['time']
@@ -130,7 +130,7 @@ def analyse_pair(level):
         for n in ('v(xana.x1.det)', 'v(xana.x1.lpf)'):
             r['off'][n] = np.interp(t, tg, r['off'][n])
     diff = {n: (r['off'][n] - r['on'][n]) * 1e3 for n in ('v(xana.x1.det)', 'v(xana.x1.lpf)')}
-    print(f'{level} dBm pair, {t[-1] * 1e6:.1f} us: off - on (mV)')
+    print(f'{level} dBm pair{tb_tile.strap_sfx()}, {t[-1] * 1e6:.1f} us: off - on (mV)')
     print('  window       det     LPF')
     for a, b in PAIR_WIN + [(2e-6, 30e-6)]:
         m = (t >= a) & (t < b)
@@ -153,7 +153,7 @@ def scan(src):
         if codes is None:                                      # refine around the flip
             lo = max(c for c, v, *_ in rows if (v > 0.9) == (rows[0][1] > 0.9))
             codes = list(range(lo, min(lo + 17, 256)))
-        log = ngspice('tile_joined_scan', scan_deck(src, codes))
+        log = ngspice('tile_joined_scan' + tb_tile.strap_sfx(), scan_deck(src, codes))
         new = [(int(a), *map(float, r)) for a, *r in re.findall(r'^SCAN (\d+) (\S+) (\S+) (\S+) (\S+)', log, re.M)]
         assert new, log[-2000:]
         rows = sorted(set(rows) | set(new))
@@ -179,6 +179,9 @@ def analyse(level):
 
 
 if __name__ == '__main__':
+    for x in sys.argv[1:]:
+        if x.startswith('--vglo='):
+            tb_tile.COND['vglo'] = float(x.split('=')[1])      # LNA strap: 0 = low gain
     a = [x for x in sys.argv[1:] if not x.startswith('--')]
     if a[0] == 'scan':
         scan(tb_tile.netlist())
