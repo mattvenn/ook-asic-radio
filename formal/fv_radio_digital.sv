@@ -7,7 +7,8 @@
 // open here: `connect -set` cuts every existing connection with its target on
 // the left, and flatten / proc store theirs that way.
 //
-//   1  TX / RX safety: never transmit while receiving, debug gate only with the strap
+//   1  TX / RX safety: never transmit while receiving, debug gate only with the strap,
+//      LNA low gain only with the 1011 strap
 //   2  correlator timing that rd_corr / rd_rx rely on (comments there)
 //   6  switched-cap clocks: non-overlapping, >= 4 clocks dead, off with RX off
 module fv_radio_digital (
@@ -18,20 +19,20 @@ module fv_radio_digital (
     input wire       comp_in
 );
     wire [7:0] uo_out, uio_out, uio_oe, trim_out;
-    wire       tx_en, tx_en_n, rx_en, dbg_en, sc_phi1, sc_phi2;
+    wire       tx_en, tx_en_n, rx_en, dbg_en, sc_phi1, sc_phi2, lna_lo_n;
 
     radio_digital dut (
         .clk(clk), .rst_n(rst_n), .ui_in(ui_in), .uio_in(uio_in),
         .uo_out(uo_out), .uio_out(uio_out), .uio_oe(uio_oe),
         .comp_in(comp_in), .trim_out(trim_out),
         .tx_en(tx_en), .tx_en_n(tx_en_n), .rx_en(rx_en), .dbg_en(dbg_en),
-        .sc_phi1(sc_phi1), .sc_phi2(sc_phi2)
+        .sc_phi1(sc_phi1), .sc_phi2(sc_phi2), .lna_lo_n(lna_lo_n)
     );
 
     fv_props chk (
         .clk(clk), .rst_n(rst_n), .ui_in(ui_in), .uio_in(uio_in),
         .tx_en(tx_en), .tx_en_n(tx_en_n), .rx_en(rx_en), .dbg_en(dbg_en),
-        .sc_phi1(sc_phi1), .sc_phi2(sc_phi2)
+        .sc_phi1(sc_phi1), .sc_phi2(sc_phi2), .lna_lo_n(lna_lo_n)
         // s_* left open: driven from the DUT's internals by `connect -set` in the .sby
     );
 endmodule
@@ -41,7 +42,7 @@ module fv_props (
     input wire       rst_n,
     input wire [7:0] ui_in,
     input wire [7:0] uio_in,
-    input wire       tx_en, tx_en_n, rx_en, dbg_en, sc_phi1, sc_phi2,
+    input wire       tx_en, tx_en_n, rx_en, dbg_en, sc_phi1, sc_phi2, lna_lo_n,
     // probes into the DUT (see the .sby)
     input wire       s_rst,      // dut.rst: rst_n registered
     input wire       s_wend,     // dut.u_corr.wend: a chip window ends, popcount starts
@@ -58,13 +59,15 @@ module fv_props (
     // the spec's view of the straps, latched while the DUT's reset register
     // (rst_n delayed one clock) is high
     reg f_seen = 1'b0;          // a reset has been seen (registers defined)
-    reg f_role_tx, f_raw, f_dbg;
+    reg f_role_tx, f_raw, f_dbg, f_lo;
+    wire f_magic = (uio_in[7:4] == 4'b1010) || (uio_in[7:4] == 4'b1011);   // 1011: also low LNA gain
     always @(posedge clk) begin
         if (s_rst) begin
             f_seen    <= 1'b1;
             f_role_tx <= ui_in[7];
-            f_raw     <= (uio_in[7:4] == 4'b1010) && (uio_in[1:0] == 2'b01);
-            f_dbg     <= (uio_in[7:4] == 4'b1010) && uio_in[2];
+            f_raw     <= f_magic && (uio_in[1:0] == 2'b01);
+            f_dbg     <= f_magic && uio_in[2];
+            f_lo      <= uio_in[7:4] == 4'b1011;
         end
     end
     // the reset register follows rst_n
@@ -84,6 +87,8 @@ module fv_props (
         assert (!tx_en_n || tx_en);
         // debug gate only with the magic + debug strap
         assert (dbg_en == f_dbg);
+        // LNA low-gain shunt (active low) only with the 1011 strap
+        assert (lna_lo_n == !f_lo);
     end
     // never transmit while receiving, in code mode
     always @(*) if (f_on && !f_raw) assert (!(rx_en && tx_en));
