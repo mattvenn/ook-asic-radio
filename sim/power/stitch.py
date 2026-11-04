@@ -102,7 +102,7 @@ def pdn_model(deck, up=common.UP, r_gate=pdn.R_GATE):
     """Replace the testbench's ideal VDPWR / VA sources and the tile's direct VGND with the PDN."""
     deck, n1 = re.subn(r'^VDPWR VDPWR GND dc 1\.8 ac 0$', 'VDPWR vd_src GND dc 1.8 ac 0', deck, flags=re.M)
     deck, n2 = re.subn(r'^VA VAPWR GND 3\.3$', 'VA va_src GND 3.3', deck, flags=re.M)
-    deck, n3 = re.subn(r'(\+ pad_p pad_n dbg VDPWR VAPWR) GND (radio_analog)', r'\1 vg_chip \2', deck)
+    deck, n3 = re.subn(r'(pad_p pad_n dbg VDPWR VAPWR) GND (radio_analog)', r'\1 vg_chip \2', deck)
     assert (n1, n2, n3) == (1, 1, 1), (n1, n2, n3)
     R, L, C = up['R'], up['L'], up['CHIP_C']
     pdn_lines = f"""

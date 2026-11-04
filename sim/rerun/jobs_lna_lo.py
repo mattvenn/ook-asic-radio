@@ -284,7 +284,7 @@ J(dict(name='pwr_mesh10', cmd='tools/osic python3 sim/power/mesh.py A 1.0', thre
 for s, est in (('r_mesh', 1800), ('ir_rx', 1200), ('em', 900)):
     J(dict(name=f'pwr_{s}', cmd=f'{O} python3 sim/power/{s}.py A', threads=2, est=est, deps=['pwr_mesh05']))
 J(dict(name='pwr_z_ac', cmd=f'{O} python3 sim/power/z_ac.py A', threads=2, est=1800, deps=['pwr_mesh10'], lock='tilemesh'))
-J(dict(name='pwr_tran_tx', cmd=f'{O} python3 sim/power/tran_tx.py A 30', threads=2, est=2 * H, deps=['pwr_mesh10'], lock='tilemesh'))
+J(dict(name='pwr_tran_tx', cmd=f': ; {O} python3 sim/power/tran_tx.py A 30', threads=2, est=2 * H, deps=['pwr_mesh10'], lock='tilemesh'))
 
 assert len({j['name'] for j in JOBS}) == len(JOBS), 'duplicate job names'
 
