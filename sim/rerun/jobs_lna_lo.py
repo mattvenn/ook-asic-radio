@@ -310,3 +310,7 @@ for j in JOBS:
 for j in JOBS:
     if j['name'].startswith('mixed_') and '_lo' in j['name']:
         j['est'] = 25 * H
+# the no-signal control first: it decides whether the low-gain -90 / -92 events are real (2026-11-05)
+for j in JOBS:
+    if j['name'].startswith('mixed_-150'):
+        j['est'] = 30 * H
