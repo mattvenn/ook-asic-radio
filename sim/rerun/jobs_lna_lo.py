@@ -193,8 +193,9 @@ NT_CASES = [('sch', '1.8', 'tb_logdet.spice', 'none -94 -92 -90 -88'),
 for kind, g, tb, lv in NT_CASES:
     for p in lv.split():
         tag = f'_{kind}_glo{g}'
+        # threads=3: ngspice runs 8 threads but keeps ~2 CPUs busy on this deck (2026-11-05)
         J(dict(name=f'nt{tag}_{p}', cmd=f"tools/osic bash -c 'cd build && VGLO={g} TB={tb} TAG={tag} bash ../sim/logdet/noise_tran.sh {p}' "
-               f"&& grep -q '^RESULT' build/nt_{p}{tag}.log", threads=8, est=600,
+               f"&& grep -q '^RESULT' build/nt_{p}{tag}.log", threads=3, est=600,
                deps=['gen_noise', 'netlists'] + (['pexsim'] if kind == 'pex' else [])))
 # mixed signal (RTL + transistor baseband) with the low-gain detector waveform: gen_det --gain from noise_tran's
 # noise-only det with the strap on (NF +0.7 dB, the extracted chain's NF off / on)
