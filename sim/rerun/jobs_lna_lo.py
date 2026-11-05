@@ -295,3 +295,7 @@ PRIO = ('gl_models', 'gl', 'pexsim', 'gen_noise', 'nt_', 'stabx_', 'mc_chain_', 
 for j in JOBS:
     if j['name'].startswith(PRIO):
         j['est'] = max(j['est'], 20 * H)
+# the low-gain mixed-signal runs (item 5's answer) ahead of everything else still waiting (2026-11-05)
+for j in JOBS:
+    if j['name'].startswith('mixed_') and '_lo' in j['name']:
+        j['est'] = 25 * H
