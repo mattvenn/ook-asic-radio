@@ -199,8 +199,15 @@ sky130A, run headless in Docker.
     analog one.
   - **TODO:** make a minimal reproducible case for an ngspice bug report / PR. That means a tiny d_cosim model
     (a counter that steps up on 1 and down on 0, like the trim servo), a slow ramp or noisy near-threshold
-    source into an `adc_bridge`, and the same deck with and without the probe. Start from
-    `build/mixed/mixed_-88_s3_lo*` (the first runaway at 3.66 ms) and the `_lofx` / `_lofxp` variants.
+    source into an `adc_bridge`, and the same deck with and without the probe. Start from `build/repro_dcosim/`
+    on sim-0, which is not in git:
+    - `mixed_-88_s3_lo_orig.cir` is the failing deck, with the first runaway at 3.66 ms.
+    - `_th` is the 0.9 V threshold only, still failing.
+    - `_lofx` and `_lofxp` are the fixed variants.
+    - `det_-88_s3_lo.inc` is the det waveform. Run the decks from a directory one level below it, as the
+      `.include ../det_…` line expects, with `radio_digital.so` (`sim/mixed/build_so.sh`).
+    - Confirm the disagreement directly by re-running `_orig` with `comp_in` saved through a d2a only at
+      `.save` time, if that doesn't itself cure it.
 
 ## Noise analysis recipes
 
