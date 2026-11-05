@@ -216,6 +216,17 @@ for kind in ('lo', 'lopex'):
     for lvl in (-92, -90, -88, -86, -84):
         for s in range(1, 6):
             mixed(f'{lvl}_s{s}_{kind}', f'--seed={s} --tag={kind} {lvl}', 1500, deps=(f'gen_det_{kind}',))
+# more seeds around the low-gain edge (5 per level could not tell -88 from -92: 2/5, 4/5, 2/5 at -88 / -90 / -92),
+# and a no-signal control (-150 dBm) for false events (2026-11-05)
+J(dict(name='gen_det_lo2', cmd=f'G=$(python3 sim/rx/lo_gain.py build/nt_none_sch_glo0.log 11.7); echo gain $G; '
+       f'for s in $(seq 6 20); do python3 sim/rx/gen_det.py --gain=$G --nf=11.7 --tag=lo --seed=$s -90 -88 -86; done; '
+       f'for s in $(seq 1 10); do python3 sim/rx/gen_det.py --gain=$G --nf=11.7 --tag=lo --seed=$s -150; done',
+       threads=1, est=600, deps=['gen_det_lo']))
+for lvl in (-90, -88, -86):
+    for s in range(6, 21):
+        mixed(f'{lvl}_s{s}_lo', f'--seed={s} --tag=lo {lvl}', 1500, deps=('gen_det_lo2',))
+for s in range(1, 11):
+    mixed(f'-150_s{s}_lo', f'--seed={s} --tag=lo -150', 1500, deps=('gen_det_lo2',))
 
 # ======== mixed signal, full gain (as 2026-10-13)
 J(dict(name='gen_det', cmd='python3 sim/rx/gen_det.py -94 -92 -90 -70 && for n in 1 2 3 4 5; do python3 sim/rx/gen_det.py --seed=$n -92 -94; '
