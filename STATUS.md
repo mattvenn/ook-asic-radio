@@ -7,7 +7,18 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
-**LNA low-gain strap (2026-10-29, branch `lna-lo-shunt`): verification pending on the big computer.** A reset strap (`uio[7:4]` = `1011`) switches a shunt across stage 2's outputs: ~10 dB less chain gain, ~2.5× the out → in coupling margin, a fallback in case the chain oscillates. Re-hardened macro (new `lna_lo_n` pin), re-routed and exported tile (router: 2 × 2 cuts on 1 µm power vias). Coupling measured: wires (kpex) and substrate (3D solve) far below the 0.1 fF budget (`docs/substrate_2026-10-29.md`). Start from **`docs/handoff_lna_lo.md`**.
+**LNA low-gain strap: verified on sim-0 2026-11-04 / 05, `docs/verify_lna_lo.md`. Two items fail and wait for Matt.**
+- Passing: GL 16/16, formal, TT precheck, stability (low gain decays at ≥ 1 fF everywhere), extracted tile, FasterCap,
+  substrate. The full rerun matches 2026-10-13, with chain / RX −0.5…−0.7 dB extracted as predicted.
+- **Fails:**
+  - **(4)** the extracted step is < 9 dB at sf 27 °C (nominal 8.46 dB, 9.3 % of MC ≥ 9) and marginal at ss 10 °C
+    (86.4 %). The shunt PMOS (body VDD, |Vgs| ≈ 1.1 V) sits near threshold: Ron 1.85 kΩ at sf against 0.71 kΩ at tt.
+  - **(5)** low gain detects 19/20 at −86 dBm but 7/20 at −88: ~6 dB below full gain, not the model's 4.5. There is
+    also an unexplained dip, −90 dBm 16/20.
+  - **(2)** the overload gap scan moved (`mixed_-90_ov*`).
+- The mixed-signal bench was fixed on the way: a d_cosim lost-edge artefact (`docs/sim_learnings.md`).
+
+**LNA low-gain strap (2026-10-29, branch `lna-lo-shunt`): design and layout.** A reset strap (`uio[7:4]` = `1011`) switches a shunt across stage 2's outputs: ~10 dB less chain gain, ~2.5× the out → in coupling margin, a fallback in case the chain oscillates. Re-hardened macro (new `lna_lo_n` pin), re-routed and exported tile (router: 2 × 2 cuts on 1 µm power vias). Coupling measured: wires (kpex) and substrate (3D solve) far below the 0.1 fF budget (`docs/substrate_2026-10-29.md`). Start from **`docs/handoff_lna_lo.md`**.
 
 **State (2026-10-10): the 3x2 tile is assembled and routed (all 111 nets, decaps in) with the power fix merged and exported to `gds/` / `lef/`: magic + KLayout DRC 0, LVS clean, TT precheck pass. Extracted-tile sims done (`docs/handoff_sim.md`): the c-mode anomalies were floating pin stubs (tied off in `sim/top/tb_tile.py`), the TX loss is fixed (tx_ls kn 14 / kp 8, TX corner re-floorplanned; extracted RC +3.18 dBm). Power delivery benchmarked and fixed (`docs/power.md` "After the fix"): every EM line < 50 %, RX ground 57–67 → 8–14 Ω. How to run every check: `docs/verification.md`. Details: docs/history.md, docs/layout.md "Top level".**
 - **Full re-verification 2026-10-13/14 after the H135 comparator rebuild (branch `comp-trim`): `docs/verify_2026-10-13.md`.** 261 jobs OK, 0 failed: everything as 2026-10-11 except by design (comparator: −92 dBm for ≥ 99 % of chips, −94 dBm a best case), amp_dp / amp_dpc extracted −0.2 / −0.45 dB (re-extracted with magic 8.3.642), and new finding #13 (overload recovery 0.25–0.3 ms, was < 0.1). GitHub lvs action fixed and passing.
