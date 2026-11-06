@@ -7,12 +7,15 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
-**LNA low-gain strap: verified on sim-0 2026-11-04 / 05, `docs/verify_lna_lo.md`. Two items fail and wait for Matt.**
+**LNA low-gain strap: verified on sim-0 2026-11-04 / 05, `docs/verify_lna_lo.md`. Two items fail and wait for Matt (4 looks like finding #5, not the design).**
 - Passing: GL 16/16, formal, TT precheck, stability (low gain decays at ≥ 1 fF everywhere), extracted tile, FasterCap,
   substrate. The full rerun matches 2026-10-13, with chain / RX −0.5…−0.7 dB extracted as predicted.
 - **Fails:**
-  - **(4)** the extracted step is < 9 dB at sf 27 °C (nominal 8.46 dB, 9.3 % of MC ≥ 9) and marginal at ss 10 °C
-    (86.4 %). The shunt PMOS (body VDD, |Vgs| ≈ 1.1 V) sits near threshold: Ron 1.85 kΩ at sf against 0.71 kΩ at tt.
+  - **(4)** on the block extraction the step is < 9 dB at sf 27 °C (nominal 8.46 dB, 9.3 % of MC ≥ 9) and marginal
+    at ss 10 °C (86.4 %). The shunt PMOS (body VDD, |Vgs| ≈ 1.1 V) sits near threshold: Ron 1.85 kΩ at sf against
+    0.71 kΩ at tt. But the block extraction is finding #5's pessimistic bound. On the tile extraction the step is
+    11.9 dB at tt and 10.1 dB at sf. Low gain still stabilises the chain at sf (edge 0.75–1 fF → > 2 fF).
+    Recommendation: restate the spec as the stability margin; no redesign (W 36 if 9 dB stays). Follow-up in the doc.
   - **(5)** low gain detects 19/20 at −86 dBm but 7/20 at −88: ~6 dB below full gain, not the model's 4.5. There is
     also an unexplained dip, −90 dBm 16/20.
   - **(2)** the overload gap scan moved (`mixed_-90_ov*`).

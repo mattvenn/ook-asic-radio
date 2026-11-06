@@ -12,7 +12,7 @@ each checked by its log), 0 failed.
 | 1 | GL cocotb | **pass**: RTL 16/16, GL 16/16 incl. `test_lna_lo_strap`; TT-level RTL 5/5, tt_gl pass; formal prove PASS |
 | 2 | Full rerun vs `verify_2026-10-13.md` | **pass, one FAIL**: chain / RX −0.53…−0.73 dB extracted, −0.2…−0.3 dB sch, as predicted; overload gap scan (`mixed_-90_ov*`) no longer shows one dead time, unexplained |
 | 3 | Chain stability, extracted, both strap states | **pass**: low gain decays at ≥ 1 fF everywhere (worst ss 10 °C 1.62 V: 1 fF ok, 1.5 fF oscillates) |
-| 4 | MC on the step | **FAIL** on the extracted chain at sf 27 °C (9.3 % ≥ 9 dB, nominal 8.46 dB) and ss 10 °C (86.4 %) |
+| 4 | MC on the step | **FAIL on the block extraction** (the pessimistic bound, [verify_system_2.md](verify_system_2.md) finding #5): sf 27 °C 9.3 % ≥ 9 dB (nominal 8.46), ss 10 °C 86.4 %. On the tile extraction, the number the project quotes, the step is 11.9 dB at tt and 10.1 dB at sf. Low gain still stabilises the chain at sf on the block extraction (follow-up below) |
 | 5 | Low-gain sensitivity, transistor level | **FAIL** at −88 dBm (7/20 detect); reliable at −86 dBm (19/20); a non-monotonic dip at −88 (−90: 16/20) |
 | 6 | Extracted tile, vglo 1.8 / 0 | **pass**: RX current identical, −60 dBm det shifts by ~10 dB of slope |
 | 7 | FasterCap, st5 / st6 Cs ↔ g1 | **pass**: −0.19 / −0.55 / −2.31 aF (kpex bound 6.6 / 9.8 aF) |
@@ -95,6 +95,72 @@ With body effect that is close to threshold, so Ron follows the PMOS corner. One
 The nominal vglo sweep shows the same: the step is still rising steeply at 0 V (vglo 0.4 V: 0.22 dB, 0.2 V: 2.0 dB,
 0 V: 8.5 dB at sf extracted). o2 CM is the same at sf and fs (1.106 / 1.117 V), so it's the device, not the bias.
 Options for Matt: a wider shunt, or the body on the source. Not changed here.
+
+### Follow-up (2026-11-06): block vs tile extraction, stability at sf, a wider shunt
+
+**The FAIL depends on which extraction is used.** The MC above swaps the block extraction
+(`layout/pex/lna_chain.spice`, `layout/pex.sh`) into `tb_chain`. That's the flow
+[verify_system_2.md](verify_system_2.md) finding #5 already found disagrees with the tile extraction
+(`layout/pex_tile.sh`) by ~3.6 dB of chain gain on `main`, before the shunt. That finding keeps the block result as a
+pessimistic bound and quotes the tile. The step comes out differently in the two flows too. At −90 dBm, in square
+law, step = 10·log10(det drop off / on):
+
+| Bench (tt 27 °C unless noted) | Strap off | Strap on | Step |
+|---|---|---|---|
+| A: `tb_chain`, block extraction (AC gain, dB) | 75.48 | 65.31 | 10.17 |
+| Tile bench, schematic (det drop, mV) | 4.92 | 0.32 | 11.9 |
+| Tile bench, schematic tile + block-extracted chain swapped in | 4.18 | 0.40 | 10.2 |
+| Tile bench, tile extraction c (item 6) | 5.94 | 0.39 | 11.8 |
+| **Tile bench, schematic, sf 27 °C** | 4.86 | 0.43 | 10.5 |
+| **Tile bench, tile extraction c, sf 27 °C** | 5.76 | 0.56 | **10.1** |
+
+The block extraction gives the same 10.2 dB in either bench, so `tb_chain` and `mk_pex_tb.py` are fine. Tile AC
+sweeps (100 MHz–2 GHz, 434 MHz): the difference is all in stage 2's strap-off gain (o2 − o1: block 11.59, tile 13.05,
+schematic 12.63 dB; strap on, both 1.2–1.3 dB). The block-extracted chain peaks at 339 MHz; the tile and the
+schematic peak at ~447 MHz.
+
+What it isn't:
+- not regeneration: the tile has no peaking, and removing its 6.4 fF o1n–o2p coupling raises gain by 0.2 dB;
+- not the devices: identical sizes, fingers, Cs MIM, loads and drain areas;
+- not the total C: 836.4 vs 835.8 fF over all chain nodes;
+- not the bias: o2 CM 1.119 vs 1.121 V;
+- not resistance: shorting every one of the block extraction's 21 993 resistors leaves the step at 10.34 dB;
+- not the layout: the XOR of `layout/lna_chain.gds` against the tile's copy is slivers (~0.03 µm² on contact layers).
+
+What's left is how the C is split between nets. For example, the tile has much more C across each differential pair:
+o3p–o3n 6.95 vs 0.82 fF, outp–outn 3.86 vs 0.44, o1p–o1n 13.3 vs 8.45. The tile sees the wiring over the chain
+(the det taps, the straps). This is finding #5 again, now with resistance ruled out. Still open.
+
+On the tile extraction at sf, 10.1 dB is 2.5σ above 9 dB with the block MC's σ (0.44 dB), so about 99 % by that
+estimate. The MC itself hasn't been run on the tile extraction.
+
+**Stability at sf 27 °C on the block extraction** (item 3's bench, real decap, L 2 nH, growth): the corner the
+handoff's list missed.
+
+| Strap | 0.5 fF | 0.75 fF | 1 fF | 1.5 fF | 2 fF |
+|---|---|---|---|---|---|
+| off | ok 5e-9 | ok 7e-9 | OSC 1.0 | OSC 1.0 | OSC 1.0 |
+| on | ok 3e-9 | ok 3e-9 | ok 3e-9 | ok 3e-9 | ok 3e-9 |
+
+Low gain takes the edge from 0.75–1 fF to above 2 fF, as at tt. The fallback works at sf even with the smaller step.
+
+**A wider shunt, if 9 dB stays the spec** (Msw's 6 extracted fingers scaled by m, block extraction, step / dB):
+
+| Msw W | tt 27 | ss 10 | ff 50 | sf 27 | fs 27 | Full-gain cost vs W 18 |
+|---|---|---|---|---|---|---|
+| 18 (as built) | 10.17 | 9.44 | 10.43 | 8.46 | 11.12 | 0 |
+| 27 | 11.17 | 10.64 | 11.25 | 9.70 | 11.96 | −0.13 dB |
+| 36 | 11.71 | 11.31 | 11.67 | 10.43 | 12.38 | −0.25 dB |
+| 54 | 12.22 | 11.99 | 12.05 | 11.19 | 12.74 | −0.50 dB |
+
+Strap-off NF changes by ≤ 0.01 dB. The cost is the device's own C only: a wider layout's wiring isn't in it.
+W 36 clears 9 dB at every corner even on the block extraction (sf ~3σ).
+
+**Recommendation:** no redesign. State the requirement as the stability margin (low gain at least doubles the
+tolerable coupling, at every corner including sf / fs), which W 18 meets. The 9 dB was a proxy for it. Matt's call.
+
+Work files (not in git): `build/whatif_sw/` (width sweep, sf stability, resistor tests), `build/tb_tile_cw_hyb_*`,
+`build/tb_tile_ac_*` (tile AC sweeps), `build/tb_tile_cw_*sf_27*` (tile CW at sf).
 
 ## 5. Low-gain sensitivity at transistor level
 
