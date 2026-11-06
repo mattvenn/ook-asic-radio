@@ -11,7 +11,7 @@ each checked by its log), 0 failed.
 |---|---|---|
 | 1 | GL cocotb | **pass**: RTL 16/16, GL 16/16 incl. `test_lna_lo_strap`; TT-level RTL 5/5, tt_gl pass; formal prove PASS |
 | 2 | Full rerun vs `verify_2026-10-13.md` | **pass**: chain / RX −0.53…−0.73 dB extracted, −0.2…−0.3 dB sch, as predicted. The overload gap scan's moved misses are burst-timing coin flips at threshold (follow-up 2026-11-06): no dead time, a −10 dBm burst costs the next one ~2–3 dB for ~1 ms, recovered by ~5 ms (finding #13 restated) |
-| 3 | Chain stability, extracted, both strap states | **pass**: low gain decays at ≥ 1 fF everywhere (worst ss 10 °C 1.62 V: 1 fF ok, 1.5 fF oscillates) |
+| 3 | Chain stability, extracted, both strap states | **pass**: low gain decays up to 1 fF at every corner (worst ss 10 °C 1.62 V: 1 fF ok, 1.5 fF oscillates) |
 | 4 | MC on the step | **pass on the full GDS extraction**: step 11.9 dB at tt, 10.1 dB at sf 27 °C (~99 % ≥ 9 dB by the block MC's σ; MC not run on it). The block extraction ([verify_system_2.md](verify_system_2.md) finding #5's pessimistic bound) fails: sf 9.3 % ≥ 9 dB (nominal 8.46), ss 10 °C 86.4 %, but low gain still stabilises the chain at sf, so it also passes with the spec stated as a stability margin (follow-up below) |
 | 5 | Low-gain sensitivity, transistor level | **pass, as the model predicts** (follow-up 2026-11-06): over burst timing 90 % at −86 dBm, 68 % at −88, 40 % at −90; 50 % at ≈ −89 (model ≈ −88.5). The first count (−88 7/20, −90 16/20: a dip) came from the bench's fixed burst timing against the slicer's 4 phases |
 | 6 | Extracted tile, vglo 1.8 / 0 | **pass**: RX current identical, −60 dBm det shifts by ~10 dB of slope |
@@ -19,7 +19,7 @@ each checked by its log), 0 failed.
 | 8 | Substrate study | **pass**: late stages 1.2e-5 fF (≤ 1e-4); every link 1.44e-4 fF, identical to main (above 1e-4 taken literally) |
 | 9 | TT precheck | **pass**: GitHub docs / gds / lvs succeed |
 
-Items 4 and 5 and the overload scan were first reported as fails; follow-ups on 2026-11-06 explain them, and Matt passed them. Nothing was redesigned.
+Items 4 and 5, and item 2's overload scan, were first reported as fails; follow-ups on 2026-11-06 explain them, and Matt passed them. Nothing was redesigned.
 
 ## 1. Gate-level cocotb, formal, pinout
 
@@ -55,7 +55,7 @@ is the growth.
 | ff 50 °C 1.8 V | off | ok | ok | ok | ok | ok | ok | | |
 | ff 50 °C 1.8 V | **on** | ok | | ok | | **ok** | ok | ok | ok |
 
-**Pass** (low gain decays to ≥ 1 fF at every corner). Low gain moves the edge from 0.5–0.75 fF to 1–1.5 fF at ss,
+**Pass** (low gain decays up to 1 fF at every corner). Low gain moves the edge from 0.5–0.75 fF to 1–1.5 fF at ss,
 and from 0.75–1 fF to 2–3 fF at tt. The thinnest case is **ss 10 °C, 1.62 V: 1 fF ok, 1.5 fF oscillates.**
 
 ## 4. Monte Carlo on the step
@@ -76,7 +76,9 @@ vglo 1.8 and 0 on the same draw (0 duplicates). Gain at 434 MHz.
 | fs 27 | **pex** | 11.12 / 0.18 / 10.44 | 100 % | 11.12 | −0.96…+0.76 | 100 % |
 | sf 27 | **pex** | 8.45 / 0.44 / 6.92 | **9.3 %** | **8.46** | −1.22…+0.72 | 99.7 % |
 
-**FAIL** (≥ 9 dB in ≥ 99 %) on the extracted chain at sf 27 °C and ss 10 °C. At sf even the nominal is short. The
+*As first reported; superseded by the follow-up below (pass on the full GDS extraction).*
+
+**FAIL** (≥ 9 dB in ≥ 99 %) on the block-extracted chain at sf 27 °C and ss 10 °C. At sf even the nominal is short. The
 handoff's corner table had tt / ss / ff only. The extracted gain bench (`sim/chain/lna_lo.sh`) confirms it:
 - sf 27: 75.48 / 67.02 dB, step 8.46;
 - fs 27: 75.41 / 64.29 dB, step 11.12.
@@ -371,7 +373,10 @@ on this branch, named in the row). **FAIL** = moved with no known cause, beyond 
 - **CHANGED, caused by the shunt:** chain / det numbers. They move as predicted: about −0.7 dB on the extracted
   tile, about −0.25 dB on the schematic.
 
-### `exited` jobs: log check (all 18 finished normally)
+### `exited` jobs: log check (all 24 finished normally)
+
+17 are 2026-10-13 jobs (below). The other 7 are low-gain checks, written up in item 5: the six `nt_pex_glo0_-92 … -80`
+each print their `RESULT` line, and `tile_pair_glo0` prints the full off − on table.
 
 | Job | Last lines of the log | |
 |---|---|---|
@@ -577,6 +582,3 @@ Not a reference item, but worth a look: `tile_rc_10` `op_off` IDPWR is **9.11 µ
 | TX keyed: tx_drv_p p-p (434 MHz) / tx_drv_n | 29.21 (1.43) / 19.55 mV | 29.08 (1.43) / 19.25 | PASS |
 | RX blocks dd p-p / 434 MHz | 7.4–7.7 / 0.21–0.22 mV | **5.96–6.16** / 0.21–0.22 | CHANGED (via arrays; 434 MHz part unchanged) |
 | det at 434 MHz | 3.47 mV | 3.48 | PASS |
-
-Side note: the rerun's `plot_mixed.py` runs rewrote five tracked plots (`sim/plots/mixed_-70 / -90 / -94 /
--94_pex / -92_pex.png`, modified in the working tree).
