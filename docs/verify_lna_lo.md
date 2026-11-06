@@ -12,7 +12,7 @@ each checked by its log), 0 failed.
 | 1 | GL cocotb | **pass**: RTL 16/16, GL 16/16 incl. `test_lna_lo_strap`; TT-level RTL 5/5, tt_gl pass; formal prove PASS |
 | 2 | Full rerun vs `verify_2026-10-13.md` | **pass, one FAIL**: chain / RX −0.53…−0.73 dB extracted, −0.2…−0.3 dB sch, as predicted; overload gap scan (`mixed_-90_ov*`) no longer shows one dead time, unexplained |
 | 3 | Chain stability, extracted, both strap states | **pass**: low gain decays at ≥ 1 fF everywhere (worst ss 10 °C 1.62 V: 1 fF ok, 1.5 fF oscillates) |
-| 4 | MC on the step | **FAIL on the block extraction** (the pessimistic bound, [verify_system_2.md](verify_system_2.md) finding #5): sf 27 °C 9.3 % ≥ 9 dB (nominal 8.46), ss 10 °C 86.4 %. On the tile extraction, the number the project quotes, the step is 11.9 dB at tt and 10.1 dB at sf. Low gain still stabilises the chain at sf on the block extraction (follow-up below) |
+| 4 | MC on the step | **pass on the full GDS extraction**: step 11.9 dB at tt, 10.1 dB at sf 27 °C (~99 % ≥ 9 dB by the block MC's σ; MC not run on it). The block extraction ([verify_system_2.md](verify_system_2.md) finding #5's pessimistic bound) fails: sf 9.3 % ≥ 9 dB (nominal 8.46), ss 10 °C 86.4 %, but low gain still stabilises the chain at sf, so it also passes with the spec stated as a stability margin (follow-up below) |
 | 5 | Low-gain sensitivity, transistor level | **FAIL** at −88 dBm (7/20 detect); reliable at −86 dBm (19/20); a non-monotonic dip at −88 (−90: 16/20) |
 | 6 | Extracted tile, vglo 1.8 / 0 | **pass**: RX current identical, −60 dBm det shifts by ~10 dB of slope |
 | 7 | FasterCap, st5 / st6 Cs ↔ g1 | **pass**: −0.19 / −0.55 / −2.31 aF (kpex bound 6.6 / 9.8 aF) |
@@ -96,12 +96,12 @@ The nominal vglo sweep shows the same: the step is still rising steeply at 0 V (
 0 V: 8.5 dB at sf extracted). o2 CM is the same at sf and fs (1.106 / 1.117 V), so it's the device, not the bias.
 Options for Matt: a wider shunt, or the body on the source. Not changed here.
 
-### Follow-up (2026-11-06): block vs tile extraction, stability at sf, a wider shunt
+### Follow-up (2026-11-06): block vs full GDS extraction, stability at sf, a wider shunt
 
 **The FAIL depends on which extraction is used.** The MC above swaps the block extraction
 (`layout/pex/lna_chain.spice`, `layout/pex.sh`) into `tb_chain`. That's the flow
-[verify_system_2.md](verify_system_2.md) finding #5 already found disagrees with the tile extraction
-(`layout/pex_tile.sh`) by ~3.6 dB of chain gain on `main`, before the shunt. That finding keeps the block result as a
+[verify_system_2.md](verify_system_2.md) finding #5 already found disagrees with the full GDS extraction
+(`layout/pex_tile.sh`: the whole tile GDS, extracted in its real surroundings) by ~3.6 dB of chain gain on `main`, before the shunt. That finding keeps the block result as a
 pessimistic bound and quotes the tile. The step comes out differently in the two flows too. At −90 dBm, in square
 law, step = 10·log10(det drop off / on):
 
@@ -110,9 +110,9 @@ law, step = 10·log10(det drop off / on):
 | A: `tb_chain`, block extraction (AC gain, dB) | 75.48 | 65.31 | 10.17 |
 | Tile bench, schematic (det drop, mV) | 4.92 | 0.32 | 11.9 |
 | Tile bench, schematic tile + block-extracted chain swapped in | 4.18 | 0.40 | 10.2 |
-| Tile bench, tile extraction c (item 6) | 5.94 | 0.39 | 11.8 |
+| Tile bench, full GDS extraction c (item 6) | 5.94 | 0.39 | 11.8 |
 | **Tile bench, schematic, sf 27 °C** | 4.86 | 0.43 | 10.5 |
-| **Tile bench, tile extraction c, sf 27 °C** | 5.76 | 0.56 | **10.1** |
+| **Tile bench, full GDS extraction c, sf 27 °C** | 5.76 | 0.56 | **10.1** |
 
 The block extraction gives the same 10.2 dB in either bench, so `tb_chain` and `mk_pex_tb.py` are fine. Tile AC
 sweeps (100 MHz–2 GHz, 434 MHz): the difference is all in stage 2's strap-off gain (o2 − o1: block 11.59, tile 13.05,
@@ -131,8 +131,8 @@ What's left is how the C is split between nets. For example, the tile has much m
 o3p–o3n 6.95 vs 0.82 fF, outp–outn 3.86 vs 0.44, o1p–o1n 13.3 vs 8.45. The tile sees the wiring over the chain
 (the det taps, the straps). This is finding #5 again, now with resistance ruled out. Still open.
 
-On the tile extraction at sf, 10.1 dB is 2.5σ above 9 dB with the block MC's σ (0.44 dB), so about 99 % by that
-estimate. The MC itself hasn't been run on the tile extraction.
+On the full GDS extraction at sf, 10.1 dB is 2.5σ above 9 dB with the block MC's σ (0.44 dB), so about 99 % by that
+estimate. The MC itself hasn't been run on the full GDS extraction.
 
 **Stability at sf 27 °C on the block extraction** (item 3's bench, real decap, L 2 nH, growth): the corner the
 handoff's list missed.
@@ -156,8 +156,9 @@ Low gain takes the edge from 0.75–1 fF to above 2 fF, as at tt. The fallback w
 Strap-off NF changes by ≤ 0.01 dB. The cost is the device's own C only: a wider layout's wiring isn't in it.
 W 36 clears 9 dB at every corner even on the block extraction (sf ~3σ).
 
-**Recommendation:** no redesign. State the requirement as the stability margin (low gain at least doubles the
-tolerable coupling, at every corner including sf / fs), which W 18 meets. The 9 dB was a proxy for it. Matt's call.
+**Verdict (Matt, 2026-11-06): pass on the full GDS extraction.** It would also pass with the spec relaxed slightly
+(e.g. stated as the stability margin: low gain at least doubles the tolerable coupling, at every corner including
+sf / fs, which W 18 meets; the 9 dB was a proxy for it). No redesign.
 
 Work files (not in git): `build/whatif_sw/` (width sweep, sf stability, resistor tests), `build/tb_tile_cw_hyb_*`,
 `build/tb_tile_ac_*` (tile AC sweeps), `build/tb_tile_cw_*sf_27*` (tile CW at sf).
