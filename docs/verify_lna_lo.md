@@ -10,7 +10,7 @@ each checked by its log), 0 failed.
 | # | Item | Result |
 |---|---|---|
 | 1 | GL cocotb | **pass**: RTL 16/16, GL 16/16 incl. `test_lna_lo_strap`; TT-level RTL 5/5, tt_gl pass; formal prove PASS |
-| 2 | Full rerun vs `verify_2026-10-13.md` | **pass, one FAIL**: chain / RX −0.53…−0.73 dB extracted, −0.2…−0.3 dB sch, as predicted; overload gap scan (`mixed_-90_ov*`) no longer shows one dead time, unexplained |
+| 2 | Full rerun vs `verify_2026-10-13.md` | **pass**: chain / RX −0.53…−0.73 dB extracted, −0.2…−0.3 dB sch, as predicted. The overload gap scan's moved misses are burst-timing coin flips at threshold (follow-up 2026-11-06): no dead time, a −10 dBm burst costs the next one ~2–3 dB for ~1 ms, recovered by ~5 ms (finding #13 restated) |
 | 3 | Chain stability, extracted, both strap states | **pass**: low gain decays at ≥ 1 fF everywhere (worst ss 10 °C 1.62 V: 1 fF ok, 1.5 fF oscillates) |
 | 4 | MC on the step | **pass on the full GDS extraction**: step 11.9 dB at tt, 10.1 dB at sf 27 °C (~99 % ≥ 9 dB by the block MC's σ; MC not run on it). The block extraction ([verify_system_2.md](verify_system_2.md) finding #5's pessimistic bound) fails: sf 9.3 % ≥ 9 dB (nominal 8.46), ss 10 °C 86.4 %, but low gain still stabilises the chain at sf, so it also passes with the spec stated as a stability margin (follow-up below) |
 | 5 | Low-gain sensitivity, transistor level | **pass, as the model predicts** (follow-up 2026-11-06): over burst timing 90 % at −86 dBm, 68 % at −88, 40 % at −90; 50 % at ≈ −89 (model ≈ −88.5). The first count (−88 7/20, −90 16/20: a dip) came from the bench's fixed burst timing against the slicer's 4 phases |
@@ -19,7 +19,7 @@ each checked by its log), 0 failed.
 | 8 | Substrate study | **pass**: late stages 1.2e-5 fF (≤ 1e-4); every link 1.44e-4 fF, identical to main (above 1e-4 taken literally) |
 | 9 | TT precheck | **pass**: GitHub docs / gds / lvs succeed |
 
-Items 4 and 5 are reported for Matt, not fixed (handoff: don't redesign).
+Items 4 and 5 and the overload scan were first reported as fails; follow-ups on 2026-11-06 explain them, and Matt passed them. Nothing was redesigned.
 
 ## 1. Gate-level cocotb, formal, pinout
 
@@ -361,9 +361,9 @@ This section covers only the 2026-10-13 jobs. The low-gain checks are written up
 Tags: **PASS** = within the doc's numbers. **CHANGED** = moved, with a known cause (the shunt, or another change
 on this branch, named in the row). **FAIL** = moved with no known cause, beyond the doc's numbers.
 
-**Verdict: PASS, with one FAIL and a few changes that need noting in the write-up.**
+**Verdict: PASS** (first reported with one FAIL, the overload scan: passed after the 2026-11-06 follow-up, see Mixed signal), with a few changes that need noting in the write-up.
 
-- **FAIL (overload):** the overload gap scan no longer has a single dead time. See Mixed signal.
+- **Overload:** the gap scan no longer has a single dead time. It never had one: see Mixed signal.
 - **CHANGED, not caused by the shunt:**
   - the decap AC numbers (the decap schematic was corrected 2026-10-17);
   - the power-delivery R / |Z| / TX→RX numbers, all better (router via arrays, 82b6462);
@@ -491,15 +491,39 @@ comes from the bench or from noise.
 | 2026-10-13 | missed | missed | 28.173 | 28.275 | 28.380 | 28.875 | 29.887 | 32.866 |
 | now | **27.981** | **28.138** | **missed** | **missed** | **missed** | 28.893 | 29.879 | 32.866 |
 
-**FAIL (unexplained).** The scan no longer has one dead time: 0.1 and 0.25 ms now detect, and 0.3–0.5 ms now
-miss.
+First reported as a FAIL: the scan no longer had one dead time (0.1 and 0.25 ms now detect, 0.3–0.5 ms miss).
 - **Not a lost edge:** in the 0.25 / 0.3 / 0.5 raws, `v(comp)` and the d2a probe `comp_in_a` never disagree
   for longer than one time step.
 - **The servo track is the same in every run:** it goes down to code 67–70 about 1.3 ms after the strong burst,
-  then climbs back. So the misses sit on a marginal −90 dBm burst that spends ~3 ms of its 13 ms off balance.
-- **Likely cause:** the bench change (one 0.9 V threshold instead of 0.6 / 1.2 V) moves which chips land while
-  the servo is low.
-- **Needs:** seeds per gap before finding #13 ("dead time 0.25–0.3 ms") is restated.
+  then climbs back over ~3 ms.
+
+**Follow-up (2026-11-06): no dead time, a gradual ~2–3 dB desensitisation.** `sim/mixed/replay_corr.py` (see item
+5's follow-up) replays the RTL's detection of the weak burst. Best correlation score, threshold 97:
+
+| Gap | RTL phases (as simulated) | Burst 1 sample later | Sim now | 2026-10-13 |
+|---|---|---|---|---|
+| 0.1 ms | 98 ✓ | 95 ✗ | detect | missed |
+| 0.25 ms | 101 ✓ | 98 ✓ | detect | missed |
+| 0.3 ms | 95 ✗ | 96 ✗ | miss | detect |
+| 0.4 ms | 94 ✗ | 98 ✓ | miss | detect |
+| 0.5 ms | 96 ✗ | 100 ✓ | miss | detect |
+| 1 ms | 99 ✓ | 98 ✓ | detect | detect |
+| 2 ms | 104 ✓ | 103 ✓ | detect | detect |
+| 5 ms | 110 ✓ | 102 ✓ | detect | detect |
+
+The replay at the RTL's phases matches the simulated event at all 8 gaps. Without a strong burst before it, a
+−90 dBm burst scores 108 (`mixed_-90`) and −92 dBm 99–107 (`mixed_-92_s1..5`).
+- Up to 0.5 ms after the strong burst, the −90 dBm burst scores 94–101: a −92 to −93 dBm burst's score, so the
+  overload costs ~2–3 dB. It recovers gradually: ~99 at 1 ms, 104 at 2 ms, 110 (baseline) by 5 ms. That is the
+  servo's ~3 ms climb back.
+- With scores within ±4 of the threshold up to 1 ms, each gap's detect / miss in a single fixed-timing run is a
+  coin flip (burst timing against the slicer's phases, small bench changes such as the 0.9 V a2d threshold). The
+  2026-10-13 "dead time 0.25–0.3 ms" was one set of those flips. Full gain: not caused by the shunt.
+- One seed per gap; the score is a continuous measure, so this holds without more seeds, but more seeds would tighten
+  the dB figures.
+
+**Verdict (Matt, 2026-11-06): pass.** Finding #13 restated: no dead time. A −10 dBm burst desensitises the
+receiver by ~2–3 dB for ~1 ms, recovered by ~5 ms: a −90 dBm burst right after it detects with −92 dBm reliability.
 
 ### Extracted tile and joined RX
 

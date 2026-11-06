@@ -7,7 +7,7 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
-**LNA low-gain strap: verified on sim-0 2026-11-04 / 05, `docs/verify_lna_lo.md`. Items 4 and 5 pass after follow-ups (2026-11-06); the item 2 overload scan waits for Matt.**
+**LNA low-gain strap: verified on sim-0 2026-11-04 / 05, `docs/verify_lna_lo.md`. All 9 items pass; items 2 (overload), 4 and 5 after follow-ups on 2026-11-06. Not merged to `main` yet.**
 - Passing: GL 16/16, formal, TT precheck, stability (low gain decays at ≥ 1 fF everywhere), extracted tile, FasterCap,
   substrate. The full rerun matches 2026-10-13, with chain / RX −0.5…−0.7 dB extracted as predicted.
 - **(4) MC on the step: pass on the full GDS extraction** (Matt, 2026-11-06): 11.9 dB at tt, 10.1 dB at sf 27 °C. The
@@ -16,14 +16,14 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 - **(5) Low-gain sensitivity: pass, as the model predicts** (Matt, 2026-11-06): over burst timing 90 % at −86 dBm,
   68 % at −88, 40 % at −90 (50 % ≈ −89; model ≈ −88.5). The first count's dip (−88 7/20, −90 16/20) was the
   bench's fixed burst timing against the slicer's 4 phases (`sim/mixed/replay_corr.py`), not the strap.
-- **Fails:**
-  - **(2)** the overload gap scan moved (`mixed_-90_ov*`).
+- **(2) Overload gap scan: pass** (Matt, 2026-11-06): its moved misses were burst-timing coin flips at threshold. No
+  dead time: a −10 dBm burst costs the next one ~2–3 dB for ~1 ms, recovered by ~5 ms (finding #13 restated).
 - The mixed-signal bench was fixed on the way: a d_cosim lost-edge artefact (`docs/sim_learnings.md`).
 
 **LNA low-gain strap (2026-10-29, branch `lna-lo-shunt`): design and layout.** A reset strap (`uio[7:4]` = `1011`) switches a shunt across stage 2's outputs: ~10 dB less chain gain, ~2.5× the out → in coupling margin, a fallback in case the chain oscillates. Re-hardened macro (new `lna_lo_n` pin), re-routed and exported tile (router: 2 × 2 cuts on 1 µm power vias). Coupling measured: wires (kpex) and substrate (3D solve) far below the 0.1 fF budget (`docs/substrate_2026-10-29.md`). Start from **`docs/handoff_lna_lo.md`**.
 
 **State (2026-10-10): the 3x2 tile is assembled and routed (all 111 nets, decaps in) with the power fix merged and exported to `gds/` / `lef/`: magic + KLayout DRC 0, LVS clean, TT precheck pass. Extracted-tile sims done (`docs/handoff_sim.md`): the c-mode anomalies were floating pin stubs (tied off in `sim/top/tb_tile.py`), the TX loss is fixed (tx_ls kn 14 / kp 8, TX corner re-floorplanned; extracted RC +3.18 dBm). Power delivery benchmarked and fixed (`docs/power.md` "After the fix"): every EM line < 50 %, RX ground 57–67 → 8–14 Ω. How to run every check: `docs/verification.md`. Details: docs/history.md, docs/layout.md "Top level".**
-- **Full re-verification 2026-10-13/14 after the H135 comparator rebuild (branch `comp-trim`): `docs/verify_2026-10-13.md`.** 261 jobs OK, 0 failed: everything as 2026-10-11 except by design (comparator: −92 dBm for ≥ 99 % of chips, −94 dBm a best case), amp_dp / amp_dpc extracted −0.2 / −0.45 dB (re-extracted with magic 8.3.642), and new finding #13 (overload recovery 0.25–0.3 ms, was < 0.1). GitHub lvs action fixed and passing.
+- **Full re-verification 2026-10-13/14 after the H135 comparator rebuild (branch `comp-trim`): `docs/verify_2026-10-13.md`.** 261 jobs OK, 0 failed: everything as 2026-10-11 except by design (comparator: −92 dBm for ≥ 99 % of chips, −94 dBm a best case), amp_dp / amp_dpc extracted −0.2 / −0.45 dB (re-extracted with magic 8.3.642), and new finding #13 (overload recovery 0.25–0.3 ms, was < 0.1; restated 2026-11-06: no dead time, ~2–3 dB desensitisation for ~1 ms, `docs/verify_lna_lo.md`). GitHub lvs action fixed and passing.
 - **Full re-verification (2026-10-11, sim-0, image 2026.09): `docs/verify_2026-10-11.md`.** Everything passes against the docs: RTL / GL 15/15, vectors bit-identical, tile and block signoff, all 14 block tests sch + pex, corners, power (R / IR / EM / |Z| identical to "After the fix"). First c / rc tile runs on the power-fix layout: RX 2.985 mA, det −60 dBm 1.206 V, TX +3.13 dBm rc at 519 MHz. New: TX at 10 / 50 °C (rc +3.47 / +2.67 dBm), overload −10 dBm (follows the keying, averager recovers in ~1.3 ms), mixed signal on the extracted baseband (−94 and −92 dBm detect), joined RX −90 dBm (matches the model after a plot-window fix). **Moved:** mixed −94 dBm on the schematic no longer detects with ngspice 47 (at the edge; −92 passes): quote −92 dBm. **Tool traps:** magic 8.3.684 drops substrate C in ext2spice (extract with 8.3.642); sim-0 has an 8-CPU quota (≤ 3 ngspice).
 - **Floorplan:** `layout/floorplan/pins.md` / `floorplan.json` (layout 5: comp_ct and r2r flipped to MYR90, macro pins level with what they connect to; `docs/floorplan_spec.md` "Chosen floorplan"). Pin moves per block: `docs/layout.md` "Pin moves for the floorplan".
 - **Macro:** `macros/radio_digital/` (GDS, LEF, DEF, netlists), from `openlane/radio_digital` (`PIN_ORDER.md`). Signoff clean; RTL and GL cocotb 15/15 on the final netlist.
