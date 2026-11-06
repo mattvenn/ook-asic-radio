@@ -96,7 +96,7 @@ None of this has been measured on this chip yet: see [bringup.md](bringup.md).
 | | −90 dBm at 85 °C (outside the verified range) | Schematic ([verify_system_2.md](verify_system_2.md)) |
 | Input band | 330–560 MHz, covering the TX ring's spread | Schematic (chain gain) |
 | Chain gain at 434 MHz | 73–81 dB over corners and temperature (76.7 nominal) | Schematic; each extracted stage is 0.2–0.45 dB below its schematic. The low-gain shunt (off) costs a further 0.65–0.8 dB extracted |
-| Low-gain strap (`uio[7:4]` = `1011` at reset) | 9.5–10.4 dB less chain gain; NF +0.4–1.0 dB; sensitivity ~−88 dBm (vs ~−93) | Extracted chain (gain, NF); link model (sensitivity). The chain then tolerates ~2.5× the out → in coupling before it oscillates (1–2 fF at ss 10 °C vs 0.5–1 fF) ([handoff_lna_lo.md](handoff_lna_lo.md)) |
+| Low-gain strap (`uio[7:4]` = `1011` at reset) | 10.1–11.9 dB less chain gain (sf to tt); NF +0.4–1.0 dB; sensitivity reliable at ~−86 dBm, 50 % at ~−89 (vs −92) | Full GDS extraction (gain; the block extraction gives 8.5–11.1 dB), extracted chain (NF), mixed signal (sensitivity, [verify_lna_lo.md](verify_lna_lo.md)). The chain then tolerates ~2.5× the out → in coupling before it oscillates (1–2 fF at ss 10 °C vs 0.5–1 fF) ([handoff_lna_lo.md](handoff_lna_lo.md)) |
 | Noise figure | 9.4–12 dB | Schematic |
 | Detector slope | 10–14 mV per dB, falling with power, over ~70 dB | Schematic |
 | Detector at idle | 1.49 V | Extracted (1.50–1.54 V schematic corners) |
