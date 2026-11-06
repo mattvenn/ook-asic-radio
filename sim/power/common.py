@@ -162,7 +162,7 @@ def sch_wrapper(case, lines=None):
     for ln in lines:
         if ln.lower().startswith('.subckt radio_analog_lay'):
             ports = ln.split()[2:]
-    sch = ['rx_en', 'tx_en', 'tx_en_n', 'dbg_en', 'sc_phi1', 'sc_phi2'] + \
+    sch = ['rx_en', 'tx_en', 'tx_en_n', 'dbg_en', 'lna_lo_n', 'sc_phi1', 'sc_phi2'] + \
           [f'trim[{i}]' for i in range(7, -1, -1)] + \
           ['comp_out', 'tx_p', 'tx_n', 'rx_p', 'rx_n', 'dbg', 'VDPWR', 'VAPWR', 'VGND']
     tile = {'ua[3]': 'tx_p', 'ua[4]': 'tx_n', 'ua[0]': 'rx_p', 'ua[1]': 'rx_n', 'ua[2]': 'dbg'}

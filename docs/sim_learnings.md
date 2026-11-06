@@ -184,6 +184,38 @@ sky130A, run headless in Docker.
   settings on the stand-alone `lna_chain` + `log_det` and on the whole tile gave chain gains 3.6 dB apart at
   434 MHz: the stand-alone flow put 4–20 fF more on each stage node. A block bench driven from an ideal source
   (−0.3 dB) showed neither; only the chain with the real loads did.
+- **Near threshold, a mixed run's detection count depends on the burst's timing against the RTL's sample clock**
+  (2026-11-06, asic-radio `lna-lo-shunt` item 5). `gen_det.py` starts every burst at the same instant (`LEAD`),
+  and the slicer scores only 4 of the 8 sample alignments of a chip. So every seed at one level gets the same luck,
+  and the count can be non-monotonic in level: low gain gave −88 dBm 7/20 but −90 dBm 16/20.
+  - `sim/mixed/replay_corr.py` replays the RTL's detection from a finished run at all 8 alignments. At the RTL's 4 it
+    matched the event pin 60/60; the other 4 are a burst 13 µs later. Averaged: 90 / 68 / 40 % at −86 / −88 / −90.
+  - **Rule:** near threshold, quote detection averaged over burst timing (the replay's both parities, or bursts
+    started at several offsets), not one fixed-timing seed set.
+- **d_cosim (Verilator) can lose a slow analog edge at an `adc_bridge`** (ngspice 47, 2026-11-05, asic-radio
+  `lna-lo-shunt`). The comparator output `comp` reached the RTL through `adc_bridge(in_low=0.6 in_high=1.2)`. In
+  low gain the comparator has only 0.2–0.5 mV of input and lingers mid-swing (0.1–1.0 V) at a clock tick.
+  After such a tick the RTL read `comp_in = 0` for ~2.3 ms (≈170 servo ticks) while `v(comp)` sat at 1.8 V, and
+  the trim servo ran from 176 to 0. That can't happen on silicon.
+  - ngspice's stock `scripts/src/verilator_shim.cpp` ignores UNKNOWN inputs (`if (val == UNKNOWN) return;`),
+    which is a likely part of it.
+  - It isn't fully root-caused: a single 0.9 V threshold alone still failed 5 of 15 runs.
+  - Adding a `dac_bridge` probe on the digital node (`acprobe [comp_in] [comp_in_a] d2a`) cured 15 of 15 runs,
+    and digital and analog then never disagreed. So it looks like a simulator event-handling artefact.
+  - `sim/mixed/gen_mixed.py` now uses the single threshold and the probe.
+  - **Rule:** when a slow analog net feeds d_cosim, save the digital node through a d2a and check it against the
+    analog one.
+  - **TODO:** make a minimal reproducible case for an ngspice bug report / PR. That means a tiny d_cosim model
+    (a counter that steps up on 1 and down on 0, like the trim servo), a slow ramp or noisy near-threshold
+    source into an `adc_bridge`, and the same deck with and without the probe. Start from `build/repro_dcosim/`
+    on sim-0, which is not in git:
+    - `mixed_-88_s3_lo_orig.cir` is the failing deck, with the first runaway at 3.66 ms.
+    - `_th` is the 0.9 V threshold only, still failing.
+    - `_lofx` and `_lofxp` are the fixed variants.
+    - `det_-88_s3_lo.inc` is the det waveform. Run the decks from a directory one level below it, as the
+      `.include ../det_…` line expects, with `radio_digital.so` (`sim/mixed/build_so.sh`).
+    - Confirm the disagreement directly by re-running `_orig` with `comp_in` saved through a d2a only at
+      `.save` time, if that doesn't itself cure it.
 
 ## Noise analysis recipes
 

@@ -1,6 +1,6 @@
 """
 cocotb smoke tests at the TT level (tt_um_mattvenn_radio, wrapper generated from the top
-schematic by tools/check_pinout.py): three of verilog/test/test_radio.py's tests, run
+schematic by tools/check_pinout.py): four of verilog/test/test_radio.py's tests, run
 through the TT pins, plus the uio_oe directions against info.yaml.
 
 test_radio's tests are written for the bare macro. TTPins gives them the TT pins for the
@@ -15,7 +15,7 @@ import test_radio
 
 # macro signal -> the analog stub's port on the same net
 ANALOG = {'comp_in': 'comp_r', 'trim_out': 'trim', 'tx_en': 'tx_en', 'tx_en_n': 'tx_en_n',
-          'rx_en': 'rx_en', 'dbg_en': 'dbg_en', 'sc_phi1': 'sc_phi1', 'sc_phi2': 'sc_phi2'}
+          'rx_en': 'rx_en', 'dbg_en': 'dbg_en', 'lna_lo_n': 'lna_lo_n', 'sc_phi1': 'sc_phi1', 'sc_phi2': 'sc_phi2'}
 TT = ('clk', 'rst_n', 'ui_in', 'uio_in', 'uo_out', 'uio_out', 'uio_oe')
 
 
@@ -48,6 +48,7 @@ def adapt(t):
 test_tx_codes = adapt(test_radio.test_tx_codes)
 test_raw_and_straps = adapt(test_radio.test_raw_and_straps)
 test_debug_strap = adapt(test_radio.test_debug_strap)
+test_lna_lo_strap = adapt(test_radio.test_lna_lo_strap)
 
 
 @cocotb.test()

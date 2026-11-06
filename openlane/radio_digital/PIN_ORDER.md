@@ -3,9 +3,10 @@
 LibreLane io_place syntax: `#N`/`#S`/`#E`/`#W` sides (N/S left → right, E/W bottom → top; `#NR` etc. reversed), one anchored regex per line, `$n` = n empty slots, `@min_distance=x`. **No comment lines**: anything starting with `#` is read as a side directive.
 
 ## radio_digital pin order (floorplan "matt layout 5", 2026-10-09)
-The macro is 200 × 220 µm, placed **MY** at the east end of the 3x2 tile at full height, so its own **east** edge faces **west**, toward the analog blocks. **All 57 signal pins are on that edge (met3); N / S / W have none.** Its west face is next to the tile's mid straps (met4, x 276.5–281.1), so the wires reach it on met3 or below.
+The macro is 200 × 220 µm, placed **MY** at the east end of the 3x2 tile at full height, so its own **east** edge faces **west**, toward the analog blocks. **All 58 signal pins are on that edge (met3); N / S / W have none.** Its west face is next to the tile's mid straps (met4, x 276.5–281.1), so the wires reach it on met3 or below.
 
 Bottom → top (macro frame y; tile y = y + 2.88), each level with what it connects to:
+- `lna_lo_n` 3.1 (2026-10-29): the LNA low-gain strap, west along the very bottom of the tile, up the tile's west edge to lna_chain's shunt (moat, turn end).
 - `rx_en` 7.1: bias_gen `en`, straight along the bottom of the tile.
 - `comp_in` 86.0: comp_ct `out`, along the gap under r2r.
 - `trim_out[7..0]` 94–154: level with r2r `b7..b0` (r2r is placed MYR90, b0 at the top), so the eight wires are straight 44 µm runs.

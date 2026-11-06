@@ -96,14 +96,16 @@ N 750 220 1150 220 {}
 N 1150 220 1550 220 {}
 N 1550 220 1950 220 {}
 N 1950 220 2000 220 {}
-C {devices/iopin.sym} -1000 -220 0 1 {name=p28
+C {devices/iopin.sym} -1000 -220 0 1 {name=p34
 lab=VDD}
-C {devices/iopin.sym} -1000 220 0 1 {name=p29
+C {devices/iopin.sym} -1000 220 0 1 {name=p35
 lab=VSS}
 C {devices/iopin.sym} -1000 100 0 1 {name=p1
 lab=ibias}
 C {devices/iopin.sym} -1000 -160 0 1 {name=p5
 lab=vcm}
+C {devices/iopin.sym} -1000 400 0 1 {name=p33
+lab=lna_lo_n}
 C {devices/iopin.sym} -1000 -100 0 1 {name=p4
 lab=inp}
 C {devices/iopin.sym} -1000 60 0 1 {name=p8
@@ -251,3 +253,19 @@ mm='mm'}
 C {devices/lab_pin.sym} 1900 40 0 0 {name=p25
 sig_type=std_logic
 lab=ibias}
+C {lna_shunt.sym} 400 400 0 0 {name=xsh}
+C {devices/lab_pin.sym} 300 360 0 0 {name=p28
+sig_type=std_logic
+lab=o2p}
+C {devices/lab_pin.sym} 300 400 0 0 {name=p29
+sig_type=std_logic
+lab=o2n}
+C {devices/lab_pin.sym} 300 440 0 0 {name=p30
+sig_type=std_logic
+lab=lna_lo_n}
+C {devices/lab_pin.sym} 350 310 0 0 {name=p31
+sig_type=std_logic
+lab=VDD}
+C {devices/lab_pin.sym} 350 490 0 0 {name=p32
+sig_type=std_logic
+lab=VSS}

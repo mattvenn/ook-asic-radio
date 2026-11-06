@@ -31,7 +31,7 @@ import tb_tile as T                      # noqa: E402
 from rawread import read_raw             # noqa: E402
 
 B = T.B
-DIG = ['rx_en', 'dbg_en', 'tx_en', 'tx_en_n', 'sc_phi1', 'sc_phi2'] + [f'trim[{i}]' for i in range(8)]
+DIG = ['rx_en', 'dbg_en', 'lna_lo_n', 'tx_en', 'tx_en_n', 'sc_phi1', 'sc_phi2'] + [f'trim[{i}]' for i in range(8)]
 
 
 def sec(x):

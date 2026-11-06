@@ -24,7 +24,7 @@ for inst in list(top.each_inst()):
         inst.delete()
 P = json.load(open(pins))
 NAME = {'comp_in': 'comp_out', 'rx_en': 'rx_en', 'sc_phi1': 'sc_phi1', 'sc_phi2': 'sc_phi2',
-        'dbg_en': 'dbg_en', 'tx_en': 'tx_en', 'tx_en_n': 'tx_en_n'}
+        'dbg_en': 'dbg_en', 'tx_en': 'tx_en', 'tx_en_n': 'tx_en_n', 'lna_lo_n': 'lna_lo_n'}
 NAME.update({f'trim_out[{i}]': f'trim[{i}]' for i in range(8)})
 lm, lp, lt = ly.layer(70, 20), ly.layer(70, 16), ly.layer(70, 5)
 for pn, net in NAME.items():
@@ -83,7 +83,7 @@ for ln in lines:
     if ln.lower().startswith('.subckt radio_analog_lay'):
         ports = ln.split()[2:]
 assert ports, 'no radio_analog_lay subckt'
-sch = ['rx_en', 'tx_en', 'tx_en_n', 'dbg_en', 'sc_phi1', 'sc_phi2'] + [f'trim[{i}]' for i in range(7, -1, -1)] + \
+sch = ['rx_en', 'tx_en', 'tx_en_n', 'dbg_en', 'lna_lo_n', 'sc_phi1', 'sc_phi2'] + [f'trim[{i}]' for i in range(7, -1, -1)] + \
       ['comp_out', 'tx_p', 'tx_n', 'rx_p', 'rx_n', 'dbg', 'VDPWR', 'VAPWR', 'VGND']
 tile = {'tx_p': 'ua[3]', 'tx_n': 'ua[4]', 'rx_p': 'ua[0]', 'rx_n': 'ua[1]', 'dbg': 'ua[2]'}
 conn = []

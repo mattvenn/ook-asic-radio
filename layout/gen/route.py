@@ -617,21 +617,44 @@ class Router:
         xs = [k * pitch for k in range(math.ceil(a0 / pitch), math.floor((a1 - cs) / pitch) + 1)]
         ys = [k * pitch for k in range(math.ceil(b0 / pitch), math.floor((b1 - cs) / pitch) + 1)]
         if len(xs) < 2 or len(ys) < 2:
-            xs, ys = [x - cs / 2], [y - cs / 2]                  # small via: one centred cut
+            # the global grid misses: a local array centred in the pad when >= 2 x 2 fit (a 1 um
+            # power via then gets 2 x 2 via2 / via3, 3 x 3 via1, not one cut), else one centred cut
+            nx = int((a1 - a0 - cs) // pitch) + 1 if a1 - a0 >= cs else 1
+            ny = int((b1 - b0 - cs) // pitch) + 1 if b1 - b0 >= cs else 1
+            pts = []
+            if nx >= 2 and ny >= 2:
+                pts = [(x - ((nx - 1) * pitch + cs) / 2 + i * pitch, y - ((ny - 1) * pitch + cs) / 2 + j * pitch)
+                       for i in range(nx) for j in range(ny)]
+                # the router keeps via sites clear of MIMs for one centred cut only: keep the array's
+                # cuts to the same margins (capm.8 via2 / capm.5 via3; magic's check needs the full
+                # 0.2 um the router's mask gives a single cut, not just the rule's 0.1 / 0.08)
+                cap = getattr(self, 'capm', None)
+                if cap is not None and not cap.is_empty() and cut in (VIA[('m2', 'm3')][0], VIA[('m3', 'm4')][0]):
+                    def ok(cx, cy):
+                        c = db.Region(ibox(cx, cy, cx + cs, cy + cs))
+                        if cap.interacting(c.sized(int(round(0.2 / DBU)))).is_empty():
+                            return True                                           # clear of every MIM
+                        if cut == VIA[('m2', 'm3')][0]:
+                            return False
+                        return (c - cap.sized(-int(round(0.02 / DBU)))).is_empty()  # via3 well on a MIM
+                    pts = [p for p in pts if ok(*p)]
+            if len(pts) < 2:
+                pts = [(x - cs / 2, y - cs / 2)]                 # small via: one centred cut
+        else:
+            pts = [(cx, cy) for cx in xs for cy in ys]
         if not hasattr(self, 'cuts'):
             self.cuts = {}
         placed = self.cuts.setdefault(cut, db.Region())
-        for cx in xs:
-            for cy in ys:
-                cx, cy = snap(cx), snap(cy)
-                c = db.Region(ibox(cx, cy, cx + cs, cy + cs))
-                hit = placed.interacting(c.sized(int(round(sp / DBU)) - 1))
-                if not hit.is_empty():
-                    if (hit & c).area() == c.area():
-                        continue                                  # the same cut
-                    continue                                      # too close: the pads overlap
-                placed.insert(ibox(cx, cy, cx + cs, cy + cs))
-                self.out.shapes(li).insert(db.DBox(cx, cy, snap(cx + cs), snap(cy + cs)))
+        for cx, cy in pts:
+            cx, cy = snap(cx), snap(cy)
+            c = db.Region(ibox(cx, cy, cx + cs, cy + cs))
+            hit = placed.interacting(c.sized(int(round(sp / DBU)) - 1))
+            if not hit.is_empty():
+                if (hit & c).area() == c.area():
+                    continue                                      # the same cut
+                continue                                          # too close: the pads overlap
+            placed.insert(ibox(cx, cy, cx + cs, cy + cs))
+            self.out.shapes(li).insert(db.DBox(cx, cy, snap(cx + cs), snap(cy + cs)))
 
 
 def build(place_gds, pins_json, fp_json):

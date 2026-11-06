@@ -16,6 +16,12 @@ detector) and its testbench:
               Reference: ibias into a diode of unit W, so stage tail current =
               mt x ibias. Stage outputs o<i>p / o<i>n (i < N) are pins too:
               the taps for the successive-detection log detector.
+              lna_lo_n (active low): the low-gain strap, a switched shunt
+              across stage 2's outputs (lna_shunt).
+  lna_shunt : o2p - Rh - PMOS - Rh - o2n, gate through Rg (+ Mcap to VDD, ~40 MHz) from pin g. On (g = 0)
+              it loads stage 2 for ~11 dB less chain gain (the fallback if the
+              chain oscillates); off, it costs ~0.2 dB. Sizing:
+              sim/chain/lna_lo.sh (docs/handoff_lna_lo.md).
   tb_chain  : the tb_lna front end (dipole, pad_model) -> lna_chain.
 
     python xschem/gen/chain.py
@@ -25,7 +31,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mim, mos, poly_r, ports, write_symbol, value_notes
+from xsch import Sch, mim, mos, poly_r, write_symbol, value_notes
 from frontend import antenna_pad
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
@@ -34,6 +40,7 @@ NSTAGES = 6
 # defaults = the chip's values (stage 1 / stages 2-6), so the sheets' value notes are the chip's
 AMP_PARAMS = {'w': 80, 'l': 0.15, 'rl': '1k', 'wt': 6, 'mt': 20, 'mm': 0}   # mm: test mismatch, 0 in silicon
 AMPC_PARAMS = {'w': 20, 'l': 0.15, 'rl': '4k', 'wt': 6, 'mt': 6, 'mm': 0, 'cs': '0.6p'}
+SHUNT_PARAMS = {'rh': 421, 'wsw': 18, 'rg': '20k'}
 CHAIN_PARAMS = {'w1': 80, 'rl1': '1k', 'mt1': 20, 'w2': 20, 'rl2': '4k', 'mt2': 6,
                 'cs': '0.6p', 'cin': '2p', 'rb': '20k', 'mm': 0}
 
@@ -116,10 +123,50 @@ def amp_dpc():
                  right=['outp', 'outn'], top=['VDD'], bottom=['VSS'], params=AMPC_PARAMS)
 
 
+def lna_shunt():
+    s = Sch()
+    s.pin_order = ['VDD', 'VSS', 'a', 'b', 'g']
+    # drawn as a textbook series path, top to bottom: a - Rh_a - Msw - Rh_b - b; the gate
+    # network in its own column on the left: VDD - Mcap - gi - Rg - g (Mcap, a PMOS W 5 / L 5
+    # ~210 fF from gi to VDD, with Rg a ~40 MHz low-pass on the strap)
+    XL, XR, YV, XG, YG = -400, 400, -320, -150, -80
+    s.text(XL, -480, 'lna_shunt: low-gain strap across stage 2 outputs (a = o2p, b = o2n)\n'
+           'g = 0: PMOS on, Rh + Ron + Rh loads the stage (~11 dB less chain gain); g = VDD: off\n'
+           'params: rh (each Rh, high_po_1p41), wsw (PMOS W, L 0.15), rg (gate R, xhigh_po_0p35); Mcap ~210 fF', 0.4)
+    ra = poly_r(s, 200, -200, 'rh', 'high', '1p41', name='Rh_a')
+    rb = poly_r(s, 200, 40, 'rh', 'high', '1p41', name='Rh_b')
+    m = mos(s, 'p', 180, YG, W="'wsw'", L=0.15, nf=6, name='Msw', body='VDD')
+    for r in (ra, rb):
+        s.connect(r, B='VSS')
+    s.route(ra.pin('P'), (200, -260), (XR, -260))
+    s.port((XR, -260), 'a', right=True)
+    s.bus(ra.pin('M'), m.pin('S'), [(200, -140)])
+    s.label((200, -140), 'sa')
+    s.bus(m.pin('D'), rb.pin('P'), [(200, -20)])
+    s.label((200, -20), 'sb')
+    s.route(rb.pin('M'), (200, 110), (XR, 110))
+    s.port((XR, 110), 'b', right=True)
+    rg = poly_r(s, XG, 20, 'rg', 'xhigh', '0p35', name='Rg')
+    mc = mos(s, 'p', XG, -180, W=5, L=5, nf=1, name='Mcap', rot=3, body='VDD')    # G down, S / D up
+    s.bus((XG, YG), m.pin('G'), [(0, YG)])
+    s.label((0, YG), 'gi')
+    s.route((XG, YG), mc.pin('G'))
+    s.route((XG, YG), rg.pin('P'))
+    s.rail(YV, XL, XG + 30, [mc.pin('S'), mc.pin('D')], 'VDD', port=True)
+    s.route(rg.pin('B'), (XL, 20))
+    s.port((XL, 20), 'VSS')
+    s.route(rg.pin('M'), (XG, 110), (XL, 110))
+    s.port((XL, 110), 'g')
+    value_notes(s, SHUNT_PARAMS)
+    s.write(os.path.join(XDIR, 'lna_shunt.sch'))
+    write_symbol(os.path.join(XDIR, 'lna_shunt.sym'), left=['a', 'b', 'g'], top=['VDD'], bottom=['VSS'],
+                 params=SHUNT_PARAMS)
+
+
 def lna_chain(n=NSTAGES):
     s = Sch()
     taps = [f'o{i}{sd}' for i in range(1, n) for sd in 'pn']
-    s.pin_order = ['VDD', 'VSS', 'ibias', 'vcm', 'inp', 'inn', 'outp', 'outn'] + taps
+    s.pin_order = ['VDD', 'VSS', 'ibias', 'vcm', 'lna_lo_n', 'inp', 'inn', 'outp', 'outn'] + taps
     s.text(-1000, -400, f'lna_chain: {n} diff-pair stages; stage 1 sized for noise, 2..{n} cap-degenerated\n'
            'tail current of stage i = mt x ibias (one reference diode); taps o<i>p/n = stage outputs', 0.4)
     XL, YV, YS = -1000, -220, 220
@@ -173,11 +220,15 @@ def lna_chain(n=NSTAGES):
                 s.bus(q, (x + 300, q[1]), [(x + tx, q[1])])
                 s.route((x + tx, q[1]), (x + tx, ty))
                 s.port((x + tx, ty), net, right=True)
+    # low-gain strap across o2 (stage 2's outputs)
+    sh = s.place('lna_shunt.sym', 400, 400, name='xsh')
+    s.connect(sh, a='o2p', b='o2n', g='lna_lo_n', VDD='VDD', VSS='VSS')
+    s.port((XL, 400), 'lna_lo_n')
     s.rail(YV, XL, (n - 1) * 400, vdd, 'VDD', port=True)
     s.rail(YS, XL, (n - 1) * 400, vss, 'VSS', port=True)
     value_notes(s, CHAIN_PARAMS)
     s.write(os.path.join(XDIR, 'lna_chain.sch'))
-    write_symbol(os.path.join(XDIR, 'lna_chain.sym'), left=['inp', 'inn', 'ibias', 'vcm'],
+    write_symbol(os.path.join(XDIR, 'lna_chain.sym'), left=['inp', 'inn', 'ibias', 'vcm', 'lna_lo_n'],
                  right=['outp', 'outn'] + taps, top=['VDD'], bottom=['VSS'], params=CHAIN_PARAMS,
                  width=200)
 
@@ -190,6 +241,8 @@ PARAMS = """
 .param mm=0.01
 * reference current (stage tail = mt x iref) and gate bias
 .param iref=60u vcm_dc=1.2
+* low-gain strap (lna_lo_n): 1.8 = off (full gain), 0 = low gain
+.param vglo=1.8
 * chain sizing (passed to x1; sweep these)
 .param w1=80 rl1=1k mt1=20 w2=20 rl2=4k mt2=6 cs=0.6p cin=2p rb=20k
 """
@@ -230,11 +283,13 @@ def tb_chain():
     x1 = s.place('lna_chain.sym', -300, -150, name='x1', w1="'w1'", rl1="'rl1'", mt1="'mt1'",
                  w2="'w2'", rl2="'rl2'", mt2="'mt2'", cs="'cs'", cin="'cin'", rb="'rb'", mm="'mm'")
     s.connect(x1, inp='pad_p', inn='pad_n', ibias='ibias', vcm='vcm', outp='out_p', outn='out_n',
-              VDD='VDPWR', VSS='GND', **{f'o{i}{sd}': f'o{i}{sd}' for i in range(1, NSTAGES) for sd in 'pn'})
+              VDD='VDPWR', VSS='GND', lna_lo_n='glo', **{f'o{i}{sd}': f'o{i}{sd}' for i in range(1, NSTAGES) for sd in 'pn'})
     ib = s.place('devices/isource.sym', -500, 250, name='Iref', value="'iref'")
     s.connect(ib, p='VDPWR', m='ibias')
     vcm = s.place('devices/vsource.sym', -300, 250, name='Vcm', value="'vcm_dc'")
     s.connect(vcm, p='vcm', m='GND')
+    vg = s.place('devices/vsource.sym', -100, 250, name='Vglo', value="'vglo'")
+    s.connect(vg, p='glo', m='GND')
     for side, x in (('p', 100), ('n', 200)):
         c = s.place('devices/capa.sym', x, 100, name=f'Cload_{side}', value='50f', m='1')
         s.connect(c, p=f'out_{side}', m='GND')
@@ -245,6 +300,7 @@ def tb_chain():
 if __name__ == '__main__':
     amp_dp()
     amp_dpc()
+    lna_shunt()
     lna_chain()
     tb_chain()
-    print('wrote amp_dp, amp_dpc, lna_chain (.sch/.sym), tb_chain.sch')
+    print('wrote amp_dp, amp_dpc, lna_shunt, lna_chain (.sch/.sym), tb_chain.sch')

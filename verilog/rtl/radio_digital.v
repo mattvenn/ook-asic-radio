@@ -7,8 +7,13 @@
 // Pins
 //   ui_in[6:0]  code (DIP switches; synchronised, 50 ms debounce)
 //   ui_in[7]    role, latched at reset release: 1 = TX, 0 = RX
-//   uio_in[1:0] mode strap, latched at reset release ONLY if
-//               uio_in[7:4] == 4'b1010 (magic), else code mode:
+//   uio_in[7:4] strap magic, latched at reset release: 4'b1010 or 4'b1011
+//               enables the straps below; 4'b1011 also selects low LNA gain
+//               (lna_lo_n = 0: the stage-2 output shunt, ~11 dB less chain
+//               gain, the fallback if the chain oscillates). Any other value
+//               (e.g. floating): no straps, full gain.
+//   uio_in[1:0] mode strap, latched at reset release ONLY with the magic,
+//               else code mode:
 //                 00 code (default)   01 raw TX (tx_en = uio_in[2])
 //                 10 data (reserved; behaves as code mode for now)
 //                 11 reserved (code mode)
@@ -40,6 +45,8 @@
 //               A disabled arm is parked low.
 //   rx_en       RX analog power enable (role = RX)
 //   dbg_en      det -> ua[2] transmission gate enable (debug strap)
+//   lna_lo_n    LNA low-gain shunt enable, active low (gate of the PMOS
+//               switch across o2p / o2n): 0 = low gain (magic 4'b1011)
 //   sc_phi1/2   non-overlapping switched-cap clocks, one cycle per sample
 //
 // Timing vs test/vectors/README.md: sample i is processed at the clock edge
@@ -61,6 +68,7 @@ module radio_digital (
     output wire       tx_en_n,
     output wire       rx_en,
     output wire       dbg_en,
+    output wire       lna_lo_n,
     output reg        sc_phi1,
     output reg        sc_phi2
 );
@@ -73,13 +81,16 @@ module radio_digital (
     reg       oe;
     reg       se;
     reg       dbg;
+    reg       lna_lo;
+    wire      magic = (uio_in[7:5] == 3'b101);    // 4'b1010 or 4'b1011
     always @(posedge clk) begin
         rst <= ~rst_n;
         if (rst) begin
             role_tx <= ui_in[7];
-            mode    <= (uio_in[7:4] == 4'b1010) ? uio_in[1:0] : M_CODE;
-            se      <= (uio_in[7:4] == 4'b1010) & uio_in[3];
-            dbg     <= (uio_in[7:4] == 4'b1010) & uio_in[2];
+            mode    <= magic ? uio_in[1:0] : M_CODE;
+            se      <= magic & uio_in[3];
+            dbg     <= magic & uio_in[2];
+            lna_lo  <= magic & uio_in[4];
             oe      <= 1'b0;
         end else begin
             oe      <= 1'b1;
@@ -87,6 +98,7 @@ module radio_digital (
     end
     wire raw = (mode == M_RAW);
     assign dbg_en = dbg;
+    assign lna_lo_n = ~lna_lo;
 
     // ---------------------------------------------------------------- synchronisers
     reg       comp_s1, comp_s2;

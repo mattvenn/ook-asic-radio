@@ -23,7 +23,7 @@ for inst in list(top.each_inst()):
         inst.delete()
 P = json.load(open(pins))
 NAME = {'comp_in': 'comp_out', 'rx_en': 'rx_en', 'sc_phi1': 'sc_phi1', 'sc_phi2': 'sc_phi2',
-        'dbg_en': 'dbg_en', 'tx_en': 'tx_en', 'tx_en_n': 'tx_en_n'}
+        'dbg_en': 'dbg_en', 'tx_en': 'tx_en', 'tx_en_n': 'tx_en_n', 'lna_lo_n': 'lna_lo_n'}
 NAME.update({f'trim_out[{i}]': f'trim[{i}]' for i in range(8)})
 lm, lp, lt = ly.layer(70, 20), ly.layer(70, 16), ly.layer(70, 5)
 for pn, net in NAME.items():

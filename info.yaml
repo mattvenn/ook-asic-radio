@@ -49,7 +49,7 @@ pinout:
   uio[1]: "mode strap bit 1 (at reset)"
   uio[2]: "raw TX key in / debug strap at reset (det on ua[2])"
   uio[3]: "raw RX comparator out / monopole strap at reset"
-  uio[4]: "burst detected / strap magic 0 at reset"
+  uio[4]: "burst detected / strap magic bit at reset (1011 = LNA low gain)"
   uio[5]: "toggle event / strap magic 1 at reset"
   uio[6]: "trim direction / strap magic 0 at reset"
   uio[7]: "TX active / strap magic 1 at reset"

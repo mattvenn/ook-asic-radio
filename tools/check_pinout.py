@@ -37,7 +37,7 @@ PINOUT = {
     'uio': [('mode strap bit 0 (at reset; 01 = raw)', 'in'), ('mode strap bit 1 (at reset)', 'in'),
             ('raw TX key in / debug strap at reset (det on ua[2])', 'in'),
             ('raw RX comparator out / monopole strap at reset', 'out'),
-            ('burst detected / strap magic 0 at reset', 'out'),
+            ('burst detected / strap magic bit at reset (1011 = LNA low gain)', 'out'),
             ('toggle event / strap magic 1 at reset', 'out'),
             ('trim direction / strap magic 0 at reset', 'out'),
             ('TX active / strap magic 1 at reset', 'out')],
@@ -52,7 +52,7 @@ UIO_OE_OUT = sum(1 << i for i, (_, d) in enumerate(PINOUT['uio']) if d == 'out')
 INTERNAL = {
     'comp': [('xdig', 'comp_in'), ('xana', 'comp_out')],
     **{f'trim[{i}]': [('xdig', f'trim_out[{i}]'), ('xana', f'trim[{i}]')] for i in range(8)},
-    **{n: [('xdig', n), ('xana', n)] for n in ('tx_en', 'tx_en_n', 'rx_en', 'dbg_en', 'sc_phi1', 'sc_phi2')},
+    **{n: [('xdig', n), ('xana', n)] for n in ('tx_en', 'tx_en_n', 'rx_en', 'dbg_en', 'lna_lo_n', 'sc_phi1', 'sc_phi2')},
     'VDPWR': [('xdig', 'VPWR'), ('xana', 'VDPWR')],
     'VGND': [('xdig', 'VGND'), ('xana', 'VGND')],
     'VAPWR': [('xana', 'VAPWR')],
@@ -242,7 +242,7 @@ def write_verilog(nets, path):
 `timescale 1ns / 1ps
 
 module radio_analog (
-    input  wire rx_en, tx_en, tx_en_n, dbg_en, sc_phi1, sc_phi2,
+    input  wire rx_en, tx_en, tx_en_n, dbg_en, lna_lo_n, sc_phi1, sc_phi2,
     input  wire [7:0] trim,
     output wire comp_out,
     inout  wire tx_p, tx_n, rx_p, rx_n, dbg,

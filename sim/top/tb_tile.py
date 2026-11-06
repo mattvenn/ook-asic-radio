@@ -44,6 +44,7 @@ def netlist():
 
 
 def deck_for(src, mode):
+    src = strap(src)
     deck = re.sub(r'write tb_radio_analog_tx\.raw', f'write tb_tile_{mode}_tx.raw', src)
     if mode == 'sch':
         return deck
@@ -72,7 +73,18 @@ def deck_for(src, mode):
     return re.sub(r'^\.end\s*$', inc + '.end', deck, flags=re.M)
 
 
-COND = {'vdd': 1.8, 'vapwr': 3.3, 'corner': 'tt', 'temp': 27.0}
+COND = {'vdd': 1.8, 'vapwr': 3.3, 'corner': 'tt', 'temp': 27.0, 'vglo': 1.8}
+
+
+def strap(deck):
+    """The LNA low-gain strap (--vglo=: lna_lo_n, 1.8 = full gain, 0 = low gain) in a tb_radio_analog deck."""
+    deck, n = re.subn(r'^\.param vglo=\S+', f'.param vglo={COND["vglo"]:g}', deck, flags=re.M)
+    assert n == 1, n
+    return deck
+
+
+def strap_sfx():
+    return '' if COND['vglo'] == 1.8 else f'_glo{COND["vglo"]:g}'.replace('.', 'p')
 
 
 def suffix():
@@ -81,7 +93,7 @@ def suffix():
         t += f'_v{COND["vdd"]:g}_a{COND["vapwr"]:g}'.replace('.', '')
     if (COND['corner'], COND['temp']) != ('tt', 27.0):
         t += f'_{COND["corner"]}_{COND["temp"]:g}'
-    return t
+    return t + strap_sfx()
 
 
 def conditions(deck, mode):

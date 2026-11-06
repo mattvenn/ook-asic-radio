@@ -139,7 +139,9 @@ def main():
             if used + j['threads'] > a.budget and (run or adopted):
                 # don't let shorter jobs keep filling the gap it is waiting for (2026-10-13: an 8-thread
                 # job starved behind 4-thread ones): hold its threads unless it can never fit
-                if j['est'] >= H_RESERVE and j['threads'] <= a.budget:
+                # (one job at a time: 2026-11-04 three waiting 8-thread jobs each reserved, 24 of 26, and
+                # nothing else started for ~7 h at load 7)
+                if j['est'] >= H_RESERVE and j['threads'] <= a.budget and not reserved:
                     reserved += j['threads']
                 continue
             if j['lock'] and any(jobs[m]['lock'] == j['lock'] for m in list(run) + list(adopted) if m in jobs):

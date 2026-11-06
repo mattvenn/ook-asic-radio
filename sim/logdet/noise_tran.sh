@@ -13,15 +13,20 @@
 # shows how far through the transient it is. TSTOP / TSTART env vars override
 # the run length (default 3u / 0.5u). NPAR = parallel cases (default 1: each
 # ngspice already uses num_threads from .spiceinit; running several at once
-# oversubscribes the cores).
+# oversubscribes the cores). VGLO = the LNA strap (lna_lo_n: 1.8 full gain, 0 low gain), TB = the
+# deck to start from (default tb_logdet.spice; e.g. one with the extracted chain swapped in by
+# sim/chain/mk_pex_tb.py), TAG = a suffix for the case files (nt_<level><TAG>.*).
 levels=${@:-none -100 -94 -90 -85 -80}
 tstop=${TSTOP:-3u}; tstart=${TSTART:-0.5u}; npar=${NPAR:-1}
+vglo=${VGLO:-1.8}; tb=${TB:-tb_logdet.spice}; tag=${TAG:-}
 for p in $levels; do
   if [ "$p" = none ]; then ve=0; else ve=$(python3 -c "import math; print(math.sqrt(8*73*1e-3*10**($p/10)))"); fi
   sed -e '/^\.control/,/^\.endc/d' -e '/^\.end$/d' \
       -e "s/^Rant_\([pn]\) ant_\([pn]\) emf_\([pn]\) 36.5/Rant_\1 an_\1 emf_\1 36.5/" \
-      tb_logdet.spice > nt_$p.spice
-  cat >> nt_$p.spice <<CTL
+      -e "s/^\.param vglo=.*/.param vglo=$vglo/" \
+      $tb > nt_$p$tag.spice
+  grep -q "^\.param vglo=$vglo\$" nt_$p$tag.spice || { echo "no .param vglo in $tb" >&2; exit 1; }
+  cat >> nt_$p$tag.spice <<CTL
 .include noise_pwl.inc
 * keep only what's measured: 60k time points x every node otherwise
 .save v(det) v(out_p) v(out_n)
@@ -38,4 +43,4 @@ echo RESULT $p \$&detavg \$&outrms
 .end
 CTL
 done
-printf '%s\n' $levels | xargs -P $npar -I{} sh -c 'ngspice -b nt_{}.spice > nt_{}.log 2>&1; grep "^RESULT" nt_{}.log; rm -f nt_{}.spice'
+printf '%s\n' $levels | xargs -P $npar -I{} sh -c "ngspice -b nt_{}$tag.spice > nt_{}$tag.log 2>&1; grep '^RESULT' nt_{}$tag.log; rm -f nt_{}$tag.spice"
