@@ -13,7 +13,7 @@ each checked by its log), 0 failed.
 | 2 | Full rerun vs `verify_2026-10-13.md` | **pass, one FAIL**: chain / RX −0.53…−0.73 dB extracted, −0.2…−0.3 dB sch, as predicted; overload gap scan (`mixed_-90_ov*`) no longer shows one dead time, unexplained |
 | 3 | Chain stability, extracted, both strap states | **pass**: low gain decays at ≥ 1 fF everywhere (worst ss 10 °C 1.62 V: 1 fF ok, 1.5 fF oscillates) |
 | 4 | MC on the step | **pass on the full GDS extraction**: step 11.9 dB at tt, 10.1 dB at sf 27 °C (~99 % ≥ 9 dB by the block MC's σ; MC not run on it). The block extraction ([verify_system_2.md](verify_system_2.md) finding #5's pessimistic bound) fails: sf 9.3 % ≥ 9 dB (nominal 8.46), ss 10 °C 86.4 %, but low gain still stabilises the chain at sf, so it also passes with the spec stated as a stability margin (follow-up below) |
-| 5 | Low-gain sensitivity, transistor level | **FAIL** at −88 dBm (7/20 detect); reliable at −86 dBm (19/20); a non-monotonic dip at −88 (−90: 16/20) |
+| 5 | Low-gain sensitivity, transistor level | **pass, as the model predicts** (follow-up 2026-11-06): over burst timing 90 % at −86 dBm, 68 % at −88, 40 % at −90; 50 % at ≈ −89 (model ≈ −88.5). The first count (−88 7/20, −90 16/20: a dip) came from the bench's fixed burst timing against the slicer's 4 phases |
 | 6 | Extracted tile, vglo 1.8 / 0 | **pass**: RX current identical, −60 dBm det shifts by ~10 dB of slope |
 | 7 | FasterCap, st5 / st6 Cs ↔ g1 | **pass**: −0.19 / −0.55 / −2.31 aF (kpex bound 6.6 / 9.8 aF) |
 | 8 | Substrate study | **pass**: late stages 1.2e-5 fF (≤ 1e-4); every link 1.44e-4 fF, identical to main (above 1e-4 taken literally) |
@@ -219,15 +219,54 @@ Full gain (sch baseband, item 2): −92 dBm 5/5 seeds, −94 3/6.
 
 Every detection lands at the burst end (14.64–14.70 ms), and the no-signal control is clean, so the events are real.
 
-**FAIL** (detects at −88 dBm): 7/20. Low gain is reliable at −86 dBm (19/20).
-- That is ~6 dB below full gain (−92), not the handoff model's ~4.5 dB (−88.5).
-- noise_tran and the joined pair agree: the low-gain det difference at −88 is below full gain at −94.
+As first counted: 7/20 at −88 dBm against the criterion "detects at −88", with a dip (−90: 16/20). Low gain is
+reliable at −86 dBm (19/20). The follow-up below explains the dip; with it, item 5 passes as the model predicts.
+- noise_tran (schematic) and the joined pair (full GDS extraction) agree on the signal: low gain at −88 moves det
+  ~0.40× as much as full gain at −92 (0.63 / 1.53 and 0.54 / 1.35 mV). The block extraction gives 0.52×.
+- The mixed runs' det waveform is a model (`gen_det.py`, `--gain` calibrated to noise_tran's schematic noise-only
+  level with the strap on), driving the transistor-level baseband (schematic) and the RTL.
 
-**Open: the dip at −88.** −90 dBm (16/20) detects more often than −88 dBm (7/20) on the same noise seeds, though the
-−88 det steps are twice as large (0.4 vs 0.2 mV on the waveform). Not explained. One untested idea: 0.4 mV is near
-one trim LSB at the comparator, so the servo's ±1 LSB dither could partly cancel the signal at that level (the trim
-node steps ~7 mV per code before the comparator's attenuation). If true, it is a property of the servo + comparator,
-not of the strap, and it may also apply at full gain.
+### Follow-up (2026-11-06): the dip is the bench's burst timing, not the strap
+
+**What isn't different between −88 and −90.** Per run, every analog stage carries more signal at −88 than at −90
+(means over 20 seeds, chip = 1 minus chip = 0 during the burst):
+
+| | det step | lpf − avg step | comparator duty step | duty / chip correlation | trim code step |
+|---|---|---|---|---|---|
+| −86 | 0.684 mV | 0.546 mV | +0.24 | 0.42 | +3.1 |
+| −88 | 0.440 mV | 0.351 mV | +0.12 | 0.23 | +2.3 |
+| −90 | 0.281 mV | 0.227 mV | +0.08 | 0.15 | +1.6 |
+
+Detected and missed seeds at a level don't differ in any of these. The servo follows the signal a little (+2.3
+codes between chips at −88) but monotonically. The dip is in the detection, not the baseband.
+
+**Replaying the detection.** `sim/mixed/replay_corr.py` recovers the comparator samples from the servo's steps
+(up = 1, down = 0) and runs the RTL's slicer and correlator (8-sample majority, 127-chip score, threshold 97) at all
+8 sample alignments. The RTL scores 4 of them (window ends on odd k). Restricted to those 4 phases, the replay
+matches the simulated event pin in **60 / 60** runs (−86 / −88 / −90, 20 seeds each).
+
+At −88 dBm the best alignment of nearly every seed falls on one the RTL doesn't score. Max score: 97–105 there, but
+86–99 at the RTL's phases. At −90 the best alignments fall on the RTL's phases. Every mixed run starts its burst at
+the same instant against the RTL's sample clock (gen_det `LEAD`), so each level gets one fixed draw of that luck.
+
+**On silicon a burst arrives at a random time.** The other 4 alignments are what the RTL would score for a burst
+one sample (13 µs) later:
+
+| Level | As simulated (RTL phases) | Burst 1 sample later | Over burst timing | Model (handoff) |
+|---|---|---|---|---|
+| −86 dBm | 19/20 | 17/20 | **90 %** | 12/12 |
+| −88 dBm | 7/20 | 20/20 | **68 %** | 8/12 |
+| −90 dBm | 16/20 | 0/20 | **40 %** | 1/12 |
+
+Monotonic, with 50 % at ≈ −89 dBm, against the model's ≈ −88.5. The extra ~1 dB in the first count (and the
+"~6 dB below full gain") was the unlucky timing at −88.
+- Approximation: shifting the samples by one stands in for a later burst. The servo and noise would differ slightly
+  in a real re-run (not run: ~1 day per low-gain run).
+- The 4-of-8 phases are the existing design at any gain (`model/radio.py` slices the same way): a burst between
+  phases loses a few score points. Not specific to the strap.
+
+**Verdict (Matt, 2026-11-06): pass.** Low gain is reliable at ≈ −86 dBm and 50 % at ≈ −89, as the model predicts.
+Against "detects at −88" it is the ~2/3 the model always gave there.
 
 ## 6. Extracted tile, vglo 1.8 / 0
 

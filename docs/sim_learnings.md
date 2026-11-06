@@ -184,6 +184,14 @@ sky130A, run headless in Docker.
   settings on the stand-alone `lna_chain` + `log_det` and on the whole tile gave chain gains 3.6 dB apart at
   434 MHz: the stand-alone flow put 4–20 fF more on each stage node. A block bench driven from an ideal source
   (−0.3 dB) showed neither; only the chain with the real loads did.
+- **Near threshold, a mixed run's detection count depends on the burst's timing against the RTL's sample clock**
+  (2026-11-06, asic-radio `lna-lo-shunt` item 5). `gen_det.py` starts every burst at the same instant (`LEAD`),
+  and the slicer scores only 4 of the 8 sample alignments of a chip. So every seed at one level gets the same luck,
+  and the count can be non-monotonic in level: low gain gave −88 dBm 7/20 but −90 dBm 16/20.
+  - `sim/mixed/replay_corr.py` replays the RTL's detection from a finished run at all 8 alignments. At the RTL's 4 it
+    matched the event pin 60/60; the other 4 are a burst 13 µs later. Averaged: 90 / 68 / 40 % at −86 / −88 / −90.
+  - **Rule:** near threshold, quote detection averaged over burst timing (the replay's both parities, or bursts
+    started at several offsets), not one fixed-timing seed set.
 - **d_cosim (Verilator) can lose a slow analog edge at an `adc_bridge`** (ngspice 47, 2026-11-05, asic-radio
   `lna-lo-shunt`). The comparator output `comp` reached the RTL through `adc_bridge(in_low=0.6 in_high=1.2)`. In
   low gain the comparator has only 0.2–0.5 mV of input and lingers mid-swing (0.1–1.0 V) at a clock tick.
