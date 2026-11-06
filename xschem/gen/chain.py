@@ -31,7 +31,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mim, mos, poly_r, ports, write_symbol, value_notes
+from xsch import Sch, mim, mos, poly_r, write_symbol, value_notes
 from frontend import antenna_pad
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
@@ -126,23 +126,37 @@ def amp_dpc():
 def lna_shunt():
     s = Sch()
     s.pin_order = ['VDD', 'VSS', 'a', 'b', 'g']
-    s.text(-200, -360, 'lna_shunt: low-gain strap across stage 2 outputs (a = o2p, b = o2n)\n'
+    # drawn as a textbook series path, top to bottom: a - Rh_a - Msw - Rh_b - b; the gate
+    # network in its own column on the left: VDD - Mcap - gi - Rg - g (Mcap, a PMOS W 5 / L 5
+    # ~210 fF from gi to VDD, with Rg a ~40 MHz low-pass on the strap)
+    XL, XR, YV, XG, YG = -400, 400, -320, -150, -80
+    s.text(XL, -480, 'lna_shunt: low-gain strap across stage 2 outputs (a = o2p, b = o2n)\n'
            'g = 0: PMOS on, Rh + Ron + Rh loads the stage (~11 dB less chain gain); g = VDD: off\n'
            'params: rh (each Rh, high_po_1p41), wsw (PMOS W, L 0.15), rg (gate R, xhigh_po_0p35); Mcap ~210 fF', 0.4)
-    ra = poly_r(s, 0, -100, 'rh', 'high', '1p41', rot=1, name='Rh_a')
-    rb = poly_r(s, 400, -100, 'rh', 'high', '1p41', rot=1, name='Rh_b')
+    ra = poly_r(s, 200, -200, 'rh', 'high', '1p41', name='Rh_a')
+    rb = poly_r(s, 200, 40, 'rh', 'high', '1p41', name='Rh_b')
+    m = mos(s, 'p', 180, YG, W="'wsw'", L=0.15, nf=6, name='Msw', body='VDD')
     for r in (ra, rb):
         s.connect(r, B='VSS')
-    m = mos(s, 'p', 200, -50, W="'wsw'", L=0.15, nf=6, name='Msw', rot=1, body='VDD')
-    s.connect(ra, P='a', M='sa')
-    s.connect(rb, P='sb', M='b')
-    s.connect(m, S='sa', D='sb', G='gi')
-    rg = poly_r(s, 200, 150, 'rg', 'xhigh', '0p35', name='Rg')
-    s.connect(rg, P='gi', M='g', B='VSS')
-    # gate filter cap: PMOS W 5 / L 5 (~210 fF) gi -> VDD, with Rg a ~40 MHz low-pass on the strap
-    mc = mos(s, 'p', 450, 150, W=5, L=5, nf=1, name='Mcap', body='VDD')
-    s.connect(mc, G='gi', S='VDD', D='VDD')
-    ports(s, -200, 300, ['VDD', 'VSS', 'a', 'b', 'g'])
+    s.route(ra.pin('P'), (200, -260), (XR, -260))
+    s.port((XR, -260), 'a', right=True)
+    s.bus(ra.pin('M'), m.pin('S'), [(200, -140)])
+    s.label((200, -140), 'sa')
+    s.bus(m.pin('D'), rb.pin('P'), [(200, -20)])
+    s.label((200, -20), 'sb')
+    s.route(rb.pin('M'), (200, 110), (XR, 110))
+    s.port((XR, 110), 'b', right=True)
+    rg = poly_r(s, XG, 20, 'rg', 'xhigh', '0p35', name='Rg')
+    mc = mos(s, 'p', XG, -180, W=5, L=5, nf=1, name='Mcap', rot=3, body='VDD')    # G down, S / D up
+    s.bus((XG, YG), m.pin('G'), [(0, YG)])
+    s.label((0, YG), 'gi')
+    s.route((XG, YG), mc.pin('G'))
+    s.route((XG, YG), rg.pin('P'))
+    s.rail(YV, XL, XG + 30, [mc.pin('S'), mc.pin('D')], 'VDD', port=True)
+    s.route(rg.pin('B'), (XL, 20))
+    s.port((XL, 20), 'VSS')
+    s.route(rg.pin('M'), (XG, 110), (XL, 110))
+    s.port((XL, 110), 'g')
     value_notes(s, SHUNT_PARAMS)
     s.write(os.path.join(XDIR, 'lna_shunt.sch'))
     write_symbol(os.path.join(XDIR, 'lna_shunt.sym'), left=['a', 'b', 'g'], top=['VDD'], bottom=['VSS'],
