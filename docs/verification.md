@@ -90,7 +90,7 @@ Run: `python3 sim/<dir>/tb_<block>.py [--pex] [corner]` (no flag = schematic, `-
 | `avg_sc` | [tb_avg_sc](../sim/avg_sc/tb_avg_sc.py) | τ 0.42 ms; clock-coupling offset ~0.15 mV |
 | `comp_ct` | [tb_comp_ct](../sim/comp_ct/tb_comp_ct.py) | H135 trim (2026-10-13), CM 1.0 V: balance code 184.1 (sch 183.9), trim 0.136 mV/LSB (sch 0.134); within 1 code / 1.2 % at all 5 corners |
 | `r2r` | [tb_r2r](../sim/dac/tb_r2r.py) | error ≤ 0.02 LSB |
-| `bias_gen` | [tb_bias_gen](../sim/bias/tb_bias_gen.py) | currents and vcm within 0.1 %, VDD 1.7–1.9 V, 10–50 °C |
+| `bias_gen` | [tb_bias_gen](../sim/bias/tb_bias_gen.py) | currents and vcm within 0.1 %, VDD 1.7–1.9 V, 10–50 °C. Noise ([bias_noise](../sim/bias/bias_noise.sh), 2026-11-07): 0.04 mV rms at the comparator (LPF − average, idle, all 5 corners at 27 °C), nearly all from the 2 µA `ib_det` mirror; with the detector's own 0.33 mV the total moves by < 0.003 mV (budget 0.5 mV) |
 | `dbg_tg` | [tb_dbg_tg](../sim/dbg_tg/tb_dbg_tg.py) | on resistance; off isolation from the pad into det |
 | `tx_ring` | [tb_tx_ring](../sim/tx/tb_tx_ring.py) | 530 MHz extracted, ~448 MHz expected on silicon (×0.845, the ttsky25b block factor; the tile rc 519 MHz × 0.866 gives the same) |
 | `tx_ls` | [tb_tx_ls](../sim/tx/tb_tx_ls.py) | kn 14 / kp 8 (2026-10-10): A duty 43.4 → 36.4 %, arm duty 41.4 / 48.3 % (schematic 45.7 / 50.5 %) |
