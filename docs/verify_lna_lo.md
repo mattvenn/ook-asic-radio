@@ -462,7 +462,7 @@ each print their `RESULT` line, and `tile_pair_glo0` prints the full off − on 
 | Tile TX 10 / 50 °C | +4.41…+4.55 / +3.75…+3.89 | +4.41…+4.55 / +3.75…+3.89 | 0 | PASS |
 | TX supply, schematic (8 points × 5) | = verify_supply_mc 2.1; ss 1.71 / 3.6 FAIL | every value identical; ss 1.71 / 3.6 FAIL | 0 | PASS |
 | TX supply, extracted (9 × 5) | = supply_mc, but ss / fs at 1.71 / 3.3 **+1.79 / +1.77** | all identical to supply_mc, incl. ss / fs 1.71 / 3.6 FAIL; ss / fs 1.71 / 3.3 **+2.22 / +2.21** | **+0.43 / +0.44 dB** | CHANGED, not the shunt (TX path untouched). Back to the supply_mc values. 2026-10-13 ran these as one 5-corner process, now one process per corner. These are the marginal `tx_ls_en` points (finding #2), and 1.71 V doesn't occur on the board |
-| Analog top over supply (6 points) | = supply_mc (−60 dBm 1.166 / 1.247 / 1.121 / 1.194 / 1.341) incl. ss 1.71 / 3.6 TX FAIL | I, vcm, det idle, off, TX identical; −60 dBm 1.1699 / 1.2516 / 1.1243 / 1.1977 / 1.3440; ss 1.71 / 3.6 FAIL | +3…+5 mV at −60 dBm | CHANGED (shunt, sch). Note: ss10 1.71 / 3.0 now prints "off in nan ns" (supply_mc: 18 ns, slow) |
+| Analog top over supply (6 points) | = supply_mc (−60 dBm 1.166 / 1.247 / 1.121 / 1.194 / 1.341) incl. ss 1.71 / 3.6 TX FAIL | I, vcm, det idle, off, TX identical; −60 dBm 1.1699 / 1.2516 / 1.1243 / 1.1977 / 1.3440; ss 1.71 / 3.6 FAIL | +3…+5 mV at −60 dBm | CHANGED (shunt, sch). Note: ss10 1.71 / 3.0 printed "off in nan ns": the measurement window, not the TX (follow-up 2026-11-08 below) |
 
 ### Mismatch
 
@@ -551,8 +551,22 @@ receiver by ~2–3 dB for ~1 ms, recovered by ~5 ms: a −90 dBm burst right aft
 | Joined −10: comparator | rises 60.15 / 269.22, falls 191.26 / 392.65 µs | rises 60.28 / 269.24, falls 190.65 / 392.58 | ≤ 0.61 µs | PASS (doc: within 1 µs) |
 
 Not a reference item, but worth a look: `tile_rc_10` `op_off` IDPWR is **9.11 µA**, against 0.908 µA for
-`tile_c_10` at the same temperature. `tile_rc_fs50` reads 1.517 µA. In both, the off OP needed true gmin stepping
-(see `build/tb_tile_rc_tt_10.log`). It looks like a second DC solution of the off OP, not a real leak.
+`tile_c_10` at the same temperature. `tile_rc_fs50` reads 1.517 µA.
+
+**Follow-up (2026-11-08): both DC oddities are simulation artefacts, no design change.**
+- **rc off current: an invalid op, not a leak or a second DC state.** Rerunning the off op alone reproduces
+  9.11 µA. The excess is all in the TX enable NAND's two pull-ups (X350 / X725, gate `tx_en` = 0): 4.1 µA each into
+  its output `ring` (the ring oscillator's stop node), which sits at 1.78125 V instead of 1.8. Nothing on `ring`
+  sinks it (every other device ≤ 1 nA, gate currents 0), so the op passed convergence with KCL unbalanced at that
+  node. The bad values sit on a 1/512 V grid (1.78125 = 912/512, fs 50: 1.798828 = 921/512); tighter tolerances
+  (reltol 1e-5, abstol 1e-14, vntol 1e-8) give another non-solution (−4.63 µA, `ring` 1.8125 V, above VDD). With
+  `.nodeset` `ring` = VDD: **tt 10 °C 0.908 µA, fs 50 °C 0.945 µA**; tt 27 / tt 50 / ss 10 / ff 50 already had
+  `ring` at exactly 1.8 V (0.910 / 0.919 / 0.907 / 1.015 µA). `sim/top/tb_tile.py` now sets that nodeset, prints
+  `ring` on the `op_off` line and warns if it is more than 1 mV off VDD.
+- **"off in nan ns" (sch, ss 10 °C, 1.71 / 3.0 V): the 80 ns window.** After the key at 60 ns the arms hold
+  p high / n low until ~78.5 ns (finding #4's slow `tx_ls_en`; supply_mc's 18 ns is this release, unchanged),
+  then the dipole's envelope falls below 10 % after the run ends. Run to 120 ns: 358.0 MHz, +3.43 dBm (as
+  supply_mc), off in **21.0 ns** by the envelope metric. `sim/tx/tx_explore.py` now prints "> N ns" instead of nan.
 
 ### Power-up, pad overload, power-off
 

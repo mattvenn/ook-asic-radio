@@ -184,12 +184,14 @@ def ring_metrics(v, ton, toff, drv=('drv_p', 'drv_n')):
     i_on = lambda x: np.mean(x[m])
     i_off = lambda x: np.mean(x[(g > 1e-9) & (g < ton)])
     return dict(g=g, vd=vd, ia=ia, idd=idd, f=fr, pdbm=pdbm, t90=t90, t10=t10, ia_off=i_off(ia), ia_on=i_on(ia),
-                id_off=i_off(idd), id_on=i_on(idd))
+                id_off=i_off(idd), id_on=i_on(idd), t10_max=env_t[-1] - toff)
 
 
 def fmt_ring(m):
+    # nan: the envelope is still above 10 % at the end of the run (e.g. ss 10 C 1.71 / 3.0 V, ~21 ns)
+    off = f'{m["t10"] * 1e9:4.1f}' if m['t10'] == m['t10'] else f'> {m.get("t10_max", float("nan")) * 1e9:.0f}'
     return (f'f = {m["f"] / 1e6:6.1f} MHz (x0.866 -> {0.866 * m["f"] / 1e6:5.1f} on silicon), '
-            f'P73 {m["pdbm"]:5.2f} dBm, on in {m["t90"] * 1e9:4.1f} ns, off in {m["t10"] * 1e9:4.1f} ns, '
+            f'P73 {m["pdbm"]:5.2f} dBm, on in {m["t90"] * 1e9:4.1f} ns, off in {off} ns, '
             f'VAPWR {m["ia_off"]:5.2f} -> {m["ia_on"]:5.2f} mA, VDPWR {m["id_off"]:5.2f} -> {m["id_on"]:5.2f} mA')
 
 

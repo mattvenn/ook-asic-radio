@@ -96,6 +96,19 @@ def suffix():
     return t + strap_sfx()
 
 
+def ring_node(mode):
+    return 'xana.xtx.ring' if mode == 'sch' else 'xana.x1.tx_top_0.ring'
+
+
+def check_off(res):
+    """Warn when the off op's ring (TX enable NAND output) isn't at VDD: a bad op (sim_learnings.md)."""
+    for ln in res:
+        m = re.search(r'^RESULT op_off .* ring (\S+)', ln)
+        if m and abs(float(m.group(1)) - COND['vdd']) > 1e-3:
+            print(f'WARNING: op_off ring = {m.group(1)} V, not VDD {COND["vdd"]:g}: '
+                  'the off current is not a valid operating point', flush=True)
+
+
 def conditions(deck, mode):
     """COND applied to a deck: supplies, the .lib corner, .temp, raw names."""
     deck, n = re.subn(r'^VDPWR VDPWR GND dc 1\.8 ', f'VDPWR VDPWR GND dc {COND["vdd"]:g} ', deck, flags=re.M)
@@ -104,6 +117,14 @@ def conditions(deck, mode):
     deck = re.sub(r'(sky130\.lib\.spice) tt\b', rf'\1 {COND["corner"]}', deck)
     deck = re.sub(r'^\.end\s*$', f'.temp {COND["temp"]:g}\n.end', deck, count=1, flags=re.M)
     deck = deck.replace(f'write tb_tile_{mode}_tx.raw', f'write tb_tile_{mode}{suffix()}_tx.raw')
+    # The TX enable NAND's output (ring, at VDD whenever the TX is off): on the rc tile the off op
+    # can stop there with ring a few mV low and 4 uA per pull-up that no device sinks (tt 10 C
+    # 9.11 uA, fs 50 C 1.52 uA; true 0.91 / 0.94). Start it at VDD, and report it so a bad op shows.
+    ring = ring_node(mode)
+    deck, n = re.subn(r'^\.end\s*$', f'.nodeset v({ring})={COND["vdd"]:g}\n.end', deck, count=1, flags=re.M)
+    deck, m = re.subn(r'^(\.save .*)$', rf'\1 v({ring})', deck, count=1, flags=re.M)
+    deck, k = re.subn(r'^(echo RESULT op_off .*)$', rf'\1 ring $&v({ring})', deck, count=1, flags=re.M)
+    assert n == m == k == 1, (n, m, k)
     if os.environ.get('NT'):
         deck = re.sub(r'^\.control$', f'.control\nset num_threads={os.environ["NT"]}', deck, count=1, flags=re.M)
     return deck
@@ -119,6 +140,7 @@ def run(src, mode):
     if not res:
         print(f'{mode}: no RESULT lines; tail of build/{name}.log:')
         print('\n'.join(log.splitlines()[-15:]))
+    check_off(res)
     return res
 
 
