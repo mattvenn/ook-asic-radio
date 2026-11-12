@@ -95,6 +95,7 @@ One board, RX role (`ui_in[7]` = 0). Do R1–R3 with no antenna fitted.
 | R11 | Overload | −10 dBm keyed | `uio[3]` follows the keying, detection still works; a weak signal is missed for only 0.25–0.3 ms after a strong burst ends | |
 | R12 | False-toggle soak | Antenna fitted, overnight, RP2350 counting `uio[5]` | 0 toggles | |
 | R13 | LNA low-gain strap | Debug strap with `1011` vs `1010`. R3 idle level, and the R6 curve at a few levels | `1011`: idle `ua[2]` slightly higher (less chain noise reaches the detector); the R6 curve shifted ~10–12 dB to higher input (10.1 dB at sf to 11.9 dB at tt, full GDS extraction). Sensitivity (R9 / L1): reliable at about −86 dBm, 50 % at about −89, vs −92 in full gain (mixed signal, docs/verify_lna_lo.md) | |
+| R14 | Trim DAC transfer | Inputs held fixed (no antenna, idle); freeze the servo and set the trim code by register ([slicer.md](slicer.md) "Overrides"), sweep 0–255, record the comparator ones density per code | Density rises with code, with dips at the carries: ~11 codes at 127 → 128, ~6 at 63 → 64, ~5 at 191 → 192, ~3 at 159 / 223 (the macro's weak `trim_out` buffers, [verify_trim_dac.md](verify_trim_dac.md)). The dip size gives the driver R (`sim/dac/ladder_model.py`); no dip would mean stronger drivers than simulated | |
 
 Without a signal generator: do R1–R5 and R10–R12. Leave sensitivity to L1, which uses a measured TX as the source. The key fob gives a quick check that `det` and `uio[3]` respond at all.
 

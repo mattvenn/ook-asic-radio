@@ -9,6 +9,7 @@ The curve goes to build/r2r_curve_<name>.json (code -> V).
 
 --pex       layout/pex/r2r.spice instead of the schematic
 --drv       real bit drivers
+--cell=C    the driver cell with --drv (default clkdlybuf4s25_1, today's macro; e.g. buf_8 after a re-harden)
 --temp=T    temperature (default 27)
 --mc=N      Monte Carlo (corner -> <corner>_mm: resistor and driver mismatch): N samples, one ngspice process
             each with its own .options seed (docs/sim_learnings.md), --jobs=J at once (default 8); DC sweep only
@@ -49,14 +50,14 @@ def ladder(pex):
     return re.sub(r'^\**\.(subckt|ends)', r'.\1', s, flags=re.M)
 
 
-def deck(corner, sub, drv, temp, mc_seed=None):
+def deck(corner, sub, drv, temp, mc_seed=None, cell=CELL):
     pdk = os.environ.get('PDK_ROOT', '/foss/pdks')
     lo, hi = bits(127), bits(128)
     node = 'a' if drv else 'b'      # where the ideal sources connect
     vb = '\n'.join(f'Vb{i} {node}{i} 0 dc {lo[i]} pwl(0 {lo[i]} 10n {lo[i]} 11n {hi[i]})' for i in range(8))
     if drv:
         vb += f'\n.include {pdk}/sky130A/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice\nVDD vdd 0 1.8\n'
-        vb += '\n'.join(f'xd{i} a{i} 0 0 vdd vdd b{i} {CELL}' for i in range(8))
+        vb += '\n'.join(f'xd{i} a{i} 0 0 vdd vdd b{i} {cell}' for i in range(8))
     sweep, prev = '', None
     for c in range(256):
         sweep += ''.join(f'alter Vb{i} dc = {v}\n' for i, v in enumerate(bits(c)) if prev is None or prev[i] != v)
@@ -141,11 +142,13 @@ if __name__ == '__main__':
     pex, drv = '--pex' in args, '--drv' in args
     opt = dict(a[2:].split('=', 1) for a in args if a.startswith('--') and '=' in a)
     temp = float(opt.get('temp', 27))
+    cell = opt.get('cell', CELL)
+    cell = cell if cell.startswith('sky130') else 'sky130_fd_sc_hd__' + cell
     corner = next((a for a in args if not a.startswith('-')), 'tt')
-    tag = f'{corner}_{temp:g}C' + ('_pex' if pex else '') + ('_drv' if drv else '')
+    tag = f'{corner}_{temp:g}C' + ('_pex' if pex else '') + ('_drv' if drv else '') + ('' if cell == CELL else '_' + cell.split('__')[1])
     sub = ladder(pex)
     if 'mc' not in opt:
-        r = run_deck(f'tb_r2r_{tag}', deck(corner, sub, drv, temp))
+        r = run_deck(f'tb_r2r_{tag}', deck(corner, sub, drv, temp, cell=cell))
         json.dump(r['v'], open(os.path.join(B, f'r2r_curve_{tag}.json'), 'w'))
         report(f'r2r {tag}', r)
         sys.exit()
@@ -155,7 +158,7 @@ if __name__ == '__main__':
     os.makedirs(os.path.join(B, 'r2r_mc'), exist_ok=True)
 
     def one(j):
-        return run_deck(f'r2r_mc/{tag}_{j}', deck(mc_corner, sub, drv, temp, seed0 + j))['v']
+        return run_deck(f'r2r_mc/{tag}_{j}', deck(mc_corner, sub, drv, temp, seed0 + j, cell))['v']
 
     with ThreadPoolExecutor(jobs) as ex:
         curves = list(ex.map(one, range(n)))
