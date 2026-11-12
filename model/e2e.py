@@ -59,6 +59,11 @@ def parse_args():
     p.add_argument('--bv', type=float, default=15e3, help='post-detection RC LPF cutoff, Hz')
     p.add_argument('--comp-noise-mv', type=float, default=0.0,
                    help='comparator input noise per decision, mV rms')
+    p.add_argument('--dac-curve', help='JSON: 256 trim DAC voltages (sim/dac/tb_r2r.py r2r_curve_*.json), '
+                   'or {"curves": [...]} with --dac-index; default a uniform DAC')
+    p.add_argument('--dac-index', type=int, default=0, help='which curve of an MC file')
+    p.add_argument('--dac-code0', type=int, default=128,
+                   help='real DAC code at the model\'s trim 128 (with --dac-curve); balance = code0 - offset/step')
     p.add_argument('--levels', type=float, nargs='+', default=list(LEVELS))
     p.add_argument('--trials', type=int, default=TRIALS)
     p.add_argument('--cases', nargs='+', default=list(CASES), choices=CASES)
@@ -74,11 +79,20 @@ def main():
     levels, trials, cases = a.levels, a.trials, a.cases
     crng = np.random.default_rng(5)
 
+    curve = None
+    if a.dac_curve:
+        import json
+        curve = json.load(open(a.dac_curve))
+        if isinstance(curve, dict):
+            curve = curve['curves'][a.dac_index]
+        curve = np.asarray(curve) / (1.8 / 256)
+
     def afe():
         return radio.AfeModel(offset_db=a.offset_mv / a.slope, trim_lsb_db=a.trim_mv / a.slope,
-                              noise_db=a.comp_noise_mv / a.slope, rng=crng)
+                              noise_db=a.comp_noise_mv / a.slope, rng=crng, dac_curve=curve, code0=a.dac_code0)
     desc = (f'NF {a.nf:g} dB, {a.brf / 1e6:.0f} MHz, LPF {a.bv / 1e3:g} kHz, {a.slope:g} mV/dB, offset {a.offset_mv:g} mV, '
-            f'trim {a.trim_mv:g} mV/LSB, comp noise {a.comp_noise_mv:g} mV')
+            f'trim {a.trim_mv:g} mV/LSB, comp noise {a.comp_noise_mv:g} mV'
+            + (f', DAC curve {os.path.basename(a.dac_curve)}[{a.dac_index}] code0 {a.dac_code0}' if a.dac_curve else ''))
     print(desc)
     rng = np.random.default_rng(21)
     on = send_onoff(CODE)

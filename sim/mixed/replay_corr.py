@@ -9,6 +9,7 @@ odd offsets are what the RTL would score for a burst one sample (13 us) later, s
 the detection rate for a burst arriving at a random time.
 
     python3 sim/mixed/replay_corr.py <tag> <level> [<level> ...]     e.g.  lo -88 -90   (mixed_<lvl>_s<1..20>_<tag>.raw)
+    level may carry a suffix, e.g. -92_pex for mixed_-92_pex_s<n>_<tag>.raw
 """
 import os
 import sys
@@ -31,7 +32,10 @@ def samples(path):
     """Comparator samples (from the servo's settled steps), their times, and whether the event pin opened."""
     v = read_raw(path)[0]['vars']
     t, trim, ev = (np.real(v[k]) for k in ('time', 'v(trim)', 'v(uio_out_4_a)'))
-    code = np.round(trim / LSB)
+    if 'v(trim_out_0_a)' in v:      # the digital code (needed with gen_mixed.py --drv: the DAC is then not code x LSB)
+        code = sum((np.real(v[f'v(trim_out_{i}_a)']) > 0.9).astype(int) << i for i in range(8))
+    else:
+        code = np.round(trim / LSB)
     seq, tt, last = [], [], code[np.searchsorted(t, 5e-6)]
     for i in np.nonzero(np.diff(code))[0]:
         j = np.searchsorted(t, t[i] + 1e-6)          # the value once the ladder has settled

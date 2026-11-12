@@ -130,9 +130,12 @@ class AfeModel:
     comparator(+) = v (detector, in 0.44 dB 'LSB' units)
     comparator(-) = switched-cap average of v + offset + trim_gain*(trim-128)
     noise_db: comparator input-referred noise per decision (rms, in dB of
-    detector input via the detector slope); 0 = noiseless (bit-exact vectors)."""
+    detector input via the detector slope); 0 = noiseless (bit-exact vectors).
+    dac_curve: optional measured trim DAC transfer, 256 values in ideal LSB (V / (1.8/256)); the trim term is
+    then trim_gain*(curve[trim - 128 + code0] - curve[code0]) (index clipped to 0..255), i.e. the model's
+    code 128 sits at real code code0. None = a uniform DAC (trim_gain*(trim-128))."""
     def __init__(self, tau=0.5e-3, offset_db=0.125, trim_lsb_db=0.005, lsb_db=0.44,
-                 noise_db=0.0, rng=None):
+                 noise_db=0.0, rng=None, dac_curve=None, code0=128):
         fs = CLK / SAMPLE_CLKS
         self.a = 1.0 / (tau * fs)
         self.off = offset_db / lsb_db
@@ -140,13 +143,21 @@ class AfeModel:
         self.noise = noise_db / lsb_db
         self.rng = rng if rng is not None else np.random.default_rng(0)
         self.avg = None
+        self.lut = None
+        if dac_curve is not None:
+            c = np.asarray(dac_curve, float)
+            idx = np.clip(np.arange(256) - 128 + code0, 0, 255)
+            self.lut = c[idx] - c[code0]
+
+    def trim_term(self, trim):
+        return self.tg * (self.lut[trim] if self.lut is not None else trim - 128)
 
     def compare(self, v, trim):
         if self.avg is None:
             self.avg = v
         self.avg += self.a * (v - self.avg)
         n = self.noise * self.rng.standard_normal() if self.noise else 0.0
-        return 1 if v + n > self.avg + self.off + self.tg * (trim - 128) else 0
+        return 1 if v + n > self.avg + self.off + self.trim_term(trim) else 0
 
 
 def run_rx(v_samples, code, afe=None):
