@@ -137,6 +137,13 @@ svg.dg{display:block; width:100%; height:auto}
 .links a.primary{background:var(--sig); color:#05181c}
 .links a.secondary{border:1px solid var(--line); color:var(--text)}
 .links a:hover{filter:brightness(1.1)}
+.videos{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.6rem; margin:.25rem 0 .5rem}
+.video{display:flex; flex-direction:column; gap:.3rem; text-decoration:none; color:var(--text); font-size:.8rem; font-weight:600; line-height:1.25}
+.video .thumb{position:relative; display:block; aspect-ratio:16/9; border-radius:8px; overflow:hidden; background:#000; border:1px solid var(--line)}
+.video .thumb img{width:100%; height:100%; object-fit:cover; display:block}
+.video .play{position:absolute; left:50%; top:50%; width:44px; height:31px; margin:-15px 0 0 -22px; border-radius:8px; background:rgba(0,0,0,.7)}
+.video .play::after{content:''; position:absolute; left:17px; top:9px; border-style:solid; border-width:6.5px 0 6.5px 12px; border-color:transparent transparent transparent #fff}
+.video:hover .play{background:#f00} .video:hover .vt{text-decoration:underline}
 .fig{display:flex; flex-direction:column; gap:.3rem}
 .xref{display:inline; background:none; border:0; padding:0; font:inherit; color:var(--sig); cursor:pointer; text-decoration:underline; text-decoration-color:#5cc8da66; text-underline-offset:3px}
 .xref:hover{text-decoration-color:var(--sig)}
@@ -560,8 +567,9 @@ const ed = (id, f, tag, attrs, html) => {
 // ------------------------------------------------------------------ blocks
 const B = {
   intro: {lvl: 'link', scene: false, anchor: 'how-it-works', more: false,
-    cta: [['Read the article', 'https://zerotoasiccourse.com/post/ai_codesigned_radio/'],
-          ['Watch the video', 'https://www.youtube.com/watch?v=c53n4mH_RYg']],
+    cta: [['Read the article', 'https://zerotoasiccourse.com/post/ai_codesigned_radio/']],
+    videos: [['fUDIhpx34Qk', 'An open-source radio in 0.1 mm² of silicon: how it works'],
+             ['c53n4mH_RYg', 'I put AI to the test on analog chip design']],
     plot: () => figLayout()},
   air: {lvl: 'link', anchor: 'bench-measurements-phase-0',
     plot: () => figPath()},
@@ -1037,6 +1045,7 @@ function focusPage(id) {
     <div class="side">
       <div>${ed(id, 'name', 'h2', 'id="dh"', nm(id))}${ed(id, 'sub', 'p', 'class="sub"', T(id, 'sub'))}${sizeLine(id)}${S.edit ? `<p class="sub">breadcrumb: ${ed(id, 'short', 'span', '', '')}</p>` : ''}</div>
       ${S.edit ? ed(id, 'body', 'div', '', '') : prose(T(id, 'body'))}
+      ${b.videos ? `<div class="videos">${b.videos.map(([v, t]) => `<a class="video" href="https://www.youtube.com/watch?v=${v}" target="_blank" rel="noopener"><span class="thumb">${D.thumbs && D.thumbs[v] ? `<img src="data:image/jpeg;base64,${D.thumbs[v]}" alt="">` : ''}<span class="play" aria-hidden="true"></span></span><span class="vt">${t} ↗</span></a>`).join('')}</div>` : ''}
       ${b.cta ? `<div class="links cta">${b.cta.map(([t, u]) => `<a class="primary" href="${u}" target="_blank" rel="noopener">${t} ↗</a>`).join('')}</div>` : ''}
       <div class="links">${b.more === false ? '' : `<a class="primary" href="${DOC + b.anchor}" target="_blank" rel="noopener">More details ↗</a>`}${b.sch ? `<a class="secondary" href="${SCH(b.sch)}" target="_blank" rel="noopener">Schematic ↗</a><a class="secondary" href="${GDS(b.sch)}" target="_blank" rel="noopener">Layout ↗</a>` : ''}${b.rtl ? `<a class="secondary" href="${REPO}verilog/rtl/${b.rtl}.v" target="_blank" rel="noopener">RTL ↗</a>` : ''}</div>
     </div>

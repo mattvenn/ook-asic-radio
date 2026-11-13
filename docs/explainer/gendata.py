@@ -309,6 +309,21 @@ def words():
     return pages
 
 
+VIDEOS = ['c53n4mH_RYg', 'fUDIhpx34Qk']   # YouTube ids on the opening page; thumbnails are yt_<id>.jpg (i.ytimg.com/vi/<id>/mqdefault.jpg)
+
+
+def thumbs():
+    """Video thumbnails for the opening page, inlined so the page loads nothing from YouTube until clicked."""
+    out = {}
+    for v in VIDEOS:
+        f = os.path.join(HERE, f'yt_{v}.jpg')
+        if os.path.exists(f):
+            out[v] = base64.b64encode(open(f, 'rb').read()).decode()
+        else:
+            report.append(f'video   yt_{v}.jpg MISSING')
+    return out
+
+
 def layout_jpg():
     """The whole-design render for the opening page: the GitHub gds action's gds_render.png
     (artifact of the same name), scaled to 1200 px wide JPEG as docs/explainer/layout.jpg."""
@@ -329,7 +344,7 @@ def main():
     import gold as G   # the two LFSR sequences: code k = M1 xor M2 shifted by k (k = 127: M1 alone), as in model/gold.py
     payload = {'code': CODE, 'gold': gold_chips(), 'm1': ''.join(map(str, G.M1)), 'm2': ''.join(map(str, G.M2)), 'path': path_loss(), 'tx': tx(), 'rx_rf': rx_rf(),
                'logdet': logdet(), 'bb': [b for b in map(baseband, BB_LEVELS) if b],
-               'model': model_sweep(), 'sizes': sizes(), 'layout_jpg': layout_jpg(), 'text': words()}
+               'model': model_sweep(), 'sizes': sizes(), 'layout_jpg': layout_jpg(), 'thumbs': thumbs(), 'text': words()}
     blob = base64.b64encode(gzip.compress(json.dumps(payload, separators=(',', ':')).encode(), 9)).decode()
     brand = base64.b64encode(open(os.path.join(HERE, 'brand_header.jpg'), 'rb').read()).decode()   # Zero to ASIC header art
     html = open(os.path.join(HERE, 'template.html')).read().replace('/*__PAYLOAD__*/', blob).replace('/*__BRAND__*/', brand)
