@@ -1,0 +1,34 @@
+* chain_strip_t: amp_dp_t + 5 x amp_dpc_t in series (chain_strip_tall.py)
+.subckt chain_strip_t inp inn nb outp outn o1p o1n o2p o2n o3p o3n o4p o4n o5p o5n VDD VSS
+X1 inp inn nb o1p o1n VDD VSS amp_dp_t
+X2 o1p o1n nb o2p o2n VDD VSS amp_dpc_t
+X3 o2p o2n nb o3p o3n VDD VSS amp_dpc_t
+X4 o3p o3n nb o4p o4n VDD VSS amp_dpc_t
+X5 o4p o4n nb o5p o5n VDD VSS amp_dpc_t
+X6 o5p o5n nb outp outn VDD VSS amp_dpc_t
+.ends
+* amp_dp_t: xschem/amp_dp.sch with {'w': 80, 'l': 0.15, 'rl': 1000.0, 'wt': 6, 'mt': 20, 'mm': 0} (lay.write_ref)
+** sch_path: /foss/designs/ook-asic-radio-tall-stages/xschem/amp_dp.sch
+.subckt amp_dp_t inp inn nb outp outn VDD VSS
+*.PININFO VDD:B VSS:B nb:B inp:B inn:B outp:B outn:B
+XRl_p outn VDD VSS sky130_fd_pr__res_high_po_1p41 L=3.13504 mult=1
+XMp outn inp tail VSS sky130_fd_pr__nfet_01v8 L=0.15 W=80 nf=4
+XRl_n outp VDD VSS sky130_fd_pr__res_high_po_1p41 L=3.13504 mult=1
+XMn outp inn tail VSS sky130_fd_pr__nfet_01v8 L=0.15 W=80 nf=4
+XMtail tail nb VSS VSS sky130_fd_pr__nfet_01v8 L=0.5 W=6 nf=2 m=20
+.ends
+
+* amp_dpc_t: xschem/amp_dpc.sch with {'w': 20, 'l': 0.15, 'rl': 4000.0, 'wt': 6, 'mt': 6, 'mm': 0, 'cs': 6e-13}, Cs drawn 6.8 x 21.33 um (amp_dpc_tall.py)
+** sch_path: /foss/designs/ook-asic-radio-tall-stages/xschem/amp_dpc.sch
+.subckt amp_dpc_t inp inn nb outp outn VDD VSS
+*.PININFO VDD:B VSS:B nb:B inp:B inn:B outp:B outn:B
+XRl_p outn VDD VSS sky130_fd_pr__res_high_po_0p69 L=7.37736 mult=1
+XMp outn inp sp VSS sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=4
+XMtail_p sp nb VSS VSS sky130_fd_pr__nfet_01v8 L=0.5 W=6 nf=2 m=3
+XRl_n outp VDD VSS sky130_fd_pr__res_high_po_0p69 L=7.37736 mult=1
+XMn outp inn sn VSS sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=4
+XMtail_n sn nb VSS VSS sky130_fd_pr__nfet_01v8 L=0.5 W=6 nf=2 m=3
+XCs_a sn sp sky130_fd_pr__cap_mim_m3_1 W=6.8 L=21.33
+XCs_b sp sn sky130_fd_pr__cap_mim_m3_1 W=6.8 L=21.33
+.ends
+

@@ -36,6 +36,7 @@ LRL = (PARAMS['rl'] - 278) / 230.3
 NG, NFG = 4, 4                     # per row: 4 groups of 4 fingers
 WF = PARAMS['w'] / 16              # 5 um fingers
 RC, RV, GRW, VW, TRK = dpc.RC, dpc.RV, dpc.GRW, dpc.VW, dpc.TRK
+TAPS = os.environ.get('DPC_TAPS', '1') == '1'   # 0: the out columns only as long as the crossings need
 
 
 def half(b, frame):
@@ -200,15 +201,18 @@ def make():
 
     # outputs: own bar, the other half's other bar, the out track: all on the net's column
     for sg, c, net in ((1, c1, 'outn'), (-1, c2, 'outp')):
-        b.rect('m4', box(c.left, -Hh, c.right, Hh))
         own, oth = mir(g['own'], sg), mir(g['oth'], -sg)
+        tr0 = sg * t1
+        b.rect('m4', box(c.left, -Hh, c.right, Hh) if TAPS else
+               box(c.left, min(own.bottom, oth.bottom, tr0) - 0.5, c.right, max(own.top, oth.top, tr0) + 0.5))
         n_own = stack(c, own)
         n_oth = stack(c, oth)
         tr = b.rect('m2', box(c.left - 0.05, min(sg * t0, sg * t1), W, max(sg * t0, sg * t1)))
         stack(c, tr)
         b.pin('m2', box(W - 0.5, tr.bottom, W, tr.top), net)
-        b.pin('m4', box(c.left, Hh - 0.5, c.right, Hh), net)
-        b.pin('m4', box(c.left, -Hh, c.right, -Hh + 0.5), net)
+        if TAPS:
+            b.pin('m4', box(c.left, Hh - 0.5, c.right, Hh), net)
+            b.pin('m4', box(c.left, -Hh, c.right, -Hh + 0.5), net)
         rep.append((net, 'bars to column', min(n_own, n_oth), cuts_needed(0.3, 'via2')))
     # inputs: own jumper (met2, to the left edge: the pin) and the other half's met3 line
     cin = g['cin']
