@@ -228,15 +228,21 @@ def make(W=W_CELL, taps=TAPS, name='amp_dpc_t', extra=0.0, riser_left=False, hoo
         b.via('via3', box(xa, -sg * land[0], xa + 0.8, -sg * land[1]))
     assert vc.right + 0.3 <= pl0 + 0.4
     # taps: each output up a met4 column the full height, landed from its track on met3
+    # taps: True / 'both' (full height), 'top' / 'bottom' (from the output's own height to that
+    # edge only: in a chain whose taps leave from one long edge, flipped stages use 'bottom')
     if taps:
         for sg, c, net in ((1, c1, 'outn'), (-1, c2, 'outp')):
-            col = b.rect('m4', box(c.left, -Hh, c.right, Hh))
+            y0c = -Hh if taps in (True, 'both', 'bottom') else sg * ys - 0.3
+            y1c = Hh if taps in (True, 'both', 'top') else sg * ys + 0.3
+            col = b.rect('m4', box(c.left, y0c, c.right, y1c))
             isl = b.rect('m3', box(c.left - 0.05, sg * ys - 0.3, c.right + 0.05, sg * ys + 0.3))
             b.via('via2', box(isl.left, sg * t0, isl.right, sg * t1) if sg > 0 else box(isl.left, -t1, isl.right, -t0),
                   enc=(0.065, 0.085))
             b.via('via3', isl, enc=(0.09, 0.09))
-            b.pin('m4', box(c.left, Hh - 0.5, c.right, Hh), net)
-            b.pin('m4', box(c.left, -Hh, c.right, -Hh + 0.5), net)
+            if y1c == Hh:
+                b.pin('m4', box(c.left, Hh - 0.5, c.right, Hh), net)
+            if y0c == -Hh:
+                b.pin('m4', box(c.left, -Hh, c.right, -Hh + 0.5), net)
         if SHIELD:
             b.rect('m4', box(sh.left, -Hh, sh.right, Hh))
             for sg in (1, -1):
@@ -250,7 +256,7 @@ def make(W=W_CELL, taps=TAPS, name='amp_dpc_t', extra=0.0, riser_left=False, hoo
         b.cell.shapes(li).transform(pya.DTrans(0, Hh))
     meta = dict(W=W, H=H, y_sig=ys, trk=(t0, t1), capw=cw, capl=ch, Hh=Hh)
     print(f'{name}: {W:.2f} x {H:.2f} um; cap {cw} x {ch} um (was {CAPW_SQ:.2f} square), '
-          f'signals at {Hh - ys:.2f} / {Hh + ys:.2f} um, taps {"on" if taps else "off"}')
+          f'signals at {Hh - ys:.2f} / {Hh + ys:.2f} um, taps {taps}')
     print('  net    where           cuts  need (2x margin)')
     for net, where, nc, need in rep:
         print(f'  {net:6s} {where:15s} {nc:4d}  {need}{"   <-- short" if nc < need else ""}')

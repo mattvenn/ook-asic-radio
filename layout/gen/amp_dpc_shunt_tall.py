@@ -15,7 +15,7 @@ import os
 import re
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lay import Fet, REPO, box, snap, cuts_needed   # noqa: E402
+from lay import Block, Fet, REPO, box, snap, cuts_needed   # noqa: E402
 from passives import PolyRes   # noqa: E402
 import amp_dpc_tall as dpc   # noqa: E402
 
@@ -24,7 +24,11 @@ BAR, VW, RV = dpc.BAR, dpc.VW, dpc.RV
 GAP = float(os.environ.get('SH_GAP', 0.9))       # Msw's n-well box to each Rh
 
 
-def shunt(b, c):
+def shunt(b0, c, flip=False):
+    """Draws the shunt in its own cell, placed over the stage; flip: mirrored about the centre
+    line (Msw and the Rh pair in the bottom half, Mcap / Rg in the top, the strap pin at the top
+    edge), for a stage whose tap columns run to its bottom edge (lna_chain_tall.py)."""
+    b = Block(b0.name + '_sh', ly=b0.ly)
     W, Hh, g = c['W'], c['Hh'], c['g']
     c1, c2, cg = c['c1'], c['c2'], c['cg']
     y0 = g['ring'].top + 0.6                          # free space above the half's ring
@@ -135,6 +139,7 @@ def shunt(b, c):
     b.rect('m4', box(cg.left, -Hh, cg.right, ys_ + 0.3))
     b.pin('m4', box(cg.left, -Hh, cg.right, -Hh + 0.5), 'lna_lo_n')
     c['rep'] += [('sa/sb', 'Msw strips', min(n.values()), 1)]
+    b0.place(b.cell, 0, 0, 0, flip)
 
 
 def write_ref(meta):

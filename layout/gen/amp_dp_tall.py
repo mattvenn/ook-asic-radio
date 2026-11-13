@@ -144,10 +144,12 @@ def half(b, frame):
                    rl_right=rl.bbox.right, tail=tail)
 
 
-def make():
+def make(taps=TAPS, name='amp_dp_t'):
+    """taps: True (full-height out columns), 'top' (from the crossings up to the top edge only),
+    False (only as long as the crossings need)."""
     _, fr = dpc.make()                                 # the frame: height, signal heights
     Hh, ys, (t0, t1) = fr['Hh'], fr['y_sig'], fr['trk']
-    b = Block('amp_dp_t')
+    b = Block(name)
     # pass 1 for the width: the out columns go right of the ring
     probe = Block('probe')
     _, g0 = half(probe, dict(W_req=50))
@@ -203,15 +205,17 @@ def make():
     for sg, c, net in ((1, c1, 'outn'), (-1, c2, 'outp')):
         own, oth = mir(g['own'], sg), mir(g['oth'], -sg)
         tr0 = sg * t1
-        b.rect('m4', box(c.left, -Hh, c.right, Hh) if TAPS else
-               box(c.left, min(own.bottom, oth.bottom, tr0) - 0.5, c.right, max(own.top, oth.top, tr0) + 0.5))
+        lo = min(own.bottom, oth.bottom, tr0) - 0.5
+        hi = max(own.top, oth.top, tr0) + 0.5
+        b.rect('m4', box(c.left, -Hh if taps is True else lo, c.right, Hh if taps in (True, 'top') else hi))
         n_own = stack(c, own)
         n_oth = stack(c, oth)
         tr = b.rect('m2', box(c.left - 0.05, min(sg * t0, sg * t1), W, max(sg * t0, sg * t1)))
         stack(c, tr)
         b.pin('m2', box(W - 0.5, tr.bottom, W, tr.top), net)
-        if TAPS:
+        if taps in (True, 'top'):
             b.pin('m4', box(c.left, Hh - 0.5, c.right, Hh), net)
+        if taps is True:
             b.pin('m4', box(c.left, -Hh, c.right, -Hh + 0.5), net)
         rep.append((net, 'bars to column', min(n_own, n_oth), cuts_needed(0.3, 'via2')))
     # inputs: own jumper (met2, to the left edge: the pin) and the other half's met3 line
@@ -231,7 +235,7 @@ def make():
     b.cell.flatten(-1, True)
     for li in b.ly.layer_indexes():
         b.cell.shapes(li).transform(pya.DTrans(0, Hh))
-    print(f'amp_dp_t: {W:.2f} x {2 * Hh:.2f} um; pair 2 rows x {NG} x {NFG} fingers of {WF} um per half, tail nf {PARAMS["mt"]} per half; '
+    print(f'{name}: {W:.2f} x {2 * Hh:.2f} um; pair 2 rows x {NG} x {NFG} fingers of {WF} um per half, tail nf {PARAMS["mt"]} per half; '
           f'outputs at {Hh - ys:.2f} / {Hh + ys:.2f} um')
     print('  net    where           cuts  need (2x margin)')
     for net, where, nc, need in rep:
