@@ -140,10 +140,15 @@ def half(b):
                    rep=rep, tail=tail, pair=pair)
 
 
-def make(W=W_CELL, taps=TAPS):
-    b = Block('amp_dpc_t')
+def make(W=W_CELL, taps=TAPS, name='amp_dpc_t', extra=0.0, riser_left=False, hook=None):
+    """extra: width added at the right edge (the plates stay where they are, the tap columns
+    move right, leaving one more column position next to the outn column); riser_left: the
+    loads' VDD risers jog to the left edge (frees the space above each ring); hook(b, ctx):
+    draws more before the cell is flattened (amp_dpc_shunt_tall.py)."""
+    b = Block(name)
     h, g = half(b)
     W = max(W, g['ring'].right + 0.3)
+    W0, W = W, W + extra
     ys = g['y_sig']
     t0, t1 = g['trk']
     # x plan, right edge: tap columns (met4) and their met3 landings, 1.2 clear of the plates
@@ -152,7 +157,7 @@ def make(W=W_CELL, taps=TAPS):
     c2 = box(W - 0.55, 0, W - 0.15, 0)                 # outp column
     sh = box(W - 1.25, 0, W - 0.85, 0)                 # VDD shield column
     c1 = box(W - 1.95, 0, W - 1.55, 0) if SHIELD else sh   # outn column
-    isl_l = c1.left - 0.05
+    isl_l = c1.left - extra - 0.05                    # (the plates as for width W0)
     pl0, pl1 = 1.3, isl_l - BOT_PLATE_SPACE            # plate x (left: 1.2 from the left neighbour's landings)
     cw = snap(pl1 - pl0 - 0.4)                         # capm width
     area = (CAPW_SQ + MIM_DW) ** 2                     # same C as today's square
@@ -188,7 +193,11 @@ def make(W=W_CELL, taps=TAPS):
         b.pin('m1', box(0, rv.bottom, 1.0, rv.top), 'VDD')
         # load's top head: met2 riser up into the rail
         top_ = g['rl_top']
-        b.rect('m2', box(top_.left, sg * top_.bottom, top_.right, sg * (Hh - RV + 0.01)))
+        if riser_left:                                 # jog left to x 1.0 .. 1.4, then up
+            b.rect('m2', box(1.0, sg * top_.bottom, top_.right, sg * top_.top))
+            b.rect('m2', box(1.0, sg * top_.bottom, 1.4, sg * (Hh - RV + 0.01)))
+        else:
+            b.rect('m2', box(top_.left, sg * top_.bottom, top_.right, sg * (Hh - RV + 0.01)))
     vc = b.rect('m4', box(0.3, -Hh, 0.8, Hh))         # VDD rails joined (left edge)
     for sg in (1, -1):
         b.via('via3', box(0.3, sg * (Hh - RV), 0.8, sg * Hh))
@@ -232,12 +241,15 @@ def make(W=W_CELL, taps=TAPS):
             b.rect('m4', box(sh.left, -Hh, sh.right, Hh))
             for sg in (1, -1):
                 b.via('via3', box(sh.left, sg * (Hh - RV), sh.right, sg * Hh))
+    if hook:
+        hook(b, dict(W=W, Hh=Hh, ys=ys, trk=(t0, t1), g=g, c1=c1, c2=c2, sh=sh, cg=box(c1.left - 0.7, 0, c1.right - 0.7, 0),
+                     plate=(pl0, pl1), rep=rep))
     # everything up so the cell's lower left is (0, 0)
     b.cell.flatten(-1, True)
     for li in b.ly.layer_indexes():
         b.cell.shapes(li).transform(pya.DTrans(0, Hh))
     meta = dict(W=W, H=H, y_sig=ys, trk=(t0, t1), capw=cw, capl=ch, Hh=Hh)
-    print(f'amp_dpc_t: {W:.2f} x {H:.2f} um; cap {cw} x {ch} um (was {CAPW_SQ:.2f} square), '
+    print(f'{name}: {W:.2f} x {H:.2f} um; cap {cw} x {ch} um (was {CAPW_SQ:.2f} square), '
           f'signals at {Hh - ys:.2f} / {Hh + ys:.2f} um, taps {"on" if taps else "off"}')
     print('  net    where           cuts  need (2x margin)')
     for net, where, nc, need in rep:

@@ -11,6 +11,7 @@ import pya   # noqa: E402
 from lay import Block, REPO, box, PIN, LBL   # noqa: E402
 
 N = 6
+ST2 = os.environ.get('STRIP_ST2', 'amp_dpc_ts')   # stage 2: with the low-gain shunt (amp_dpc_ts) or without (amp_dpc_t)
 
 
 def pins(cell, ly):
@@ -33,15 +34,15 @@ def pins(cell, ly):
 
 def make():
     b = Block('chain_strip_t')
-    for c in ('amp_dp_t', 'amp_dpc_t'):
+    for c in sorted({'amp_dp_t', 'amp_dpc_t', ST2}):
         b.ly.read(os.path.join(REPO, 'layout', c + '.gds'))
-    dp, dpc = b.ly.cell('amp_dp_t'), b.ly.cell('amp_dpc_t')
+    dp, dpc, st2 = b.ly.cell('amp_dp_t'), b.ly.cell('amp_dpc_t'), b.ly.cell(ST2)
     H = dpc.dbbox().height()
     assert abs(dp.dbbox().height() - H) < 1e-6
     x = 0.0
     stages = []
     for i in range(1, N + 1):
-        c = dp if i == 1 else dpc
+        c = dp if i == 1 else st2 if i == 2 else dpc
         flip = i % 2 == 0 and str(i) != os.environ.get("STRIP_NOFLIP")   # mutation test hook
         if flip:
             b.place(c, x, H, 0, True)                  # MX: mirror about the centre line
@@ -58,6 +59,9 @@ def make():
     for net in ('inp', 'inn', 'nb', 'VSS', 'VDD'):
         lay, r = p1[net][0]
         b.pin(lay, t1 * r, net)
+    if ST2 == 'amp_dpc_ts':                             # the shunt's strap pin
+        lay, r = pins(st2, b.ly)['lna_lo_n'][0]
+        b.pin(lay, stages[1][2] * r, 'lna_lo_n')
     taps = {}
     for i, c, tr, x0 in stages:
         pc = pins(c, b.ly)
@@ -77,13 +81,15 @@ def make():
 
 
 def write_ref():
-    refs = [open(os.path.join(REPO, 'layout', 'ref', c + '.spice')).read() for c in ('amp_dp_t', 'amp_dpc_t')]
+    refs = [open(os.path.join(REPO, 'layout', 'ref', c + '.spice')).read() for c in sorted({'amp_dp_t', 'amp_dpc_t', ST2})]
     taps = ' '.join(f'o{i}p o{i}n' for i in range(1, N))
-    top = [f'.subckt chain_strip_t inp inn nb outp outn {taps} VDD VSS']
+    sh = ' lna_lo_n' if ST2 == 'amp_dpc_ts' else ''
+    top = [f'.subckt chain_strip_t inp inn nb outp outn {taps} VDD VSS{sh}']
     for i in range(1, N + 1):
         a = ('inp', 'inn') if i == 1 else (f'o{i - 1}p', f'o{i - 1}n')
         o = ('outp', 'outn') if i == N else (f'o{i}p', f'o{i}n')
-        top.append(f'X{i} {a[0]} {a[1]} nb {o[0]} {o[1]} VDD VSS {"amp_dp_t" if i == 1 else "amp_dpc_t"}')
+        cell = 'amp_dp_t' if i == 1 else ST2 if i == 2 else 'amp_dpc_t'
+        top.append(f'X{i} {a[0]} {a[1]} nb {o[0]} {o[1]} VDD VSS{sh if cell == "amp_dpc_ts" else ""} {cell}')
     top.append('.ends')
     with open(os.path.join(REPO, 'layout', 'ref', 'chain_strip_t.spice'), 'w') as fh:
         fh.write('* chain_strip_t: amp_dp_t + 5 x amp_dpc_t in series (chain_strip_tall.py)\n'

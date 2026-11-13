@@ -1,0 +1,17 @@
+* amp_dpc_ts: amp_dpc_t (layout/ref/amp_dpc_t.spice) + lna_shunt (a = outp, b = outn, g = lna_lo_n), the shunt as layout/gen/lna_chain.py writes it (amp_dpc_shunt_tall.py)
+.subckt amp_dpc_ts inp inn nb outp outn VDD VSS lna_lo_n
+*.PININFO VDD:B VSS:B nb:B inp:B inn:B outp:B outn:B
+XRl_p outn VDD VSS sky130_fd_pr__res_high_po_0p69 L=7.37736 mult=1
+XMp outn inp sp VSS sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=4
+XMtail_p sp nb VSS VSS sky130_fd_pr__nfet_01v8 L=0.5 W=6 nf=2 m=3
+XRl_n outp VDD VSS sky130_fd_pr__res_high_po_0p69 L=7.37736 mult=1
+XMn outp inn sn VSS sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=4
+XMtail_n sn nb VSS VSS sky130_fd_pr__nfet_01v8 L=0.5 W=6 nf=2 m=3
+XCs_a sn sp sky130_fd_pr__cap_mim_m3_1 W=6.8 L=21.33
+XCs_b sp sn sky130_fd_pr__cap_mim_m3_1 W=6.8 L=21.33
+XRh_a sa outp VSS sky130_fd_pr__res_high_po_1p41 L=0.62 mult=1
+XRh_b outn sb VSS sky130_fd_pr__res_high_po_1p41 L=0.62 mult=1
+XMsw sb gi sa VDD sky130_fd_pr__pfet_01v8 L=0.15 W=18 nf=6
+XRg lna_lo_n gi VSS sky130_fd_pr__res_xhigh_po_0p35 L=2.71039 mult=1
+XMcap VDD gi VDD VDD sky130_fd_pr__pfet_01v8 L=5 W=5 nf=1
+.ends
