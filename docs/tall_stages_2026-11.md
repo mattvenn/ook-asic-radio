@@ -1,4 +1,4 @@
-# Tall, thin chain stages: a sketch for a straight chain (2026-11-13)
+# Tall, thin chain stages and a straight chain (2026-11-13)
 
 Harald Pretl's review ([review_harald_2026-11-13.md](review_harald_2026-11-13.md), point 5, action 8) suggested a straight
 chain of tall, thin stages in place of the U fold. This job laid out the two stage cells in tall form and abutted them
@@ -6,12 +6,23 @@ into a stage strip, to find out whether a straight chain fits the U's slot (145.
 [handoff_tall_stages.md](handoff_tall_stages.md). Branch `chain-tall-stages`. Nothing in the chain, the tile or the
 floorplan changed: these are new cells beside the old ones.
 
-**Result: it fits, with room to spare.** The two cells came out well under their target widths. The six stages abut
-into a strip of **78.9 × 63.5 µm**. With an input section of about 38.6 µm (sized on paper below), the straight chain is
-about **117.5 µm long, 27.9 µm shorter than the slot**, and 7 µm lower. The stages themselves gain more than today's
-(+2.7 dB over the chain, unloaded, at tt). The output taps are the cost: drawn as full-height met4 columns, so that each
-output reaches either long edge, they take about 0.8 dB per stage and leave the strip 1.6 dB below today's U chain.
-How the taps are run is the main open choice for a full re-layout.
+**Result: the whole chain is drawn straight, and it fits, with room to spare.** `lna_chain_t` is the input section,
+stage 1, stage 2 with the low-gain shunt built in, and stages 3 to 6, all abutted. It is **124.0 × 63.5 µm against the
+U's 145.4 × 70.5 µm slot**. It is clean (DRC 0 in magic and KLayout, antenna 0) and matches LVS against today's chain
+devices and ports.
+
+Extracted, in the same stability bench as today's chain (`tb_chain`, 2 nH, real decap, 1 µA kick):
+- **Gain:** 0.37 dB more than today's U at both tt and ss 10 °C (75.84 vs 75.47 dB, and 79.88 vs 79.51 dB, at 434 MHz).
+- **Stability margin:** the same as today's. Each chain survives up to 0.75 fF of added output-to-pad coupling at tt and
+  0.5 fF at ss 10 °C, against a 0.1 fF budget.
+- **Own coupling:** the layout's wiring couples 0 aF from stages 3–6 and the outputs back to the input side, as in the U,
+  but the output is now about 120 µm from the input instead of 14 µm across a moat.
+
+The open point is the floorplan. log_det's inputs don't line up with the straight chain's taps, so it needs to move
+west, and ideally its pins need to move too ("Taps" below).
+
+The first part of this report is the two-cell sketch and the stage strip. The second part ("Stage 2 with the shunt"
+onwards) is the shunt, the taps, the input section and the full chain.
 
 All extractions use magic 8.3.642 (`OSIC_MAGIC=$HOME/.local/magic642/bin`), as for the committed ones.
 
@@ -166,29 +177,127 @@ o3n 42.05, o3p 43.45, o4n 53.75, o4p 55.15, o5n 65.45, o5p 66.85, outn 77.15, ou
 the input section's 38.6 µm in front, add 38.6: o1 about 57.3–58.7, o2 69.0–70.4, o3 80.7–82.1, o4 92.4–93.8,
 o5 104.1–105.5, out 115.8–117.2 µm.
 
-## The input section, on paper
+## Stage 2 with the low-gain shunt (amp_dpc_ts)
 
-The input section is Cin_p / Cin_n (2 pF each), Mref and the Rb pair. Here it is laid out the same way as the stages:
-Cin_p in the top half and Cin_n in the bottom half of a column the strip's height, with the rails continued through
-it.
+`layout/gen/amp_dpc_shunt_tall.py`, cell `amp_dpc_ts`, is 12.4 × 63.5 µm (amp_dpc_t plus 0.7 µm). The shunt
+(`lna_shunt`: o2p, Rh_a 421 Ω, Msw PMOS W 18 / L 0.15, Rh_b 421 Ω, o2n, with the gate from `lna_lo_n` through Rg 20 kΩ
+and Mcap) uses the free space above each half's ring, under the Cs plates. Today's Rb and Mref sit under Cin the
+same way.
 
-- **Cin.** Today's caps are 31.16 µm squares, so the model's (w + 0.15)(l + 0.15) is 980 µm². In a half, capm can run
-  from 2.4 µm (1.2 µm off the VSS rail's met3, plus the plate's 0.2 µm) to 28.85 µm (the same off the VDD rail),
-  which gives l = 26.45 µm and w = 980 / 26.6 − 0.15 = **36.7 µm**.
-- **Mref and the Rb pair** go under the Cin plates, as they do today. The Rb pair is two side-by-side 0p35 segments
-  of 19.1 µm (so their rpm merges), about 1.3 µm wide. Mref is W 6 nf 2 / L 0.5, about 1.3 × 3 µm. Both fit easily in
-  the 36.7 × 26 µm under each plate.
-- **Width:** 0.5 µm at the pad-side edge, plus 0.2 + 36.7 + 0.2 µm of plate, plus about 1 µm for the top-plate drops
-  to amp_dp_t's inputs (met2 at 18.0–18.5 and 45.0–45.5 µm). amp_dp_t's nearest met3 is 1.2 µm inside its own edge,
-  so the plate can run right up to the boundary. That makes about **38.6 µm**.
+- Msw sits between Rh_a and Rh_b in one half, and each Rh lands on its output's tap column. Mcap and Rg sit in the
+  other half.
+- The gate node gi crosses the centre on one extra met4 column next to the outn column. `lna_lo_n` comes in on the
+  same column's lower segment, with its pin at the cell edge.
+- The loads' VDD risers jog to the left edge to free the space. The plates, caps and height are unchanged.
+- Checks: clean, and LVS matches amp_dpc + lna_shunt. The one antenna "feedback" entry is magic's note on Mcap, a
+  MOS cap with source, drain and body on VDD. Today's `lna_chain` has the same entry.
 
-**Whole chain: 38.6 + 78.9 = about 117.5 µm against 145.4 µm. It fits, with about 27.9 µm to spare**, and is 63.5 µm
-tall against the slot's 70.5 µm. Two variants buy back length:
-- Without VDD rails through the input section (it needs no VDD), Cin is about 34.2 µm wide and the chain about 115 µm.
-- If the input column uses the slot's full 70.5 µm height, Cin is about 30 µm wide and the chain about 111 µm.
+Low gain works as today's: in the strip (stage 1 gates to the output, unloaded, tt), the gain goes from 78.36 dB to
+68.28 dB with `lna_lo_n` = 0, a step of 10.1 dB. Today's U gives 80.87 to 70.70 dB, a step of 10.2 dB. Off, the shunt
+costs stage 2 about 0.9 dB (12.33 → 11.42 dB in the strip), as its C does today. The strip numbers in Table III are
+without the shunt.
 
-The input and the output are then about 117 µm apart at the two ends, with stages 2 to 5 between them. The isolation
-(out → input coupling, budget ≤ 0.1 fF at ss 10 °C) can only be extracted once the input section is drawn.
+## Taps
+
+**Where log_det is.** log_det sits north of the chain slot, at tile x 67.5–154.8 and y 80–111, 10 µm above the
+chain's north edge. The RX pads ua[1] / ua[0] are at tile x 117.3 / 136.6 on the south edge, so the input section
+has to sit at the east end of the slot. The chain then flows west: it is mirrored (MY) in the tile, and the cells'
+top edge is north.
+
+**In the chain:** every stage output reaches the chain's north edge only, on a met4 column from the output's own
+height to that edge. The column is 19.4 µm for the output in the north half and 44.1 µm for the one in the south
+half, against 63.5 µm for a full-height column. Unflipped stages use cells built with taps to their top edge
+(`amp_dp_tu`, `amp_dpc_tu`). Flipped stages use cells with taps to their bottom edge (`amp_dpc_td`, and
+`amp_dpc_tsd`, where the shunt is mirrored into the half the tap columns run through). All are made by
+`layout/gen/lna_chain_tall.py`. The asymmetry alternates from stage to stage.
+
+**Tap positions** in the tile, with the chain placed so Cin_p's pad tab is over ua[0] (chain from x 21.2 to 145.3):
+o1 80.8 / 82.2, o2 68.4 / 69.8, o3 56.7 / 58.1, o4 45.0 / 46.4, o5 33.3 / 34.7, out 21.6 / 23.0 µm (p / n columns).
+They leave the chain's north edge at y about 70 µm.
+
+**log_det doesn't fit this as placed.** Its inputs t1–t3 face the chain at x 69–122, and t4–t6 face away from it on
+its north edge. The chain's taps are at 22–82. Only o1 → t1 is short (about 1–13 µm). o3 → t3 would be about 60 µm,
+and out → t6 about 90 µm plus the way round log_det. **Recommendation:**
+- move log_det west, over the stages (it is 87.3 µm wide; the taps span 21.6–82.2 µm);
+- re-pin it so all six inputs are on its south edge, in chain order, at or near the chain's tap x. Each tap is then a
+  short straight drop across the 10 µm channel.
+log_det's pair pitch (about 21 µm) is wider than the stage pitch (11.7 µm), so a re-pin, not just a move, is what
+makes every tap short. This is a floorplan and log_det change, not done here.
+
+## The input section (chain_in_t)
+
+`layout/gen/chain_in_tall.py`, cell `chain_in_t`, is **44.4 × 63.5 µm**. Same devices as today's input
+(`layout/ref/lna_chain.spice`).
+
+- **Cin_p | Cin_n side by side**, 15.88 × 61.0 µm each, with today's C (the model's (w + 0.15)(l + 0.15) kept). Each pad
+  reaches its own cap's bottom plate from the south edge, through a met3 tab (pins `inp` / `inn`).
+- **A 6 µm zone** next to stage 1 holds the Rb pair (side by side, rpm merged, across the centre line) and Mref in a
+  p-tap ring.
+  - Mref's drain and gate (nb, `ibias`) run on met2 into stage 1's nb, and its sources go down into the VSS line.
+  - Rb_p's top head goes to g1p and Rb_n's bottom head to g1n. The other two heads (vcm) join on met3.
+  - `vcm` and `ibias` also leave on met4 columns at the south edge.
+- **Top plates:**
+  - g1n leaves Cin_n on a met4 strip straight across at stage 1's inn height.
+  - g1p rises above both plates, crosses on met4 clear of Cin_n's capm, and drops down a column to the inp height.
+  - Both land 1.2 µm clear of the plate and go into stage 1 on met2.
+- Checks: clean, LVS match.
+
+It is 5.8 µm wider than the paper estimate (38.6 µm) because of the zone. Mref and Rb were kept out from under the
+pad-side plates, so the pad signal doesn't couple into nb.
+
+## The whole chain (lna_chain_t)
+
+`layout/gen/lna_chain_tall.py` (run `chain_in_tall.py` first). It writes the stage variants and `lna_chain_t`, and its
+reference uses today's `lna_chain` port list.
+
+![lna_chain_t](images/tall_lna_chain_t.png)
+
+Fig. 4. lna_chain_t, 124.0 × 63.5 µm, drawn with the input on the left; in the tile it is mirrored to flow west. From
+the left: Cin_p and Cin_n, the Rb / Mref zone, stage 1, stage 2 (shunt at the top), then stages 3 to 6, each with its
+tap columns running to the top edge.
+
+- **Size:** 124.03 × 63.5 µm. Input section 44.4 µm, stage 1 20.4 µm, stage 2 12.4 µm, stages 3–6 4 × 11.7 µm.
+  **21.4 µm spare in the slot** (8.1 µm at the west end and 13.2 µm at the east end, with the pad alignment above), and
+  7 µm in height.
+- **Checks:** magic DRC 0, KLayout DRC 0, antenna 0, LVS match. During assembly, a 0.35 µm psdm gap between the input
+  section's ring and stage 1's (rule 0.38) was fixed with 0.1 µm more margin.
+- **Extraction:** `layout/pex/lna_chain_t.spice`, 210 devices, 13.4k R, 1.1k C, magic 8.3.642.
+
+### Coupling check
+
+`sim/chain/back_coupling.py <extraction>` lists every coupling C between nets two or more stages apart. It takes each
+stage's place in the chain from the extraction itself, because magic's instance numbers don't follow the chain. It
+was mutation-tested: a planted 50 aF outp → g1p and a 12 aF o3 → o1 are both reported.
+
+- **lna_chain_t: 0 aF** between any nets two or more stages apart. That includes out, o5, o4 and stages 5–6
+  internals into inp, inn, g1, o1 and stage 1 internals. magic's coupling range in this flow is about 200 µm, so the
+  distance is within what the extraction sees.
+- Today's U (`layout/pex/lna_chain.spice` as committed) also gives 0 aF on this check.
+- **Not modelled:** substrate coupling (magic ties the substrate to VSS). In the straight chain, the output is about
+  120 µm from the input along the same p-substrate. In the U, it was 14 µm across a guard-ring moat. A 3D substrate
+  solve as in `docs/substrate_2026-10-29.md` would confirm it.
+
+### Stability
+
+`sim/chain/stability.sh` on `tb_chain`, with the extracted chain swapped in by `sim/chain/mk_pex_tb.py`. Decks are
+in `build/pexsim_t` (tall) and `build/pexsim_u` (today's U), with the same settings: 2 nH supply and ground, the real
+VDPWR decap, a 1 µA / 1 ns kick into pad_p, and Ccpl from out_p back to pad_p. "decays" means growth of about 1e-9;
+"osc" means growth of about 1.
+
+Table IV. Kick test against added output-to-input coupling, and AC gain (no added coupling).
+
+| | gain at 434 MHz / peak | 0 | 0.3 fF | 0.5 fF | 0.75 fF | 1 fF | 1.5 fF |
+|---|---|---|---|---|---|---|---|
+| tall, tt | **75.84 / 77.03 dB** | decays | decays | decays | decays | osc 1.01 | osc 1.00 |
+| U, tt | 75.47 / 76.83 dB | decays | | decays | decays | osc 1.00 | |
+| tall, ss 10 °C | **79.88 / 80.93 dB** | decays | decays | decays (6.8e-8) | osc 0.98 | osc 0.99 | |
+| U, ss 10 °C | 79.51 / 80.79 dB | decays | decays | decays | osc 0.99 | osc 0.99 | |
+
+The tall chain has 0.37 dB more gain than the U at both corners, net of its north-only tap columns on one side and
+the U's turn and tap stubs on the other. Both chains reach the same coupling edge: stable to 0.75 fF at tt and to 0.5 fF at
+ss 10 °C, oscillating at 1 fF and 0.75 fF. At 0.5 fF and ss 10 °C, the tall chain's AC peak rises to 99 dB, against
+94 dB for the U, so it is closer to the edge there. The layout itself adds 0 aF. What the straight chain changes is
+where coupling could come from: the output is now about 120 µm from the input, not 14 µm across a moat.
 
 ## What set the widths, and how to go thinner
 
@@ -209,34 +318,27 @@ The input and the output are then about 117 µm apart at the two ends, with stag
 - **Multiple vias** (Harald's point 11): every landing is a cut array as wide as the strip or bar allows. The
   narrowest landings are single-row via1 on the 0.42 µm met2 bars.
 
-## For a full straight-chain re-layout
+## For the floorplan and the tile
 
-- **Pin heights:** see the table above. The input section has to bring Cin's top plates to amp_dp_t's left edge at
-  18.0–18.5 µm (inn) and 45.0–45.5 µm (inp), on met2.
-- **Taps:** decide where log_det sits first. Full-height columns (as drawn here) let the chain flip either way, but
-  they cost about 0.8 dB per amp_dpc stage. A column to one edge only, from the output's own height, would be about
-  half that on average. It would be asymmetric, though: 19.4 µm for the output on that edge's side and 44.1 µm for
-  the other one. With stages alternately flipped, which output that is alternates too. Running log_det's tap wires
-  straight off the right-edge output tracks between stages is another option. Whatever the choice, the tap wires
-  will load the stages the way the U's tap wires do (o1 +14 fF there).
-- **Supply:** the VSS rail (met1–met3, 2 µm) and the VDD rails (met1–met3, 1.5 µm) run the full length, and every
-  cell joins the two VDD rails on met4. The chain draws about 3.0 mA (1.2 mA in stage 1, 5 × 0.36 mA in stages 2 to 6,
-  plus the reference). The rail resistance end to end is about 1–2 Ω, so the drop is a few mV. Feed both rails from
-  the stage-1 end, which carries the biggest current, with a dedicated trunk as in the power fix. Keep the feed away
-  from stage 6, so that no shared supply impedance sits between the output stage and the input.
-- **Stability:** the strip without taps has 88 dB at ss 10 °C, 3 dB more than today's chain. A straight chain puts
-  the output about 117 µm from the input (the U had 14 µm across the moat). But more gain means a smaller coupling
-  budget: re-run `sim/chain/stability.sh` on the real chain and extract the out → in coupling.
-- **Low-gain shunt (`lna_shunt`, across o2):** not in the strip. Today it sits at the U's turn by the o2 columns: o2p,
-  421 Ω, PMOS W 18 / L 0.15, 421 Ω, o2n, with the gate driven from `lna_lo_n` through 20 kΩ and a 5 × 5 µm MOS cap to
-  VDD. A straight chain needs it symmetric across o2p / o2n, most simply as a narrow column between stages 2 and 3.
-  That costs a few µm of length (of the about 28 µm spare) and adds its off-state C to o2, as it does today.
-- **Height:** the cells are 63.5 µm, set by amp_dpc_t's caps at 11.7 µm wide. The slot allows 70.5 µm, which is the
-  first lever if length gets tight.
+- **Placement:** the chain is mirrored (MY) to flow west, with Cin_p's pad tab over ua[0] (x 136.6). It then spans tile
+  x 21.2–145.3. Cin_n's plate covers ua[1] (x 117.3); its tab is at the plate centre (x 119.1) and can move along the
+  plate's bottom edge.
+- **Pins:** at the south edge, `inp` / `inn` (met3 tabs) and `vcm` / `ibias` (met4). At the north edge, the taps
+  (met4) and `lna_lo_n` (met4, stage 2's gi column). VDD and VSS run on rails along the whole length.
+- **log_det:** move it west and re-pin it, as above. This is the one change the straight chain needs elsewhere in the
+  tile.
+- **Supply:** the VSS rail (met1–met3, 2 µm) on the centre line and the VDD rails (met1–met3, 1.5 µm) on both long edges
+  run the full length. Every stage joins the two VDD rails on met4. The chain draws about 3.0 mA, and end to end the
+  rail resistance is about 1–2 Ω, a few mV of drop. Feed both rails at the stage-1 end (the biggest current), away
+  from stage 6, with a dedicated trunk as in the power fix.
+- **Height:** 63.5 µm, leaving 7 µm of the slot's 70.5 µm free. That is the first lever if length gets tight (the caps
+  can be taller and narrower).
 
 ## Not done
 
-- No input section was drawn, so there is no full-chain extraction, coupling check or stability run. The strip has
-  no loads on its taps, and `tb_strip_tall` reports stage gain only.
-- No corners beyond tt and ss 10 °C, and no Monte Carlo of amp_dp_t's pair, whose matching is common-centroid by
-  construction.
+- No floorplan change: log_det isn't moved or re-pinned, and nothing outside the chain is routed. The tile is not
+  rebuilt.
+- No substrate coupling solve for the straight chain.
+- Stability at tt and ss 10 °C only, with the strap off. There is no small-signal loop-gain margin yet (review action
+  4, branch `chain-stability-ac`).
+- No Monte Carlo of amp_dp_t's pair, whose matching is common-centroid by construction.

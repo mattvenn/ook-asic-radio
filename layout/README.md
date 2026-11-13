@@ -7,11 +7,17 @@ Viewer links work once the GDS is pushed to `main`. This table is written by `to
 |---|---|---|---|
 | `amp_dp` | 36.4 × 20.7 µm (755 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dp.gds) | `layout/gen/` |
 | `amp_dp_t` | 20.4 × 63.5 µm (1,295 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dp_t.gds) | `layout/gen/` |
+| `amp_dp_tu` | 20.4 × 63.5 µm (1,295 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dp_tu.gds) | `layout/gen/` |
 | `amp_dpc` | 30.5 × 21.2 µm (648 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dpc.gds) | `layout/gen/` |
 | `amp_dpc_t` | 11.7 × 63.5 µm (743 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dpc_t.gds) | `layout/gen/` |
+| `amp_dpc_td` | 11.7 × 63.5 µm (743 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dpc_td.gds) | `layout/gen/` |
+| `amp_dpc_ts` | 12.4 × 63.5 µm (787 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dpc_ts.gds) | `layout/gen/` |
+| `amp_dpc_tsd` | 12.4 × 63.5 µm (787 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dpc_tsd.gds) | `layout/gen/` |
+| `amp_dpc_tu` | 11.7 × 63.5 µm (743 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/amp_dpc_tu.gds) | `layout/gen/` |
 | `avg_sc` | 77.3 × 30.4 µm (2,351 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/avg_sc.gds) | `layout/gen/` |
 | `bias_gen` | 80.2 × 49.1 µm (3,936 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/bias_gen.gds) | `layout/gen/` |
-| `chain_strip_t` | 78.9 × 63.5 µm (5,010 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/chain_strip_t.gds) | `layout/gen/` |
+| `chain_in_t` | 43.9 × 63.1 µm (2,772 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/chain_in_t.gds) | `layout/gen/` |
+| `chain_strip_t` | 79.6 × 63.5 µm (5,055 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/chain_strip_t.gds) | `layout/gen/` |
 | `comp_ct` | 73.5 × 41.2 µm (3,028 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/comp_ct.gds) | `layout/gen/` |
 | `ctrim_1p` | 22.4 × 22.4 µm (503 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/ctrim_1p.gds) | `layout/gen/` |
 | `dbg_tg` | 5.7 × 16.3 µm (93 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/dbg_tg.gds) | `layout/gen/` |
@@ -25,6 +31,7 @@ Viewer links work once the GDS is pushed to `main`. This table is written by `to
 | `decap_vdpwr_p3` | 25.4 × 84.3 µm (2,141 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/decap_vdpwr_p3.gds) | `layout/gen/` |
 | `det_cell` | 20.8 × 16.1 µm (335 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/det_cell.gds) | `layout/gen/` |
 | `lna_chain` | 145.4 × 70.5 µm (10,244 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/lna_chain.gds) | `layout/gen/` |
+| `lna_chain_t` | 123.5 × 63.5 µm (7,844 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/lna_chain_t.gds) | `layout/gen/` |
 | `log_det` | 87.3 × 31.0 µm (2,708 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/log_det.gds) | `layout/gen/` |
 | `lpf_rc` | 65.2 × 35.0 µm (2,284 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/lpf_rc.gds) | `layout/gen/` |
 | `r2r` | 71.8 × 54.1 µm (3,883 µm²) | [view](https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/layout/r2r.gds) | `layout/gen/` |
