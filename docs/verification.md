@@ -73,6 +73,72 @@ Two findings:
 Run: `tools/osic bash -c 'cd formal && sby -f radio_digital.sby prove'` (and `raw_rx` for the counterexample trace,
 `formal/radio_digital_raw_rx/engine_0/trace.vcd`).
 
+### Equivalence (eqy)
+Gate-level simulation only shows that the netlist matches the RTL (register transfer level) for the stimulus the tests
+give it. A logic equivalence check (LEC) proves it for every input. [`formal/eqy/`](../formal/eqy) uses eqy (Yosys'
+equivalence checker) to prove that the RTL in `verilog/rtl/` and the shipped netlist
+`macros/radio_digital/radio_digital.nl.v` (run `lnalo`) do the same thing, as recommended in Harald Pretl's design
+review (`docs/review_harald_2026-11-13.md`, action 7).
+
+Result (2026-11-13): **equivalent. 108/108 partitions proven, the clock check passes, and all four planted bugs are caught.**
+The check takes about 3 s, and the whole script with the self-test about 15 s.
+- **Gold** is the RTL read as LibreLane synthesis reads it: the same six files, no `SIM` (synthesis doesn't define it),
+  so `rd_cg` instantiates the real `sky130_fd_sc_hd__dlclkp_1`. **Gate** is `nl.v` with the PDK's functional cell
+  models (`sky130_fd_sc_hd.v`, `FUNCTIONAL`, no power pins). Yosys can't read the models' UDPs (user-defined primitives),
+  so [`udp.v`](../formal/eqy/udp.v) has Verilog stand-ins for the three that are used (flop, latch, 2:1 mux), plus the
+  tie cell's pullup / pulldown. Fill, tap, decap and diode cells are dropped.
+- **Clock gates:** black-boxed on both sides ([`icg_bb.v`](../formal/eqy/icg_bb.v)). It's the same library cell,
+  instantiated by name in the RTL, so eqy pairs the four instances by name and proves their inputs (`CLK`, `GATE` =
+  `en0`…`en3`) equivalent. The latch inside is the same cell on both sides, so there is nothing to prove there.
+- **Matching:** all **718 flops match by name** on both sides (508 chip-register bits, 210 others), **none by
+  structure**. Synthesis didn't retime, merge or remove any register. The netlist names each bus bit as its own net
+  (`\burst[1]`), so the gold's internal vectors are split the same way. [`match.py`](../formal/eqy/match.py) matches only ports,
+  flop outputs and the clock gates. An internal combinational net would become a cut point, and a cut there gives
+  false failures: `rx_en = ~role_tx` becomes a free input to the logic that reads it, while the netlist computes that
+  logic from `role_tx`. For the same reason the six combinational outputs that are also read inside (`rx_en`, `tx_en`,
+  `tx_en_n`, `lna_lo_n`, `uio_oe`, `uio_out`) are `amend`ed into the partitions that use them.
+- **Strategy:** `sat` alone. Every partition proves at induction length 1, so each is combinational logic between matched
+  registers. Nothing needed `sby` or a deeper induction, and no partition is left unproven.
+- **Clocks:** eqy's strategies treat every flop as clocked by one implicit global clock, so they never look at
+  which clock net a flop is on. [`clocks.py`](../formal/eqy/clocks.py) checks that separately. Each flop must be on
+  the same source in the RTL and in the netlist: `clk` (210 flops, through the clock tree buffers) or the same
+  clock gate (127 each). Result: 0 mismatched.
+- **`pnl.v`** (with power pins): with the power pins stripped it is the same 6931 statements as `nl.v`
+  ([`strip_pg.py`](../formal/eqy/strip_pg.py)), so the check covers it.
+
+**Planted bugs** ([`plant.py`](../formal/eqy/plant.py), one text edit each on a copy of `nl.v`, all in `run.sh`):
+
+| Bug | Edit | Result |
+|---|---|---|
+| `corr_and` | `or2` → `and2` in the chip registers' clock-gate enable (`clr \| …`) | caught, 3 s: `en0`…`en3` not equivalent (a counterexample), 6 downstream partitions unknown |
+| `tx_mux` | the raw / code mux in front of `tx_en` with its inputs swapped | caught, 2 s: `tx_en` not equivalent |
+| `acc_top` | the popcount's top bit `acc[6]` reads `acc[5]` | caught, 2 s: `u_corr.acc` unknown (induction fails at length 1) |
+| `clk_swap` | chip-register flop `sr0[5]` on register 1's gated clock | **eqy passes it (108/108)**; the clock check catches it |
+
+`acc_top` only matters once a rotation counts more than 64 matches, so a simulation needs a strong, well-aligned burst
+to see it. eqy finds it in the same 2 s as the others, because every register is a cut point and the bug sits in the logic
+between two of them. It shows up as "unknown" rather than "not equivalent": the base case runs only 5 clocks, not long
+enough to reach a count of 64. The induction step gives two equal states that diverge in one clock, which is the bug.
+
+**Versions:** eqy and Yosys 0.69 (image 2026.09). The macro was synthesised by LibreLane 3.0.3, most likely in image
+2026.05 (`tools/osic`'s default when the `lnalo` run was made), which ships Yosys 0.65. That isn't recorded in the repo,
+since the run folder wasn't kept. So the check doesn't run on the Yosys that synthesised the macro. Only Yosys' Verilog
+reader and flatten touch the netlist here; the logic comes from the PDK's cell models.
+
+**Not covered:** the cell models are the PDK's functional Verilog, so a wrong model (or a UDP stand-in that's wrong)
+would go unseen. LVS ties the layout to `pnl.v`, and this ties `pnl.v` to the RTL. The clock gates' latch
+behaviour and the clock tree's timing are STA's (static timing analysis) and GL simulation's job.
+
+**CI:** about 15 s plus the image pull, with no PDK beyond the one cell-model file. It would fit a GitHub action
+next to `lvs`. Not added yet (Matt's call). It should run after every re-harden: the instance names in `plant.py` are
+the `lnalo` netlist's, so a new netlist needs new edits there (plant.py stops with an error if an edit doesn't match).
+
+**Image trap:** `/foss/tools/bin/eqy` is a symlink, and eqy looks for its Yosys plugins next to its own path, so it
+fails with "Can't load module eqy_combine.so". `run.sh` calls it by its real path (`readlink -f`).
+
+Run: `tools/osic bash formal/eqy/run.sh` (the check, `pnl.v` and the self-test; exit 0 if all pass) or
+`tools/osic bash formal/eqy/run.sh check` (only the check). Logs in `build/eqy/`.
+
 ### TT top level and pinout
 - **Pinout check** ([`tools/check_pinout.py`](../tools/check_pinout.py)): its `PINOUT` table is the one statement of what each TT pin does. The script checks that `info.yaml`'s pinout labels match it. It checks that in the top schematic every `radio_digital` and `radio_analog` port lands on the expected net, including the digital ↔ analog nets, with `ena` and `ua[5..7]` unconnected. It also checks that the `radio_digital` symbol's pins are the macro's (GL netlist and LEF). It parses the schematic directly (labels on pins, no xschem), and `--xschem <netlist>` cross-checks that parse against xschem's netlist. It runs in the `lvs` GitHub action. Result (2026-10-12): OK, and it catches a swapped `ua[0]`/`ua[1]`, a reversed trim bus and a wrong `info.yaml` label. Run: `python3 tools/check_pinout.py`.
 - **TT-level cocotb** ([`test/`](../test)): `tt_um_mattvenn_radio` with a wrapper generated from the top schematic (`check_pinout.py --verilog`, which also runs the check), the macro inside it and `radio_analog` as a stub. It runs `test_tx_codes`, `test_raw_and_straps`, `test_debug_strap` and `test_lna_lo_strap` from `test_radio.py` through the TT pins, plus `test_uio_oe` (`uio_oe` is 0 in reset, then 1 on exactly the uio pins `PINOUT` marks as outputs). The macro ↔ analog signals are driven and read at the stub's ports, so they go through the schematic's wiring. Result (2026-11-05): **5/5 pass** RTL (~1 min) and GL (~2 min). Run: `cd test && make` and `make GL=1 SIM_BUILD=sim_build_gl COCOTB_RESULTS_FILE=results_gl.xml` (cell models from `$PDK_ROOT/sky130A`).
