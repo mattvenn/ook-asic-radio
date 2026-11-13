@@ -10,6 +10,8 @@ schematic copy of the next stage. Measures, on the differential output:
   - the AC imbalance at 434 MHz, |v(outp) + v(outn)| / |v(outp) - v(outn)|, which shows
     asymmetric parasitics (inn / outn cross the cell).
 --pex swaps in layout/pex/amp_dpc.spice (layout/pex.sh amp_dpc).
+--pex-file=<path> swaps in another extraction instead (e.g. layout/pex/amp_dpc_t.spice, the tall
+cell; its .subckt name is read from the file). --temp=<C> sets the temperature (default 27).
 --fingers writes the schematic's pair and tails as separate nf=1 fingers (as drawn and as
 magic extracts them), the like-for-like reference for the extracted layout.
 
@@ -26,6 +28,8 @@ B = os.path.join(ROOT, 'build')
 OSIC = os.path.join(ROOT, 'tools', 'osic')
 PRM = 'w=20 l=0.15 rl=4k wt=6 mt=6 mm=0 cs=0.6p'
 F = 433.92e6
+PEXFILE = None   # --pex-file
+TEMP = None      # --temp
 
 
 def subckt(name, fingers=False):
@@ -60,12 +64,15 @@ def subckt(name, fingers=False):
 
 def deck(corner, mode):
     pex = mode == 'pex'
-    dut = 'amp_dpc' if pex else 'amp_dpc_x'
+    pf = PEXFILE or os.path.join(ROOT, 'layout', 'pex', 'amp_dpc.spice')
+    pdut = re.search(r'^\.subckt (\S+)', open(pf).read(), re.M).group(1) if pex else ''
+    dut = pdut if pex else 'amp_dpc_x'
     return f"""* tb_amp_dpc ({mode}), {corner}
 .lib {os.environ.get('PDK_ROOT', '/foss/pdks')}/sky130A/libs.tech/combined/sky130.lib.spice {corner}
 {subckt('amp_dpc_sch')}
 {'' if pex else subckt('amp_dpc_x', mode == 'fingers')}
-{'.include ../layout/pex/amp_dpc.spice' if pex else ''}
+{'.include ' + pf if pex else ''}
+{'.temp ' + str(TEMP) if TEMP is not None else ''}
 VD VDD 0 1.8
 Iref VDD nb 60u
 XMref nb nb 0 0 sky130_fd_pr__nfet_01v8 L=0.5 W=6 nf=2
@@ -97,6 +104,10 @@ echo RESULTS
 
 def run(corner, mode):
     name = f'tb_amp_dpc_{corner}' + ('' if mode == 'sch' else '_' + mode)
+    if PEXFILE:
+        name += '_' + os.path.basename(PEXFILE).replace('.spice', '')
+    if TEMP is not None:
+        name += f'_{TEMP:g}C'
     with open(os.path.join(B, name + '.spice'), 'w') as fh:
         fh.write(deck(corner, mode))
     subprocess.run([OSIC, 'bash', '-c', f'cd build && ngspice -b {name}.spice > {name}.log 2>&1'], cwd=ROOT)
@@ -112,9 +123,19 @@ def run(corner, mode):
 
 if __name__ == '__main__':
     args = sys.argv[1:]
+    for a in args:
+        if a.startswith('--pex-file='):
+            PEXFILE = os.path.abspath(a.split('=', 1)[1])
+            args.append('--pex')
+        elif a.startswith('--temp='):
+            TEMP = float(a.split('=', 1)[1])
     mode = 'pex' if '--pex' in args else 'fingers' if '--fingers' in args else 'sch'
     corner = next((a for a in args if not a.startswith('-')), 'tt')
     r = run(corner, mode)
+    if PEXFILE:
+        mode += ' ' + os.path.basename(PEXFILE)
+    if TEMP is not None:
+        corner += f' {TEMP:g} C'
     print(f'amp_dpc {corner} {mode}: gain at 434 MHz {r["g434"]:.2f} dB '
           f'(peak {r["gmax"]:.2f} dB at {r["fpk"] / 1e6:.0f} MHz), -3 dB {r["flo"] / 1e6:.1f} MHz .. '
           f'{r["fhi"] / 1e6:.0f} MHz; imbalance at 434 MHz {r["imb434"]:.1f} dB; '
