@@ -156,8 +156,9 @@ These figures are higher than the 76.65 / 80.78 dB quoted for the chain in docs/
 the input section and the outputs' loads. Compare the rows here with each other, not with those numbers.
 
 The strip without tap columns has 2.7 dB more gain than today's chain (2.0 dB more than the blocks), and nearly all
-of that is the shorter output nets. There is no turn either: today's stage 2 gives 11.70 dB in the U against 12.79 dB
-as a block, a 1.1 dB loss in this unloaded bench. With full-height tap columns, the strip is 1.6 dB below today's chain at tt (1.7 dB at
+of that is the shorter output nets. Today's stage 2 gives 11.70 dB in the U against 12.79 dB as a block, a 1.1 dB loss
+in this unloaded bench. That is the turn's o2 wiring plus the low-gain shunt across o2, which loads it even when off.
+The strip has neither, so this row overstates what a full straight chain would give at stage 2. With full-height tap columns, the strip is 1.6 dB below today's chain at tt (1.7 dB at
 ss 10 °C).
 
 **Tap x positions** (column centres, from the strip's left edge): o1n 18.65, o1p 20.05, o2n 30.35, o2p 31.75,
@@ -226,6 +227,10 @@ The input and the output are then about 117 µm apart at the two ends, with stag
 - **Stability:** the strip without taps has 88 dB at ss 10 °C, 3 dB more than today's chain. A straight chain puts
   the output about 117 µm from the input (the U had 14 µm across the moat). But more gain means a smaller coupling
   budget: re-run `sim/chain/stability.sh` on the real chain and extract the out → in coupling.
+- **Low-gain shunt (`lna_shunt`, across o2):** not in the strip. Today it sits at the U's turn by the o2 columns: o2p,
+  421 Ω, PMOS W 18 / L 0.15, 421 Ω, o2n, with the gate driven from `lna_lo_n` through 20 kΩ and a 5 × 5 µm MOS cap to
+  VDD. A straight chain needs it symmetric across o2p / o2n, most simply as a narrow column between stages 2 and 3.
+  That costs a few µm of length (of the about 28 µm spare) and adds its off-state C to o2, as it does today.
 - **Height:** the cells are 63.5 µm, set by amp_dpc_t's caps at 11.7 µm wide. The slot allows 70.5 µm, which is the
   first lever if length gets tight.
 
