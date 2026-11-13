@@ -31,6 +31,30 @@ run() {
     local nf=$(grep -c "Failed to prove equivalence of partition" "$name.log" || true)
     echo "$name: ${r:-ERROR}, $((np - nf))/$np partitions proven, $(( $(date +%s) - t0 )) s ($B/$name.log)"
     grep "Failed to prove equivalence of partition" "$name.log" | sed 's/.*partition /  not proven: /' || true
+    # eqy assumes one global clock: check each flop's clock source separately
+    if python3 "$HERE/clocks.py" gold.json gate.json > "$name.clocks.log"; then c=PASS; else c=FAIL; fi
+    echo "  clocks: $c, $(head -1 "$name.clocks.log" | sed 's/^clocks: //')"
+    grep "^  mismatch:" "$name.clocks.log" | head -3 || true
+    [ "$r" = PASS ] && [ "$c" = PASS ]
 }
 
-run nl "$ROOT/macros/radio_digital/radio_digital.nl.v"
+NL=$ROOT/macros/radio_digital/radio_digital.nl.v
+fail=0
+run nl "$NL" || fail=1
+[ "${1:-}" = check ] && exit $fail
+
+# radio_digital.pnl.v: the same netlist with power pins. Strip them and compare with nl.v
+PNL=$ROOT/macros/radio_digital/radio_digital.pnl.v
+python3 "$HERE/strip_pg.py" --canon "$PNL" > pnl.canon
+python3 "$HERE/strip_pg.py" --canon "$NL" > nl.canon
+python3 "$HERE/strip_pg.py" "$PNL" > pnl_stripped.v
+if cmp -s pnl.canon nl.canon; then echo "pnl: the same $(wc -l < nl.canon) statements as nl.v once the power pins are stripped"
+else echo "pnl: DIFFERS from nl.v after stripping the power pins: checking it with eqy"; run pnl pnl_stripped.v || fail=1; fi
+
+# self-test: each planted bug must make the check fail (plant.py)
+for bug in corr_and tx_mux acc_top clk_swap; do
+    python3 "$HERE/plant.py" $bug "$NL" > bug_$bug.v
+    if run bug_$bug bug_$bug.v; then echo "  SELF-TEST FAIL: planted bug $bug not caught"; fail=1
+    else echo "  caught"; fi
+done
+exit $fail
