@@ -1,0 +1,4 @@
+* cdet_t: log_det's Cdet on its own (layout/gen/log_det_tall.py)
+.subckt cdet_t det VDD
+XCdet det VDD sky130_fd_pr__cap_mim_m3_1 W=22.035 L=22.035
+.ends
