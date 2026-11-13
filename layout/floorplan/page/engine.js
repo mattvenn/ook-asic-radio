@@ -50,6 +50,16 @@
     // section (Cin, Rb, Mref) and stage 1 in the front row (top), stages 4-6 in the back row
     // (bottom, across the 14 um moat). Placed R180, the front row sits over the RX pads.
     const chainZones = { input: [0, 35.21, 69.02, 35.26], stage1: [69.02, 35.21, 36.4, 20.73], late: [9.8, 0, 95.62, 21.21] };
+    // the straight tall chain (layout/gen/lna_chain_tall.py, docs/tall_stages_2026-11.md), used when
+    // blocks.json has it: input section (south-edge inputs), stage 1, then stages 2-6 at 11.7 um
+    // (stage 2 12.4 um, with the shunt); taps on the north edge. Placed MY in the tile it flows
+    // west from ua[0] / ua[1].
+    const TALL = !!C.lna_chain_t;
+    const tallZones = { input: [0, 0, 43.93, 63.5], stage1: [43.93, 0, 20.4, 63.5], late: [88.43, 0, 35.1, 63.5] };
+    // log_det unwrapped into one row along the chain's north edge: a sketch (tools/floorplan_blocks_tall.py),
+    // a per-variant alternative to the laid-out two-row log_det; Cdet is then the separate block xcdet
+    const detAlt = C.log_det_t ? { cell: 'log_det_t', w: C.log_det_t.w, h: C.log_det_t.h, pins: C.log_det_t.pins, m4: C.log_det_t.m4, zones: {},
+      label: 'log_det_t (sketch)', what: 'one row of six det_cells, inputs reached from the south edge, Cdet outside (xcdet)' } : null;
     const real = (inst, cell, extra) => Object.assign({ inst, cell, w: C[cell].w, h: C[cell].h, pins: C[cell].pins, m4: C[cell].m4 || [], group: 'rx' }, extra || {});
     // macro pins: even spread of pin_order.cfg slots (LibreLane), an estimate until the DEF is read
     const W = ['$', '$', 'tx_en', 'tx_en_n', '$', '$', '$', 'rx_en', 'dbg_en', '$', '$', '$', 'comp_in', 'sc_phi1', 'sc_phi2', '$', '$']
@@ -62,14 +72,18 @@
     N.forEach((n, i) => { mpins[n] = { layer: 'met2', x: +((i + 1) * 260 / 83).toFixed(2), y: 190, est: true }; });
     const list = [
       { inst: 'macro', cell: 'radio_digital', w: 260, h: 190, reshape: true, halo: 5, pins: mpins, m4: [[0, 0, 260, 190]], group: 'dig', label: 'radio_digital' },
-      real('xchain', 'lna_chain', { zones: chainZones }),
-      real('xdet', 'log_det'), real('xlpf', 'lpf_rc'),
+      TALL ? real('xchain', 'lna_chain_t', { zones: tallZones, label: 'lna_chain_t (tall)' }) : real('xchain', 'lna_chain', { zones: chainZones }),
+      real('xdet', 'log_det', detAlt ? { alt: detAlt } : {}), real('xlpf', 'lpf_rc'),
       real('xavg', 'avg_sc'),
       real('xcomp', 'comp_ct'),
       real('xdac', 'r2r', { group: 'trim', overDecap: true }),   // met1-only: a MIM decap may sit on top
       C.ctrim_1p ? real('xctrim', 'ctrim_1p', { group: 'trim', label: 'Ctrim 1 pF' })     // laid out (layout/gen/ctrim_1p.py)
         : { inst: 'xctrim', cell: 'ctrim_1p', w: 23.5, h: 23.5, estimate: true, group: 'trim', label: 'Ctrim 1 pF',
           pins: { trim: { layer: 'met4', x: 1, y: 0.25 } }, m4: [[0, 0, 23.5, 23.5]] },
+      // Cdet (1 pF MIM, det -> VDD) on its own, for the unwrapped log_det sketch; optional: not parked or
+      // listed as unplaced when a variant leaves it out (the two-row log_det has Cdet inside)
+      ...(detAlt ? [{ inst: 'xcdet', cell: 'cdet_1p', w: 22.4, h: 22.4, estimate: true, optional: true, group: 'rx', label: 'Cdet 1 pF',
+        pins: { det: { layer: 'met4', x: 0.5, y: 11.2 }, VDD: { layer: 'met3', x: 21.9, y: 11.2 } }, m4: [[0, 0, 22.4, 22.4]] }] : []),
       real('xbias', 'bias_gen', { group: 'bias' }), real('xdbg', 'dbg_tg'),
       real('xtx.xring', 'tx_ring', { group: 'tx' }), real('xtx.xls', 'tx_ls', { group: 'tx' }),
       real('xtx.xlse_p', 'tx_ls_en', { group: 'tx' }), real('xtx.xlse_n', 'tx_ls_en', { group: 'tx' }),
@@ -89,7 +103,7 @@
     ['rx_p', 'rxin', 'pad:ua[0]', 'xchain.inp'], ['rx_n', 'rxin', 'pad:ua[1]', 'xchain.inn'],
     ['o1', 'rx', 'xchain.o1p', 'xdet.t1p'], ['o2', 'rx', 'xchain.o2p', 'xdet.t2p'], ['o3', 'rx', 'xchain.o3p', 'xdet.t3p'],
     ['o4', 'late', 'xchain.o4p', 'xdet.t4p'], ['o5', 'late', 'xchain.o5p', 'xdet.t5p'], ['out', 'late', 'xchain.outp', 'xdet.t6p'],
-    ['det', 'rx', 'xdet.det', 'xlpf.in'], ['det dbg', 'rx', 'xdet.det', 'xdbg.a'], ['dbg', 'rx', 'xdbg.b', 'pad:ua[2]'],
+    ['det', 'rx', 'xdet.det', 'xlpf.in'], ['det dbg', 'rx', 'xdet.det', 'xdbg.a'], ['det cdet', 'rx', 'xdet.det', 'xcdet.det'], ['dbg', 'rx', 'xdbg.b', 'pad:ua[2]'],
     ['lpf', 'rx', 'xlpf.out', 'xavg.in'], ['lpf comp', 'rx', 'xlpf.out', 'xcomp.inn'], ['avg', 'rx', 'xavg.out', 'xcomp.inp'],   // xschem/gen/top.py: inp = avg, inn = lpf
     ['comp_in', 'clk', 'xcomp.out', 'macro.comp_in'],
     ['sc_phi1', 'clk', 'macro.sc_phi1', 'xavg.phi1'], ['sc_phi2', 'clk', 'macro.sc_phi2', 'xavg.phi2'],
@@ -153,7 +167,8 @@
     for (const [n, c] of Object.entries(cat)) {
       const p = (v.place || {})[n];
       if (!p) continue;
-      const F = c.fold && v.fold && v.fold[n] ? c.fold : null;          // folded chain: its own size, pins, met4 and zones
+      const alt = !!(c.alt && v.alt && v.alt[n]);                         // the alternative block (log_det_t sketch)
+      const F = c.fold && v.fold && v.fold[n] ? c.fold : alt ? c.alt : null;   // folded chain / alt: its own size, pins, met4 and zones
       let w = F ? F.w : c.w, h = F ? F.h : c.h;
       const scaled = c.estimate || c.reshape;      // estimated blocks, and the macro (re-hardened at a new aspect ratio, same area)
       if (scaled && v.est && v.est[n]) { w = v.est[n].w; h = c.reshape ? (v.est[n].area || c.w * c.h) / w : v.est[n].h; }   // macro: est.area overrides the hardened area
@@ -173,7 +188,7 @@
       const m4 = ((F ? F.m4 : c.m4) || []).map(r => scaled ? [0, 0, w, h] : r).map(r => mapRect(pl, w, h, r));
       const zones = {};
       for (const [zn, z] of Object.entries((F ? F.zones : c.zones) || {})) zones[zn] = mapRect(pl, w, h, z);
-      inst[n] = { name: n, cat: c, pl, w, h, rect, pins, m4, zones, folded: !!F,
+      inst[n] = { name: n, cat: c, pl, w, h, rect, pins, m4, zones, folded: !!F && !alt, alt,
         halo: c.halo ? [rect[0] - c.halo, rect[1] - c.halo, rect[2] + 2 * c.halo, rect[3] + 2 * c.halo] : null };
     }
     const decaps = [];
@@ -274,7 +289,7 @@
     const segsOf = list => list.filter(n => n && !n.missing).flatMap(n => n.segs.map(segRect));
     const lvl = (x, pass, warn, higher) => higher ? (x >= pass ? 'pass' : x >= warn ? 'warn' : 'fail') : (x <= pass ? 'pass' : x <= warn ? 'warn' : 'fail');
     const chanSh = channelShapes(tile, R, s), chan = chanSh.length ? channelRect(tile, R, s) : null;
-    const missing = Object.keys(cat).filter(n => !I[n]);
+    const missing = Object.keys(cat).filter(n => !I[n] && !cat[n].optional);
 
     // inputs: chain input section + pad wires; late: stages 4-6, log_det's t4-t6 row and their tap wires
     const A = I.xchain, D = I.xdet, M = I.macro;
@@ -438,6 +453,7 @@
       const [k, m] = ORIENTS[i.pl.orient];
       const b = { inst: i.name, cell: i.cat.cell, x: +i.rect[0].toFixed(2), y: +i.rect[1].toFixed(2), orient: i.pl.orient,
         rot: k * 90, mirror: m, estimate: !!i.cat.estimate };
+      if (i.alt) { b.cell = i.cat.alt.cell; b.w = i.w; b.h = i.h; b.estimate = true; b.note = `sketch: ${i.cat.alt.what}`; }
       if (i.folded) { b.w = i.w; b.h = i.h; b.fold = 'U-fold, same area, half width: input half (input section, stages 1-2) on top with the inputs on the top edge, stages 3-6 turning back along the bottom row (needs a lna_chain re-layout)'; }
       if (i.cat.estimate || (i.cat.reshape && (Math.abs(i.w - i.cat.w) > 1e-6 || Math.abs(i.h - i.cat.h) > 1e-6))) { b.w = +i.w.toFixed(3); b.h = +i.h.toFixed(3); }
       if (i.cat.reshape && Math.abs(i.w - i.cat.w) < 1e-6 && Math.abs(i.h - i.cat.h) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um`;
@@ -464,6 +480,7 @@
       if (!cat[n]) continue;
       v.place[n] = { x: +b.x, y: +b.y, orient: ORIENTS[b.orient] ? b.orient : 'R0' };
       if (b.fold && cat[n].fold) { v.fold = v.fold || {}; v.fold[n] = true; }
+      if (cat[n].alt && b.cell === cat[n].alt.cell) { v.alt = v.alt || {}; v.alt[n] = true; }
       if ((cat[n].estimate || cat[n].reshape) && b.w && b.h) { v.est[n] = { w: +b.w, h: +b.h }; if (cat[n].reshape && Math.abs(b.w * b.h - cat[n].w * cat[n].h) > 1) v.est[n].area = +b.w * +b.h; }
     }
     return v;

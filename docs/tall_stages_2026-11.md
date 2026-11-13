@@ -342,3 +342,15 @@ where coupling could come from: the output is now about 120 µm from the input, 
 - Stability at tt and ss 10 °C only, with the strap off. There is no small-signal loop-gain margin yet (review action
   4, branch `chain-stability-ac`).
 - No Monte Carlo of amp_dp_t's pair, whose matching is common-centroid by construction.
+
+## Floorplan page with the tall chain (2026-11-13)
+- **Page:** "Tall Chain Floorplan", https://claude.ai/artifact/Jm514FScc5nMTxUayf8pCD, a separate artifact, so the layout 5 page and its saved variants are unchanged. Built with `tools/floorplan_page.py` from the repo's page sources. Its store is seeded from `layout/floorplan/variants_tall.json`.
+- **Blocks:** `tools/floorplan_blocks_tall.py` adds `lna_chain_t` (from its GDS; ibias is the south-edge met4 pin) and the `log_det_t` sketch to `blocks.json`. When `lna_chain_t` is in `blocks.json`, the engine uses it as `xchain` (zones: input section, stage 1, stages 4-6), so older variants that place the U at R180 show the tall chain upside down. Place it MY.
+- **log_det_t (sketch, not laid out):** six unchanged det_cells in one row, plus a ~10 µm end section (Mbias, Rs_b, Rdet). It is 135.0 × 16.1 µm with every input reached from the south edge. Cdet (1 pF) doesn't fit in a 16 µm row, so it is the separate estimate block `xcdet`. On the page the sketch is a per-variant option on `xdet` (a checkbox in the selection panel), next to the two-row log_det.
+- **Variants:**
+  - "layout 5 + tall chain": the chain at (20.3, 6.5) MY, with everything else as in layout 5.
+  - "tall chain + unwrapped log_det (sketch)": the row at (15.6, 72.5) MY, with t6 at the west end over stages 5-6 and t1 at the east end, and Cdet at (134.7, 91.1).
+- **What the sketch shows:**
+  - The row overlaps both TX drivers (y 80.5), which have to move.
+  - At the det_cell's 20.8 µm pitch the six detectors spread over the whole chain, while the taps sit in its west half (11.7 µm pitch). t4 lands over stage 2, 3 µm from stage 1's zone, and the page's rule 2 fails on that.
+  - A det_cell turned 90° (16.1 µm pitch, about 21 µm tall) would keep t4-t6 over stages 3-6.
