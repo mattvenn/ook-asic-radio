@@ -129,14 +129,15 @@ reader and flatten touch the netlist here; the logic comes from the PDK's cell m
 would go unseen. LVS ties the layout to `pnl.v`, and this ties `pnl.v` to the RTL. The clock gates' latch
 behaviour and the clock tree's timing are STA's (static timing analysis) and GL simulation's job.
 
-**CI:** about 15 s plus the image pull, with no PDK beyond the one cell-model file. It would fit a GitHub action
-next to `lvs`. Not added yet (Matt's call). It should run after every re-harden: the instance names in `plant.py` are
-the `lnalo` netlist's, so a new netlist needs new edits there (plant.py stops with an error if an edit doesn't match).
+**CI:** the `eqy` GitHub action ([`.github/workflows/eqy.yaml`](../.github/workflows/eqy.yaml)) runs `run.sh` on
+every push, with YosysHQ's oss-cad-suite (build 2026-09-30) and the `lvs` action's PDK cache. The check itself takes
+about 15 s. After a re-harden, the edits in `plant.py` need updating: they name instances in the `lnalo` netlist, and
+`plant.py` stops with an error if an edit doesn't match, so the action fails until they are updated.
 
 **Image trap:** `/foss/tools/bin/eqy` is a symlink, and eqy looks for its Yosys plugins next to its own path, so it
 fails with "Can't load module eqy_combine.so". `run.sh` calls it by its real path (`readlink -f`).
 
-Run: `tools/osic bash formal/eqy/run.sh` (the check, `pnl.v` and the self-test; exit 0 if all pass) or
+Run: `tools/osic bash formal/eqy/run.sh` (the check, `pnl.v` and the self-test; exit 0 if all pass; also the `eqy` action) or
 `tools/osic bash formal/eqy/run.sh check` (only the check). Logs in `build/eqy/`.
 
 ### TT top level and pinout
