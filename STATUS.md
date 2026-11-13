@@ -7,6 +7,8 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
+**Tall chain stages (2026-11-13, branch `chain-tall-stages`, not merged): `docs/tall_stages_2026-11.md`.** Review action 8, sketch only: `amp_dpc_t` 11.7 × 63.5 µm and `amp_dp_t` 20.4 × 63.5 µm (halves stacked, VSS + nb on the centre line, A B B A kept), all clean; a 6-stage strip is 78.9 µm, so a straight chain with a ~38.6 µm input section is ~117.5 µm: **fits the U's 145.4 µm slot with ~28 µm spare**. Stages alone +2.7 dB over today's chain; the full-height tap columns cost ~0.8 dB per stage (strip 1.6 dB below today with them). Open: where the taps go.
+
 **Design review with Harald Pretl (2026-11-13): `docs/review_harald_2026-11-13.md`.** His main point: chain oscillation is the most likely failure, and the U fold is the worst case for it. Small corrections done (input impedance in how_it_works, bring-up rescue networks). Open, in parallel: AC stability margin, RC loads and bond-wire coupling (branch `chain-stability-ac`, `docs/handoff_chain_stability_ac.md`); eqy equivalence check of the macro (branch `digital-eqy`, `docs/handoff_eqy.md`). Later: straight chain layout, local decap, lower-gain option (actions 8–11); long runners only after any LNA change.
 
 **LNA low-gain strap: verified on sim-0 2026-11-04 / 05, `docs/verify_lna_lo.md`. All 9 items pass; items 2 (overload), 4 and 5 after follow-ups on 2026-11-06. Not merged to `main` yet.**

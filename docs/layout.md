@@ -357,6 +357,19 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - o2 → t2 (~75 µm) and o3 → t3 (~60 µm) would each cost st2 / st3 a few tenths of a dB. Worth a look when the tile is assembled (log_det orientation, or tap order).
 - **ua[2]** (debug, x 98) comes up under Cin_n: route it outside the chain, not across it. A floating debug wire over st5 and Cin_n would bridge output to input.
 
+## Tall chain stages, a sketch (2026-11-13, branch `chain-tall-stages`)
+- **`amp_dpc_t` 11.7 × 63.5 µm, `amp_dp_t` 20.4 × 63.5 µm, `chain_strip_t` (st1 + 5 × st2–6, abutted) 78.9 × 63.5 µm**; all DRC 0 (magic + KLayout), antenna 0, LVS match. Full report: `docs/tall_stages_2026-11.md`.
+- Frame: halves stacked (p over n, mirrored), VSS (met1 + met3) and nb (met2, inside the VSS rail) on the centre line, VDD at the top and bottom edges, signals on met2 at ±12.37 µm from the centre; every other stage flipped (MX).
+- Extracted, 434 MHz tt: amp_dpc_t 13.25 dB with full-height tap columns, 14.05 dB without (today 13.69); amp_dp_t 15.55 dB (today 15.58). Strip, gates to output: 79.29 dB with taps, 83.58 without; today's U chain 80.87.
+- **Lessons:**
+  - Draw a mirrored pair of halves as one half cell placed twice (`mirror=True` about y = 0), flatten, then shift the whole cell up by H/2.
+  - A rectangular MIM keeps its C when (w + 0.15)(l + 0.15) is kept (the model's dw), not w × l.
+  - capm must leave a band of the bottom plate free where the source bars via2 up (capm.8); the other cap's met4 strip lands in the same band.
+  - A lone high_po_0p69 segment: draw rpm and psdm 1.3 µm wide over it (rpm.1, psdm.1).
+  - The tail's gate pads are staggered (poly to 0.7 µm above the diff): keep resistor poly 0.6 µm clear of the higher pads (poly.9 is 0.48 µm).
+  - A via1 on a gate strap taller than the met2 track it lands on: limit the via box to the track (met2.4).
+  - Full-height met4 tap columns cost about 18 fF per output (0.8 dB per 4 kΩ stage). Two of them 0.3 µm apart couple 6.9 fF output to output; a VDD column between them removes that.
+
 ## Pin moves for the floorplan (layout 5, 2026-10-09)
 Every block re-laid out to `layout/floorplan/pins.md` (circuits unchanged; each DRC / antenna / LVS clean and its `tb_<block> --pex` unchanged or better). Where the pins went, and how:
 
