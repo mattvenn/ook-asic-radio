@@ -92,5 +92,7 @@ change that. Demos should be cabled with attenuators, or done in a shielded room
 - 1–3: done in this commit.
 - 4, 5, 6: one session, branch `chain-stability-ac`, [handoff_chain_stability_ac.md](handoff_chain_stability_ac.md).
 - 7: one session, branch `digital-eqy`, [handoff_eqy.md](handoff_eqy.md).
-- 8–11: later, once 4–6 have reported.
+- 8: first a sketch of tall, thin stage cells, to see if a straight chain fits in the U's box (it can also be
+  flipped, input on the left): branch `chain-tall-stages`, [handoff_tall_stages.md](handoff_tall_stages.md).
+- 9–11: later, once 4–6 have reported.
 - 12 and up: only after any LNA changes are made.
