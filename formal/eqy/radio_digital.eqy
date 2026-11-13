@@ -1,0 +1,12 @@
+# Logic equivalence: radio_digital RTL (gold) vs the shipped netlist (gate).
+# Template: run.sh appends the generated [match radio_digital] section (match.py).
+# docs/verification.md "Equivalence (eqy)".
+[gold]
+script in/gold.ys
+
+[gate]
+script in/gate.ys
+
+[strategy sat]
+use sat
+depth 5

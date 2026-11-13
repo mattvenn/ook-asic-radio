@@ -1,0 +1,69 @@
+name: eqy
+# Logic equivalence of the digital macro: verilog/rtl/ vs macros/radio_digital/radio_digital.nl.v (eqy), the
+# clock-source check, pnl.v vs nl.v, and the planted-bug self-test (formal/eqy/run.sh, about 15 s).
+# docs/verification.md "Equivalence (eqy)". Tools from YosysHQ's oss-cad-suite (dated build, Yosys 0.69 line);
+# the PDK's sky130_fd_sc_hd functional models from the same ciel PDK (and cache) as the lvs action.
+on:
+  push:
+  workflow_dispatch:
+
+env:
+  PDK_ROOT: /home/runner/pdk
+  PDK: sky130A
+  PDK_VERSION: 1689ac3f2dc763876eaf967227c7dfe831b031ae
+  OSS_CAD_SUITE: 2026-09-30
+
+jobs:
+  eqy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: Cache oss-cad-suite
+        id: cache-ocs
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/oss-cad-suite
+          key: oss-cad-suite-${{ env.OSS_CAD_SUITE }}
+
+      - name: Install oss-cad-suite
+        if: steps.cache-ocs.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+            d=${OSS_CAD_SUITE//-/}
+            curl -sfL https://github.com/YosysHQ/oss-cad-suite-build/releases/download/$OSS_CAD_SUITE/oss-cad-suite-linux-x64-$d.tgz \
+              | tar xz -C /home/runner
+
+      - name: Cache PDK
+        id: cache-pdk
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PDK_ROOT }}
+          key: pdk-sky130-${{ env.PDK_VERSION }}
+
+      - name: Install PDK
+        if: steps.cache-pdk.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+            pip install --break-system-packages -q ciel
+            ciel enable --pdk-root $PDK_ROOT --pdk-family sky130 $PDK_VERSION
+
+      - name: Equivalence check and planted-bug self-test
+        shell: bash
+        run: |
+            export PATH=/home/runner/oss-cad-suite/bin:$PATH
+            yosys -V; eqy --version
+            rc=0; bash formal/eqy/run.sh | tee eqy.txt || rc=$?
+            echo "## eqy" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY; grep -v '^#' eqy.txt >> $GITHUB_STEP_SUMMARY; echo '```' >> $GITHUB_STEP_SUMMARY
+            exit $rc
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eqy-logs
+          path: |
+            build/eqy/*.log
+            build/eqy/*.txt
