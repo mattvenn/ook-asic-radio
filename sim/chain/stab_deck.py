@@ -59,9 +59,10 @@ def kick_control(tag="case x"):
 tran 20p 300n 0
 let d = v(out_p) - v(out_n)
 meas tran early pp d from=5n to=25n
+meas tran mid pp d from=150n to=200n
 meas tran late pp d from=250n to=300n
 let growth = late / early
-echo RESULT kick {tag} early_pp $&early late_pp $&late growth $&growth
+echo RESULT kick {tag} early_pp $&early late_pp $&late growth $&growth mid_pp $&mid
 destroy all
 reset
 ac dec 50 100meg 2g
