@@ -10,6 +10,7 @@ Order matters: each stage only uses parts the earlier stages have already checke
 - Keysight HD304MSO scope (`bench/scope.py`), 1 MΩ probes.
 - RTL-SDR (any SDR covering 300–600 MHz), with `rtl_power` / `rtl_sdr`.
 - SMA DC blocks, 50 Ω attenuators (a 10 dB step set adding up to ≥ 100 dB), SMA cables, a balun if available.
+- An adapter board on the TT breakout for the RX inputs: SMD footprints (0402 / 0603) for a shunt part across `ua[0]` / `ua[1]`, a shunt part from each to ground, and a series part in each; an SMA (single-ended) and a balun footprint. Unpopulated by default (0 Ω links in series). It is the rescue path if the chain oscillates (below) and the way into the cabled tests.
 - Optional, makes the RX tests much better: an RF signal generator with pulse/OOK modulation at 300–600 MHz, and an AWG.
 - 4 × 16.5 cm wires for the dipoles.
 - A 433.92 MHz key fob or garage remote (an uncalibrated test signal).
@@ -99,6 +100,18 @@ One board, RX role (`ui_in[7]` = 0). Do R1–R3 with no antenna fitted.
 Without a signal generator: do R1–R5 and R10–R12. Leave sensitivity to L1, which uses a measured TX as the source. The key fob gives a quick check that `det` and `uio[3]` respond at all.
 
 The input loss matters for R6–R9: the board traces, the TT analog mux and the pad all sit between the SMA and the chain. Record levels at the SMA, and work out the loss from the R6 curve against the simulated one.
+
+### If the chain oscillates (R0 fails)
+
+The chain's output never leaves the chip, so the RX input (`ua[0]` / `ua[1]`) is the only node outside we can change (Harald Pretl's review, [review_harald_2026-11-13.md](review_harald_2026-11-13.md) point 17). Try in this order, repeating R0 after each, and record what each does to `ua[2]` and the supply current:
+
+1. **Low-gain strap** (`1011`, ~10 dB less gain). If R0 passes, carry on with the strap and note the sensitivity cost (R13).
+2. **Short the inputs** with a 0 Ω across `ua[0]` / `ua[1]` on the adapter board. If it still oscillates with no input signal possible, the loop is on the chip (substrate, supply) and the input network can't fix it: go to 5.
+3. **Load the input:** a shunt resistor across the inputs (try 1 kΩ, then 200 Ω, then 100 Ω), then a capacitor across them (1 pF, 3 pF, 10 pF). A low input impedance lowers the gain around the feedback loop through the pad. Each costs sensitivity; measure it with the cabled link (L1).
+4. **Series parts:** a resistor (50–200 Ω) or an inductor in each input, which change the loop's phase at the oscillation frequency. Note the frequency on the SDR first: aim the network to load that frequency more than 433–470 MHz.
+5. **Cable instead of the antenna:** drive `ua[0]` from a 50 Ω source (generator or attenuator from the TX board) with `ua[1]` to ground through 50 Ω. A defined source impedance may be stable where the wires aren't.
+
+Whatever works, record the network, the oscillation frequency, and the R6 curve with it in place.
 
 ## Stage 3: both together
 
