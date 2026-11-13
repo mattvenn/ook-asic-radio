@@ -6,6 +6,9 @@ read small: context spent on setup is context not spent on the block.
 ## Rules
 - **Only work on what Matt assigned you.** The leaf-block list in STATUS.md "Start here" says
   what's done; if it's unclear whether a block is taken, ask.
+- **Branch names say what the work is** (`chain-stability-ac`, `digital-eqy`, `tall-stages-handoff`).
+  Never push an auto-generated name (`claude/busy-johnson-7it97w` and the like): if the session gave you
+  one, rename it (`git branch -m <old> <new>`) before the first push. A handoff names its branch: use that.
 - **Before every push:** `git fetch`, rebase onto `origin/main`, and re-check STATUS.md /
   docs/layout.md merged cleanly (they conflict most). Push small commits often.
 - **Shared code** (`layout/gen/rows.py`, `lay.py`, `passives.py`, `tools/`): other blocks depend on
