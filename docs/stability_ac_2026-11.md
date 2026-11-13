@@ -79,10 +79,35 @@ the chip pins (pad models removed). The bench uses the 2 nH supply and the real 
 
 ### Results
 
-<<A>>
+| Corner | Strap | Node | Gain at 434 MHz, sch / pex (dB) | Ccpl_crit AC, sch (fF) | Kick edge, sch (fF) | Margin at 0.1 fF, sch (dB) | f, sch (MHz) | Ccpl_crit AC, pex (fF) | Kick edge, pex (fF) | Margin at 0.1 fF, pex (dB) | f, pex (MHz) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| tt 27 °C | full | pad_p | 76.4 / 75.5 | 0.780 | 0.781–0.797 | 17.8 | 623 | 0.925 | 0.925–0.953 | 19.3 | 466 |
+| tt 27 °C | full | o1p | 76.4 / 75.5 | 0.563 | 0.562–0.578 | 14.9 | 739 | 0.782 | 0.782–0.806 | 17.8 | 529 |
+| tt 27 °C | low | pad_p | 64.4 / 65.3 | 2.728 | 2.75–2.81 | 28.7 | 731 | 2.805 | 2.81–2.89 | 28.9 | 548 |
+| tt 27 °C | low | o1p | 64.4 / 65.3 | 1.825 | 1.81–1.84 | 25.2 | 888 | 2.212 | 2.21–2.28 | 26.8 | 632 |
+| ss 10 °C | full | pad_p | 80.9 / 79.5 | 0.474 | 0.472–0.481 | 13.5 | 619 | 0.586 | 0.586–0.604 | 15.3 | 468 |
+| ss 10 °C | full | o1p | 80.9 / 79.5 | 0.358 | 0.35–0.359 | 11.0 | 727 | 0.512 | 0.512–0.527 | 14.1 | 527 |
+| ss 10 °C | low | pad_p | 69.4 / 70.1 | 1.562 | 1.56–1.59 | 23.8 | 721 | 1.641 | 1.64–1.69 | 24.3 | 543 |
+| ss 10 °C | low | o1p | 69.4 / 70.1 | 1.098 | 1.09–1.12 | 20.7 | 866 | 1.341 | 1.34–1.38 | 22.5 | 621 |
+| sf 27 °C | full | pad_p | 76.4 / 75.5 | 0.785 | 0.781–0.797 | 17.8 | 633 | 0.935 | 0.935–0.963 | 19.4 | 472 |
+| sf 27 °C | full | o1p | 76.4 / 75.5 | 0.556 | 0.547–0.562 | 14.8 | 756 | 0.780 | 0.78–0.804 | 17.8 | 537 |
+| sf 27 °C | low | pad_p | 65.9 / 67.0 | 2.317 | 2.31–2.38 | 27.2 | 736 | 2.332 | 2.33–2.4 | 27.3 | 546 |
+| sf 27 °C | low | o1p | 65.9 / 67.0 | 1.527 | 1.53–1.56 | 23.6 | 897 | 1.822 | 1.82–1.88 | 25.2 | 631 |
+| ff 50 °C | full | pad_p | 73.1 / 70.1 | 1.125 | 1.12–1.16 | 21.0 | 629 | 1.681 | 1.68–1.73 | 24.5 | 473 |
+| ff 50 °C | full | o1p | 73.1 / 70.1 | 0.798 | 0.797–0.812 | 18.0 | 756 | 1.386 | 1.39–1.43 | 22.8 | 543 |
+| ff 50 °C | low | pad_p | 60.8 / 59.7 | 4.033 | > 4 | 32.1 | 744 | 5.191 | 5.19–5.35 | 34.3 | 561 |
+| ff 50 °C | low | o1p | 60.8 / 59.7 | 2.649 | 2.69–2.75 | 28.4 | 915 | 3.975 | 3.97–4.09 | 31.9 | 655 |
+| ss 10 °C 1.89 V | full | pad_p | 81.2 / 80.0 | 0.458 | 0.453–0.463 | 13.2 | 623 | 0.556 | 0.556–0.573 | 14.9 | 470 |
+| ss 10 °C 1.89 V | full | o1p | 81.2 / 80.0 | 0.346 | 0.341–0.35 | 10.7 | 732 | 0.485 | 0.485–0.5 | 13.7 | 530 |
+| ss 10 °C 1.89 V | low | pad_p | 68.5 / 69.3 | 1.724 | 1.72–1.75 | 24.7 | 732 | 1.795 | 1.8–1.85 | 25.0 | 552 |
+| ss 10 °C 1.89 V | low | o1p | 68.5 / 69.2 | 1.206 | 1.19–1.22 | 21.6 | 881 | 1.460 | 1.46–1.5 | 23.2 | 633 |
 
-- The **AC edge and the kick edge agree everywhere**, to within 1.5 %. On the extracted chain the kick was run on a
-  grid at 0.9 / 0.97 / 1.03 / 1.1 × the AC edge and then bisected; each run there takes about 5 min.
+Ccpl_crit from the 0.1 fF and 1 fF runs differ by at most 0.8 %.
+
+- The **AC edge and the kick edge agree everywhere**: to within 1.5 % on the schematic, and on the extracted chain
+  the kick edge lies between 1.00 and 1.03 × the AC edge in all 20 cases (the kick grid there was 0.9 / 0.97 / 1.03 /
+  1.1 × the AC edge, then bisected once, so 3 % is its resolution). An extracted kick run takes 5–50 min, longest near the edge,
+  where the ring-down is slow; the 20 cases took 2 h 24 min on 24 CPUs.
 - Where the loop has its 0° crossing: on the schematic, 620–630 MHz (coupling to `pad_p`) and 730–760 MHz (to
   `o1p`) at full gain, and 720–920 MHz at low gain. **On the extracted chain it is 466–473 MHz and 527–543 MHz**, in
   the band. The extraction adds C, which slows each stage and moves the 0° crossing down. With that phase change,
@@ -96,7 +121,28 @@ the chip pins (pad models removed). The bench uses the 2 nH supply and the real 
   is reached at the low end, where the input is nearly lossless. |S12| ≤ −113 dB extracted (−124 dB schematic). The
   chain is unconditionally stable for any passive source and load.
 
-<<K>>
+| Chain | Corner | Strap | K min (port 1 at the board side) | K min (port 1 at the pins) | f of K min (MHz) | \|Δ\| max | μ min | \|S12\| max (dB) |
+|---|---|---|---|---|---|---|---|---|
+| sch | tt 27 °C | full | 5.67e+04 | 1.89e+03 | 752 / 1728 | 0.972 | 1.026 | -126 |
+| sch | tt 27 °C | low | 1.89e+05 | 7.39e+03 | 752 / 770 | 0.972 | 1.026 | -129 |
+| sch | ss 10 °C | full | 3.16e+04 | 1.21e+03 | 752 / 770 | 0.971 | 1.026 | -128 |
+| sch | ss 10 °C | low | 9.74e+04 | 4.2e+03 | 752 / 770 | 0.971 | 1.026 | -131 |
+| sch | sf 27 °C | full | 7.06e+04 | 1.69e+03 | 752 / 1852 | 0.972 | 1.026 | -125 |
+| sch | sf 27 °C | low | 1.96e+05 | 5.92e+03 | 735 / 2559 | 0.972 | 1.026 | -128 |
+| sch | ff 50 °C | full | 9.41e+04 | 2.03e+03 | 752 / 1939 | 0.972 | 1.025 | -124 |
+| sch | ff 50 °C | low | 3.23e+05 | 9.65e+03 | 752 / 2872 | 0.972 | 1.025 | -128 |
+| sch | ss 10 °C 1.89 V | full | 3.14e+04 | 1.2e+03 | 752 / 770 | 0.971 | 1.026 | -128 |
+| sch | ss 10 °C 1.89 V | low | 1.12e+05 | 4.86e+03 | 752 / 752 | 0.971 | 1.026 | -131 |
+| pex | tt 27 °C | full | 209 | 15.1 | 752 / 752 | 0.972 | 1.025 | -113 |
+| pex | tt 27 °C | low | 494 | 36.3 | 752 / 752 | 0.972 | 1.025 | -113 |
+| pex | ss 10 °C | full | 133 | 10.8 | 752 / 752 | 0.971 | 1.026 | -113 |
+| pex | ss 10 °C | low | 286 | 23.5 | 752 / 752 | 0.971 | 1.026 | -113 |
+| pex | sf 27 °C | full | 209 | 14.2 | 752 / 752 | 0.972 | 1.025 | -113 |
+| pex | sf 27 °C | low | 417 | 28.8 | 752 / 752 | 0.972 | 1.025 | -113 |
+| pex | ff 50 °C | full | 382 | 23.3 | 752 / 752 | 0.973 | 1.025 | -113 |
+| pex | ff 50 °C | low | 957 | 59.3 | 752 / 752 | 0.973 | 1.025 | -113 |
+| pex | ss 10 °C 1.89 V | full | 127 | 10.5 | 752 / 752 | 0.971 | 1.026 | -113 |
+| pex | ss 10 °C 1.89 V | low | 312 | 26 | 752 / 752 | 0.971 | 1.026 | -113 |
 
 ## (B) RC loads
 
@@ -113,7 +159,12 @@ gain-loss limit.
 
 ### Today's roll-off (schematic)
 
-<<B1>>
+| Corner | Strap | Gain at 434 MHz (dB) | −20 dB at (MHz) | −40 dB at (MHz) | Stage upper −3 dB edges, 1–6 (MHz) | Stage gain peaks, 1–6 (MHz) | NF at 448 MHz (dB) |
+|---|---|---|---|---|---|---|---|
+| tt 27 °C | full | 76.42 | 1403 | 2559 | 3299, 1575, 1688, 1688, 1809, 1575 | 221, 412, 432, 432, 432, 485 | 11.08 |
+| tt 27 °C | low | 64.39 | 1650 | 3150 | 3618, –, 1688, 1688, 1809, 1575 | 376, 1114, 432, 432, 432, 485 | 11.91 |
+| ss 10 °C | full | 80.89 | 1340 | 2443 | 2939, 1470, 1612, 1575, 1728, 1504 | 231, 412, 432, 432, 432, 496 | 10.57 |
+| ss 10 °C | low | 69.39 | 1575 | 2939 | 3224, –, 1612, 1575, 1728, 1504 | 376, 1063, 432, 432, 432, 496 | 11.14 |
 
 Stage 1 is a low-pass from about 220 MHz up, with its upper edge at 2.9–3.3 GHz. Stages 2–6 are band-passes (the
 capacitive degeneration gives the high-pass), peaking at 410–500 MHz with upper edges at 1.5–1.8 GHz. The whole chain
@@ -123,7 +174,36 @@ frequency.**
 
 ### The sweep (schematic, full gain)
 
-<<B2>>
+| Variant | Pole (GHz) | Cl per side, stage 1 / 2–6 (fF) | tt: ΔG 448 / 560 (dB) | ss 10 °C: ΔG 448 / 560 (dB) | ΔNF 448 (dB) | Ccpl_crit ×, tt pad_p / o1p | Ccpl_crit ×, ss 10 °C pad_p / o1p | Meets 0.5 / 1 dB |
+|---|---|---|---|---|---|---|---|---|
+| all | 0.6 | 265 / 66 | -13.19 / -15.35 | -14.11 / -16.38 | +0.32 | 4.64 / 5.30 | 5.06 / 5.72 | no |
+| all | 0.8 | 199 / 50 | -9.90 / -11.54 | -10.61 / -12.34 | +0.20 | 3.26 / 3.64 | 3.48 / 3.85 | no |
+| all | 1.0 | 159 / 40 | -7.91 / -9.23 | -8.49 / -9.89 | +0.14 | 2.61 / 2.87 | 2.76 / 3.01 | no |
+| all | 1.5 | 106 / 27 | -5.25 / -6.13 | -5.65 / -6.59 | +0.08 | 1.92 / 2.06 | 1.99 / 2.12 | no |
+| all | 2.0 | 80 / 20 | -3.93 / -4.59 | -4.23 / -4.94 | +0.05 | 1.64 / 1.73 | 1.68 / 1.77 | no |
+| all | 3.0 | 53 / 13 | -2.61 / -3.05 | -2.82 / -3.29 | +0.03 | 1.39 / 1.45 | 1.42 / 1.47 | no |
+| all | 5.0 | 32 / 8 | -1.56 / -1.83 | -1.69 / -1.97 | +0.02 | 1.22 / 1.25 | 1.24 / 1.26 | no |
+| last3 | 0.6 | – / 66 | -7.09 / -8.03 | -7.51 / -8.48 | -0.00 | 2.38 / 2.57 | 2.48 / 2.65 | no |
+| last3 | 0.8 | – / 50 | -5.38 / -6.11 | -5.71 / -6.46 | -0.00 | 1.95 / 2.07 | 2.01 / 2.12 | no |
+| last3 | 1.0 | – / 40 | -4.33 / -4.92 | -4.60 / -5.22 | -0.00 | 1.72 / 1.81 | 1.76 / 1.84 | no |
+| last3 | 1.5 | – / 27 | -2.91 / -3.31 | -3.10 / -3.52 | -0.00 | 1.44 / 1.50 | 1.47 / 1.52 | no |
+| last3 | 2.0 | – / 20 | -2.19 / -2.50 | -2.33 / -2.66 | -0.00 | 1.32 / 1.36 | 1.34 / 1.37 | no |
+| last3 | 3.0 | – / 13 | -1.46 / -1.67 | -1.56 / -1.78 | -0.00 | 1.21 / 1.23 | 1.22 / 1.24 | no |
+| last3 | 5.0 | – / 8 | -0.88 / -1.01 | -0.94 / -1.07 | -0.00 | 1.12 / 1.13 | 1.13 / 1.14 | no |
+| last2 | 0.6 | – / 66 | -4.72 / -5.35 | -4.99 / -5.64 | -0.00 | 1.80 / 1.90 | 1.85 / 1.94 | no |
+| last2 | 0.8 | – / 50 | -3.57 / -4.07 | -3.79 / -4.30 | -0.00 | 1.57 / 1.64 | 1.60 / 1.66 | no |
+| last2 | 1.0 | – / 40 | -2.87 / -3.28 | -3.05 / -3.47 | -0.00 | 1.44 / 1.49 | 1.46 / 1.51 | no |
+| last2 | 1.5 | – / 27 | -1.93 / -2.21 | -2.05 / -2.34 | -0.00 | 1.28 / 1.31 | 1.29 / 1.32 | no |
+| last2 | 2.0 | – / 20 | -1.45 / -1.66 | -1.54 / -1.77 | -0.00 | 1.20 / 1.23 | 1.21 / 1.24 | no |
+| last2 | 3.0 | – / 13 | -0.97 / -1.11 | -1.03 / -1.18 | -0.00 | 1.13 / 1.15 | 1.14 / 1.15 | no |
+| last2 | 5.0 | – / 8 | -0.58 / -0.67 | -0.62 / -0.71 | -0.00 | 1.08 / 1.09 | 1.08 / 1.09 | no |
+| s1 | 0.6 | 265 / – | -1.35 / -1.90 | -1.54 / -2.14 | +0.28 | 1.22 / 1.28 | 1.24 / 1.30 | no |
+| s1 | 0.8 | 199 / – | -0.91 / -1.31 | -1.05 / -1.49 | +0.18 | 1.15 / 1.19 | 1.16 / 1.21 | no |
+| s1 | 1.0 | 159 / – | -0.68 / -0.98 | -0.78 / -1.12 | +0.13 | 1.11 / 1.14 | 1.12 / 1.15 | no |
+| s1 | 1.5 | 106 / – | -0.39 / -0.58 | -0.46 / -0.67 | +0.07 | 1.06 / 1.08 | 1.07 / 1.09 | yes |
+| s1 | 2.0 | 80 / – | -0.27 / -0.40 | -0.32 / -0.47 | +0.05 | 1.04 / 1.06 | 1.05 / 1.06 | yes |
+| s1 | 3.0 | 53 / – | -0.17 / -0.25 | -0.19 / -0.29 | +0.03 | 1.02 / 1.04 | 1.03 / 1.04 | yes |
+| s1 | 5.0 | 32 / – | -0.09 / -0.14 | -0.11 / -0.16 | +0.02 | 1.01 / 1.02 | 1.01 / 1.02 | yes |
 
 "Ccpl_crit ×" is the tolerable coupling relative to no Cl. The kick confirms the AC numbers for the passing variants:
 
@@ -214,7 +294,16 @@ predicted closed-loop / open-loop = 1.13 where the simulation with a real K = 0.
 **Combined with on-chip coupling** (`stability_bond.py combined`): `Ccpl_crit` with the bond coupling present, k
 = ±0.1 and ±0.3 on `pad_p`'s wire, supply or ground as the aggressor:
 
-<<C2>>
+| Corner | L = Lb | Node | Ccpl_crit, k = 0 (fF) | Worst with \|k\| ≤ 0.3 (fF) | Change | Worst case | Margin at 0.1 fF (dB) |
+|---|---|---|---|---|---|---|---|
+| ss 10 °C | 2n | pad_p | 0.457 | 0.433 | -5.2 % | sup, k -0.3 | 12.7 |
+| ss 10 °C | 2n | o1p | 0.359 | 0.340 | -5.3 % | gnd, k -0.3 | 10.6 |
+| ss 10 °C | 5n | pad_p | 0.433 | 0.396 | -8.6 % | gnd, k -0.3 | 11.9 |
+| ss 10 °C | 5n | o1p | 0.360 | 0.354 | -1.7 % | gnd, k -0.3 | 11.0 |
+| tt 27 °C | 2n | pad_p | 0.753 | 0.728 | -3.3 % | sup, k -0.3 | 17.2 |
+| tt 27 °C | 2n | o1p | 0.563 | 0.542 | -3.9 % | gnd, k -0.3 | 14.7 |
+| tt 27 °C | 5n | pad_p | 0.713 | 0.679 | -4.7 % | gnd, k -0.3 | 16.6 |
+| tt 27 °C | 5n | o1p | 0.565 | 0.563 | -0.3 % | gnd, k +0.3 | 15.0 |
 
 Adding the input bond wire itself changes the tolerable coupling a little (k = 0 here vs (A): ss 10 °C `pad_p` 0.474
 → 0.457 fF at 2 nH, 0.433 fF at 5 nH). The mutual coupling then takes off at most another 8.6 %. **The 0.1 fF budget
@@ -223,7 +312,24 @@ keeps ≥ 10.6 dB of margin with both paths together** (schematic, the worse ben
 **The aggressor's size** (`stability_bond.py current`): the RF current in the supply wires with a CW input at
 −90 and −60 dBm (from 73 Ω), measured over the last 200 ns of 400 ns:
 
-<<C3>>
+| Corner | Strap | L | Input (dBm) | Out diff at 434 MHz (mV amplitude) | I(Lsup) 434 / 868 MHz (µA) | I(Lgnd) 434 / 868 MHz (µA) |
+|---|---|---|---|---|---|---|
+| tt 27 °C | full | 2n | -90 | 171 | 0.21 / 0.3 | 0.22 / 0.3 |
+| tt 27 °C | full | 2n | -60 | 1405 | 0.43 / 96.9 | 0.60 / 100.2 |
+| tt 27 °C | full | 5n | -90 | 188 | 0.23 / 0.2 | 0.24 / 0.3 |
+| tt 27 °C | full | 5n | -60 | 1405 | 1.36 / 15.0 | 1.52 / 21.6 |
+| tt 27 °C | low | 2n | -90 | 43 | 0.20 / 0.2 | 0.20 / 0.2 |
+| tt 27 °C | low | 2n | -60 | 1136 | 0.28 / 17.6 | 0.31 / 17.1 |
+| tt 27 °C | low | 5n | -90 | 47 | 0.21 / 0.2 | 0.21 / 0.2 |
+| tt 27 °C | low | 5n | -60 | 1196 | 0.52 / 3.8 | 0.55 / 4.4 |
+| ss 10 °C | full | 2n | -90 | 284 | 0.21 / 0.6 | 0.23 / 0.7 |
+| ss 10 °C | full | 2n | -60 | 1385 | 0.52 / 128.1 | 0.70 / 132.0 |
+| ss 10 °C | full | 5n | -90 | 313 | 0.27 / 0.2 | 0.29 / 0.4 |
+| ss 10 °C | full | 5n | -60 | 1384 | 1.67 / 18.9 | 1.85 / 26.7 |
+| ss 10 °C | low | 2n | -90 | 76 | 0.20 / 0.2 | 0.20 / 0.2 |
+| ss 10 °C | low | 2n | -60 | 1336 | 0.33 / 54.4 | 0.38 / 52.0 |
+| ss 10 °C | low | 5n | -90 | 84 | 0.22 / 0.2 | 0.22 / 0.2 |
+| ss 10 °C | low | 5n | -60 | 1352 | 0.90 / 10.8 | 0.96 / 11.3 |
 
 The fundamental at 434 MHz is about 0.2 µA at −90 dBm, and that figure barely depends on the gain or the strap state:
 it is the input signal's own current returning through the chip, not the chain's output. At −60 dBm, with the chain

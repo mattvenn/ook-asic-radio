@@ -25,6 +25,7 @@ KT4_ANT = 4 * 1.380649e-23 * 300.15 * 73
 CORNERS = [('tt', 27, 1.8), ('ss', 10, 1.8)]
 SETS = {'all': [1, 2, 3, 4, 5, 6], 'last3': [4, 5, 6], 'last2': [5, 6], 's1': [1]}
 FPOLES = [0.6e9, 0.8e9, 1.0e9, 1.5e9, 2.0e9, 3.0e9, 5.0e9]
+SUBSET = [('s1', 1.5e9), ('s1', 2.0e9), ('last2', 5.0e9), ('all', 2.0e9)]  # extracted check: the passing ones and one that fails
 TAPS = ['o1', 'o2', 'o3', 'o4', 'o5', 'out_']
 
 
@@ -121,11 +122,13 @@ def main():
     ap.add_argument('mode', choices=['rolloff', 'sweep'])
     ap.add_argument('--chain', default='sch')
     ap.add_argument('--jobs', type=int, default=20)
+    ap.add_argument('--subset', action='store_true', help='sweep only the variants worth checking extracted')
     a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
     cases = [(a.chain, *c, v, 'none', [], 0) for c in CORNERS for v in (1.8, 0)]
     if a.mode == 'sweep':
-        cases += [(a.chain, *c, 1.8, n, s, fp) for c in CORNERS for n, s in SETS.items() for fp in FPOLES]
+        sel = SUBSET if a.subset else [(n, fp) for n in SETS for fp in FPOLES]
+        cases += [(a.chain, *c, 1.8, n, SETS[n], fp) for c in CORNERS for n, fp in sel]
     with ThreadPoolExecutor(a.jobs) as ex:
         res = list(ex.map(lambda x: run_case(*x), cases))
     json.dump(res, open(os.path.join(OUT, f'rcload_{a.mode}_{a.chain}.json'), 'w'), indent=1)
