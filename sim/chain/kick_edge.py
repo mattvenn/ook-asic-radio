@@ -72,13 +72,26 @@ def main():
     ap.add_argument('--nodes', default='pad_p,o1p')
     ap.add_argument('--corners', default=','.join(CORNERS))
     ap.add_argument('--straps', default='1.8,0')
+    ap.add_argument('--around', help='ac_<chain>.json from stability_ac.py: grid at 0.9 / 0.97 / 1.03 / 1.1 x its '
+                    'Ccpl_crit (1 fF run) instead of the fixed grid, to save time on the extracted chain')
     a = ap.parse_args()
+    crit = {}
+    if a.around:
+        for r in json.load(open(a.around)):
+            if r['C'] == '1f':
+                crit[(r['corner'], r['temp'], r['vsup'], r['vglo'], r['node'])] = r['Ccpl_crit_fF']
     os.makedirs(OUT, exist_ok=True)
     cases = [(a.chain, *CORNERS[c], float(v), n) for c in a.corners.split(',') for v in a.straps.split(',')
              for n in a.nodes.split(',')]
     inner = ThreadPoolExecutor(a.jobs)
     with ThreadPoolExecutor(len(cases)) as ex:
-        res = list(ex.map(lambda cs: (cs, find_edge(ccpl_case(*cs), pool=inner)), cases))
+        def edge(cs):
+            g = GRID
+            if a.around:
+                c0 = crit[cs[1:]]
+                g = [round(c0 * k, 4) for k in (0.9, 0.97, 1.03, 1.1)]
+            return cs, find_edge(ccpl_case(*cs), grid=g, pool=inner)
+        res = list(ex.map(edge, cases))
     out = [dict(chain=c[0], corner=c[1], temp=c[2], vsup=c[3], vglo=c[4], node=c[5], **r) for c, r in res]
     json.dump(out, open(os.path.join(OUT, f'kick_{a.chain}.json'), 'w'), indent=1)
     for r in out:
