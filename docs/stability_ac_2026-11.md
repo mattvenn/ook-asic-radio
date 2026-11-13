@@ -8,7 +8,7 @@ handoff [handoff_chain_stability_ac.md](handoff_chain_stability_ac.md). It is si
 
 - **(A) The kick test now has a small-signal margin, and the two agree.** The AC loop gain through the coupling
   capacitor `Ccpl` gives the coupling at which the chain oscillates to within 1.5 % of the kick-test edge in all
-  20 schematic cases. The worst case is ss 10 °C, 1.89 V, full gain, `Ccpl` to stage 2's input (`o1p`): it oscillates
+  20 schematic cases, and within 3 % (the kick's resolution there) in all 20 extracted cases. The worst case is ss 10 °C, 1.89 V, full gain, `Ccpl` to stage 2's input (`o1p`): it oscillates
   at 0.346 fF on the schematic and 0.485 fF on the extracted chain. Against the 0.1 fF budget that is a gain margin of
   **10.7 dB (schematic) and 13.7 dB (extracted)**. The low-gain strap adds 7.4–11.5 dB. The extracted layout's own
   out → in coupling (1.44e-4 fF, [verify_lna_lo.md](verify_lna_lo.md)) is about 70 dB below the extracted edge (0.485 fF).
@@ -19,7 +19,8 @@ handoff [handoff_chain_stability_ac.md](handoff_chain_stability_ac.md). It is si
   `pad_p`; the strap gives 0.84–0.95 dB per dB). The loop's phase crosses 0° at 620–740 MHz
   on the schematic and at **466–537 MHz on the extracted chain, inside the 330–560 MHz band**. A first-order pole
   can't separate that from 448 MHz. Within the gain-loss limit (0.5 dB at 448 MHz, 1 dB at 560 MHz) the best variant
-  buys ×1.07 (0.6 dB).
+  buys ×1.07–1.09 on the schematic and ×1.05–1.06 (0.5 dB) on the extracted chain, where only Cl on stage 1 at
+  2 GHz (80 fF per side, 80 µm² of MIM) still passes.
 - **(C) Bond-wire coupling can't make the chain oscillate in this model**, at any k up to 1, at any corner, with
   either strap state, wire L 2 or 5 nH, and either orientation. With the plausible k ≤ 0.3 it lowers the tolerable
   on-chip `Ccpl` by at most 8.6 %. The 0.1 fF budget keeps ≥ 10.6 dB of margin with both paths together.
@@ -214,21 +215,38 @@ frequency.**
 | stage 1, 2.0 GHz | 0.813–0.819 / 0.594–0.600 | 0.494–0.500 / 0.381–0.384 | 0.496 |
 | last two, 5 GHz (fails by 0.1 dB) | 0.838–0.850 / 0.613–0.619 | 0.513–0.519 / 0.391–0.394 | 0.513 |
 
-<<BPEX>>
+### Extracted check
+
+The passing variants, plus the failing "last two, 5 GHz" and "all six, 2 GHz", on the extracted chain
+(`rcload.py sweep --chain pex --subset`, full gain; the baselines match the extracted AC edges in (A) to 0.2 %):
+
+| Variant | tt: ΔG 448 / 560 (dB) | ss 10 °C: ΔG 448 / 560 (dB) | ΔNF 448 (dB) | Ccpl_crit ×, tt pad_p / o1p | Ccpl_crit ×, ss 10 °C pad_p / o1p | Meets 0.5 / 1 dB |
+|---|---|---|---|---|---|---|
+| none | 0 / 0 (NF 11.22) | 0 / 0 (NF 10.75) | – | 0.925 / 0.782 fF | 0.587 / 0.512 fF | – |
+| stage 1, 1.5 GHz | −0.58 / −0.81 | −0.67 / −0.92 | +0.12 | 1.06 / 1.07 | 1.07 / 1.08 | **no** |
+| stage 1, 2.0 GHz | −0.42 / −0.59 | −0.49 / −0.67 | +0.08 | 1.05 / 1.05 | 1.05 / 1.06 | yes, by 0.01 dB |
+| last two, 5 GHz | −0.61 / −0.67 | −0.64 / −0.71 | 0.00 | 1.07 / 1.07 | 1.07 / 1.08 | no |
+| all six, 2 GHz | −4.15 / −4.71 | −4.44 / −5.01 | +0.09 | 1.58 / 1.62 | 1.62 / 1.66 | no |
+
+The extraction makes Cl on stage 1 cost about 1.5× more gain than on the schematic (on the last stages, 1.05×):
+stage 1's node already carries the extracted wiring C, so the same Cl moves its pole further into the band. **On the extracted chain the only passing
+variant is stage 1 at 2 GHz, which meets the 0.5 dB limit by 0.01 dB at ss 10 °C and buys ×1.05–1.06 (0.4–0.5 dB).**
+The rate is about the same: 0.9–1.0 dB of margin per dB of gain lost at 448 MHz.
 
 **What it buys.** Across the whole sweep, every dB of in-band gain lost at 448 MHz buys 1.0–1.3 dB of margin for
 coupling to `pad_p` (up to 1.8 dB for `o1p` with the smallest Cl, where both numbers are tiny). For example, all six
 stages at 2 GHz lose 3.9 dB at 448 MHz and gain ×1.64 (4.3 dB). Removing gain flat does nearly as well: the strap
 buys 0.84–0.95 dB per dB. The reason is that the loop's 0° crossing is only 1.1–1.7× above
 the band, closer still on the extracted chain, and a first-order pole can't separate two frequencies that close. Only
-stage 1 alone (a 1 kΩ node, the lowest gain behind it) stays inside the limits up to a 1.5 GHz pole, and it buys
-×1.07–1.09. NF at 448 MHz moves by ≤ 0.08 dB for the passing variants: Cl on stages 4–6 doesn't move it at all, and
+stage 1 alone (a 1 kΩ node, the lowest gain behind it) stays inside the limits, up to a 1.5 GHz pole on the schematic
+(×1.07–1.09) and only at 2 GHz on the extracted chain (×1.05–1.06). NF at 448 MHz moves by ≤ 0.08 dB for the passing variants: Cl on stages 4–6 doesn't move it at all, and
 Cl on stage 1 adds 0.05–0.07 dB.
 
-**Area.** Stage 1 at 1.5 GHz needs 106 fF per side, about 53 µm² of MIM each at 2 fF/µm² (about 7.3 µm square),
-106 µm² in all. `amp_dp` is 36.4 × 20.7 µm (754 µm²) and has no MIM today. The two caps would fit over it on met3 /
+**Area.** The best variant that passes on both benches, stage 1 at 2 GHz, needs 80 fF per side, about 40 µm² of MIM
+each at 2 fF/µm² (about 6.3 µm square), 80 µm² in all. Stage 1 at 1.5 GHz (passing on the schematic only) needs 106 fF
+per side, 53 µm² each. `amp_dp` is 36.4 × 20.7 µm (754 µm²) and has no MIM today. The two caps would fit over it on met3 /
 met4 only if its upper routing leaves room; otherwise they go beside it, which the U layout doesn't have spare. Cl on
-the last two stages at 5 GHz is 8 fF per side (4 µm²) and fits anywhere. Neither is worth doing for ×1.07–1.09.
+the last two stages at 5 GHz is 8 fF per side (4 µm²) and fits anywhere. None of them is worth doing for ×1.05–1.09.
 
 ## (C) Bond-wire and package coupling
 
@@ -347,8 +365,8 @@ What this says about each option, in the order I'd do them if any:
    10 dB below the strap, would add roughly another 9 dB. It is the cheapest insurance against what isn't modelled: the board, the antenna and its cable,
    and the real package. It also works after tape-out, which a layout change doesn't.
 2. **RC loads (action 5): don't.** They cost in-band gain at the same rate as simply lowering the gain, add MIM area,
-   and on the extracted chain the loop's 0° crossing is in the band. Within the 0.5 / 1 dB limit the best (Cl on stage
-   1, 1.5 GHz) buys ×1.07.
+   and on the extracted chain the loop's 0° crossing is in the band. Within the 0.5 / 1 dB limit the best that passes extracted (Cl on
+   stage 1, 2 GHz, 80 fF per side) buys ×1.05–1.06, and meets the limit by only 0.01 dB.
 3. **Action 9, local decap: no stability case from these sims.** The bond-wire / supply path is passive-dominated and
    never reaches the jω axis. The chain's two-port K minimum sits at the 752 MHz supply resonance but is ≥ 10 there.
    It may still be worth doing for the supply-noise reasons in [power.md](power.md), but not for oscillation.
@@ -374,6 +392,7 @@ python3 sim/chain/stability_ac.py --chain pex            # extracted: ~10 min
 python3 sim/chain/kfactor.py --chain pex
 python3 sim/chain/kick_edge.py --chain pex --around build/stab_ac/ac_pex.json   # ~1.5 h on 24 CPUs
 python3 sim/chain/rcload.py rolloff; python3 sim/chain/rcload.py sweep           # (B)
+python3 sim/chain/rcload.py sweep --chain pex --subset --jobs 12                   # (B) extracted check, 2 min
 python3 sim/chain/stability_bond.py ac|check|kick|combined|current               # (C)
 python3 sim/chain/stab_tables.py a b c                   # the tables in this doc, from build/stab_ac/*.json
 ```

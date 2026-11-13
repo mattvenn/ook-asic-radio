@@ -7,6 +7,8 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
+**Chain stability, small-signal (2026-11-13, branch `chain-stability-ac`): `docs/stability_ac_2026-11.md`.** 10.7 dB (schematic) / 13.7 dB (extracted) gain margin at the 0.1 fF coupling budget, worst corner; K ≥ 10.5; bond-wire coupling doesn't oscillate at any k; RC loads not worth it (≤ ×1.09); actions 8–10 not needed for stability.
+
 **Design review with Harald Pretl (2026-11-13): `docs/review_harald_2026-11-13.md`.** His main point: chain oscillation is the most likely failure, and the U fold is the worst case for it. Small corrections done (input impedance in how_it_works, bring-up rescue networks). Open, in parallel: AC stability margin, RC loads and bond-wire coupling (branch `chain-stability-ac`, `docs/handoff_chain_stability_ac.md`); eqy equivalence check of the macro (branch `digital-eqy`, `docs/handoff_eqy.md`). Later: straight chain layout, local decap, lower-gain option (actions 8–11); long runners only after any LNA change.
 
 **LNA low-gain strap: verified on sim-0 2026-11-04 / 05, `docs/verify_lna_lo.md`. All 9 items pass; items 2 (overload), 4 and 5 after follow-ups on 2026-11-06. Not merged to `main` yet.**
