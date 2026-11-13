@@ -1,0 +1,16 @@
+# eqy gate: the shipped netlist with the PDK's functional cell models. Paths relative to build/eqy.
+read_verilog in/udp.v
+read_verilog -DFUNCTIONAL -DUNIT_DELAY= in/sky130_fd_sc_hd.v
+blackbox sky130_fd_sc_hd__dlclkp_1
+read_verilog gate.v
+hierarchy -top radio_digital
+# fill, tap, decap and diode cells have no logic
+delete t:sky130_fd_sc_hd__fill_* t:sky130_fd_sc_hd__tapvpwrvgnd_* t:sky130_fd_sc_hd__decap_* t:sky130_ef_sc_hd__decap_* t:sky130_fd_sc_hd__diode_*
+# flatten, then hide the names it made for the cells' pins and internal wires (they carry
+# hdlname): only the netlist's own net names are left for eqy to match against the RTL
+flatten
+rename -hide w:* a:hdlname %i
+# drop the leftover (black-box) library modules, then the clock gate's box again
+delete =sky130_*
+read_verilog -lib in/icg_bb.v
+prep -top radio_digital

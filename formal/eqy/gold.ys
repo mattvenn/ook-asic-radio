@@ -1,0 +1,14 @@
+# eqy gold: the RTL, read as LibreLane synthesis reads it. Paths relative to build/eqy.
+# The same files and defines as LibreLane synthesis: no SIM, so rd_cg instantiates the
+# real sky130_fd_sc_hd__dlclkp_1 (black-boxed on both sides: icg_bb.v).
+read_verilog -sv rtl/rd_cg.v rtl/rd_gold.v rtl/rd_corr.v rtl/rd_rx.v rtl/rd_tx.v rtl/radio_digital.v
+read_verilog -lib in/icg_bb.v
+hierarchy -top radio_digital
+flatten
+prep -top radio_digital
+# proc turns a case table (the LED segment decode) into a ROM: map it back to logic
+memory_map
+opt_clean
+# the netlist names each bit of an internal bus as its own net (\burst[1]): split the RTL's
+# internal vectors the same way so the names match (ports stay vectors on both sides)
+splitnets -format []
