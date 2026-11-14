@@ -115,7 +115,7 @@ class Block:
             sh.insert(r)
 
     def flare(self, cuts=('via1', 'via2', 'via3'), maxrow=3, keep=(), only=None, small=False, small_nets=None,
-              skip_nets=None, target=None, netof=None, verbose=False):
+              skip_nets=None, target=None, netof=None, outline=None, verbose=False):
         """Via arrays at every junction (Harald Pretl's review point 11, docs/layout.md "Checklist").
         Every single cut and every 1 x n row (n <= maxrow) drawn in this cell becomes an array: >= 2 x 2
         where one fits, else 1 x 2. The array grows from the existing cut(s) on their pitch; both metals
@@ -133,6 +133,8 @@ class Block:
         target: a child Block placed in this cell (e.g. a half placed twice, mirrored): flare the child's
         own cuts instead, checked in every placement against this whole cell, drawn into the child (so
         the placements stay identical / symmetric). keep / only are in this cell's coordinates.
+        outline: a pya.DBox to keep the pads inside instead of the cell's bounding box (inset by
+        the layer's spacing / 2 all the same), e.g. the die minus a margin at the tile level.
         netof: callable(cut, box) -> net name (box in this cell's dbu coordinates), instead of the
         labels (e.g. the top-level router's own net tags).
         Adds shapes only; nothing drawn before is moved or removed.
@@ -155,7 +157,7 @@ class Block:
         def tr(reg, T):
             return reg.transformed(T)
 
-        outline = top.bbox()
+        outline = outline.to_itype(dbu) if outline is not None else top.bbox()
         cap = rec((89, 44)) + rec((97, 44))
         metal = {m: (rec(L[m]) + rec(PIN[m])).merged() for m in SP}
         kbox = pya.Region([b.to_itype(dbu) for b in keep])
