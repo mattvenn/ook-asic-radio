@@ -35,7 +35,7 @@ change that. Demos should be cabled with attenuators, or done in a shielded room
 | 4 | **RC loads, not R.** Today the roll-off above the band comes from the next stage's input C, which isn't controlled. A defined low-pass in each load kills the gain before the frequency where it could oscillate | Not done. → action 5. |
 | 5 | **The U-fold is the worst case.** Lay the chain out straight, even if the block becomes long: flip it, run it along the left edge, make each stage tall and thin (the input caps are easy to squash) | Not done. The chain is the U (145.4 × 70.5 µm) with a 14 µm guard-ring moat. → action 8. |
 | 6 | **Decoupling is too far from the RF blocks.** Fill the empty space inside each high-frequency block with local decap | Open: [power.md](power.md) proposal 5, "decap at the load"; \|Z\| at the blocks is flat ≈ R to 500 MHz. → action 9. |
-| 7 | Coupling sims only include what you put in them: bond wires, package and board aren't in a block extraction | Known. The stability bench has 2–5 nH supply / ground L and the real decap, but no bond-wire mutual coupling. → action 6. Also corrected from the review: the out → in coupling budget is **0.1 fF**, not 1 fF. At ss 10 °C 0.5 fF oscillates, at tt 1 fF rings. The extracted chain has 0 aF (wires) and far below 0.1 fF through the substrate ([substrate_2026-10-29.md](substrate_2026-10-29.md)). |
+| 7 | Coupling sims only include what you put in them: bond wires, package and board aren't in a block extraction | Known. The stability bench has 2–5 nH supply / ground L and the real decap, but no bond-wire mutual coupling. → action 6. Also corrected from the review: the out → in coupling budget is **0.1 fF**, not 1 fF. The kick-test edge is 0.5–0.75 fF at ss 10 °C and 0.75–1 fF at tt (full gain, extracted), so the budget has ~5× headroom. The extracted chain has 0 aF (wires) and far below 0.1 fF through the substrate ([substrate_2026-10-29.md](substrate_2026-10-29.md)). |
 | 8 | **Add a small-signal stability analysis** (a K-factor or loop-gain method). It's quantitative and wideband; the kick covers the large-signal side. People do both | Not done. `sim/chain/stability.sh` is a kick plus AC gain / peaking. → action 4. |
 | 9 | The stability results he saw predate the low-gain strap | Already in [verification.md](verification.md) (strap on: stable up to 1 fF at every corner; [verify_lna_lo.md](verify_lna_lo.md) item 3), but at the end of a long table cell. The row now leads with the current result. |
 | 10 | Comparator: a more differential version is possible (two mirror loads, the second mirrored to the output, push-pull). Not critical: the envelope is slow | No action. His sketch wasn't captured. |
@@ -46,7 +46,7 @@ change that. Demos should be cabled with attenuators, or done in a shielded room
 | 15 | **Regulations:** no legal transmission without certification. Cable + attenuators (say 45–50 dB ≈ "50 m"), or a shielded room / EM chamber | README has the regulations notice; the bring-up plan already does the cabled link (L1) before the air link. → action 15. |
 | 16 | Bring-up plan is good; **check for oscillation first** | R0 is the oscillation check. |
 | 17 | **Rescue path:** the input is the only off-chip node, so an external network on it (shunt / series R, L, C, or a cable into a quiet source) may stop an oscillation. Put SMD footprints on the board | Added to [bringup.md](bringup.md) ("If the chain oscillates") and its equipment list. → action 14. |
-| 18 | Dropping to ~60 dB of gain takes most of the risk out. He'd expect problems from 80 dB up | The strap gives ~70 dB. No 60 dB option yet. → action 10. |
+| 18 | Dropping to ~60 dB of gain takes most of the risk out. He'd expect problems from 80 dB up | The strap gives ~61–71 dB over corners (~65 dB at tt). No 60 dB option yet. → action 10. |
 
 ## Actions
 
@@ -82,7 +82,7 @@ change that. Demos should be cabled with attenuators, or done in a shielded room
 
 **Hardware**
 
-14. An adapter board on the TT breakout: SMD footprints for shunt and series parts on `ua[0]` / `ua[1]`, and an
+14. An adapter board on the TT breakout: SMD footprints for shunt and series parts on the RX pins (`ua[3]` / `ua[2]` since the tall-chain tile), and an
     SMA or balun footprint for cabled tests.
 15. Book the university EM chamber for the air-link tests. Keep public demos and videos cabled, or state they were
     done in a shielded environment.
@@ -96,3 +96,19 @@ change that. Demos should be cabled with attenuators, or done in a shielded room
   flipped, input on the left): branch `chain-tall-stages`, [handoff_tall_stages.md](handoff_tall_stages.md).
 - 9–11: later, once 4–6 have reported.
 - 12 and up: only after any LNA changes are made.
+
+## Where it stands (2026-11-14)
+
+| Action | State |
+|---|---|
+| 1–3 | Done (on `main`). |
+| 4 AC margin | Done, branch `chain-stability-ac` ([stability_ac_2026-11.md](stability_ac_2026-11.md)): AC and kick agree; worst margin at the 0.1 fF budget 10.7 dB schematic / 13.7 dB extracted; the strap adds 7.4–11.5 dB; Rollett K ≥ 10.5. The extracted loop's 0° crossing is at 466–543 MHz, inside the band. |
+| 5 RC loads | Simulated, **not worth it**: within 0.5 dB loss at 448 MHz the best (C on stage 1, 2 GHz pole) buys ×1.05. Harald asked about it again after the review (C at the outputs to kill gain above 433 MHz); answered with these numbers. |
+| 6 Bond wires | Done, branch `chain-stability-ac`: no oscillation at any k; k ≤ 0.3 lowers the tolerable on-chip coupling by ≤ 8.6 %. |
+| 7 eqy | Done (on `main`): 108/108 partitions, 4/4 planted bugs caught, GitHub action on every push. |
+| 8 Straight chain | Done, branch `chain-tall-stages` ([tall_stages_2026-11.md](tall_stages_2026-11.md)): `lna_chain_t` 124.0 × 63.5 µm, +0.37 dB extracted, same stability edge, output ~120 µm from the input. Tile rebuilt around it ("RX in the corner": RX `ua[3]` / `ua[2]`, dbg `ua[1]`, TX `ua[4]` / `ua[5]`), DRC 0, precheck pass, LVS match. Open: tile PEX, system runs, substrate solve. |
+| 9 Local decap | Done (Matt). |
+| 10 60 dB option | Not doing it (Matt): the strap is the fallback. |
+| 11 Resistive-feedback input | Shelved. |
+| 12, 13 Long runners, 14 Adapter board, 15 EM chamber | On the to-do list ([TODO.md](../TODO.md)). 12 and 13 are due now that the LNA has changed, once the tile PEX is in. |
+
