@@ -83,6 +83,19 @@ for ln in lines:
     if ln.lower().startswith('.subckt radio_analog_lay'):
         ports = ln.split()[2:]
 assert ports, 'no radio_analog_lay subckt'
+# rc: extresist can leave a supply port on a name nothing in the body uses (the tile's ground port
+# came out as decap_vdpwr_p3_0.VGND while the mesh lands on node VGND): point it at the real node
+body = set()
+for ln in lines:
+    if ln and ln[0] not in '.*':
+        body.update(ln.split()[1:])
+for i, p in enumerate(ports):
+    for net in ('VGND', 'VDPWR', 'VAPWR'):
+        if p not in body and (p == net or p.endswith('.' + net)) and net in body:
+            ports[i] = net
+            lines = [re.sub(r'^(\.subckt radio_analog_lay .*?) ' + re.escape(p) + r'( |\$)', r'\1 ' + net + r'\2', ln, flags=re.I) for ln in lines]
+dead = [p for p in ports if p not in body and re.search(r'V(GND|DPWR|APWR)', p)]
+assert not dead, ('supply port with nothing on it', dead)
 sch = ['rx_en', 'tx_en', 'tx_en_n', 'dbg_en', 'lna_lo_n', 'sc_phi1', 'sc_phi2'] + [f'trim[{i}]' for i in range(7, -1, -1)] + \
       ['comp_out', 'tx_p', 'tx_n', 'rx_p', 'rx_n', 'dbg', 'VDPWR', 'VAPWR', 'VGND']
 tile = {'tx_p': 'ua[4]', 'tx_n': 'ua[5]', 'rx_p': 'ua[3]', 'rx_n': 'ua[2]', 'dbg': 'ua[1]'}
@@ -91,7 +104,7 @@ for p in ports:
     s = {v: k for k, v in tile.items()}.get(p, p)
     if s in sch:
         conn.append(s)
-    elif p in ('VSUBS', 'VSUB') or p.startswith('VGND'):
+    elif p in ('VSUBS', 'VSUB') or p.startswith('VGND') or p.endswith('.VGND'):   # (magic may name the ground port after a subcell pin)
         conn.append('VGND')
     elif p.startswith('VDPWR'):
         conn.append('VDPWR')
@@ -100,6 +113,7 @@ for p in ports:
     else:
         conn.append(f'nc_{re.sub(r"[^A-Za-z0-9_]", "_", p)}')     # TT bus stubs etc.
 missing = [s for s in sch if s not in conn]
+assert 'VGND' in conn and 'VDPWR' in conn and 'VAPWR' in conn, ('a supply port was not mapped', ports)
 with open('$REPO/layout/pex/radio_analog_$MODE.spice', 'w') as f:
     f.write('* radio_analog from the extracted tile (layout/pex_tile.sh $MODE)\n')
     f.write('\n'.join(lines) + '\n\n')
