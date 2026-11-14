@@ -389,7 +389,22 @@ The floorplan page's variant **RX in the corner** is now the tile (`layout/floor
   - LVS "Circuits match uniquely", no property errors;
   - antenna: the macro's own 7 violations, as before;
   - `tools/check_pinout.py` OK.
+- **Extracted tile** (`layout/pex_tile.sh`, magic 8.3.642, then `python3 sim/top/tb_tile.py sch c rc`):
+
+  | | RX current | det idle | det at −60 dBm | all off | TX |
+  |---|---|---|---|---|---|
+  | schematic | 2.975 mA | 1.521 V | 1.210 V | 0.908 µA | 485.5 MHz, +4.14 dBm |
+  | C | 2.987 mA | 1.491 V | 1.227 V | 0.910 µA | 537.7 MHz, +3.41 dBm |
+  | RC | 2.985 mA | 1.491 V | 1.226 V | 0.910 µA | 519.7 MHz (×0.866 → ~450 on silicon), +3.18 dBm |
+  | old tile, RC | 2.985 mA | 1.491 V | 1.206-1.214 V | 0.910 µA | 519 MHz, +3.13 dBm |
+
+  - **No sign of oscillation:** det idles at 1.491 V, the same as the old tile, and every operating point solved directly (no "transient op").
+  - **Gain:** det drops 265 mV at −60 dBm, against 277-285 mV on the old tile. At ~13 mV/dB that is 1-1.5 dB less effective chain gain in the tile.
+  - **TX:** the same as before - 519.7 MHz, +3.18 dBm.
+  - **Two traps on the way:**
+    - My first runs extracted with the image's magic 8.3.684, which drops node-to-substrate C. That read ~3 dB *more* gain and a 10 % faster ring (573 MHz). Extract with `OSIC_MAGIC=~/.local/magic642/bin`, as `docs/verification.md` says.
+    - In the RC extraction magic named the tile's ground port `decap_vdpwr_p3_0.VGND`, while the resistor mesh lands on node `VGND`. The ground floated and the RX read dead (0.12 µA, det at 1.8 V). The wrapper now re-points such a port and stops if any supply port has nothing on it.
 - **Not done yet:**
-  - the tile extraction (`layout/pex_tile.sh`) and the system runs on it;
+  - why the tile loses 1-1.5 dB against the old one (the block extractions of `rx_t` are the place to start);
   - the substrate solve;
   - `docs/explainer.html` is not regenerated from `docs/explainer/text.md`.
