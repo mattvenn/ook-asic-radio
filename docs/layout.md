@@ -381,6 +381,62 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
   - magic numbers flattened instances in its own order: map instances to stages from the extraction (the net on each pair's gates) before reading coupling by stage.
   - Full-height met4 tap columns cost about 18 fF per output (0.8 dB per 4 kΩ stage). Two of them 0.3 µm apart couple 6.9 fF output to output; a VDD column between them removes that.
 
+## Via arrays (2026-11, branch `via-arrays`)
+Harald Pretl's review point 11: every metal-to-metal junction should be a cut array (≥ 2 × 2 where it fits), never
+one cut. Handoff: `docs/handoff_via_arrays.md`.
+
+**Audit:** `python3 tools/via_audit.py [--md] [--list] [block ...]` (KLayout, read-only, ~5 s for everything). Per
+GDS and cut layer it groups cuts closer than 0.25 µm into clusters and counts the clusters, the single cuts and the
+1 × n rows (and of those, the rows of n ≤ 3). `mcon-dev` is the pcells' own contacts (the li under the mcon also
+carries a licon: source / drain strips, gate pads, taps, std-cell internals); `mcon` is li wiring to met1.
+`tile` is the exported tile without the digital macro, `tile-top` only the top cell's own shapes (the router).
+`--list` prints every single cut and short row with its position.
+
+**Baseline (before any change, 2026-11-14, on `chain-tall-stages` 9710fc9):** cells are
+clusters / single cuts / 1 × n rows (rows of n ≤ 3).
+
+| block | mcon-dev cl / 1 / 1×n (≤3) | mcon cl / 1 / 1×n (≤3) | via1 cl / 1 / 1×n (≤3) | via2 cl / 1 / 1×n (≤3) | via3 cl / 1 / 1×n (≤3) |
+|---|---|---|---|---|---|
+| tx_drv | 138 / 61 / 77 (8) | - | 49 / 12 / 31 (4) | 21 / 6 / 3 (3) | - |
+| tx_ls | 54 / 15 / 39 (0) | - | 20 / 11 / 6 (6) | 14 / 11 / 0 (0) | - |
+| tx_ls_en | 42 / 19 / 23 (2) | - | 19 / 15 / 1 (1) | 13 / 10 / 0 (0) | - |
+| tx_ring | 164 / 164 / 0 (0) | - | 8 / 4 / 1 (1) | 5 / 2 / 1 (0) | - |
+| bias_gen | 357 / 12 / 341 (144) | - | 89 / 76 / 6 (4) | 49 / 43 / 0 (0) | 8 / 3 / 0 (0) |
+| comp_ct | 240 / 2 / 238 (22) | - | 59 / 49 / 8 (8) | 54 / 50 / 1 (1) | 19 / 13 / 3 (3) |
+| avg_sc | 32 / 16 / 16 (8) | - | 24 / 20 / 0 (0) | 17 / 13 / 0 (0) | 11 / 4 / 4 (4) |
+| lpf_rc | 36 / 0 / 36 (0) | - | 3 / 2 / 0 (0) | 2 / 0 / 1 (0) | 3 / 0 / 0 (0) |
+| ctrim_1p | - | - | - | - | 3 / 0 / 0 (0) |
+| r2r | 57 / 0 / 2 (0) | - | 2 / 0 / 0 (0) | - | - |
+| dbg_tg | 20 / 6 / 14 (2) | - | 12 / 10 / 0 (0) | 7 / 5 / 0 (0) | - |
+| decap_vapwr_p1 | 29 / 0 / 29 (0) | - | - | - | - |
+| decap_vapwr_p2 | 22 / 0 / 22 (0) | - | 2 / 0 / 0 (0) | 2 / 0 / 0 (0) | 5 / 0 / 0 (0) |
+| decap_vapwr_p3 | 22 / 0 / 22 (0) | - | 2 / 0 / 0 (0) | 2 / 0 / 0 (0) | 3 / 0 / 0 (0) |
+| decap_vapwr_p4 | 63 / 0 / 63 (0) | - | 2 / 0 / 0 (0) | 2 / 0 / 0 (0) | 7 / 0 / 0 (0) |
+| decap_vapwr_p5 | 140 / 0 / 140 (0) | - | 2 / 0 / 0 (0) | 2 / 0 / 0 (0) | 13 / 0 / 0 (0) |
+| decap_vapwr_p6 | 106 / 0 / 106 (0) | - | 2 / 0 / 0 (0) | 2 / 0 / 0 (0) | 9 / 0 / 0 (0) |
+| decap_vapwr_p7 | - | - | - | - | 12 / 0 / 0 (0) |
+| decap_vdpwr_p1 | 8 / 0 / 8 (0) | - | - | - | - |
+| decap_vdpwr_p2 | 6 / 0 / 6 (0) | - | - | - | - |
+| decap_vdpwr_p3 | 17 / 0 / 17 (0) | - | - | - | - |
+| decap_vdpwr_p4 | 103 / 0 / 103 (0) | - | 2 / 0 / 0 (0) | 2 / 0 / 0 (0) | 13 / 0 / 0 (0) |
+| det_cell | 34 / 2 / 32 (4) | - | 9 / 8 / 0 (0) | 5 / 4 / 0 (0) | 4 / 0 / 2 (2) |
+| log_det_t | 220 / 13 / 200 (26) | - | 53 / 50 / 1 (1) | 26 / 25 / 0 (0) | 24 / 0 / 12 (12) |
+| cdet_t | - | - | - | - | 1 / 0 / 0 (0) |
+| amp_dp_t | 166 / 72 / 90 (0) | - | 78 / 60 / 10 (10) | 18 / 4 / 12 (10) | 16 / 4 / 12 (12) |
+| amp_dpc_t | 56 / 20 / 32 (0) | - | 30 / 18 / 8 (4) | 12 / 4 / 6 (0) | 10 / 2 / 6 (6) |
+| amp_dpc_ts | 80 / 26 / 46 (0) | - | 44 / 32 / 8 (4) | 17 / 9 / 6 (0) | 15 / 7 / 6 (6) |
+| chain_in_t | 13 / 2 / 11 (0) | - | 6 / 4 / 2 (2) | 5 / 5 / 0 (0) | 6 / 4 / 0 (0) |
+| lna_chain_t | 483 / 180 / 275 (0) | - | 248 / 168 / 52 (32) | 84 / 34 / 42 (10) | 77 / 23 / 42 (42) |
+| rx_t | 703 / 193 / 475 (26) | - | 301 / 218 / 53 (33) | 110 / 59 / 42 (10) | 137 / 47 / 66 (66) |
+| tile | 2539 / 568 / 1877 (222) | - | 718 / 453 / 138 (62) | 554 / 385 / 51 (17) | 548 / 253 / 73 (73) |
+| tile-top | - | - | 52 / 9 / 0 (0) | 202 / 156 / 0 (0) | 277 / 184 / 0 (0) |
+
+- About 1,100 single cuts in the tile outside the pcells (via1 453, via2 385, via3 253). Half the via2 / via3 ones
+  are the router's (`tile-top`: one centred cut wherever a 0.3 µm signal wire changes layer).
+- The decaps and lpf_rc / ctrim_1p / r2r already have arrays everywhere.
+- `mcon-dev` singles are gate pads (one licon + one mcon in the pcell) and std-cell internals (tx_ring): not
+  junctions between two metals, so not in this job's scope.
+
 ## Pin moves for the floorplan (layout 5, 2026-10-09)
 Every block re-laid out to `layout/floorplan/pins.md` (circuits unchanged; each DRC / antenna / LVS clean and its `tb_<block> --pex` unchanged or better). Where the pins went, and how:
 
