@@ -18,7 +18,8 @@
 # VSS is one net: the detector's rail and the shields join the chain's ground through the p-substrate
 # (both blocks' p-tap rings), as magic extracts it. Pins: the chain's inp / inn / vcm / ibias / lna_lo_n (south),
 # VDD (south, on the bottom rail), VSS (east end of the centre line); the detector's det /
-# ibias_det (its west edge), VDDD (its north edge), VSS (its rail, the shields).
+# ibias_det (its west edge), VDDD (its north edge), VSS (its rail, the shields). The taps
+# (o1p .. o5n, outp / outn) are pins on their tracks too, for simulation.
 # Run (after lna_chain_tall.py and log_det_tall.py): tools/osic klayout -b -r layout/gen/rx_tall.py
 import os
 import re
@@ -109,7 +110,9 @@ def make():
         c, st, yy = r['tap'], r['stub'], r['y']
         trk = box(min(c.left, r['rx']), yy, max(c.right, r['rx'] + RISER_W), yy + SIG_W)
         b.rect('m3', trk)
-        b.label('m3', trk, r['net'])
+        # a pin on the track at the chain's column (the taps are ports for simulation and the
+        # extraction; nothing at the top level connects to them)
+        b.pin('m3', box(c.left, yy, c.right, yy + SIG_W), r['net'])
         # chain side: the tap column on up to the track, via3
         b.rect('m4', box(c.left, Hc, c.right, yy + SIG_W))
         b.via('via3', box(c.left, yy, c.right, yy + SIG_W), enc=(0.065, 0.065))
@@ -153,7 +156,7 @@ def write_ref():
     taps = ' '.join(f'o{i}{s}' for i in range(1, 6) for s in 'pn')
     det_t = ' '.join(f'o{i}p o{i}n' for i in range(1, 6)) + ' outp outn'
     out = ['* rx_t: lna_chain_t + log_det_t with the taps wired (layout/gen/rx_tall.py)',
-           '.subckt rx_t inp inn ibias vcm lna_lo_n ibias_det det VDD VSS VDDD',
+           f'.subckt rx_t inp inn ibias vcm lna_lo_n outp outn {taps} ibias_det det VDD VSS VDDD',
            f'Xc inp inn ibias vcm lna_lo_n outp outn {taps} VDD VSS lna_chain_t',
            f'Xd {det_t} ibias_det det VDDD VSS log_det_t',
            '.ends']

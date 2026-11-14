@@ -1,5 +1,5 @@
 * rx_t: lna_chain_t + log_det_t with the taps wired (layout/gen/rx_tall.py)
-.subckt rx_t inp inn ibias vcm lna_lo_n ibias_det det VDD VSS VDDD
+.subckt rx_t inp inn ibias vcm lna_lo_n outp outn o1p o1n o2p o2n o3p o3n o4p o4n o5p o5n ibias_det det VDD VSS VDDD
 Xc inp inn ibias vcm lna_lo_n outp outn o1p o1n o2p o2n o3p o3n o4p o4n o5p o5n VDD VSS lna_chain_t
 Xd o1p o1n o2p o2n o3p o3n o4p o4n o5p o5n outp outn ibias_det det VDDD VSS log_det_t
 .ends
