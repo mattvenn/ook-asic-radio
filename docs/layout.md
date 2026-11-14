@@ -55,6 +55,14 @@ From the IIC-JKU guides and our own lessons:
 
 **Wiring**
 - [ ] **Measure the currents** in the block testbench, then size widths and **cut counts** (≥ 2× the tech-LEF limits; table below). The generator prints the cut check.
+- [ ] **Via arrays at every junction, not single vias** (Harald Pretl's review point 11; Matt's sketch below). Where a
+  wire meets a wider rail, strap or bar on another layer, widen both locally: a tab on the rail and a flare on the wire
+  just before the junction, so the overlap fits a cut array (≥ 2 × 2 where it fits, never one cut). The wire goes
+  back to its normal width once clear of the junction. Lower R, EM headroom, and one bad cut doesn't open the net.
+  On RF / sensitive nets (chain signals, taps, det, Cin, comparator inputs) the flare adds C: keep it as small as the
+  array needs and check it in the block's PEX.
+
+  ![single via vs flared junction with a via array](images/via_flare_sketch.jpg)
 - [ ] **Label internal nets** (`Block.label`), so LVS and PEX name them (`y4`, not `a_4018_655#`).
 - [ ] **No met5** (TT PDN). Power pins: met4, ≥ 1.2 µm, full height.
 - [ ] **Good neighbour on density:** TT adds fill after submission, but the PDK rule is ≥ 40 % clear area per layer (li, met1–met3), so stay **well under 60 % metal** in any region.

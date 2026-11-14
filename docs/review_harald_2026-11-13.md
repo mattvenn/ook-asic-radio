@@ -112,4 +112,5 @@ change that. Demos should be cabled with attenuators, or done in a shielded room
 | 11 Resistive-feedback input | Shelved. |
 | 12, 13 Long runners, 14 Adapter board, 15 EM chamber | On the to-do list ([TODO.md](../TODO.md)). 12 and 13 are due now that the LNA has changed, once the tile PEX is in. |
 | Point 10 Comparator (more differential, push-pull) | Shelved (Matt, 2026-11-14). |
+| Point 11 Multiple vias | Rule in `docs/layout.md` "Checklist" (flared junction with a via array, Matt's sketch); sweep of every block and the tile handed off: branch `via-arrays`, [handoff_via_arrays.md](handoff_via_arrays.md). |
 
