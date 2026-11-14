@@ -10,7 +10,7 @@ Order matters: each stage only uses parts the earlier stages have already checke
 - Keysight HD304MSO scope (`bench/scope.py`), 1 MΩ probes.
 - RTL-SDR (any SDR covering 300–600 MHz), with `rtl_power` / `rtl_sdr`.
 - SMA DC blocks, 50 Ω attenuators (a 10 dB step set adding up to ≥ 100 dB), SMA cables, a balun if available.
-- An adapter board on the TT breakout for the RX inputs: SMD footprints (0402 / 0603) for a shunt part across `ua[0]` / `ua[1]`, a shunt part from each to ground, and a series part in each; an SMA (single-ended) and a balun footprint. Unpopulated by default (0 Ω links in series). It is the rescue path if the chain oscillates (below) and the way into the cabled tests.
+- An adapter board on the TT breakout for the RX inputs: SMD footprints (0402 / 0603) for a shunt part across `ua[3]` / `ua[2]`, a shunt part from each to ground, and a series part in each; an SMA (single-ended) and a balun footprint. Unpopulated by default (0 Ω links in series). It is the rescue path if the chain oscillates (below) and the way into the cabled tests.
 - Optional, makes the RX tests much better: an RF signal generator with pulse/OOK modulation at 300–600 MHz, and an AWG.
 - 4 × 16.5 cm wires for the dipoles.
 - A 433.92 MHz key fob or garage remote (an uncalibrated test signal).
@@ -19,7 +19,7 @@ Order matters: each stage only uses parts the earlier stages have already checke
 
 The expected values come from the spec list in [how_it_works.md](how_it_works.md#specs), which says for each one whether it comes from the schematic, the extracted layout, a model or a bench measurement. The tests below quote the ones they need.
 
-**Pin limits:** `ua[2]` uses thin-oxide devices, so keep it within 0–1.8 V. Never connect a TX pin (`ua[3]`/`ua[4]`, 3.3 V push-pull) straight into an RF input. Always use a DC block, and attenuate to below the input's limit (RTL-SDR: below about +10 dBm, so use ≥ 20 dB). Never connect a TX pin to an RX pin without ≥ 40 dB in between.
+**Pin limits:** `ua[1]` uses thin-oxide devices, so keep it within 0–1.8 V. Never connect a TX pin (`ua[4]`/`ua[5]`, 3.3 V push-pull) straight into an RF input. Always use a DC block, and attenuate to below the input's limit (RTL-SDR: below about +10 dBm, so use ≥ 20 dB). Never connect a TX pin to an RX pin without ≥ 40 dB in between.
 
 ## Demo-board firmware
 
@@ -62,14 +62,14 @@ One board, TX role unless noted. Use a DC block and ≥ 20 dB of attenuation bet
 
 | # | Test | How | Expected | Result |
 |---|---|---|---|---|
-| T1 | Carrier exists | Raw mode, `uio[2]` = 1 (steady). SDR with a short wire near the board, or cabled from `ua[3]` | a carrier near 448 MHz | |
+| T1 | Carrier exists | Raw mode, `uio[2]` = 1 (steady). SDR with a short wire near the board, or cabled from `ua[4]` | a carrier near 448 MHz | |
 | T2 | Frequency | Scope FFT or SDR peak, cabled | 330–560 MHz (~448 expected). Record the frequency and the spread across the two boards | |
 | T3 | Drift | Steady on for 10 min, frequency every 10 s; breathe on it / warm it with a finger | slow drift of a few MHz is fine; the RX doesn't tune | |
-| T4 | Power, each arm | Scope at 50 Ω on `ua[3]`, then `ua[4]` (DC block + attenuator), `bench/rf.py spectrum_dbm`. Correct for the attenuator | similar on both arms. Into 50 Ω single-ended it reads lower than the differential dipole figure: record it, and compare it with the old ring's −8.5 dBm into 50 Ω (PLAN.md) | |
+| T4 | Power, each arm | Scope at 50 Ω on `ua[4]`, then `ua[5]` (DC block + attenuator), `bench/rf.py spectrum_dbm`. Correct for the attenuator | similar on both arms. Into 50 Ω single-ended it reads lower than the differential dipole figure: record it, and compare it with the old ring's −8.5 dBm into 50 Ω (PLAN.md) | |
 | T5 | Harmonics | Same capture, H2 and H3 | record in dBc (the old ring: H2 −21 dBc) | |
 | T6 | VAPWR current | Steady on vs off | ~13 mA on, ~0 off | |
 | T7 | Keying edges and chirp | Raw mode, `uio[2]` square wave 1 kHz; `bench/keying.py` | on/off in a few ns at the pin (PLAN.md). Record how long the frequency takes to settle after turn-on, compared with one chip (104 µs) | |
-| T8 | Monopole strap | Strapped reset with `uio[3]` = 1, keyed | `ua[3]` carries the carrier, `ua[4]` stays low | |
+| T8 | Monopole strap | Strapped reset with `uio[3]` = 1, keyed | `ua[4]` carries the carrier, `ua[5]` stays low | |
 | T9 | Code-mode burst timing | Code mode, change the code. Scope a 1 MΩ probe near the antenna (or the SDR envelope) and `uio[7]` | 3 bursts of 13.2 ms with 6.7 ms gaps, 59.6 ms in all, inside `uio[7]` high | |
 | T10 | Code-mode chip pattern | Decode the T9 envelope at 104 µs per chip | matches `gold(code)` for 3 codes (e.g. 0, 1, 127) | |
 | T11 | Off is off | Code mode, idle: SDR at max gain near the board | no carrier between sends | |
@@ -82,20 +82,20 @@ One board, RX role (`ui_in[7]` = 0). Do R1–R3 with no antenna fitted.
 
 | # | Test | How | Expected | Result |
 |---|---|---|---|---|
-| R0 | Chain oscillation check | No antenna, then with the antenna. Debug strap (`1010`, `uio[2]` = 1), `ua[2]` on a scope; VDPWR current; an SDR or a near-field probe over the chip, 300–700 MHz | `ua[2]` near its idle level (R3), no tone. **Oscillation looks like:** `ua[2]` pinned well below idle (as if a strong signal were present, ~1.2 V or lower), `uio[3]` stuck, extra supply current, a tone on the probe. If so, reset with `1011` (+ `uio[2]` = 1): the LNA low-gain strap cuts ~10 dB; repeat this test | |
+| R0 | Chain oscillation check | No antenna, then with the antenna. Debug strap (`1010`, `uio[2]` = 1), `ua[1]` on a scope; VDPWR current; an SDR or a near-field probe over the chip, 300–700 MHz | `ua[1]` near its idle level (R3), no tone. **Oscillation looks like:** `ua[1]` pinned well below idle (as if a strong signal were present, ~1.2 V or lower), `uio[3]` stuck, extra supply current, a tone on the probe. If so, reset with `1011` (+ `uio[2]` = 1): the LNA low-gain strap cuts ~10 dB; repeat this test | |
 | R1 | Idle | Scope `uio[3]` (comparator) and `uio[6]` (trim direction) | both toggle, roughly 50 % duty: the servo dithers the threshold around the noise | |
 | R2 | RX current | VDPWR, RX vs TX role idle | ~3 mA difference | |
-| R3 | Detector, idle | Debug strap (`1010`, `uio[2]` = 1). 1 MΩ probe on `ua[2]` | ~1.49 V, quiet | |
-| R4 | Debug off | Normal reset | `ua[2]` floats: it doesn't follow det | |
-| R5 | Baseband injection (no RF) | Debug mode. AWG (50 Ω) on `ua[2]`: it drives det at ×0.65 through the debug switch. Send `gold(code)` as steps of ~20 mV at 104 µs per chip around the idle level. Stay within 0–1.8 V | `uio[3]` follows the pattern, `uio[4]` opens, the LED toggles, the display shows a quality digit. A wrong code doesn't toggle | |
-| R6 | Detector curve | Signal generator, CW at the T2 frequency, into `ua[0]` (single-ended through a DC block, `ua[1]` open, which costs ~6 dB; or through a balun). Sweep −100 → −20 dBm in 5 dB steps, record `ua[2]` | falls ~13 mV/dB, straight over ~70 dB; ~1.21 V at −60 dBm (less the input loss) | |
+| R3 | Detector, idle | Debug strap (`1010`, `uio[2]` = 1). 1 MΩ probe on `ua[1]` | ~1.49 V, quiet | |
+| R4 | Debug off | Normal reset | `ua[1]` floats: it doesn't follow det | |
+| R5 | Baseband injection (no RF) | Debug mode. AWG (50 Ω) on `ua[1]`: it drives det at ×0.65 through the debug switch. Send `gold(code)` as steps of ~20 mV at 104 µs per chip around the idle level. Stay within 0–1.8 V | `uio[3]` follows the pattern, `uio[4]` opens, the LED toggles, the display shows a quality digit. A wrong code doesn't toggle | |
+| R6 | Detector curve | Signal generator, CW at the T2 frequency, into `ua[3]` (single-ended through a DC block, `ua[2]` open, which costs ~6 dB; or through a balun). Sweep −100 → −20 dBm in 5 dB steps, record `ua[1]` | falls ~13 mV/dB, straight over ~70 dB; ~1.21 V at −60 dBm (less the input loss) | |
 | R7 | Frequency response | Fixed level (e.g. −60 dBm), sweep 300–600 MHz | flat-ish over 330–560 MHz, peaking near 433 | |
 | R8 | Comparator vs power | Generator pulse-modulated: a square wave of 2 chips period (4.8 kHz), stepping down from −60 dBm. The RP2350 samples `uio[3]` and scores it against the known square | ~100 % correct at strong signal, ~80 % at the sensitivity limit (−92 dBm at the pins) | |
 | R9 | Code-mode detection | Generator with arbitrary modulation (or another board's raw TX keyed with the pattern, see L1): 3 bursts of `gold(code)` with the T9 timing. Step the level down | LED toggles; the quality digit falls with level; record the lowest level that toggles ≥ 19/20 | |
 | R10 | Wrong code / noise | As R9 with a different code, and with the key fob held near the board | no toggle, ever | |
 | R11 | Overload | −10 dBm keyed | `uio[3]` follows the keying, detection still works; a weak signal is missed for only 0.25–0.3 ms after a strong burst ends | |
 | R12 | False-toggle soak | Antenna fitted, overnight, RP2350 counting `uio[5]` | 0 toggles | |
-| R13 | LNA low-gain strap | Debug strap with `1011` vs `1010`. R3 idle level, and the R6 curve at a few levels | `1011`: idle `ua[2]` slightly higher (less chain noise reaches the detector); the R6 curve shifted ~10–12 dB to higher input (10.1 dB at sf to 11.9 dB at tt, full GDS extraction). Sensitivity (R9 / L1): reliable at about −86 dBm, 50 % at about −89, vs −92 in full gain (mixed signal, docs/verify_lna_lo.md) | |
+| R13 | LNA low-gain strap | Debug strap with `1011` vs `1010`. R3 idle level, and the R6 curve at a few levels | `1011`: idle `ua[1]` slightly higher (less chain noise reaches the detector); the R6 curve shifted ~10–12 dB to higher input (10.1 dB at sf to 11.9 dB at tt, full GDS extraction). Sensitivity (R9 / L1): reliable at about −86 dBm, 50 % at about −89, vs −92 in full gain (mixed signal, docs/verify_lna_lo.md) | |
 
 Without a signal generator: do R1–R5 and R10–R12. Leave sensitivity to L1, which uses a measured TX as the source. The key fob gives a quick check that `det` and `uio[3]` respond at all.
 
@@ -103,13 +103,13 @@ The input loss matters for R6–R9: the board traces, the TT analog mux and the 
 
 ### If the chain oscillates (R0 fails)
 
-The chain's output never leaves the chip, so the RX input (`ua[0]` / `ua[1]`) is the only node outside we can change (Harald Pretl's review, [review_harald_2026-11-13.md](review_harald_2026-11-13.md) point 17). Try in this order, repeating R0 after each, and record what each does to `ua[2]` and the supply current:
+The chain's output never leaves the chip, so the RX input (`ua[3]` / `ua[2]`) is the only node outside we can change (Harald Pretl's review, [review_harald_2026-11-13.md](review_harald_2026-11-13.md) point 17). Try in this order, repeating R0 after each, and record what each does to `ua[1]` and the supply current:
 
 1. **Low-gain strap** (`1011`, ~10 dB less gain). If R0 passes, carry on with the strap and note the sensitivity cost (R13).
-2. **Short the inputs** with a 0 Ω across `ua[0]` / `ua[1]` on the adapter board. If it still oscillates with no input signal possible, the loop is on the chip (substrate, supply) and the input network can't fix it: go to 5.
+2. **Short the inputs** with a 0 Ω across `ua[3]` / `ua[2]` on the adapter board. If it still oscillates with no input signal possible, the loop is on the chip (substrate, supply) and the input network can't fix it: go to 5.
 3. **Load the input:** a shunt resistor across the inputs (try 1 kΩ, then 200 Ω, then 100 Ω), then a capacitor across them (1 pF, 3 pF, 10 pF). A low input impedance lowers the gain around the feedback loop through the pad. Each costs sensitivity; measure it with the cabled link (L1).
 4. **Series parts:** a resistor (50–200 Ω) or an inductor in each input, which change the loop's phase at the oscillation frequency. Note the frequency on the SDR first: aim the network to load that frequency more than 433–470 MHz.
-5. **Cable instead of the antenna:** drive `ua[0]` from a 50 Ω source (generator or attenuator from the TX board) with `ua[1]` to ground through 50 Ω. A defined source impedance may be stable where the wires aren't.
+5. **Cable instead of the antenna:** drive `ua[3]` from a 50 Ω source (generator or attenuator from the TX board) with `ua[2]` to ground through 50 Ω. A defined source impedance may be stable where the wires aren't.
 
 Whatever works, record the network, the oscillation frequency, and the R6 curve with it in place.
 
@@ -119,7 +119,7 @@ Two boards, the same code on both unless noted.
 
 | # | Test | How | Expected | Result |
 |---|---|---|---|---|
-| L1 | Cabled link, calibrated | TX board monopole strap (`ua[3]` only), DC block, step attenuator, RX `ua[0]`. Code mode, 20 sends per setting. Start at 60 dB, add 10 then 2 dB at a time | the toggle rate drops off near TX power (T4) − attenuation ≈ −92 dBm. Record the 95 % point | |
+| L1 | Cabled link, calibrated | TX board monopole strap (`ua[4]` only), DC block, step attenuator, RX `ua[3]`. Code mode, 20 sends per setting. Start at 60 dB, add 10 then 2 dB at a time | the toggle rate drops off near TX power (T4) − attenuation ≈ −92 dBm. Record the 95 % point | |
 | L1a | Leakage check | At the L1 threshold, disconnect the cable | no toggles (otherwise the boards hear each other over the air: separate them or shield one) | |
 | L2 | Air link, 1 m | Dipoles on both boards | LED toggles on every send, high quality digit; RX sees ~−32 dBm | |
 | L3 | Wrong code | TX on a different code | no toggle | |

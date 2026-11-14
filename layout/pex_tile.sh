@@ -85,7 +85,7 @@ for ln in lines:
 assert ports, 'no radio_analog_lay subckt'
 sch = ['rx_en', 'tx_en', 'tx_en_n', 'dbg_en', 'lna_lo_n', 'sc_phi1', 'sc_phi2'] + [f'trim[{i}]' for i in range(7, -1, -1)] + \
       ['comp_out', 'tx_p', 'tx_n', 'rx_p', 'rx_n', 'dbg', 'VDPWR', 'VAPWR', 'VGND']
-tile = {'tx_p': 'ua[3]', 'tx_n': 'ua[4]', 'rx_p': 'ua[0]', 'rx_n': 'ua[1]', 'dbg': 'ua[2]'}
+tile = {'tx_p': 'ua[4]', 'tx_n': 'ua[5]', 'rx_p': 'ua[3]', 'rx_n': 'ua[2]', 'dbg': 'ua[1]'}
 conn = []
 for p in ports:
     s = {v: k for k, v in tile.items()}.get(p, p)

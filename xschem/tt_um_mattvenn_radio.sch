@@ -6,7 +6,7 @@ V {}
 S {}
 E {}
 T {tt_um_mattvenn_radio: radio_analog + radio_digital (hardened macro) on the TT pins
-ua[0]/ua[1] RX dipole, ua[2] debug (det, dbg_en only), ua[3]/ua[4] TX dipole
+ua[3]/ua[2] RX dipole, ua[1] debug (det, dbg_en only), ua[4]/ua[5] TX dipole, ua[0] unused
 enables / clocks wired across; rx_en, trim and comp are labelled} -700 -560 0 0 0.4 0.4 {}
 N -440 -200 -500 -200 {}
 N -440 -160 -500 -160 {}
@@ -87,19 +87,19 @@ sig_type=std_logic
 lab=VGND}
 C {devices/lab_pin.sym} 540 40 0 1 {name=p23
 sig_type=std_logic
-lab=ua[0]}
+lab=ua[3]}
 C {devices/lab_pin.sym} 540 80 0 1 {name=p24
 sig_type=std_logic
-lab=ua[1]}
+lab=ua[2]}
 C {devices/lab_pin.sym} 540 120 0 1 {name=p25
 sig_type=std_logic
-lab=ua[2]}
+lab=ua[1]}
 C {devices/lab_pin.sym} 540 -40 0 1 {name=p26
 sig_type=std_logic
-lab=ua[3]}
+lab=ua[4]}
 C {devices/lab_pin.sym} 540 0 0 1 {name=p27
 sig_type=std_logic
-lab=ua[4]}
+lab=ua[5]}
 C {devices/lab_pin.sym} 260 200 0 0 {name=p28
 sig_type=std_logic
 lab=trim[7:0]}

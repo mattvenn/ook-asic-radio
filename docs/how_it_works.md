@@ -10,8 +10,8 @@ To click through it instead, with simulated waveforms at each block: [interactiv
 
 ![block diagram](images/block_diagram.png)
 
-- **RX (top):** the dipole on ua[0]/ua[1] feeds a 6-stage amplifier chain (`lna_chain`). Each stage's output taps into the log detector (`log_det`), which turns RF power into a DC level. That level is filtered (`lpf_rc`) and compared (`comp_ct`) against its own slow average (`avg_sc`), plus a fine trim from the DAC (`r2r`). The comparator bit goes to the digital macro. `bias_gen` supplies every block's currents.
-- **TX (bottom):** the digital macro keys the ring oscillator (`tx_ring`). The level shifter (`tx_ls`) turns it into two opposite-phase 3.3 V signals, one driver per dipole arm (`tx_drv`, ua[3]/ua[4]).
+- **RX (top):** the dipole on ua[3]/ua[2] feeds a 6-stage amplifier chain (`lna_chain`). Each stage's output taps into the log detector (`log_det`), which turns RF power into a DC level. That level is filtered (`lpf_rc`) and compared (`comp_ct`) against its own slow average (`avg_sc`), plus a fine trim from the DAC (`r2r`). The comparator bit goes to the digital macro. `bias_gen` supplies every block's currents.
+- **TX (bottom):** the digital macro keys the ring oscillator (`tx_ring`). The level shifter (`tx_ls`) turns it into two opposite-phase 3.3 V signals, one driver per dipole arm (`tx_drv`, ua[4]/ua[5]).
 - Dashed lines are enables from the digital. This is the "Block diagram" view of the floorplanning tool ([layout/floorplan](../layout/floorplan)).
 
 ## Theory of operation
@@ -176,7 +176,7 @@ At −92 dBm the signal is buried in noise. Here the real RTL servo drives the r
 
 ### Support
 - [bias_gen](https://xschem-viewer.com/?file=https://github.com/mattvenn/ook-asic-radio/blob/main/xschem/bias_gen.sch): makes the reference currents and the mid-rail voltage for every analog block.
-- [dbg_tg](https://xschem-viewer.com/?file=https://github.com/mattvenn/ook-asic-radio/blob/main/xschem/dbg_tg.sch): a switch that connects the detector output to ua[2] in debug mode only.
+- [dbg_tg](https://xschem-viewer.com/?file=https://github.com/mattvenn/ook-asic-radio/blob/main/xschem/dbg_tg.sch): a switch that connects the detector output to ua[1] in debug mode only.
 - [decap_vapwr](https://xschem-viewer.com/?file=https://github.com/mattvenn/ook-asic-radio/blob/main/xschem/decap_vapwr.sch) / [decap_vdpwr](https://xschem-viewer.com/?file=https://github.com/mattvenn/ook-asic-radio/blob/main/xschem/decap_vdpwr.sch): on-chip supply decoupling. It supplies the TX's 433 MHz current spikes locally, so they don't disturb the receiver.
 
 ### Digital (`radio_digital` macro)
@@ -197,8 +197,8 @@ Per-block previews (TT GDS viewer links) are in [layout/README.md](../layout/REA
 
 ### Floorplan
 The tile is 3×2 TT tiles (493 × 226 µm). The digital macro takes the right side. The analog blocks are placed so the signal flows a short way from pin to pin:
-- The **RX chain** runs along the bottom, starting at the RX pins ua[0]/ua[1]. It is folded into a U so its output stays far from its own input; feedback from the output to the input would make it oscillate.
-- The **TX** sits on the left, above its pins ua[3]/ua[4] and away from the chain's input.
+- The **RX chain** runs straight along the bottom, from its input section over the RX pins ua[3]/ua[2] at the west end to its output at the east end, about 120 µm from its own input; feedback from the output to the input would make it oscillate. The log detector runs along its top edge, with the taps wired between them.
+- The **TX** sits in the bottom-left corner, over its pins ua[4]/ua[5]. It is off whenever the receiver is on, so it can sit next to the chain's input.
 - The signal goes up from the chain: **detector → filter / average → comparator**. The **DAC** and **trim** sit next to the macro's trim outputs.
 - The **decaps** fill the gaps.
 

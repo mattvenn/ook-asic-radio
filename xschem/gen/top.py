@@ -11,7 +11,7 @@ Generate the analog top, the TT top level and a whole-analog testbench.
   radio_digital (symbol): the hardened macro, a black box here (spice_sym_def);
       its netlist comes from the OpenLane run.
   tt_um_mattvenn_radio  : radio_analog + radio_digital on the TT pins.
-      ua[0] / ua[1] RX dipole, ua[2] debug (det), ua[3] / ua[4] TX dipole.
+      ua[3] / ua[2] RX dipole, ua[1] debug (det), ua[4] / ua[5] TX dipole, ua[0] unused.
   tb_radio_analog       : radio_analog with the RX front end (dipole + pad
       models), pad models + dipole on the TX pins, a probe on the debug pin, and
       sources for the digital interface. RX on: bias, operating points,
@@ -135,7 +135,7 @@ def tt_top():
     s.pin_order = ['VGND', 'VDPWR', 'VAPWR', 'ui_in[7:0]', 'uo_out[7:0]', 'uio_in[7:0]',
                    'uio_out[7:0]', 'uio_oe[7:0]', 'ua[7:0]', 'ena', 'clk', 'rst_n']
     s.text(-700, -560, 'tt_um_mattvenn_radio: radio_analog + radio_digital (hardened macro) on the TT pins\n'
-           'ua[0]/ua[1] RX dipole, ua[2] debug (det, dbg_en only), ua[3]/ua[4] TX dipole\n'
+           'ua[3]/ua[2] RX dipole, ua[1] debug (det, dbg_en only), ua[4]/ua[5] TX dipole, ua[0] unused\n'
            'enables / clocks wired across; rx_en, trim and comp are labelled', 0.4)
     ports(s, -700, -400, ['VGND', 'VDPWR', 'VAPWR', 'ua[7:0]', 'ena'])
     dg = s.place('radio_digital.sym', -300, 0, name='xdig')
@@ -152,7 +152,7 @@ def tt_top():
     an = s.place('radio_analog.sym', 400, 60, name='xana')
     s.label(an.pin('VAPWR'), 'VAPWR', right=True)
     s.connect(an, rx_en='rx_en', comp_out='comp', VDPWR='VDPWR', VGND='VGND',
-              rx_p='ua[0]', rx_n='ua[1]', dbg='ua[2]', tx_p='ua[3]', tx_n='ua[4]', **{'trim[7:0]': 'trim[7:0]'})
+              rx_p='ua[3]', rx_n='ua[2]', dbg='ua[1]', tx_p='ua[4]', tx_n='ua[5]', **{'trim[7:0]': 'trim[7:0]'})
     # digital -> analog control wires (straight, or one jog each, staggered so none cross)
     for pin, jx in (('tx_en', None), ('tx_en_n', None), ('dbg_en', 0), ('lna_lo_n', 20), ('sc_phi1', 40),
                     ('sc_phi2', 80)):

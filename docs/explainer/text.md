@@ -109,7 +109,7 @@ A tapered buffer: a NAND (the enable) and five thick-oxide 3.3 V inverters, gett
 
 The last one is big enough to drive the pin and antenna, but far too big for the small [[tx_ls|level shifter]] to switch quickly; stepping up 4× per stage gets the edge through fastest.
 
-One drives ua[3], the other ua[4]. Each driver swings about 2.4 V peak-to-peak on the die, but the pad's inductance and capacitance leave about 0.65 V on each wire at 485 MHz.
+One drives ua[4], the other ua[5]. Each driver swings about 2.4 V peak-to-peak on the die, but the pad's inductance and capacitance leave about 0.65 V on each wire at 485 MHz.
 
 Driving the two arms in antiphase doubles that across the dipole: {dipole_swing} in simulation, and +4.1 to +4.3 dBm into it across the process corners (+3.1 to +3.4 dBm with the extracted layout).
 

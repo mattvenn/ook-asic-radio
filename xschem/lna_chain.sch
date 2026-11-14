@@ -7,9 +7,9 @@ S {}
 E {}
 T {lna_chain: 6 diff-pair stages; stage 1 sized for noise, 2..6 cap-degenerated
 tail current of stage i = mt x ibias (one reference diode); taps o<i>p/n = stage outputs} -1000 -400 0 0 0.4 0.4 {}
-T {C = 2pF (31.2 x 31.2 um)} -625 -32 0 0 0.25 0.25 {}
+T {C = 2pF (15.9 x 61.1 um)} -625 -32 0 0 0.25 0.25 {}
 T {R = 20k (L 19.1 um)} -325 -32 0 0 0.25 0.25 {}
-T {C = 2pF (31.2 x 31.2 um)} -625 68 0 0 0.25 0.25 {}
+T {C = 2pF (15.9 x 61.1 um)} -625 68 0 0 0.25 0.25 {}
 T {R = 20k (L 19.1 um)} -325 68 0 0 0.25 0.25 {}
 T {w 80, rl 1k, mt 20
 mm 0} -60 15 0 0 0.25 0.25 {}
@@ -153,8 +153,8 @@ model=nfet_01v8
 spiceprefix=X}
 C {sky130_fd_pr/cap_mim_m3_1.sym} -650 -70 2 0 {name=Cin_p
 model=cap_mim_m3_1
-W='sqrt((cin)/1/2.06e-15)'
-L='sqrt((cin)/1/2.06e-15)'
+W='sqrt((cin)/2.06e-15/3.84131)'
+L='3.84131*sqrt((cin)/2.06e-15/3.84131)'
 MF=1
 spiceprefix=X}
 C {sky130_fd_pr/res_high_po_0p35.sym} -350 -70 0 0 {name=Rb_p
@@ -170,8 +170,8 @@ sig_type=std_logic
 lab=g1p}
 C {sky130_fd_pr/cap_mim_m3_1.sym} -650 30 0 0 {name=Cin_n
 model=cap_mim_m3_1
-W='sqrt((cin)/1/2.06e-15)'
-L='sqrt((cin)/1/2.06e-15)'
+W='sqrt((cin)/2.06e-15/3.84131)'
+L='3.84131*sqrt((cin)/2.06e-15/3.84131)'
 MF=1
 spiceprefix=X}
 C {sky130_fd_pr/res_high_po_0p35.sym} -350 30 2 0 {name=Rb_n

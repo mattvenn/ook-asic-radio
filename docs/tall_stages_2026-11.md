@@ -354,3 +354,42 @@ where coupling could come from: the output is now about 120 µm from the input, 
   - The row overlaps both TX drivers (y 80.5), which have to move.
   - At the det_cell's 20.8 µm pitch the six detectors spread over the whole chain, while the taps sit in its west half (11.7 µm pitch). t4 lands over stage 2, 3 µm from stage 1's zone, and the page's rule 2 fails on that.
   - A det_cell turned 90° (16.1 µm pitch, about 21 µm tall) would keep t4-t6 over stages 3-6.
+
+## The tile: "RX in the corner" (2026-11-14)
+
+The floorplan page's variant **RX in the corner** is now the tile (`layout/floorplan/floorplan.json`, exported with `node layout/floorplan/page/pinreport.js`).
+
+- **Placement:**
+  - `rx_t` (the chain, plus the one-row detector along its top, with the taps wired between them) sits bottom-centre, unflipped. Its input section is at the west end over the RX pads, and the signal flows east.
+  - The TX cluster sits bottom-left over its pads.
+  - LPF, averager, comparator, Ctrim and r2r run east along the row above it, towards the macro.
+  - `bias_gen` (R90) sits east of the chain's output end, with VAPWR decap between it and the macro.
+- **Pinout:**
+  - RX `ua[3]` / `ua[2]`, debug `ua[1]`, TX `ua[4]` / `ua[5]`; `ua[0]` is unused.
+  - This needs `analog_pins: 6`.
+  - The RX and TX pad wires are 8-10 µm and 4-7 µm long.
+- **Build:**
+  - `layout/gen/top.py` places the floorplan's `xchain` + `xdet` as one block, `rx_t` ('xrx'), and checks that the detector sits where `rx_t` puts it.
+  - `layout/gen/top_nets.py` has the new routing plan:
+    - fixed TX supply feeds: a met3 sheet from the west VAPWR strap, plus met4 buses over the drivers;
+    - `dbg` runs down the gap west of the chain and under it on met2;
+    - comp's output runs east over r2r, then down the x 233-236 gap;
+    - the clocks and enables use ordered tracks in that gap;
+    - the west blocks take their supplies from the west straps;
+    - a met4 antenna jumper sits before `xlse_n`'s input.
+  - `layout/gen/decap.py` has the per-part rules for the new decap parts.
+- **Schematic side:**
+  - `xschem/gen/top.py`: the new pads.
+  - `xschem/gen/chain.py`: Cs and Cin are drawn as the tall cells' rectangles (L / W 21.33 / 6.8 and 61 / 15.88, same capacitance), so the tile LVS compares like with like.
+  - `xschem/gen/decap.py`: the new decap device lists. VAPWR is ~39 pF, VDPWR ~21 pF (was ~43 / ~11).
+- **Checks** (`tools/osic bash layout/check_top.sh`):
+  - 100 / 100 nets routed;
+  - KLayout and magic DRC 0;
+  - precheck PASS;
+  - LVS "Circuits match uniquely", no property errors;
+  - antenna: the macro's own 7 violations, as before;
+  - `tools/check_pinout.py` OK.
+- **Not done yet:**
+  - the tile extraction (`layout/pex_tile.sh`) and the system runs on it;
+  - the substrate solve;
+  - `docs/explainer.html` is not regenerated from `docs/explainer/text.md`.

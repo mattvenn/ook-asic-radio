@@ -4,7 +4,7 @@ PINOUT below is the single source of truth for what each TT pin does. The script
 - info.yaml's pinout labels are exactly the PINOUT labels;
 - in xschem/tt_um_mattvenn_radio.sch every port of xdig (radio_digital) and xana
   (radio_analog) lands on the expected net, so each TT pin reaches the block port PINOUT
-  says, the digital <-> analog nets are the right ones, and ena / ua[5..7] are unconnected;
+  says, the digital <-> analog nets are the right ones, and ena / ua[0] / ua[6..7] are unconnected;
 - the radio_digital symbol's pins are the hardened macro's pins (GL netlist and LEF);
 - each uio_oe bit is wired to the macro's uio_oe bit (the value is checked in test/: it
   must equal UIO_OE_OUT after reset, from the PINOUT directions).
@@ -35,15 +35,15 @@ PINOUT = {
     'uo': [(f'segment {c}', [('xdig', f'uo_out[{i}]')]) for i, c in enumerate('abcdefg')]
     + [('dp: LED toggle (RX) / TX key / raw bit', [('xdig', 'uo_out[7]')])],
     'uio': [('mode strap bit 0 (at reset; 01 = raw)', 'in'), ('mode strap bit 1 (at reset)', 'in'),
-            ('raw TX key in / debug strap at reset (det on ua[2])', 'in'),
+            ('raw TX key in / debug strap at reset (det on ua[1])', 'in'),
             ('raw RX comparator out / monopole strap at reset', 'out'),
             ('burst detected / strap magic bit at reset (1011 = LNA low gain)', 'out'),
             ('toggle event / strap magic 1 at reset', 'out'),
             ('trim direction / strap magic 0 at reset', 'out'),
             ('TX active / strap magic 1 at reset', 'out')],
-    'ua': [('RX dipole +', [('xana', 'rx_p')]), ('RX dipole -', [('xana', 'rx_n')]),
-           ('debug: detector output', [('xana', 'dbg')]), ('TX dipole +', [('xana', 'tx_p')]),
-           ('TX dipole -', [('xana', 'tx_n')]), ('', [])],
+    'ua': [('', []), ('debug: detector output', [('xana', 'dbg')]), ('RX dipole -', [('xana', 'rx_n')]),
+           ('RX dipole +', [('xana', 'rx_p')]), ('TX dipole +', [('xana', 'tx_p')]),
+           ('TX dipole -', [('xana', 'tx_n')])],
 }
 # uio_oe after reset: 1 for each uio PINOUT marks 'out'
 UIO_OE_OUT = sum(1 << i for i, (_, d) in enumerate(PINOUT['uio']) if d == 'out')

@@ -31,7 +31,19 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
-from xsch import Sch, mim, mos, poly_r, write_symbol, value_notes
+from xsch import Sch, mim, mos, poly_r, write_symbol, value_notes, MIM_F_PER_UM2
+
+# The tall-stage layout (layout/gen/amp_dpc_tall.py, lna_chain_tall.py) draws these MIMs as
+# rectangles of the same area (L / W below), so the tile LVS compares like with like.
+ASPECT = {'Cs': 21.33 / 6.8, 'Cin': 61 / 15.88}
+
+
+def mim_rect(sch, x, y, c, aspect, rot=0, name=None):
+    """cap_mim_m3_1 of value c as one W x L rectangle with L / W = aspect (as xsch.mim otherwise)."""
+    w = f"'sqrt(({c})/{MIM_F_PER_UM2:g}/{aspect:.6g})'"
+    l = f"'{aspect:.6g}*sqrt(({c})/{MIM_F_PER_UM2:g}/{aspect:.6g})'"
+    return sch.place('sky130_fd_pr/cap_mim_m3_1.sym', x, y, rot=rot, name=name,
+                     model='cap_mim_m3_1', W=w, L=l, MF='1', spiceprefix='X')
 from frontend import antenna_pad
 
 XDIR = os.path.normpath(os.path.join(HERE, '..'))
@@ -109,8 +121,8 @@ def amp_dpc():
     diff_pair(s, '0p69', after_side=tail)
     # Cs as two MIM halves, anti-parallel: each source sees one bottom plate
     # (Cs_b drawn upside down: top plate c0 at the bottom, on sp)
-    ca = mim(s, 120, -60, 'cs/2', name='Cs_a')
-    cb = mim(s, 280, -60, 'cs/2', rot=2, name='Cs_b')
+    ca = mim_rect(s, 120, -60, 'cs/2', ASPECT['Cs'], name='Cs_a')
+    cb = mim_rect(s, 280, -60, 'cs/2', ASPECT['Cs'], rot=2, name='Cs_b')
     s.bus((0, -30), cb.pin('c0'), [ca.pin('c1')])
     s.bus(ca.pin('c0'), (400, -90), [cb.pin('c1')])
     s.route(tails[0].pin('G'), (-200, 10))
@@ -187,7 +199,7 @@ def lna_chain(n=NSTAGES):
             # in series, Rb from vcm to the gate
             for side, y, src, cy, crot, ry, rrot in (('p', -40, 'inp', -70, 2, -70, 0),
                                                      ('n', 0, 'inn', 30, 0, 30, 2)):
-                c = mim(s, x - 650, cy, 'cin', rot=crot, name=f'Cin_{side}')
+                c = mim_rect(s, x - 650, cy, 'cin', ASPECT['Cin'], rot=crot, name=f'Cin_{side}')
                 rb = poly_r(s, x - 350, ry, 'rb', 'high', '0p35', rot=rrot, name=f'Rb_{side}')
                 s.connect(rb, B='VSS')
                 s.bus(c.pin('c0'), (x - 100, y), [rb.pin('M')])

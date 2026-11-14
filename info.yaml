@@ -11,7 +11,7 @@ project:
   tiles: "3x2"          # Valid values for analog projects: 1x2, 2x2, 3x2
 
   # How many analog pins does your project use?
-  analog_pins: 5        # Valid values: 0 to 6
+  analog_pins: 6        # Valid values: 0 to 6
   uses_vapwr: true       # Set to true if your project uses second analog power supply (VAPWR) in addition to 1.8V (VDPWR)
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
@@ -47,7 +47,7 @@ pinout:
   # Bidirectional pins
   uio[0]: "mode strap bit 0 (at reset; 01 = raw)"
   uio[1]: "mode strap bit 1 (at reset)"
-  uio[2]: "raw TX key in / debug strap at reset (det on ua[2])"
+  uio[2]: "raw TX key in / debug strap at reset (det on ua[1])"
   uio[3]: "raw RX comparator out / monopole strap at reset"
   uio[4]: "burst detected / strap magic bit at reset (1011 = LNA low gain)"
   uio[5]: "toggle event / strap magic 1 at reset"
@@ -55,12 +55,12 @@ pinout:
   uio[7]: "TX active / strap magic 1 at reset"
 
   # Analog pins - make sure to also set "analog_pins" above, else the pins won't be connected
-  ua[0]: "RX dipole +"
-  ua[1]: "RX dipole -"
-  ua[2]: "debug: detector output"
-  ua[3]: "TX dipole +"
-  ua[4]: "TX dipole -"
-  ua[5]: ""
+  ua[0]: ""
+  ua[1]: "debug: detector output"
+  ua[2]: "RX dipole -"
+  ua[3]: "RX dipole +"
+  ua[4]: "TX dipole +"
+  ua[5]: "TX dipole -"
 
 # Do not change!
 yaml_version: 6

@@ -165,7 +165,7 @@ def sch_wrapper(case, lines=None):
     sch = ['rx_en', 'tx_en', 'tx_en_n', 'dbg_en', 'lna_lo_n', 'sc_phi1', 'sc_phi2'] + \
           [f'trim[{i}]' for i in range(7, -1, -1)] + \
           ['comp_out', 'tx_p', 'tx_n', 'rx_p', 'rx_n', 'dbg', 'VDPWR', 'VAPWR', 'VGND']
-    tile = {'ua[3]': 'tx_p', 'ua[4]': 'tx_n', 'ua[0]': 'rx_p', 'ua[1]': 'rx_n', 'ua[2]': 'dbg'}
+    tile = {'ua[4]': 'tx_p', 'ua[5]': 'tx_n', 'ua[3]': 'rx_p', 'ua[2]': 'rx_n', 'ua[1]': 'dbg'}
     conn = []
     for p in ports:
         s = tile.get(p, p)

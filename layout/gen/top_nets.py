@@ -67,7 +67,7 @@ def nets():
     # bias: ib_det / ib_comp up out of bias_gen's north-west corner; ib_chain / vcm down its west
     # face and west under the chain to its south-edge pins
     out.append(N('ib_det', 'xbias.ib_det', 'xrx.ibias_det', zones=nochain, margin=8, label='ib_det'))
-    out.append(N('ib_comp', 'xbias.ib_comp', 'xcomp.ibias', zones=nochain, margin=8, label='ib_comp'))
+    out.append(N('ib_comp', 'xbias.ib_comp', 'xcomp.ibias', zones=[blk(*RX)], margin=8, label='ib_comp'))   # (not over the detector)
     out.append(N('ib_chain', 'xbias.ib_chain', 'xrx.ibias', zones=nochain, margin=6, label='ib_chain'))
     out.append(N('vcm', 'xbias.vcm', 'xrx.vcm', zones=nochain, margin=6, label='vcm'))
 
