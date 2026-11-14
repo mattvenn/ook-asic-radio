@@ -137,5 +137,9 @@ def make():
 
 
 if __name__ == '__main__':
-    make().write(os.path.join(REPO, 'layout', 'avg_sc.gds'))
+    b = make()
+    # via arrays at every junction (docs/layout.md "Via arrays"); 1 x 2 on everything but the
+    # supplies: the caps and the mirrored clock channel keep their symmetry and least C
+    b.flare(small_nets='(?!VDD$|VSS$).*')
+    b.write(os.path.join(REPO, 'layout', 'avg_sc.gds'))
     write_ref('avg_sc', 'avg_sc', PARAMS)

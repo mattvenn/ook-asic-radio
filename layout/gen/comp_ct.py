@@ -277,6 +277,8 @@ def add_passives(b, P_):
 
 if __name__ == '__main__':
     passives = os.environ.get('PASSIVES', '1') != '0'      # PASSIVES=0: transistors only
-    make(passives).write(os.path.join(REPO, 'layout', 'comp_ct.gds'))
+    b = make(passives)
+    b.flare(small_nets='inp|inn')     # via arrays at every junction (docs/layout.md "Via arrays"); inputs: 1 x 2
+    b.write(os.path.join(REPO, 'layout', 'comp_ct.gds'))
     # reference: parameters substituted; without the passives while they aren't drawn
     write_ref('comp_ct', 'comp_ct', PARAMS, drop=None if passives else r'^X(R|C)')

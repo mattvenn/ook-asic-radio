@@ -148,6 +148,8 @@ def make():
         b.pin('m3', box(bot.left, bot.bottom, bot.left + 1.0, bot.bottom + 1.0), inn)
     print(f'det_cell: {W:.2f} x {inner.top + GRW:.2f} um; cap {CAPW} um, Rb 4 x {LRB / 4:.3f}, '
           f'Rs 2 x {LRS / 2:.3f}')
+    # via arrays at every junction (docs/layout.md "Via arrays"), 1 x 2: the detector's nets are RF
+    b.flare(small=True)
     return b
 
 
