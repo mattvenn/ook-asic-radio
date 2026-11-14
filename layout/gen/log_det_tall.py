@@ -142,7 +142,9 @@ def make_cdet():
 
 
 if __name__ == '__main__':
-    make().write(os.path.join(REPO, 'layout', 'log_det_t.gds'))
+    b = make()
+    b.flare()                         # via arrays at every junction (docs/layout.md "Via arrays")
+    b.write(os.path.join(REPO, 'layout', 'log_det_t.gds'))
     write_ref('log_det_t', 'log_det', PARAMS, drop=r'XCdet$')
     ref = os.path.join(REPO, 'layout', 'ref', 'log_det_t.spice')
     txt = re.sub(r'(?m)^(x\w+ .* det_cell)(\s+\w+=\S+)+$', r'\1', open(ref).read())
