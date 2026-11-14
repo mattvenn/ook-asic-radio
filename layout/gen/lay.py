@@ -115,7 +115,7 @@ class Block:
             sh.insert(r)
 
     def flare(self, cuts=('via1', 'via2', 'via3'), maxrow=3, keep=(), only=None, small=False, small_nets=None,
-              skip_nets=None, verbose=False):
+              skip_nets=None, target=None, verbose=False):
         """Via arrays at every junction (Harald Pretl's review point 11, docs/layout.md "Checklist").
         Every single cut and every 1 x n row (n <= maxrow) drawn in this cell becomes an array: >= 2 x 2
         where one fits, else 1 x 2. The array grows from the existing cut(s) on their pitch; both metals
@@ -123,23 +123,35 @@ class Block:
         junction. A candidate is drawn only if both pads keep the layer's spacing to every other metal
         shape (child cells included: the shapes not touching the cut), the new cuts keep the cut spacing
         to every other cut, stay 0.2 um clear of MIM (capm / cap2m; a met3 pad 1.4 um unless it is that
-        MIM's bottom plate), and the pads stay inside the cell's
-        outline (inset by half the spacing) wherever the metal isn't already outside it. Of the
-        candidates, the one adding the least metal wins (least C).
+        MIM's bottom plate), and the pads stay inside the cell's outline (inset by half the spacing)
+        wherever the metal isn't already outside it. Of the candidates, the one adding the least metal
+        wins (least C).
         small=True (RF and sensitive nets): a single cut becomes 1 x 2 rather than 2 x 2, rows are left.
         small_nets / skip_nets: regexes on net names (from the cell's labels, KLayout connectivity): the
         junctions of matching nets get the small treatment / are left alone.
         keep: boxes whose cuts are left alone; only: if given, flare only cuts inside these boxes.
+        target: a child Block placed in this cell (e.g. a half placed twice, mirrored): flare the child's
+        own cuts instead, checked in every placement against this whole cell, drawn into the child (so
+        the placements stay identical / symmetric). keep / only are in this cell's coordinates.
         Adds shapes only; nothing drawn before is moved or removed.
         Returns [(cut, x, y, n, net)] for the junctions left as they were (no room)."""
+        import re as _re
         dbu = self.ly.dbu
         I = lambda v: int(round(v / dbu))                       # noqa: E731
         SP = {'li': 0.17, 'm1': 0.14, 'm2': 0.14, 'm3': 0.3, 'm4': 0.3}
         top = self.cell
+        tc = target.cell if target is not None else top
+        Ts = [inst.cplx_trans for inst in top.each_inst() if inst.cell_index == tc.cell_index()] \
+            if target is not None else [pya.ICplxTrans()]
+        if not Ts:
+            raise ValueError(f'{target.name} is not placed in {self.name}')
 
         def rec(lay):
             li = self.ly.find_layer(*lay)
             return pya.Region(top.begin_shapes_rec(li)) if li is not None else pya.Region()
+
+        def tr(reg, T):
+            return reg.transformed(T)
 
         outline = top.bbox()
         cap = rec((89, 44)) + rec((97, 44))
@@ -148,11 +160,10 @@ class Block:
         obox = pya.Region([b.to_itype(dbu) for b in only]) if only else None
         left = []
         netof = self._netof() if (small_nets or skip_nets or verbose) else (lambda cut, b: '?')
-        import re as _re
         for cut in cuts:
             size, space, lo, elo, hi, ehi = VIA[cut]
             cs, p = I(size), I(size + space)
-            mine = pya.Region(top.shapes(self.li(cut)))
+            mine = pya.Region(tc.shapes(self.li(cut)))
             mine.merged_semantics = False
             allc = rec(L[cut])
             allc.merged_semantics = False
@@ -161,17 +172,19 @@ class Block:
                 cl = [c.bbox() for c in mine.interacting(gr).each()]
                 n = len(cl)
                 xs, ys = {c.left for c in cl}, {c.bottom for c in cl}
-                net = netof(cut, cl[0])
+                old = pya.Region(cl)
+                olds = [tr(old, T) for T in Ts]                  # the cluster in each placement
+                net = netof(cut, olds[0].bbox())
                 sm = small or bool(small_nets and _re.fullmatch(small_nets, net))
                 if skip_nets and _re.fullmatch(skip_nets, net):
                     continue
                 if n > maxrow or (len(xs) > 1 and len(ys) > 1) or (sm and n > 1):
                     continue                                    # already an array (or a long row)
-                if not kbox.is_empty() and not kbox.interacting(gr).is_empty():
+                if not kbox.is_empty() and any(not kbox.interacting(o).is_empty() for o in olds):
                     continue
-                if obox is not None and obox.interacting(gr).is_empty():
+                if obox is not None and all(obox.interacting(o).is_empty() for o in olds):
                     continue
-                cc = grp.bbox().center()
+                cc = olds[0].bbox().center()
                 x0, y0 = min(xs), min(ys)
                 cands = []                                       # (rank, new cut origins)
                 if n == 1:
@@ -188,10 +201,12 @@ class Block:
                 else:                                            # a column: a second column
                     for dx in (1, -1):
                         cands.append((0, [(x0 + dx * p, y) for y in sorted(ys)]))
-                old = pya.Region(cl)
-                others = allc - allc.interacting(gr)
-                own = {m: metal[m].interacting(old) for m in (lo, hi)}
-                foreign = {m: metal[m] - own[m] for m in (lo, hi)}
+                allold = pya.Region()
+                for o in olds:
+                    allold += o
+                others = allc - allc.interacting(allold)
+                owns = [{m: metal[m].interacting(o) for m in (lo, hi)} for o in olds]
+                foreigns = [{m: metal[m] - ow[m] for m in (lo, hi)} for ow in owns]
                 best = None
                 for rank, new in cands:
                     nb = pya.Region([pya.Box(x, y, x + cs, y + cs) for x, y in new])
@@ -201,23 +216,51 @@ class Block:
                         for m, (es, eb) in ((lo, ENC[cut][:2]), (hi, ENC[cut][2:])):
                             ex, ey = (eb, es) if ori else (es, eb)
                             pads[m] = pya.Region(arr.enlarged(I(ex), I(ey)))
-                        best = self._flare_try(best, rank, nb, pads, own, foreign, others, cap, outline, cut, space, SP, I)
+                        ok, cost = True, 0
+                        padsT = []
+                        for T, ow, fo in zip(Ts, owns, foreigns):
+                            pT = {m: tr(pd, T) for m, pd in pads.items()}
+                            r = self._flare_try(None, rank, tr(nb, T), pT, ow, fo, others, cap, outline, cut, space, SP, I)
+                            if r is None:
+                                ok = False
+                                break
+                            cost += r[0][1]
+                            padsT.append((pT, ow))
+                        # two placements' pads: apart by the spacing unless they are the same net
+                        for a in range(len(padsT)):
+                            for c in range(a + 1, len(padsT)):
+                                for m in pads:
+                                    if not ok:
+                                        break
+                                    if padsT[a][1][m].interacting(padsT[c][1][m]).is_empty() and \
+                                            not (padsT[a][0][m] & padsT[c][0][m].sized(I(SP[m]) - 1)).is_empty():
+                                        ok = False
+                        if ok and (best is None or (rank, cost) < best[0]):
+                            best = ((rank, cost), nb, pads)
                 if best is None:
                     left.append((cut, round(cc.x * dbu, 3), round(cc.y * dbu, 3), n, net))
                     continue
                 _, nb, pads = best
                 for c in nb.each():
-                    top.shapes(self.li(cut)).insert(c)
-                allc += nb
+                    tc.shapes(self.li(cut)).insert(c)
+                for T in Ts:
+                    allc += tr(nb, T)
                 for m, pd in pads.items():
-                    # the pad, plus whatever closes a notch between it and the metal it joins (same net)
-                    loc = (own[m] + pd).merged()
+                    # the pad, plus whatever closes a notch between it and the metal it joins (same net,
+                    # under the spacing): only fill that is clear in every placement
                     d = I(SP[m] / 2) + 1
-                    fill = ((loc.sized(d).sized(-d) - loc) & pd.sized(I(SP[m]))) - foreign[m].sized(I(SP[m]))
-                    add = ((pd - own[m]) + fill).merged()
+                    fill = None
+                    for T, ow, fo in zip(Ts, owns, foreigns):
+                        pT = tr(pd, T)
+                        loc = (ow[m] + pT).merged()
+                        f = ((loc.sized(d).sized(-d) - loc) & pT.sized(I(SP[m]))) - fo[m].sized(I(SP[m]))
+                        f = tr(f, T.inverted())
+                        fill = f if fill is None else fill & f
+                    add = (pd + fill).merged()
                     for poly in add.each():
-                        top.shapes(self.li(m)).insert(poly)
-                    metal[m] = (metal[m] + add).merged()
+                        tc.shapes(self.li(m)).insert(poly)
+                    for T in Ts:
+                        metal[m] = (metal[m] + tr(add, T)).merged()
                 if verbose:
                     print(f'  flare {cut} {net} ({cc.x * dbu:.2f}, {cc.y * dbu:.2f}): {n} -> {n + nb.count()}')
         if left:
