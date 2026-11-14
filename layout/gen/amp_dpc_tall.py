@@ -251,6 +251,9 @@ def make(W=W_CELL, taps=TAPS, name='amp_dpc_t', extra=0.0, riser_left=False, hoo
         hook(b, dict(W=W, Hh=Hh, ys=ys, trk=(t0, t1), g=g, c1=c1, c2=c2, sh=sh, cg=box(c1.left - 0.7, 0, c1.right - 0.7, 0),
                      plate=(pl0, pl1), rep=rep))
     # everything up so the cell's lower left is (0, 0)
+    # via arrays at every junction (docs/layout.md "Via arrays"): the half's own cuts, 1 x 2 (RF),
+    # drawn into the half cell so both halves stay mirror images
+    b.flare(target=h, small=True, verbose=True)
     b.cell.flatten(-1, True)
     for li in b.ly.layer_indexes():
         b.cell.shapes(li).transform(pya.DTrans(0, Hh))

@@ -169,5 +169,6 @@ def write_ref():
 
 if __name__ == '__main__':
     b = make()
+    b.flare(small=True, verbose=True)     # via arrays (docs/layout.md "Via arrays"), 1 x 2: the taps are RF
     b.write(os.path.join(REPO, 'layout', 'rx_t.gds'))
     write_ref()

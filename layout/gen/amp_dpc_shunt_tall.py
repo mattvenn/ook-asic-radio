@@ -140,6 +140,7 @@ def shunt(b0, c, flip=False):
     b.pin('m4', box(cg.left, -Hh, cg.right, -Hh + 0.5), 'lna_lo_n')
     c['rep'] += [('sa/sb', 'Msw strips', min(n.values()), 1)]
     b0.place(b.cell, 0, 0, 0, flip)
+    b0.flare(target=b, small=True, verbose=True)   # via arrays (docs/layout.md "Via arrays"), 1 x 2: RF
 
 
 def write_ref(meta):
