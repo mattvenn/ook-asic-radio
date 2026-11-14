@@ -1,6 +1,6 @@
 # Floorplan: block positions and pin positions
 
-Generated from the floorplan page's variant **matt layout 5 (routing review)** by `layout/floorplan/page/pinreport.js`; the placements are also in `floorplan.json` next to this file.
+Generated from the floorplan page's variant **RX in the corner (ua[3] / ua[2]), TX on ua[4] / ua[5]** by `layout/floorplan/page/pinreport.js`; the placements are also in `floorplan.json` next to this file.
 
 - Coordinates in µm. **Placement**: lower-left of the placed (transformed) bbox in the tile, and the GDS orientation (KLayout `DCplxTrans(1, rot, mirror, …)`, mirror about x first).
 - **Pins**: in each block's *own* frame (its bbox lower-left = 0, 0, before the orientation), grouped by the block's own edge. "moved" = a new position for the re-layout / re-harden; the others are where the GDS has them now. The tile direction each edge faces after placement is given in brackets.
@@ -10,16 +10,16 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 
 | rule | status | value |
 |---|---|---|
-| 1. Chain input far from the macro | pass | 119 µm |
-| 2. Late stages away from the input | fail | 14 µm |
-| 3. Clock edges off the RX | pass | 25 µm |
-| 4. Short analog path | pass | 146 µm |
-| 5. TX at ua[3] / ua[4] | fail | 121 µm |
-| 6. Bias next to the chain | pass | 11 µm |
-| 7. Decap VAPWR | warn | 97 % |
-| 7. Decap VDPWR | warn | 89 % |
-| 8. TX away from the RX input | warn | 39 µm |
-| 9. Overlaps and spacing | warn | 2 tight |
+| 1. Chain input far from the macro | pass | 159 µm |
+| 2. Late stages away from the input | fail | 4 µm |
+| 3. Clock edges off the RX | pass | 31 µm |
+| 4. Short analog path | pass | 164 µm |
+| 5. TX at ua[4] / ua[5] | pass | 15 µm |
+| 6. Bias next to the chain | fail | 123 µm |
+| 7. Decap VAPWR | pass | 111 % |
+| 7. Decap VDPWR | pass | 109 % |
+| 8. TX away from the RX input | warn | 3 µm |
+| 9. Overlaps and spacing | pass | none |
 | 9. TT pin channel clear | fail | 2.9 µm |
 | P. Power straps | fail | 1 blocked |
 
@@ -33,7 +33,6 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 
 | pin | x | y | |
 |---|---|---|---|
-| lna_lo_n | 199.75 | 3.06 | added 2026-10-29 |
 | rx_en | 199.75 | 7.14 | moved |
 | comp_in | 199.75 | 86.02 | moved |
 | trim_out[7] | 199.75 | 94.18 | moved |
@@ -92,56 +91,45 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 | ui_in[0] | 199.75 | 216.58 | moved |
 | rst_n | 199.75 | 217.94 | moved |
 
-## xchain (lna_chain)
+## xchain (lna_chain_t)
 
-- Size: 145.36 × 70.47 (GDS)
-- Placement: x 13.14, y 6.50, R180 (rot 180, mirror false)
+- Size: 123.53 × 63.50 (GDS)
+- Placement: x 74.84, y 6.50, R0 (rot 0, mirror false)
 - Pins moved: none
 
-**N edge** (faces south in the tile; left → right, x):
+**N edge** (faces north in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| inp | 21.88 | 70.22 |  |
-| inn | 41.20 | 70.22 |  |
+| VDD | 44.43 | 62.75 |  |
+| o1n | 62.58 | 63.25 |  |
+| o1p | 63.98 | 63.25 |  |
+| o2n | 74.98 | 63.25 |  |
+| o2p | 76.38 | 63.25 |  |
+| o3n | 86.68 | 63.25 |  |
+| o3p | 88.08 | 63.25 |  |
+| o4n | 98.38 | 63.25 |  |
+| o4p | 99.78 | 63.25 |  |
+| o5n | 110.08 | 63.25 |  |
+| o5p | 111.48 | 63.25 |  |
+| outn | 121.78 | 63.25 |  |
+| outp | 123.18 | 63.25 |  |
 
-**S edge** (faces north in the tile; left → right, x):
-
-| pin | x | y | |
-|---|---|---|---|
-| outn | 9.05 | 2.20 |  |
-| outp | 9.05 | 3.60 |  |
-| o5n | 41.34 | 2.90 |  |
-| o5p | 41.34 | 3.60 |  |
-| o4n | 73.88 | 2.90 |  |
-| o4p | 73.88 | 3.60 |  |
-| o3n | 106.42 | 2.90 |  |
-| o3p | 106.42 | 3.60 |  |
-| o2n | 139.06 | 2.90 |  |
-| o2p | 140.06 | 3.60 |  |
-| o1p | 141.76 | 3.60 |  |
-| o1n | 142.46 | 2.90 |  |
-
-**W edge** (faces east in the tile; bottom → top, y):
+**S edge** (faces south in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| vcm | 0.25 | 38.15 |  |
-| ibias | 0.25 | 49.86 |  |
-| g1n | 7.04 | 60.97 |  |
-| g1p | 6.04 | 60.97 |  |
-
-**E edge** (faces west in the tile; bottom → top, y):
-
-| pin | x | y | |
-|---|---|---|---|
-| VSS | 143.56 | 20.46 |  |
-| VDD | 144.86 | 35.96 |  |
+| inp | 8.14 | 0.20 |  |
+| inn | 25.62 | 0.20 |  |
+| vcm | 36.26 | 0.25 |  |
+| ibias | 42.33 | 0.25 |  |
+| VSS | 43.68 | 31.75 |  |
+| lna_lo_n | 74.28 | 0.25 |  |
 
 ## xbias (bias_gen)
 
 - Size: 80.22 × 49.07 (GDS)
-- Placement: x 160.50, y 7.50, R90 (rot 90, mirror false)
+- Placement: x 206.70, y 3.00, R90 (rot 90, mirror false)
 - Pins moved: none
 
 **N edge** (faces west in the tile; left → right, x):
@@ -193,50 +181,40 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 
 ## xdet (log_det)
 
-- Size: 87.33 × 31.01 (GDS)
-- Placement: x 67.50, y 80.00, MX (rot 0, mirror true)
+- Size: 137.05 × 16.11 (GDS)
+- Placement: x 67.14, y 76.90, R0 (rot 0, mirror false)
 - Pins moved: none
 
-**N edge** (faces south in the tile; left → right, x):
+**N edge** (faces north in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
-| t1n | 12.77 | 23.02 |  |
-| t2p | 22.53 | 23.02 |  |
-| t2n | 33.59 | 23.02 |  |
-| t3p | 43.36 | 23.02 |  |
-| t3n | 54.43 | 23.02 |  |
-
-**S edge** (faces north in the tile; left → right, x):
-
-| pin | x | y | |
-|---|---|---|---|
-| t4n | 12.77 | 7.99 |  |
-| t5p | 22.53 | 7.99 |  |
-| t5n | 33.59 | 7.99 |  |
-| t6p | 43.36 | 7.99 |  |
-| t6n | 54.43 | 7.99 |  |
+| VDD | 10.65 | 15.86 |  |
+| t1p | 13.77 | 8.12 |  |
+| t1n | 24.83 | 8.12 |  |
+| t2p | 34.59 | 8.12 |  |
+| t2n | 45.66 | 8.12 |  |
+| t3p | 55.43 | 8.12 |  |
+| t3n | 66.49 | 8.12 |  |
+| t4p | 76.25 | 8.12 |  |
+| t4n | 87.32 | 8.12 |  |
+| t5p | 97.09 | 8.12 |  |
+| t5n | 108.15 | 8.12 |  |
+| t6p | 117.92 | 8.12 |  |
+| t6n | 128.98 | 8.12 |  |
 
 **W edge** (faces west in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
-| det | 0.20 | 0.25 |  |
-| t4p | 1.70 | 7.99 |  |
-| VSS | 0.50 | 15.51 |  |
-| t1p | 1.70 | 23.02 |  |
-
-**E edge** (faces east in the tile; bottom → top, y):
-
-| pin | x | y | |
-|---|---|---|---|
-| VDD | 86.73 | 15.51 |  |
-| ibias_det | 87.08 | 24.29 |  |
+| VSS | 0.50 | 0.60 |  |
+| det | 0.25 | 2.10 |  |
+| ibias_det | 0.25 | 2.80 |  |
 
 ## xlpf (lpf_rc)
 
 - Size: 65.20 × 35.02 (GDS)
-- Placement: x 67.00, y 113.60, R0 (rot 0, mirror false)
+- Placement: x 67.20, y 95.60, R0 (rot 0, mirror false)
 - Pins moved: none
 
 **N edge** (faces north in the tile; left → right, x):
@@ -280,7 +258,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xavg (avg_sc)
 
 - Size: 77.35 × 30.40 (GDS)
-- Placement: x 53.00, y 151.20, R0 (rot 0, mirror false)
+- Placement: x 55.00, y 133.20, R0 (rot 0, mirror false)
 - Pins moved: none
 
 **N edge** (faces north in the tile; left → right, x):
@@ -305,7 +283,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xcomp (comp_ct)
 
 - Size: 73.55 × 41.16 (GDS)
-- Placement: x 137.50, y 116.60, MYR90 (rot 270, mirror true)
+- Placement: x 135.00, y 122.00, MYR90 (rot 270, mirror true)
 - Pins moved: none
 
 **N edge** (faces west in the tile; left → right, x):
@@ -317,7 +295,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 | vref | 28.60 | 30.11 |  |
 | d2 | 36.90 | 31.71 |  |
 | VDD | 37.00 | 40.41 |  |
-| inp | 16.70 | 40.91 | moved 2026-10-13 (met4, the riser's top: the inp dead-end stub fix, STATUS 5a) |
+| inp | 37.85 | 40.91 |  |
 | sa | 40.30 | 32.52 |  |
 | inn | 42.45 | 40.91 |  |
 | sb | 44.45 | 29.31 |  |
@@ -374,7 +352,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xdac (r2r)
 
 - Size: 71.75 × 54.12 (GDS)
-- Placement: x 185.00, y 91.00, MYR90 (rot 270, mirror true)
+- Placement: x 179.00, y 95.60, MYR90 (rot 270, mirror true)
 - Pins moved: none
 
 **S edge** (faces east in the tile; left → right, x):
@@ -401,7 +379,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xctrim (ctrim_1p)
 
 - Size: 22.43 × 22.43 (GDS)
-- Placement: x 159.00, y 90.30, MX (rot 0, mirror true)
+- Placement: x 150.00, y 95.60, MX (rot 0, mirror true)
 - Pins moved: none
 
 **S edge** (faces north in the tile; left → right, x):
@@ -419,7 +397,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xdbg (dbg_tg)
 
 - Size: 5.70 × 16.30 (GDS)
-- Placement: x 57.50, y 124.00, R0 (rot 0, mirror false)
+- Placement: x 59.00, y 95.00, MY (rot 180, mirror true)
 - Pins moved: none
 
 **N edge** (faces north in the tile; left → right, x):
@@ -434,14 +412,14 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 |---|---|---|---|
 | VSS | 2.83 | 1.00 |  |
 
-**W edge** (faces west in the tile; bottom → top, y):
+**W edge** (faces east in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
 | a | 0.25 | 0.25 |  |
 | enb | 2.74 | 7.15 |  |
 
-**E edge** (faces east in the tile; bottom → top, y):
+**E edge** (faces west in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -451,10 +429,10 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xtx.xring (tx_ring)
 
 - Size: 18.32 × 6.96 (GDS)
-- Placement: x 17.50, y 140.50, R270 (rot 270, mirror false)
+- Placement: x 37.00, y 65.00, R0 (rot 0, mirror false)
 - Pins moved: none
 
-**N edge** (faces east in the tile; left → right, x):
+**N edge** (faces north in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -468,7 +446,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 | r15 | 13.76 | 5.01 |  |
 | r14 | 15.14 | 5.01 |  |
 
-**S edge** (faces west in the tile; left → right, x):
+**S edge** (faces south in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -485,7 +463,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 | r10 | 14.22 | 1.95 |  |
 | r11 | 15.60 | 1.95 |  |
 
-**W edge** (faces north in the tile; bottom → top, y):
+**W edge** (faces west in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -493,7 +471,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 | r1 | 1.34 | 1.95 |  |
 | en | 0.44 | 4.46 |  |
 
-**E edge** (faces south in the tile; bottom → top, y):
+**E edge** (faces east in the tile; bottom → top, y):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -503,17 +481,17 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xtx.xls (tx_ls)
 
 - Size: 14.25 × 19.00 (GDS)
-- Placement: x 26.50, y 141.00, MYR90 (rot 270, mirror true)
+- Placement: x 34.50, y 48.00, R270 (rot 270, mirror false)
 - Pins moved: none
 
-**N edge** (faces west in the tile; left → right, x):
+**N edge** (faces east in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
 | VDD | 3.95 | 18.00 |  |
 | VAPWR | 10.90 | 18.00 |  |
 
-**S edge** (faces east in the tile; left → right, x):
+**S edge** (faces west in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -537,17 +515,17 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xtx.xlse_p (tx_ls_en)
 
 - Size: 13.35 × 15.48 (GDS)
-- Placement: x 39.50, y 124.00, MYR90 (rot 270, mirror true)
+- Placement: x 56.50, y 48.00, R270 (rot 270, mirror false)
 - Pins moved: none
 
-**N edge** (faces west in the tile; left → right, x):
+**N edge** (faces east in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
 | VDD | 3.50 | 14.48 |  |
 | VAPWR | 10.00 | 14.48 |  |
 
-**S edge** (faces east in the tile; left → right, x):
+**S edge** (faces west in the tile; left → right, x):
 
 | pin | x | y | |
 |---|---|---|---|
@@ -571,7 +549,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xtx.xlse_n (tx_ls_en)
 
 - Size: 13.35 × 15.48 (GDS)
-- Placement: x 13.00, y 124.00, R270 (rot 270, mirror false)
+- Placement: x 16.50, y 48.00, R270 (rot 270, mirror false)
 - Pins moved: none
 
 **N edge** (faces east in the tile; left → right, x):
@@ -605,7 +583,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xtx.xdrv_p (tx_drv)
 
 - Size: 40.90 × 26.68 (GDS)
-- Placement: x 37.50, y 80.50, R270 (rot 270, mirror false)
+- Placement: x 45.66, y 4.50, R270 (rot 270, mirror false)
 - Pins moved: none
 
 **N edge** (faces east in the tile; left → right, x):
@@ -641,7 +619,7 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 ## xtx.xdrv_n (tx_drv)
 
 - Size: 40.90 × 26.68 (GDS)
-- Placement: x 5.50, y 80.50, MYR90 (rot 270, mirror true)
+- Placement: x 16.40, y 4.50, MYR90 (rot 270, mirror true)
 - Pins moved: none
 
 **N edge** (faces west in the tile; left → right, x):
@@ -685,12 +663,14 @@ Generated from the floorplan page's variant **matt layout 5 (routing review)** b
 - VGND strap: x 278.20, w 1.20 (met4, full height)
 - VDPWR strap: x 279.90, w 1.20 (met4, full height)
 - VAPWR strap: x 0.30, w 5.00 (met4, full height)
-- xdeca 1: x 242.00, y 2.00, 33.00 × 211.00
-- xdeca 2: x 0.00, y 193.00, 239.00 × 20.00
-- xdeca 3: x 0.00, y 162.00, 50.00 × 28.00
-- xdeca 4: x 182.00, y 166.00, 57.00 × 24.00
-- xdeca 5: x 185.00, y 91.00, 54.12 × 71.75 (MIM only, on top of r2r)
-- xdecd 1: x 0.00, y 7.00, 10.64 × 71.00
-- xdecd 2: x 0.00, y 124.00, 10.00 × 35.00
-- xdecd 3: x 213.00, y 2.00, 26.00 × 86.00
-- xdecd 4: x 0.00, y 216.00, 51.00 × 6.00
+- xdeca 1: x 0.00, y 2.00, 13.00 × 95.00
+- xdeca 2: x 259.20, y 2.00, 17.80 × 81.00
+- xdeca 3: x 135.00, y 198.10, 41.00 × 14.90
+- xdeca 4: x 179.00, y 170.00, 54.00 × 43.00
+- xdeca 5: x 0.00, y 100.50, 52.00 × 120.50
+- xdeca 6: x 236.00, y 86.00, 41.00 × 127.00
+- xdeca 7: x 179.00, y 95.60, 54.12 × 71.75 (MIM only, on top of r2r)
+- xdecd 1: x 135.00, y 96.00, 12.00 × 22.00
+- xdecd 2: x 207.00, y 86.00, 26.00 × 7.00
+- xdecd 3: x 16.00, y 65.00, 15.50 × 32.00
+- xdecd 4: x 55.00, y 167.00, 77.00 × 46.00

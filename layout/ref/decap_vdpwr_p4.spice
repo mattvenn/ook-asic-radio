@@ -1,0 +1,35 @@
+* decap_vdpwr_p4: layout/gen/decap.py
+.subckt decap_vdpwr_p4 VDPWR VGND
+XM0 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM1 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM2 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM3 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM4 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM5 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM6 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM7 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM8 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM9 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM10 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM11 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM12 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM13 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM14 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM15 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM16 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM17 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM18 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XM19 VGND VDPWR VGND VGND sky130_fd_pr__nfet_01v8 L=5 W=16.2 nf=2
+XC0 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC1 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC2 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC3 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC4 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC5 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC6 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC7 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC8 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC9 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC10 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+XC11 VDPWR VGND sky130_fd_pr__cap_mim_m3_1 W=16.37 L=13.37 m=1
+.ends

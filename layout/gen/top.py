@@ -85,6 +85,21 @@ def cell_pins(cell):
     return out
 
 
+def rx_merged(blocks):
+    """The tall chain and its one-row detector are one block, rx_t (layout/gen/rx_tall.py: the taps
+    are wired inside it). The floorplan places them separately (xchain = lna_chain_t, xdet =
+    log_det_t); rx_t goes in as 'xrx', with its bbox (the detector's west end, the chain's bottom)
+    at (xdet.x, xchain.y). Checked: the detector must sit where rx_t puts it."""
+    b = {x['inst']: x for x in blocks}
+    if b.get('xchain', {}).get('cell') != 'lna_chain_t':
+        return blocks
+    ch, dt = b['xchain'], b['xdet']
+    assert ch['orient'] == dt['orient'] == 'R0', (ch, dt)
+    assert abs(dt['x'] - (ch['x'] - 7.7)) < 0.02 and abs(dt['y'] - (ch['y'] + 70.405)) < 0.02, (ch, dt)
+    rx = dict(inst='xrx', cell='rx_t', x=dt['x'], y=ch['y'], orient='R0', rot=0, mirror=False, estimate=False)
+    return [rx] + [x for x in blocks if x['inst'] not in ('xchain', 'xdet')]
+
+
 def main():
     t = Tile()
     ly, top = t.ly, t.cell
@@ -99,7 +114,7 @@ def main():
     txc = ly.create_cell('tx_top')
     top.insert(pya.DCellInstArray(txc.cell_index(), pya.DTrans()))
     pins, insts = {}, {}
-    for b in FP['blocks']:
+    for b in rx_merged(FP['blocks']):
         if b['cell'].startswith('decap_'):
             # decap parts (layout/gen/decap.py), above the full-width VDPWR bar
             cell = f"{b['cell']}_p{b['part']}"
@@ -115,6 +130,14 @@ def main():
         insts[b['inst']] = [round(v, 3) for v in (bb.left, bb.bottom, bb.right, bb.top)]
         pins[b['inst']] = {n: [(lay, [round(v, 3) for v in (lambda r: (r.left, r.bottom, r.right, r.top))(bx.transformed(tr))])
                                for lay, bx in shp] for n, shp in cell_pins(c).items()}
+
+    if 'xrx' in pins:
+        # rx_t's two VSS pins (the chain's, east end; the detector's rail, west end) are joined in
+        # the block only through the substrate: each gets its own trunk, so tag them apart
+        vss = pins['xrx'].pop('VSS')
+        pins['xrx']['VSS'] = [p for p in vss if p[1][0] > 150]
+        pins['xrx']['VSS_det'] = [p for p in vss if p[1][0] <= 150]
+        assert len(pins['xrx']['VSS']) == 1 and len(pins['xrx']['VSS_det']) == 1, vss
 
     # met4 power straps (the tile's power pins). The mid and east sets are joined under and over
     # the macro (it sits 2.88 um above the tile's bottom edge and below its top): met3 bars for

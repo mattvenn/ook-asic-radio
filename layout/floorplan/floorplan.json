@@ -1,6 +1,6 @@
 {
- "variant": "matt layout 5 (routing review)",
- "note": "matt layout 4 (handoff, chain folded) with the 2026-10-09 routing review, and every block laid out to it (pins from the GDS). comp_ct MYR90 (out at its tile-south-east corner; inp = avg / inn = lpf on the west face; ibias over the corridor west of Ctrim, trim over Ctrim); r2r MYR90 (out level with Ctrim, a straight met2 run over r2r); avg_sc clocks on its north edge (leave over the top, away from comp inp / inn), in on its south edge; Ctrim laid out (1 pF shunt cap trim -> VGND, 22.4 um). Macro pins: trim_out[i] level with r2r b_i, comp_in in the gap under r2r, sc_phi then dbg_en / tx_en_n / tx_en just under the TT group (the enables run west in the TT channel). Block positions unchanged.",
+ "variant": "RX in the corner (ua[3] / ua[2]), TX on ua[4] / ua[5]",
+ "note": "Matt's tall-chain layout reworked (2026-11-14): rx_t as laid out (chain + one-row log_det_t, unflipped: input at the west end, flowing east), RX on ua[3] / ua[2] so the input section sits bottom-left, TX drivers on ua[4] / ua[5] in the strip west of it (TX is off in RX, so no isolation needed), dbg on ua[1]. det comes out at the detector's west end: LPF, averager, comparator, Ctrim and the trim DAC run east along the top towards the macro. Everything but the macro shifted 15 um west (bias 21 um from the macro halo; the RX inputs run ~15 um west along the bottom from ua[2] / ua[1] to the chain). Detector at exactly rx_t's offset (-7.7, +70.4 from the chain); bias R90 at (206.7, 3) just clear of it, 17.8 um of decap between the bias and the macro. Bias east of the chain's output end (ib_chain / vcm run west along the bottom to the chain's south-edge pins). Pinout change: rx ua[0]/ua[1] -> ua[3]/ua[2], tx ua[3]/ua[4] -> ua[4]/ua[5], dbg ua[2] -> ua[1] (under the chain). Rule 2's 4 um is the flyline of o4 past stage 1; the real taps are wired in rx_t's channel (PEX: nothing back to the input).",
  "tile": {
   "w": 493.12,
   "h": 225.76
@@ -21,29 +21,31 @@
   },
   {
    "inst": "xchain",
-   "cell": "lna_chain",
-   "x": 13.14,
+   "cell": "lna_chain_t",
+   "x": 74.84,
    "y": 6.5,
-   "orient": "R180",
-   "rot": 180,
+   "orient": "R0",
+   "rot": 0,
    "mirror": false,
    "estimate": false
   },
   {
    "inst": "xdet",
-   "cell": "log_det",
-   "x": 67.5,
-   "y": 80,
-   "orient": "MX",
+   "cell": "log_det_t",
+   "x": 67.14,
+   "y": 76.9,
+   "orient": "R0",
    "rot": 0,
-   "mirror": true,
-   "estimate": false
+   "mirror": false,
+   "estimate": false,
+   "w": 137.05,
+   "h": 16.11
   },
   {
    "inst": "xlpf",
    "cell": "lpf_rc",
-   "x": 67,
-   "y": 113.6,
+   "x": 67.2,
+   "y": 95.6,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -52,8 +54,8 @@
   {
    "inst": "xavg",
    "cell": "avg_sc",
-   "x": 53,
-   "y": 151.2,
+   "x": 55,
+   "y": 133.2,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -62,8 +64,8 @@
   {
    "inst": "xcomp",
    "cell": "comp_ct",
-   "x": 137.5,
-   "y": 116.6,
+   "x": 135,
+   "y": 122,
    "orient": "MYR90",
    "rot": 270,
    "mirror": true,
@@ -72,8 +74,8 @@
   {
    "inst": "xdac",
    "cell": "r2r",
-   "x": 185,
-   "y": 91,
+   "x": 179,
+   "y": 95.6,
    "orient": "MYR90",
    "rot": 270,
    "mirror": true,
@@ -82,18 +84,28 @@
   {
    "inst": "xctrim",
    "cell": "ctrim_1p",
-   "x": 159,
-   "y": 90.3,
+   "x": 150,
+   "y": 95.6,
    "orient": "MX",
    "rot": 0,
    "mirror": true,
    "estimate": false
   },
   {
+   "inst": "xcdet",
+   "cell": "cdet_t",
+   "x": 34,
+   "y": 75.5,
+   "orient": "MY",
+   "rot": 180,
+   "mirror": true,
+   "estimate": false
+  },
+  {
    "inst": "xbias",
    "cell": "bias_gen",
-   "x": 160.5,
-   "y": 7.5,
+   "x": 206.7,
+   "y": 3,
    "orient": "R90",
    "rot": 90,
    "mirror": false,
@@ -102,48 +114,48 @@
   {
    "inst": "xdbg",
    "cell": "dbg_tg",
-   "x": 57.5,
-   "y": 124,
+   "x": 59,
+   "y": 95,
+   "orient": "MY",
+   "rot": 180,
+   "mirror": true,
+   "estimate": false
+  },
+  {
+   "inst": "xtx.xring",
+   "cell": "tx_ring",
+   "x": 37,
+   "y": 65,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
    "estimate": false
   },
   {
-   "inst": "xtx.xring",
-   "cell": "tx_ring",
-   "x": 17.5,
-   "y": 140.5,
+   "inst": "xtx.xls",
+   "cell": "tx_ls",
+   "x": 34.5,
+   "y": 48,
    "orient": "R270",
    "rot": 270,
    "mirror": false,
    "estimate": false
   },
   {
-   "inst": "xtx.xls",
-   "cell": "tx_ls",
-   "x": 26.5,
-   "y": 141,
-   "orient": "MYR90",
-   "rot": 270,
-   "mirror": true,
-   "estimate": false
-  },
-  {
    "inst": "xtx.xlse_p",
    "cell": "tx_ls_en",
-   "x": 39.5,
-   "y": 124,
-   "orient": "MYR90",
+   "x": 56.5,
+   "y": 48,
+   "orient": "R270",
    "rot": 270,
-   "mirror": true,
+   "mirror": false,
    "estimate": false
   },
   {
    "inst": "xtx.xlse_n",
    "cell": "tx_ls_en",
-   "x": 13,
-   "y": 124,
+   "x": 16.5,
+   "y": 48,
    "orient": "R270",
    "rot": 270,
    "mirror": false,
@@ -152,8 +164,8 @@
   {
    "inst": "xtx.xdrv_p",
    "cell": "tx_drv",
-   "x": 37.5,
-   "y": 80.5,
+   "x": 45.66,
+   "y": 4.5,
    "orient": "R270",
    "rot": 270,
    "mirror": false,
@@ -162,8 +174,8 @@
   {
    "inst": "xtx.xdrv_n",
    "cell": "tx_drv",
-   "x": 5.5,
-   "y": 80.5,
+   "x": 16.4,
+   "y": 4.5,
    "orient": "MYR90",
    "rot": 270,
    "mirror": true,
@@ -173,10 +185,10 @@
    "inst": "xdeca",
    "part": 1,
    "cell": "decap_vapwr",
-   "x": 242,
+   "x": 0,
    "y": 2,
-   "w": 33,
-   "h": 211,
+   "w": 13,
+   "h": 95,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -186,10 +198,10 @@
    "inst": "xdeca",
    "part": 2,
    "cell": "decap_vapwr",
-   "x": 0,
-   "y": 193,
-   "w": 239,
-   "h": 20,
+   "x": 259.2,
+   "y": 2,
+   "w": 17.8,
+   "h": 81,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -199,10 +211,10 @@
    "inst": "xdeca",
    "part": 3,
    "cell": "decap_vapwr",
-   "x": 0,
-   "y": 162,
-   "w": 50,
-   "h": 28,
+   "x": 135,
+   "y": 198.1,
+   "w": 41,
+   "h": 14.9,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -212,10 +224,10 @@
    "inst": "xdeca",
    "part": 4,
    "cell": "decap_vapwr",
-   "x": 182,
-   "y": 166,
-   "w": 57,
-   "h": 24,
+   "x": 179,
+   "y": 170,
+   "w": 54,
+   "h": 43,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -225,8 +237,34 @@
    "inst": "xdeca",
    "part": 5,
    "cell": "decap_vapwr",
-   "x": 185,
-   "y": 91,
+   "x": 0,
+   "y": 104,
+   "w": 52,
+   "h": 109,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdeca",
+   "part": 6,
+   "cell": "decap_vapwr",
+   "x": 236,
+   "y": 86,
+   "w": 41,
+   "h": 127,
+   "orient": "R0",
+   "rot": 0,
+   "mirror": false,
+   "estimate": true
+  },
+  {
+   "inst": "xdeca",
+   "part": 7,
+   "cell": "decap_vapwr",
+   "x": 179,
+   "y": 95.6,
    "w": 54.12,
    "h": 71.75,
    "orient": "R0",
@@ -240,10 +278,10 @@
    "inst": "xdecd",
    "part": 1,
    "cell": "decap_vdpwr",
-   "x": 0,
-   "y": 7,
-   "w": 10.64,
-   "h": 71,
+   "x": 135,
+   "y": 96,
+   "w": 12,
+   "h": 22,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -253,10 +291,10 @@
    "inst": "xdecd",
    "part": 2,
    "cell": "decap_vdpwr",
-   "x": 0,
-   "y": 124,
-   "w": 10,
-   "h": 35,
+   "x": 207,
+   "y": 86,
+   "w": 26,
+   "h": 7,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -266,10 +304,10 @@
    "inst": "xdecd",
    "part": 3,
    "cell": "decap_vdpwr",
-   "x": 213,
-   "y": 2,
-   "w": 26,
-   "h": 86,
+   "x": 16,
+   "y": 65,
+   "w": 15.5,
+   "h": 32,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -279,10 +317,10 @@
    "inst": "xdecd",
    "part": 4,
    "cell": "decap_vdpwr",
-   "x": 0,
-   "y": 216,
-   "w": 51,
-   "h": 6,
+   "x": 55,
+   "y": 167,
+   "w": 77,
+   "h": 46,
    "orient": "R0",
    "rot": 0,
    "mirror": false,
@@ -292,235 +330,243 @@
  "macro_pins": {
   "trim_out[7:0]": "W"
  },
+ "pads": {
+  "rx_p": "ua[3]",
+  "rx_n": "ua[2]",
+  "dbg": "ua[1]",
+  "clk": "clk",
+  "tx_p": "ua[4]",
+  "tx_n": "ua[5]"
+ },
  "pins_moved": {
   "macro": {
-   "rx_en": [
+   "clk": [
     199.75,
-    7.14
+    162.18
    ],
    "comp_in": [
     199.75,
     86.02
    ],
-   "trim_out[7]": [
+   "dbg_en": [
     199.75,
-    94.18
+    158.1
    ],
-   "trim_out[6]": [
+   "rst_n": [
     199.75,
-    102.34
+    217.94
    ],
-   "trim_out[5]": [
+   "rx_en": [
     199.75,
-    109.14
-   ],
-   "trim_out[4]": [
-    199.75,
-    117.3
-   ],
-   "trim_out[3]": [
-    199.75,
-    124.1
-   ],
-   "trim_out[2]": [
-    199.75,
-    132.26
-   ],
-   "trim_out[1]": [
-    199.75,
-    139.06
-   ],
-   "trim_out[0]": [
-    199.75,
-    154.02
-   ],
-   "sc_phi2": [
-    199.75,
-    155.38
+    7.14
    ],
    "sc_phi1": [
     199.75,
     156.74
    ],
-   "dbg_en": [
+   "sc_phi2": [
     199.75,
-    158.1
+    155.38
    ],
-   "tx_en_n": [
+   "trim_out[0]": [
     199.75,
-    159.46
+    154.02
+   ],
+   "trim_out[1]": [
+    199.75,
+    139.06
+   ],
+   "trim_out[2]": [
+    199.75,
+    132.26
+   ],
+   "trim_out[3]": [
+    199.75,
+    124.1
+   ],
+   "trim_out[4]": [
+    199.75,
+    117.3
+   ],
+   "trim_out[5]": [
+    199.75,
+    109.14
+   ],
+   "trim_out[6]": [
+    199.75,
+    102.34
+   ],
+   "trim_out[7]": [
+    199.75,
+    94.18
    ],
    "tx_en": [
     199.75,
     160.82
    ],
-   "clk": [
+   "tx_en_n": [
     199.75,
-    162.18
-   ],
-   "uio_oe[7]": [
-    199.75,
-    163.54
-   ],
-   "uio_oe[6]": [
-    199.75,
-    164.9
-   ],
-   "uio_oe[5]": [
-    199.75,
-    166.26
-   ],
-   "uio_oe[4]": [
-    199.75,
-    167.62
-   ],
-   "uio_oe[3]": [
-    199.75,
-    168.98
-   ],
-   "uio_oe[2]": [
-    199.75,
-    170.34
-   ],
-   "uio_oe[1]": [
-    199.75,
-    171.7
-   ],
-   "uio_oe[0]": [
-    199.75,
-    173.06
-   ],
-   "uio_out[7]": [
-    199.75,
-    174.42
-   ],
-   "uio_out[6]": [
-    199.75,
-    175.78
-   ],
-   "uio_out[5]": [
-    199.75,
-    177.14
-   ],
-   "uio_out[4]": [
-    199.75,
-    178.5
-   ],
-   "uio_out[3]": [
-    199.75,
-    179.86
-   ],
-   "uio_out[2]": [
-    199.75,
-    181.22
-   ],
-   "uio_out[1]": [
-    199.75,
-    182.58
-   ],
-   "uio_out[0]": [
-    199.75,
-    183.94
-   ],
-   "uo_out[7]": [
-    199.75,
-    185.3
-   ],
-   "uo_out[6]": [
-    199.75,
-    186.66
-   ],
-   "uo_out[5]": [
-    199.75,
-    188.02
-   ],
-   "uo_out[4]": [
-    199.75,
-    189.38
-   ],
-   "uo_out[3]": [
-    199.75,
-    190.74
-   ],
-   "uo_out[2]": [
-    199.75,
-    192.1
-   ],
-   "uo_out[1]": [
-    199.75,
-    193.46
-   ],
-   "uo_out[0]": [
-    199.75,
-    194.82
-   ],
-   "uio_in[7]": [
-    199.75,
-    196.18
-   ],
-   "uio_in[6]": [
-    199.75,
-    197.54
-   ],
-   "uio_in[5]": [
-    199.75,
-    198.9
-   ],
-   "uio_in[4]": [
-    199.75,
-    200.26
-   ],
-   "uio_in[3]": [
-    199.75,
-    201.62
-   ],
-   "uio_in[2]": [
-    199.75,
-    202.98
-   ],
-   "uio_in[1]": [
-    199.75,
-    204.34
-   ],
-   "uio_in[0]": [
-    199.75,
-    205.7
-   ],
-   "ui_in[7]": [
-    199.75,
-    207.06
-   ],
-   "ui_in[6]": [
-    199.75,
-    208.42
-   ],
-   "ui_in[5]": [
-    199.75,
-    209.78
-   ],
-   "ui_in[4]": [
-    199.75,
-    211.14
-   ],
-   "ui_in[3]": [
-    199.75,
-    212.5
-   ],
-   "ui_in[2]": [
-    199.75,
-    213.86
-   ],
-   "ui_in[1]": [
-    199.75,
-    215.22
+    159.46
    ],
    "ui_in[0]": [
     199.75,
     216.58
    ],
-   "rst_n": [
+   "ui_in[1]": [
     199.75,
-    217.94
+    215.22
+   ],
+   "ui_in[2]": [
+    199.75,
+    213.86
+   ],
+   "ui_in[3]": [
+    199.75,
+    212.5
+   ],
+   "ui_in[4]": [
+    199.75,
+    211.14
+   ],
+   "ui_in[5]": [
+    199.75,
+    209.78
+   ],
+   "ui_in[6]": [
+    199.75,
+    208.42
+   ],
+   "ui_in[7]": [
+    199.75,
+    207.06
+   ],
+   "uio_in[0]": [
+    199.75,
+    205.7
+   ],
+   "uio_in[1]": [
+    199.75,
+    204.34
+   ],
+   "uio_in[2]": [
+    199.75,
+    202.98
+   ],
+   "uio_in[3]": [
+    199.75,
+    201.62
+   ],
+   "uio_in[4]": [
+    199.75,
+    200.26
+   ],
+   "uio_in[5]": [
+    199.75,
+    198.9
+   ],
+   "uio_in[6]": [
+    199.75,
+    197.54
+   ],
+   "uio_in[7]": [
+    199.75,
+    196.18
+   ],
+   "uio_oe[0]": [
+    199.75,
+    173.06
+   ],
+   "uio_oe[1]": [
+    199.75,
+    171.7
+   ],
+   "uio_oe[2]": [
+    199.75,
+    170.34
+   ],
+   "uio_oe[3]": [
+    199.75,
+    168.98
+   ],
+   "uio_oe[4]": [
+    199.75,
+    167.62
+   ],
+   "uio_oe[5]": [
+    199.75,
+    166.26
+   ],
+   "uio_oe[6]": [
+    199.75,
+    164.9
+   ],
+   "uio_oe[7]": [
+    199.75,
+    163.54
+   ],
+   "uio_out[0]": [
+    199.75,
+    183.94
+   ],
+   "uio_out[1]": [
+    199.75,
+    182.58
+   ],
+   "uio_out[2]": [
+    199.75,
+    181.22
+   ],
+   "uio_out[3]": [
+    199.75,
+    179.86
+   ],
+   "uio_out[4]": [
+    199.75,
+    178.5
+   ],
+   "uio_out[5]": [
+    199.75,
+    177.14
+   ],
+   "uio_out[6]": [
+    199.75,
+    175.78
+   ],
+   "uio_out[7]": [
+    199.75,
+    174.42
+   ],
+   "uo_out[0]": [
+    199.75,
+    194.82
+   ],
+   "uo_out[1]": [
+    199.75,
+    193.46
+   ],
+   "uo_out[2]": [
+    199.75,
+    192.1
+   ],
+   "uo_out[3]": [
+    199.75,
+    190.74
+   ],
+   "uo_out[4]": [
+    199.75,
+    189.38
+   ],
+   "uo_out[5]": [
+    199.75,
+    188.02
+   ],
+   "uo_out[6]": [
+    199.75,
+    186.66
+   ],
+   "uo_out[7]": [
+    199.75,
+    185.3
    ]
   }
  },

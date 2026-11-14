@@ -42,14 +42,17 @@ Y_BOT = 3.2               # decaps start above the full-width VDPWR bar (y 1.7-2
 
 # per part: MIM allowed below this own-frame y (None: everywhere, False: nowhere), MOS on/off
 SPEC = {
-    ('xdeca', 1): dict(mim_top=160.0 - Y_BOT, mos=True),    # top of part 1 MOS only (TT staircase)
-    ('xdeca', 2): dict(mim_top=None, mos=True),
+    ('xdeca', 1): dict(mim_top=False, mos=True),             # west strip, under the west straps
+    ('xdeca', 2): dict(mim_top=None, mos=True),              # between bias_gen and the macro
     ('xdeca', 3): dict(mim_top=None, mos=True),
     ('xdeca', 4): dict(mim_top=None, mos=True),
-    ('xdeca', 5): dict(mim_top=None, mos=False),             # MIM only, over r2r (met1 only)
-    ('xdecd', 1): dict(mim_top=False, mos=True),             # beside the west straps / TX feeds
-    ('xdecd', 2): dict(mim_top=False, mos=True),
-    ('xdecd', 3): dict(mim_top=None, mos=True),
+    ('xdeca', 5): dict(mim_top=None, mos=True),              # west, above the TX cluster
+    ('xdeca', 6): dict(mim_top=160.0 - 86.0, mos=True),      # west of the macro; top MOS only (TT staircase)
+    ('xdeca', 7): dict(mim_top=None, mos=False),             # MIM only, over r2r (met1 only)
+    ('xdecd', 1): dict(mim_top=False, mos=True),             # under comp_ct (routes over it)
+    ('xdecd', 2): dict(mim_top=False, mos=True),             # over bias_gen, under r2r
+    ('xdecd', 3): dict(mim_top=False, mos=True),             # in the TX cluster
+    ('xdecd', 4): dict(mim_top=None, mos=True),              # over avg_sc
 }
 
 
