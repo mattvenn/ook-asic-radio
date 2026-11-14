@@ -115,7 +115,7 @@ class Block:
             sh.insert(r)
 
     def flare(self, cuts=('via1', 'via2', 'via3'), maxrow=3, keep=(), only=None, small=False, small_nets=None,
-              skip_nets=None, target=None, verbose=False):
+              skip_nets=None, target=None, netof=None, verbose=False):
         """Via arrays at every junction (Harald Pretl's review point 11, docs/layout.md "Checklist").
         Every single cut and every 1 x n row (n <= maxrow) drawn in this cell becomes an array: >= 2 x 2
         where one fits, else 1 x 2. The array grows from the existing cut(s) on their pitch; both metals
@@ -133,6 +133,8 @@ class Block:
         target: a child Block placed in this cell (e.g. a half placed twice, mirrored): flare the child's
         own cuts instead, checked in every placement against this whole cell, drawn into the child (so
         the placements stay identical / symmetric). keep / only are in this cell's coordinates.
+        netof: callable(cut, box) -> net name (box in this cell's dbu coordinates), instead of the
+        labels (e.g. the top-level router's own net tags).
         Adds shapes only; nothing drawn before is moved or removed.
         Returns [(cut, x, y, n, net)] for the junctions left as they were (no room)."""
         import re as _re
@@ -159,7 +161,8 @@ class Block:
         kbox = pya.Region([b.to_itype(dbu) for b in keep])
         obox = pya.Region([b.to_itype(dbu) for b in only]) if only else None
         left = []
-        netof = self._netof() if (small_nets or skip_nets or verbose) else (lambda cut, b: '?')
+        if netof is None:
+            netof = self._netof() if (small_nets or skip_nets or verbose) else (lambda cut, b: '?')
         for cut in cuts:
             size, space, lo, elo, hi, ehi = VIA[cut]
             cs, p = I(size), I(size + space)
@@ -175,8 +178,9 @@ class Block:
                 old = pya.Region(cl)
                 olds = [tr(old, T) for T in Ts]                  # the cluster in each placement
                 net = netof(cut, olds[0].bbox())
-                sm = small or bool(small_nets and _re.fullmatch(small_nets, net))
-                if skip_nets and _re.fullmatch(skip_nets, net):
+                names = net.split(',')                          # a net with several labels
+                sm = small or bool(small_nets and any(_re.fullmatch(small_nets, q) for q in names))
+                if skip_nets and any(_re.fullmatch(skip_nets, q) for q in names):
                     continue
                 if n > maxrow or (len(xs) > 1 and len(ys) > 1) or (sm and n > 1):
                     continue                                    # already an array (or a long row)
