@@ -913,37 +913,43 @@
    "decaps": {
     "xdeca": [
      {
-      "x": 70,
-      "y": 166.2,
-      "w": 77,
-      "h": 20.3
+      "x": 0,
+      "y": 2,
+      "w": 13,
+      "h": 95
      },
      {
-      "x": 150,
+      "x": 260,
+      "y": 2,
+      "w": 17,
+      "h": 81
+     },
+     {
+      "x": 135,
       "y": 198,
       "w": 41,
       "h": 15
      },
      {
-      "x": 0,
-      "y": 2,
-      "w": 28.9,
-      "h": 95
-     },
-     {
-      "x": 194,
+      "x": 179,
       "y": 170,
-      "w": 83,
+      "w": 54,
       "h": 43
      },
      {
       "x": 0,
       "y": 100,
-      "w": 67,
-      "h": 120
+      "w": 52,
+      "h": 121
      },
      {
-      "x": 194,
+      "x": 236,
+      "y": 86,
+      "w": 41,
+      "h": 127
+     },
+     {
+      "x": 179,
       "y": 95.6,
       "w": 54.12,
       "h": 71.75,
@@ -952,34 +958,28 @@
     ],
     "xdecd": [
      {
-      "x": 150,
+      "x": 135,
       "y": 96,
       "w": 12,
       "h": 22
      },
      {
-      "x": 222,
+      "x": 207,
       "y": 86,
       "w": 26,
       "h": 7
      },
      {
-      "x": 32,
+      "x": 16,
       "y": 65,
-      "w": 17,
+      "w": 18,
       "h": 32
      },
      {
-      "x": 251,
-      "y": 86,
-      "w": 26,
-      "h": 81
-     },
-     {
-      "x": 70,
-      "y": 189,
+      "x": 55,
+      "y": 167,
       "w": 77,
-      "h": 24
+      "h": 46
      }
     ]
    },
@@ -994,8 +994,13 @@
     "trim": "W"
    },
    "name": "RX in the corner (ua[2] / ua[1]), TX on ua[3] / ua[4]",
-   "note": "Matt's tall-chain layout reworked (2026-11-14): rx_t as laid out (chain + one-row log_det_t, unflipped: input at the west end, flowing east), RX on ua[2] / ua[1] so the input section sits bottom-left, TX drivers on their own pads ua[3] / ua[4] in the strip west of it (TX is off in RX, so no isolation needed), dbg moves to ua[5]. det comes out at the detector's west end: LPF, averager, comparator, Ctrim and the trim DAC run east along the top towards the macro. Bias east of the chain's output end (ib_chain / vcm run west along the bottom to the chain's south-edge pins). Pinout change: rx ua[0]/ua[1] -> ua[2]/ua[1], dbg ua[2] -> ua[5]. Rule 2's 4 um is the flyline of o4 past stage 1; the real taps are wired in rx_t's channel (PEX: nothing back to the input).",
+   "note": "Matt's tall-chain layout reworked (2026-11-14): rx_t as laid out (chain + one-row log_det_t, unflipped: input at the west end, flowing east), RX on ua[2] / ua[1] so the input section sits bottom-left, TX drivers on their own pads ua[3] / ua[4] in the strip west of it (TX is off in RX, so no isolation needed), dbg moves to ua[5]. det comes out at the detector's west end: LPF, averager, comparator, Ctrim and the trim DAC run east along the top towards the macro. Everything but the macro shifted 15 um west (bias 21 um from the macro halo; the RX inputs run ~15 um west along the bottom from ua[2] / ua[1] to the chain). Bias east of the chain's output end (ib_chain / vcm run west along the bottom to the chain's south-edge pins). Pinout change: rx ua[0]/ua[1] -> ua[2]/ua[1], dbg ua[2] -> ua[5]. Rule 2's 4 um is the flyline of o4 past stage 1; the real taps are wired in rx_t's channel (PEX: nothing back to the input).",
    "order": 12,
+   "pads": {
+    "dbg": "ua[5]",
+    "rx_n": "ua[1]",
+    "rx_p": "ua[2]"
+   },
    "pins": {
     "macro": {
      "clk": {
@@ -1235,84 +1240,84 @@
      "y": 2.88
     },
     "xavg": {
-     "x": 70,
-     "y": 133.2,
-     "orient": "R0"
+     "orient": "R0",
+     "x": 55,
+     "y": 133.2
     },
     "xbias": {
-     "x": 222.5,
-     "y": 2.5,
-     "orient": "R90"
+     "orient": "R90",
+     "x": 207.5,
+     "y": 2.5
     },
     "xcdet": {
-     "x": 57.2,
-     "y": 74.5,
-     "orient": "MY"
+     "orient": "MY",
+     "x": 42.2,
+     "y": 74.5
     },
     "xchain": {
-     "x": 89.84,
-     "y": 6.5,
-     "orient": "R0"
+     "orient": "R0",
+     "x": 74.84,
+     "y": 6.5
     },
     "xcomp": {
-     "x": 150,
-     "y": 121.2,
-     "orient": "MYR90"
+     "orient": "MYR90",
+     "x": 135,
+     "y": 121.2
     },
     "xctrim": {
-     "x": 165,
-     "y": 95.6,
-     "orient": "MX"
+     "orient": "MX",
+     "x": 150,
+     "y": 95.6
     },
     "xdac": {
-     "x": 194,
-     "y": 95.6,
-     "orient": "MYR90"
+     "orient": "MYR90",
+     "x": 179,
+     "y": 95.6
     },
     "xdbg": {
-     "x": 72,
-     "y": 99.5,
-     "orient": "MY"
+     "orient": "MY",
+     "x": 57,
+     "y": 99.5
     },
     "xdet": {
-     "x": 82.14,
-     "y": 76.9,
-     "orient": "R0"
+     "orient": "R0",
+     "x": 67.14,
+     "y": 76.9
     },
     "xlpf": {
-     "x": 82.2,
-     "y": 95.6,
-     "orient": "R0"
+     "orient": "R0",
+     "x": 67.2,
+     "y": 95.6
     },
     "xtx.xdrv_n": {
-     "x": 31.4,
-     "y": 4.5,
-     "orient": "MYR90"
+     "orient": "MYR90",
+     "x": 16.4,
+     "y": 4.5
     },
     "xtx.xdrv_p": {
-     "x": 60.66,
-     "y": 4.5,
-     "orient": "R270"
+     "orient": "R270",
+     "x": 45.66,
+     "y": 4.5
     },
     "xtx.xls": {
-     "x": 49.5,
-     "y": 48,
-     "orient": "R270"
+     "orient": "R270",
+     "x": 34.5,
+     "y": 48
     },
     "xtx.xlse_n": {
-     "x": 31.5,
-     "y": 48,
-     "orient": "R270"
+     "orient": "R270",
+     "x": 16.5,
+     "y": 48
     },
     "xtx.xlse_p": {
-     "x": 71.5,
-     "y": 48,
-     "orient": "R270"
+     "orient": "R270",
+     "x": 56.5,
+     "y": 48
     },
     "xtx.xring": {
-     "x": 52,
-     "y": 65,
-     "orient": "R0"
+     "orient": "R0",
+     "x": 37,
+     "y": 65
     }
    },
    "straps": [
@@ -1363,12 +1368,7 @@
     }
    ],
    "updatedAt": "2026-11-14T09:28:36.108Z",
-   "updatedBy": "u_f2MrQcToqQu4mF7vfWFxQQ",
-   "pads": {
-    "rx_p": "ua[2]",
-    "rx_n": "ua[1]",
-    "dbg": "ua[5]"
-   }
+   "updatedBy": "u_f2MrQcToqQu4mF7vfWFxQQ"
   }
  ]
 }
