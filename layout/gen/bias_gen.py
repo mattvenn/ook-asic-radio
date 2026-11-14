@@ -441,5 +441,7 @@ if __name__ == '__main__':
     if t:
         {'mirror': test_mirror, 'small': test_small}[t]().write(os.path.join(REPO, 'layout', f'bias_{t}.gds'))
     else:
-        make().write(os.path.join(REPO, 'layout', 'bias_gen.gds'))
+        b = make()
+        b.flare()                     # via arrays at every junction (docs/layout.md "Via arrays")
+        b.write(os.path.join(REPO, 'layout', 'bias_gen.gds'))
         write_ref('bias_gen', 'bias_gen', PARAMS)

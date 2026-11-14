@@ -57,5 +57,7 @@ def write_ref(name, params):
 
 if __name__ == '__main__':
     for name, prm in VARIANTS.items():
-        make(name, **prm).write(os.path.join(REPO, 'layout', name + '.gds'), flatten=True)
+        b = make(name, **prm)
+        b.flare()                     # via arrays at every junction (docs/layout.md "Via arrays")
+        b.write(os.path.join(REPO, 'layout', name + '.gds'), flatten=True)
         write_ref(name, prm)          # also the main variant: netgen can't evaluate W='0.42*kn'
