@@ -14,7 +14,7 @@ import sys
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 FP = os.path.join(ROOT, 'layout', 'floorplan')
 CELLS = ['log_det', 'lpf_rc', 'avg_sc', 'comp_ct', 'r2r', 'bias_gen', 'dbg_tg', 'tx_ring', 'tx_ls',
-         'tx_ls_en', 'tx_drv', 'lna_chain', 'lna_chain_t', 'log_det_t']
+         'tx_ls_en', 'tx_drv', 'lna_chain', 'lna_chain_t', 'log_det_t', 'cdet_t']
 
 
 def main():

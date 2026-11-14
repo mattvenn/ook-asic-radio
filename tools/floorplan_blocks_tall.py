@@ -4,7 +4,7 @@
                fixes: ibias is the met4 pin on the south edge (the met2 one at the input
                section's east edge is inside the chain now), and the input section's g1p / g1n
                labels (internal nodes) are dropped;
-  log_det_t    a SKETCH, not laid out: log_det unwrapped into one row to sit along the chain's
+  log_det_t    from layout/log_det_t.gds once it exists (cdet_t too); before that a SKETCH: log_det unwrapped into one row to sit along the chain's
                north edge. Six det_cells (layout/det_cell.gds, unchanged) in a row, t1 next to
                the end section, every input on the cells' Cc bottom plates as drawn (reached from
                the south, across the VSS rail). End section (Mbias, Rs_b, Rdet, ~10 um) at the t1
@@ -53,10 +53,14 @@ def main():
     p = os.path.join(ROOT, 'layout', 'floorplan', 'blocks.json')
     d = json.load(open(p))
     d['lna_chain_t'] = chain()
-    d['log_det_t'] = det_sketch(d['det_cell'])
+    if os.path.exists(os.path.join(ROOT, 'layout', 'log_det_t.gds')):   # laid out (layout/gen/log_det_tall.py)
+        d['log_det_t'] = fb.block(os.path.join(ROOT, 'layout', 'log_det_t.gds'))
+        d['cdet_t'] = fb.block(os.path.join(ROOT, 'layout', 'cdet_t.gds'))
+    else:
+        d['log_det_t'] = det_sketch(d['det_cell'])
     with open(p, 'w') as fh:
         json.dump(d, fh, indent=1, sort_keys=True)
-    for k in ('lna_chain_t', 'log_det_t'):
+    for k in [k for k in ('lna_chain_t', 'log_det_t', 'cdet_t') if k in d]:
         print(f"{k:12s} {d[k]['w']:6.2f} x {d[k]['h']:5.2f}  {' '.join(sorted(d[k]['pins']))}")
 
 

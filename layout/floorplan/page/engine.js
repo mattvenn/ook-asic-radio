@@ -59,7 +59,8 @@
     // log_det unwrapped into one row along the chain's north edge: a sketch (tools/floorplan_blocks_tall.py),
     // a per-variant alternative to the laid-out two-row log_det; Cdet is then the separate block xcdet
     const detAlt = C.log_det_t ? { cell: 'log_det_t', w: C.log_det_t.w, h: C.log_det_t.h, pins: C.log_det_t.pins, m4: C.log_det_t.m4, zones: {},
-      label: 'log_det_t (sketch)', what: 'one row of six det_cells, inputs reached from the south edge, Cdet outside (xcdet)' } : null;
+      sketch: !!C.log_det_t.sketch, label: C.log_det_t.sketch ? 'log_det_t (sketch)' : 'log_det_t',
+      what: 'one row of six det_cells, inputs reached from the south edge, Cdet outside (xcdet)' } : null;
     const real = (inst, cell, extra) => Object.assign({ inst, cell, w: C[cell].w, h: C[cell].h, pins: C[cell].pins, m4: C[cell].m4 || [], group: 'rx' }, extra || {});
     // macro pins: even spread of pin_order.cfg slots (LibreLane), an estimate until the DEF is read
     const W = ['$', '$', 'tx_en', 'tx_en_n', '$', '$', '$', 'rx_en', 'dbg_en', '$', '$', '$', 'comp_in', 'sc_phi1', 'sc_phi2', '$', '$']
@@ -82,7 +83,7 @@
           pins: { trim: { layer: 'met4', x: 1, y: 0.25 } }, m4: [[0, 0, 23.5, 23.5]] },
       // Cdet (1 pF MIM, det -> VDD) on its own, for the unwrapped log_det sketch; optional: not parked or
       // listed as unplaced when a variant leaves it out (the two-row log_det has Cdet inside)
-      ...(detAlt ? [{ inst: 'xcdet', cell: 'cdet_1p', w: 22.4, h: 22.4, estimate: true, optional: true, group: 'rx', label: 'Cdet 1 pF',
+      ...(detAlt && C.cdet_t ? [real('xcdet', 'cdet_t', { optional: true, label: 'Cdet 1 pF' })] : detAlt ? [{ inst: 'xcdet', cell: 'cdet_1p', w: 22.4, h: 22.4, estimate: true, optional: true, group: 'rx', label: 'Cdet 1 pF',
         pins: { det: { layer: 'met4', x: 0.5, y: 11.2 }, VDD: { layer: 'met3', x: 21.9, y: 11.2 } }, m4: [[0, 0, 22.4, 22.4]] }] : []),
       real('xbias', 'bias_gen', { group: 'bias' }), real('xdbg', 'dbg_tg'),
       real('xtx.xring', 'tx_ring', { group: 'tx' }), real('xtx.xls', 'tx_ls', { group: 'tx' }),
@@ -118,6 +119,16 @@
     ['enh_p', 'tx', 'xtx.xlse_p.A', 'xtx.xdrv_p.en'], ['enh_n', 'tx', 'xtx.xlse_n.A', 'xtx.xdrv_n.en'],
     ['tx_p', 'tx', 'xtx.xdrv_p.out', 'pad:ua[3]'], ['tx_n', 'tx', 'xtx.xdrv_n.out', 'pad:ua[4]'],
   ]);
+  // tile pads of the pad nets; a variant can reassign them (v.pads = {net: 'ua[k]'}, a pinout change:
+  // info.yaml, src/project.v, the docs). Only ua[0]..ua[5] can be used.
+  const PAD_NETS = Object.fromEntries(NETS.filter(n => n[2].startsWith('pad:') || n[3].startsWith('pad:'))
+    .map(n => [n[0], (n[2].startsWith('pad:') ? n[2] : n[3]).slice(4)]));
+  function padsOf(v) { return Object.assign({}, PAD_NETS, (v && v.pads) || {}); }
+  function padRoles(v) {                       // {ua[k]: net}
+    const r = {};
+    for (const [n, p] of Object.entries(padsOf(v))) if (p.startsWith('ua')) r[p] = n;
+    return r;
+  }
   const NET_CLASSES = {
     rxin: 'RX input', rx: 'RX signal', late: 'RX late stages', clk: 'clock / switching', en: 'enable (static in RX)', bias: 'bias', tx: 'TX', trim: 'trim',
   };
@@ -258,10 +269,10 @@
     return [x0, y0, x1 - x0, tile.h - y0];
   }
 
-  function routeNets(tile, R) {
-    const obst = Object.values(R.inst).map(i => i.rect);
-    const out = [];
-    for (const [name, cls, a, b] of NETS) {
+  function routeNets(tile, R, v) {
+    const out = [], pads = padsOf(v);
+    for (const [name, cls, a0, b0] of NETS) {
+      const a = a0.startsWith('pad:') ? 'pad:' + pads[name] : a0, b = b0.startsWith('pad:') ? 'pad:' + pads[name] : b0;
       const pa = pinAt(tile, R, a), pb = pinAt(tile, R, b);
       if (!pa || !pb) { out.push({ name, cls, a, b, missing: true }); continue; }
       const ownA = a.startsWith('pad:') ? null : a.slice(0, a.lastIndexOf('.'));
@@ -282,7 +293,7 @@
   // ---- checks: [{id, rule, title, status: pass|warn|fail|info, value, detail}]
   function evaluate(data, cat, v, settings) {
     const s = Object.assign({}, DEFAULT_SETTINGS, settings || {});
-    const tile = data.tile, R = resolve(cat, v), nets = routeNets(tile, R);
+    const tile = data.tile, R = resolve(cat, v), nets = routeNets(tile, R, v);
     const I = R.inst, res = [];
     const add = (rule, title, status, value, detail) => res.push({ rule, title, status, value, detail: detail || '' });
     const netBy = n => nets.find(x => x.name === n);
@@ -342,12 +353,12 @@
 
     // 5. TX at the pads
     {
-      const tp = netBy('tx_p'), tn = netBy('tx_n');
+      const tp = netBy('tx_p'), tn = netBy('tx_n'), pd = padsOf(v), t5 = `TX at ${pd.tx_p} / ${pd.tx_n}`;
       if (tp && tn && !tp.missing && !tn.missing) {
         const m = Math.max(tp.len, tn.len), en = ['tx_en', 'tx_en_n', 'tx_en key'].map(netBy).filter(n => n && !n.missing);
-        add(5, 'TX at ua[3] / ua[4]', lvl(m, s.r5, s.r5 * 2), `${fmt(m)} µm`,
+        add(5, t5, lvl(m, s.r5, s.r5 * 2), `${fmt(m)} µm`,
           `driver → pad: tx_p ${fmt(tp.len)}, tx_n ${fmt(tn.len)} µm (met3, 2.5 µm wide; want ≤ ${s.r5}). Enables from the macro: ${en.map(n => fmt(n.len)).join(' / ')} µm.`);
-      } else add(5, 'TX at ua[3] / ua[4]', 'info', '-', 'Place the TX drivers.');
+      } else add(5, t5, 'info', '-', 'Place the TX drivers.');
     }
 
     // 6. bias near the chain
@@ -453,7 +464,7 @@
       const [k, m] = ORIENTS[i.pl.orient];
       const b = { inst: i.name, cell: i.cat.cell, x: +i.rect[0].toFixed(2), y: +i.rect[1].toFixed(2), orient: i.pl.orient,
         rot: k * 90, mirror: m, estimate: !!i.cat.estimate };
-      if (i.alt) { b.cell = i.cat.alt.cell; b.w = i.w; b.h = i.h; b.estimate = true; b.note = `sketch: ${i.cat.alt.what}`; }
+      if (i.alt) { b.cell = i.cat.alt.cell; b.w = i.w; b.h = i.h; b.estimate = i.cat.alt.sketch; if (i.cat.alt.sketch) b.note = `sketch: ${i.cat.alt.what}`; }
       if (i.folded) { b.w = i.w; b.h = i.h; b.fold = 'U-fold, same area, half width: input half (input section, stages 1-2) on top with the inputs on the top edge, stages 3-6 turning back along the bottom row (needs a lna_chain re-layout)'; }
       if (i.cat.estimate || (i.cat.reshape && (Math.abs(i.w - i.cat.w) > 1e-6 || Math.abs(i.h - i.cat.h) > 1e-6))) { b.w = +i.w.toFixed(3); b.h = +i.h.toFixed(3); }
       if (i.cat.reshape && Math.abs(i.w - i.cat.w) < 1e-6 && Math.abs(i.h - i.cat.h) > 1e-6) b.note = `re-harden at ${b.w} x ${b.h} um`;
@@ -464,6 +475,7 @@
     return {
       variant: v.name, note: v.note || '', tile: { w: data.tile.w, h: data.tile.h }, blocks,
       macro_pins: { 'trim_out[7:0]': (v.macroPins && v.macroPins.trim) || 'W' },
+      pads: padsOf(v),
       pins_moved: Object.fromEntries(Object.entries(v.pins || {}).filter(([, ps]) => Object.keys(ps).length).map(([i, ps]) => [i, Object.fromEntries(Object.entries(ps).map(([p, q]) => [p, [+q.x.toFixed(2), +q.y.toFixed(2)]]))])),
       pins_note: 'pins_moved: [x, y] in each block\'s own frame (lower-left = 0, 0, before its orientation); they need a block re-layout, or for the macro a new pin_order.cfg.',
       straps: (v.straps || []).map(s => ({ net: s.net, x: s.x, w: s.w })),
@@ -473,6 +485,7 @@
   function importJSON(cat, j) {
     const v = { name: j.variant || 'Imported', note: j.note || '', place: {}, decaps: {}, straps: (j.straps || []).map(s => ({ net: s.net, x: +s.x, w: +s.w })), est: {} };
     const ts = j.macro_pins && j.macro_pins['trim_out[7:0]']; if (TRIM_SIDES[ts]) v.macroPins = { trim: ts };
+    if (j.pads) { const d = Object.entries(j.pads).filter(([n, p]) => PAD_NETS[n] && PAD_NETS[n] !== p); if (d.length) v.pads = Object.fromEntries(d); }
     if (j.pins_moved) { v.pins = {}; for (const [i, ps] of Object.entries(j.pins_moved)) { if (!cat[i]) continue; v.pins[i] = {}; for (const [p, xy] of Object.entries(ps)) v.pins[i][p] = { x: +xy[0], y: +xy[1] }; } }
     for (const b of j.blocks || []) {
       if (DECAPS[b.inst]) { (v.decaps[b.inst] = v.decaps[b.inst] || []).push(Object.assign({ x: +b.x, y: +b.y, w: +b.w, h: +b.h }, b.mim ? { mim: true } : {})); continue; }
@@ -487,5 +500,5 @@
   }
 
   root.FP = { TRIM_SIDES, ORIENTS, placedSize, mapPt, mapRect, compose, buildCatalog, DECAPS, NETS, NET_CLASSES, DEFAULT_SETTINGS,
-    resolve, routeNets, evaluate, exportJSON, importJSON, rectGap, overlap, channelRect, channelShapes };
+    resolve, routeNets, evaluate, padsOf, padRoles, exportJSON, importJSON, rectGap, overlap, channelRect, channelShapes };
 })(typeof window !== 'undefined' ? window : globalThis);

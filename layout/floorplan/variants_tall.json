@@ -905,6 +905,470 @@
     }
    ],
    "id": "tallsk"
+  },
+  {
+   "alt": {
+    "xdet": true
+   },
+   "decaps": {
+    "xdeca": [
+     {
+      "x": 70,
+      "y": 166.2,
+      "w": 77,
+      "h": 20.3
+     },
+     {
+      "x": 150,
+      "y": 198,
+      "w": 41,
+      "h": 15
+     },
+     {
+      "x": 0,
+      "y": 2,
+      "w": 28.9,
+      "h": 95
+     },
+     {
+      "x": 194,
+      "y": 170,
+      "w": 83,
+      "h": 43
+     },
+     {
+      "x": 0,
+      "y": 100,
+      "w": 67,
+      "h": 120
+     },
+     {
+      "x": 194,
+      "y": 95.6,
+      "w": 54.12,
+      "h": 71.75,
+      "mim": true
+     }
+    ],
+    "xdecd": [
+     {
+      "x": 150,
+      "y": 96,
+      "w": 12,
+      "h": 22
+     },
+     {
+      "x": 222,
+      "y": 86,
+      "w": 26,
+      "h": 7
+     },
+     {
+      "x": 32,
+      "y": 65,
+      "w": 17,
+      "h": 32
+     },
+     {
+      "x": 251,
+      "y": 86,
+      "w": 26,
+      "h": 81
+     },
+     {
+      "x": 70,
+      "y": 189,
+      "w": 77,
+      "h": 24
+     }
+    ]
+   },
+   "est": {
+    "macro": {
+     "area": 44000,
+     "h": 220,
+     "w": 200
+    }
+   },
+   "macroPins": {
+    "trim": "W"
+   },
+   "name": "RX in the corner (ua[2] / ua[1]), TX on ua[3] / ua[4]",
+   "note": "Matt's tall-chain layout reworked (2026-11-14): rx_t as laid out (chain + one-row log_det_t, unflipped: input at the west end, flowing east), RX on ua[2] / ua[1] so the input section sits bottom-left, TX drivers on their own pads ua[3] / ua[4] in the strip west of it (TX is off in RX, so no isolation needed), dbg moves to ua[5]. det comes out at the detector's west end: LPF, averager, comparator, Ctrim and the trim DAC run east along the top towards the macro. Bias east of the chain's output end (ib_chain / vcm run west along the bottom to the chain's south-edge pins). Pinout change: rx ua[0]/ua[1] -> ua[2]/ua[1], dbg ua[2] -> ua[5]. Rule 2's 4 um is the flyline of o4 past stage 1; the real taps are wired in rx_t's channel (PEX: nothing back to the input).",
+   "order": 12,
+   "pins": {
+    "macro": {
+     "clk": {
+      "x": 199.75,
+      "y": 162.18
+     },
+     "comp_in": {
+      "x": 199.75,
+      "y": 86.02
+     },
+     "dbg_en": {
+      "x": 199.75,
+      "y": 158.1
+     },
+     "rst_n": {
+      "x": 199.75,
+      "y": 217.94
+     },
+     "rx_en": {
+      "x": 199.75,
+      "y": 7.14
+     },
+     "sc_phi1": {
+      "x": 199.75,
+      "y": 156.74
+     },
+     "sc_phi2": {
+      "x": 199.75,
+      "y": 155.38
+     },
+     "trim_out[0]": {
+      "x": 199.75,
+      "y": 154.02
+     },
+     "trim_out[1]": {
+      "x": 199.75,
+      "y": 139.06
+     },
+     "trim_out[2]": {
+      "x": 199.75,
+      "y": 132.26
+     },
+     "trim_out[3]": {
+      "x": 199.75,
+      "y": 124.1
+     },
+     "trim_out[4]": {
+      "x": 199.75,
+      "y": 117.3
+     },
+     "trim_out[5]": {
+      "x": 199.75,
+      "y": 109.14
+     },
+     "trim_out[6]": {
+      "x": 199.75,
+      "y": 102.34
+     },
+     "trim_out[7]": {
+      "x": 199.75,
+      "y": 94.18
+     },
+     "tx_en": {
+      "x": 199.75,
+      "y": 160.82
+     },
+     "tx_en_n": {
+      "x": 199.75,
+      "y": 159.46
+     },
+     "ui_in[0]": {
+      "x": 199.75,
+      "y": 216.58
+     },
+     "ui_in[1]": {
+      "x": 199.75,
+      "y": 215.22
+     },
+     "ui_in[2]": {
+      "x": 199.75,
+      "y": 213.86
+     },
+     "ui_in[3]": {
+      "x": 199.75,
+      "y": 212.5
+     },
+     "ui_in[4]": {
+      "x": 199.75,
+      "y": 211.14
+     },
+     "ui_in[5]": {
+      "x": 199.75,
+      "y": 209.78
+     },
+     "ui_in[6]": {
+      "x": 199.75,
+      "y": 208.42
+     },
+     "ui_in[7]": {
+      "x": 199.75,
+      "y": 207.06
+     },
+     "uio_in[0]": {
+      "x": 199.75,
+      "y": 205.7
+     },
+     "uio_in[1]": {
+      "x": 199.75,
+      "y": 204.34
+     },
+     "uio_in[2]": {
+      "x": 199.75,
+      "y": 202.98
+     },
+     "uio_in[3]": {
+      "x": 199.75,
+      "y": 201.62
+     },
+     "uio_in[4]": {
+      "x": 199.75,
+      "y": 200.26
+     },
+     "uio_in[5]": {
+      "x": 199.75,
+      "y": 198.9
+     },
+     "uio_in[6]": {
+      "x": 199.75,
+      "y": 197.54
+     },
+     "uio_in[7]": {
+      "x": 199.75,
+      "y": 196.18
+     },
+     "uio_oe[0]": {
+      "x": 199.75,
+      "y": 173.06
+     },
+     "uio_oe[1]": {
+      "x": 199.75,
+      "y": 171.7
+     },
+     "uio_oe[2]": {
+      "x": 199.75,
+      "y": 170.34
+     },
+     "uio_oe[3]": {
+      "x": 199.75,
+      "y": 168.98
+     },
+     "uio_oe[4]": {
+      "x": 199.75,
+      "y": 167.62
+     },
+     "uio_oe[5]": {
+      "x": 199.75,
+      "y": 166.26
+     },
+     "uio_oe[6]": {
+      "x": 199.75,
+      "y": 164.9
+     },
+     "uio_oe[7]": {
+      "x": 199.75,
+      "y": 163.54
+     },
+     "uio_out[0]": {
+      "x": 199.75,
+      "y": 183.94
+     },
+     "uio_out[1]": {
+      "x": 199.75,
+      "y": 182.58
+     },
+     "uio_out[2]": {
+      "x": 199.75,
+      "y": 181.22
+     },
+     "uio_out[3]": {
+      "x": 199.75,
+      "y": 179.86
+     },
+     "uio_out[4]": {
+      "x": 199.75,
+      "y": 178.5
+     },
+     "uio_out[5]": {
+      "x": 199.75,
+      "y": 177.14
+     },
+     "uio_out[6]": {
+      "x": 199.75,
+      "y": 175.78
+     },
+     "uio_out[7]": {
+      "x": 199.75,
+      "y": 174.42
+     },
+     "uo_out[0]": {
+      "x": 199.75,
+      "y": 194.82
+     },
+     "uo_out[1]": {
+      "x": 199.75,
+      "y": 193.46
+     },
+     "uo_out[2]": {
+      "x": 199.75,
+      "y": 192.1
+     },
+     "uo_out[3]": {
+      "x": 199.75,
+      "y": 190.74
+     },
+     "uo_out[4]": {
+      "x": 199.75,
+      "y": 189.38
+     },
+     "uo_out[5]": {
+      "x": 199.75,
+      "y": 188.02
+     },
+     "uo_out[6]": {
+      "x": 199.75,
+      "y": 186.66
+     },
+     "uo_out[7]": {
+      "x": 199.75,
+      "y": 185.3
+     }
+    }
+   },
+   "place": {
+    "macro": {
+     "orient": "MY",
+     "x": 282.5,
+     "y": 2.88
+    },
+    "xavg": {
+     "x": 70,
+     "y": 133.2,
+     "orient": "R0"
+    },
+    "xbias": {
+     "x": 222.5,
+     "y": 2.5,
+     "orient": "R90"
+    },
+    "xcdet": {
+     "x": 57.2,
+     "y": 74.5,
+     "orient": "MY"
+    },
+    "xchain": {
+     "x": 89.84,
+     "y": 6.5,
+     "orient": "R0"
+    },
+    "xcomp": {
+     "x": 150,
+     "y": 121.2,
+     "orient": "MYR90"
+    },
+    "xctrim": {
+     "x": 165,
+     "y": 95.6,
+     "orient": "MX"
+    },
+    "xdac": {
+     "x": 194,
+     "y": 95.6,
+     "orient": "MYR90"
+    },
+    "xdbg": {
+     "x": 72,
+     "y": 99.5,
+     "orient": "MY"
+    },
+    "xdet": {
+     "x": 82.14,
+     "y": 76.9,
+     "orient": "R0"
+    },
+    "xlpf": {
+     "x": 82.2,
+     "y": 95.6,
+     "orient": "R0"
+    },
+    "xtx.xdrv_n": {
+     "x": 31.4,
+     "y": 4.5,
+     "orient": "MYR90"
+    },
+    "xtx.xdrv_p": {
+     "x": 60.66,
+     "y": 4.5,
+     "orient": "R270"
+    },
+    "xtx.xls": {
+     "x": 49.5,
+     "y": 48,
+     "orient": "R270"
+    },
+    "xtx.xlse_n": {
+     "x": 31.5,
+     "y": 48,
+     "orient": "R270"
+    },
+    "xtx.xlse_p": {
+     "x": 71.5,
+     "y": 48,
+     "orient": "R270"
+    },
+    "xtx.xring": {
+     "x": 52,
+     "y": 65,
+     "orient": "R0"
+    }
+   },
+   "straps": [
+    {
+     "net": "VGND",
+     "w": 3.1,
+     "x": 12
+    },
+    {
+     "net": "VDPWR",
+     "w": 4.7,
+     "x": 5.8
+    },
+    {
+     "net": "VAPWR",
+     "w": 8.22,
+     "x": 481
+    },
+    {
+     "net": "VGND",
+     "w": 1.2,
+     "x": 489.72
+    },
+    {
+     "net": "VDPWR",
+     "w": 1.2,
+     "x": 491.42
+    },
+    {
+     "net": "VAPWR",
+     "w": 1.2,
+     "x": 276.5
+    },
+    {
+     "net": "VGND",
+     "w": 1.2,
+     "x": 278.2
+    },
+    {
+     "net": "VDPWR",
+     "w": 1.2,
+     "x": 279.9
+    },
+    {
+     "net": "VAPWR",
+     "w": 5,
+     "x": 0.3
+    }
+   ],
+   "updatedAt": "2026-11-14T09:28:36.108Z",
+   "updatedBy": "u_f2MrQcToqQu4mF7vfWFxQQ",
+   "pads": {
+    "rx_p": "ua[2]",
+    "rx_n": "ua[1]",
+    "dbg": "ua[5]"
+   }
   }
  ]
 }
