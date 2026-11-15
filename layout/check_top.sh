@@ -14,9 +14,13 @@ has() { [[ " $STAGES " == *" $1 "* ]]; }
 
 if has precheck; then
   # TT analog rules we can check here: no met5; power pins met4, >= 1.2 um wide, within 10 um of
-  # the bottom and the top edges, not touching each other
+  # the bottom and the top edges, not touching each other; and TT's analog pin check (tt-support-tools
+  # precheck.py analog_pin_check): ua[i] has met4 in the 0.1-0.5 um ring round its pin (or via3 on the
+  # pin) exactly when i < analog_pins, and then only with a description in info.yaml
   cat > precheck.py <<'PYEOF'
+import os, re
 import pya
+assert os.path.isfile(gds), 'no GDS: ' + gds
 ly = pya.Layout(); ly.read(gds); top = ly.top_cell(); H = top.dbbox().height()
 bad = 0
 for dt in (20, 16, 5, 44):
@@ -39,9 +43,29 @@ for i in range(len(allp)):
     for j in range(i + 1, len(allp)):
         if allp[i].enlarged(0.001, 0.001).overlaps(allp[j]):
             print('FAIL power pins touch', allp[i], allp[j]); bad += 1
+info = open(os.path.join(repo, 'info.yaml')).read()
+npins = int(re.search(r'^\s*analog_pins:\s*(\d+)', info, re.M).group(1))
+desc = dict(re.findall(r'^\s*(ua\[\d\])\s*:\s*"(.*)"', info, re.M))
+m4 = pya.Region(top.begin_shapes_rec(ly.find_layer(71, 20)))
+v3 = pya.Region(top.begin_shapes_rec(ly.find_layer(70, 44)))
+um = lambda v: int(round(v / ly.dbu))
+for s in top.shapes(li).each():
+    b = s.dbbox()
+    n = [t.string for t in texts if b.contains(t.trans.disp.to_p())]
+    if not n or not re.fullmatch(r'ua\[\d\]', n[0]):
+        continue
+    i = int(n[0][3])
+    pr = pya.Region(b.to_itype(ly.dbu))
+    ring = pr.sized(um(0.5)) - pr.sized(um(0.1))
+    conn = not (m4 & ring).is_empty() or not (v3 & pr).is_empty()
+    want, d = i < npins, bool(desc.get(n[0], ''))
+    ok = conn == want and (d if conn else not d)
+    print('%-5s %s metal %s, analog_pins %d, description %s' % ('ok' if ok else 'FAIL', n[0], 'yes' if conn else 'no',
+                                                              npins, 'yes' if d else 'no'))
+    bad += not ok
 print('precheck', 'PASS' if not bad else 'FAIL %d' % bad)
 PYEOF
-  echo "== precheck"; klayout -b -rd gds=$GDS -r precheck.py 2>/dev/null | grep -v "^Loaded"
+  echo "== precheck"; klayout -b -rd gds=$GDS -rd repo=$REPO -r precheck.py 2>&1 | grep -v "^Loaded"
 fi
 
 if has klayout; then

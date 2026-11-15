@@ -109,6 +109,11 @@ def main():
         assert lay == 'met4'
         t.rect('m4', bx)
         t.pin('m4', bx, n)
+        if n == 'ua[0]':
+            # ua[0] is unused, but TT's analog pins start at ua[0]: with analog_pins 6 (ua[1..5] used)
+            # the precheck wants metal next to it (0.1-0.5 um round the pin). A met4 stub on the pin,
+            # connected to nothing else (0.4 um below the riser that starts at y 2.0 next to it).
+            t.rect('m4', pya.DBox(bx.left, bx.top, bx.right, bx.top + 0.6))
 
     # blocks; the TX ones go into tx_top (placed at the origin: same tile coordinates)
     txc = ly.create_cell('tx_top')

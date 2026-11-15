@@ -41,7 +41,7 @@ PINOUT = {
             ('toggle event / strap magic 1 at reset', 'out'),
             ('trim direction / strap magic 0 at reset', 'out'),
             ('TX active / strap magic 1 at reset', 'out')],
-    'ua': [('', []), ('debug: detector output', [('xana', 'dbg')]), ('RX dipole -', [('xana', 'rx_n')]),
+    'ua': [('unused (a metal stub only: TT analog pins start at ua[0])', []), ('debug: detector output', [('xana', 'dbg')]), ('RX dipole -', [('xana', 'rx_n')]),
            ('RX dipole +', [('xana', 'rx_p')]), ('TX dipole +', [('xana', 'tx_p')]),
            ('TX dipole -', [('xana', 'tx_n')])],
 }

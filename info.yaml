@@ -55,7 +55,7 @@ pinout:
   uio[7]: "TX active / strap magic 1 at reset"
 
   # Analog pins - make sure to also set "analog_pins" above, else the pins won't be connected
-  ua[0]: ""
+  ua[0]: "unused (a metal stub only: TT analog pins start at ua[0])"
   ua[1]: "debug: detector output"
   ua[2]: "RX dipole -"
   ua[3]: "RX dipole +"
