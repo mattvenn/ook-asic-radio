@@ -5,7 +5,8 @@ xschem/tb_logdet.sch (pad models, 6-stage chain, log_det, ideal bias), no noise,
 200 ns of 1 us, minus the same run with no signal. --pex swaps in layout/pex/lna_chain.spice and
 layout/pex/log_det.spice.
 
-    python3 sim/chain/cw_drop.py [--corner=tt] [--jobs=10] [--blocks=lna_chain,log_det] [--levels=-90]
+    python3 sim/chain/cw_drop.py [--corner=tt] [--jobs=10] [--blocks=lna_chain,log_det | --rx] [--levels=-90]
+--rx: the extracted rx_t (layout/pex/rx_t.spice: chain + detector + tap wiring) in place of both blocks.
 
 --blocks picks which blocks the extracted view swaps (default both: which one loses the gain);
 --levels limits the levels (no-signal reference always runs); --pex-only reuses the schematic logs.
@@ -46,11 +47,16 @@ def base(corner):
 BLOCKS = ['lna_chain', 'log_det']
 
 
+RXSRC = []     # --rx: the deck with rx_t swapped in (sim/chain/mk_pex_rx.py), made once in main
+
+
 def deck(src, pex, lvl):
-    if pex:
+    if pex and RXSRC:
+        src = RXSRC[0]
+    elif pex:
         src = swap(src, BLOCKS)
         # the extracted subckts have no parameters: drop them from the instances (with continuation lines)
-        for blk in BLOCKS:
+        for blk in ([] if RXSRC else BLOCKS):
             src, n = re.subn(rf'^(x\d+ [^\n]* {blk})\b[^\n]*\n(\+[^\n]*\n)*', r'\1\n', src, flags=re.M)
             assert n == 1, blk
     ve = 0 if lvl is None else math.sqrt(8 * 73 * 1e-3 * 10 ** (lvl / 10))
@@ -80,6 +86,13 @@ if __name__ == '__main__':
         LEVELS[:] = [None] + [int(x) for x in opt['levels'].split(',')]
     views = (True,) if '--pex-only' in sys.argv else (False, True)
     src = base(corner)
+    if '--rx' in sys.argv:
+        # the extracted RX block (chain + detector + tap wiring, as in the tile) in place of both
+        f0, f1 = os.path.join(B, f'cwdrop_base_{corner}.spice'), os.path.join(B, f'cwdrop_base_{corner}_rx.spice')
+        open(f0, 'w').write(src)
+        subprocess.run([sys.executable, os.path.join(HERE, 'mk_pex_rx.py'), f0, f1], cwd=ROOT, check=True)
+        RXSRC.append(open(f1).read())
+        BLOCKS[:] = ['rx_t']
     tasks = [(src, pex, lvl, corner) for pex in views for lvl in LEVELS]
     with ThreadPoolExecutor(jobs) as ex:
         res = list(ex.map(one, tasks))
