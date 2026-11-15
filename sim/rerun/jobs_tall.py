@@ -1,6 +1,7 @@
 """Full verification of branch chain-tall-stages: the tall chain in the tile ("RX in the corner"), via arrays,
 the TX VAPWR feed (merged from tx-vapwr-feed). sim-0 (28 CPUs).
     mkdir -p build/rerun_tall && nohup setsid python3 sim/rerun/sched.py sim/rerun/jobs_tall.py --budget 26 --out build/rerun_tall > build/rerun_tall/sched.log 2>&1 &
+    python3 sim/rerun/watch.py --out build/rerun_tall      # returns on FAIL / STALLED / ERROR / IDLE / DEAD; run it again after each
 Results: build/rerun_tall/logs/<name>.log (+ each script's own outputs); write-up docs/verify_tall.md, against
 docs/verify_lna_lo.md. Expected differences (not findings): RX chain / sensitivity ~1-1.5 dB down on the extracted tile
 (2026-11-14 tile run, not yet explained); decap VAPWR ~39 pF (was ~43), VDPWR ~21 pF (was ~11); TX VAPWR at tx_drv_p
