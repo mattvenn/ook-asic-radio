@@ -174,6 +174,12 @@ def tx_feed():
     BY0, BY1 = 8.2, 24.0                        # met4 bus band
     f = [('box', 'm3', 0.3, Y0, 16.4, Y1)]
     f += [('via', 'm3', 'm4', 2.8, round(7.5 + 3.6 * k, 2), 4.4) for k in range(10)]
+    # what-if (TX VAPWR robust to the stripe case): a met3 sheet under the widened west VAPWR strap
+    # (x 0.3-7.5) from the feed sheet up to y 103.9, via3 into the strap all the way: the strap's
+    # run down from the case-A met5 stripe (y 103-112) carried by met4 + met3
+    # (sheet edge x 7.0: 0.5 um clear for the router's met3 landings on the VDPWR strap next to it)
+    f += [('box', 'm3', 0.3, Y1, 7.0, 103.9)]
+    f += [('via', 'm3', 'm4', 3.65, round(Y1 + 2.6 + 3.6 * k, 2), 6.1) for k in range(15)]
     f += [('box', 'm4', 15.6, BY0, 72.34, BY1)]
     f += [('via', 'm3', 'm4', 17.9, round(BY0 + 1.5 + 2.5 * k, 2), 3.0) for k in range(6)]
     f += [('box', 'm4', 69.34, BY0, 72.34, Y1)]

@@ -702,6 +702,13 @@ def build(place_gds, pins_json, fp_json):
                 # (the met3 bars under / over the macro and the full-width VDPWR bar: '@bar')
                 tag += '@' + ('bar' if L == 'm3' else 'w' if x < 100 else 'm' if x < 290 else 'e')
             R.S.add(L, tag, db.Region(b))
+    # the corner below the west VAPWR strap's bottom end (x 0 to the west VDPWR strap, y < 4.2,
+    # 0.3 under the TX feed sheet):
+    # free metal at the die edge, where a landing's via pads would hang below y = 0 (and get
+    # clipped into DRC errors). Nothing needs it: keep every net out.
+    xv = min(s['x'] for s in FP['straps'] if s['net'] == 'VDPWR')
+    for L in LAYERS:
+        R.add_box(L, "?", [0, 0, xv - 0.3, 4.2])
     # decap areas not laid out (none now): reserve met1, met3, met4 (MOS + MIM); met2 stays free
     for b in FP['blocks'] if False else []:
         if b['cell'].startswith('decap_') and not (b['inst'] == 'xdecd' and b['part'] == 4):
