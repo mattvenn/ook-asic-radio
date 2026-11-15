@@ -18,10 +18,10 @@
 //                 10 data (reserved; behaves as code mode for now)
 //                 11 reserved (code mode)
 //   uio_in[2]   at reset release, with the same magic: 1 = analog debug,
-//               dbg_en = 1 connects the detector output (det) to ua[2]
+//               dbg_en = 1 connects the detector output (det) to ua[1]
 //               through a transmission gate. Default: off (det isolated).
 //   uio_in[3]   single-ended TX strap, latched at reset release ONLY with
-//               the same magic: 1 = drive ua[3] only (monopole fallback;
+//               the same magic: 1 = drive ua[4] only (monopole fallback;
 //               tx_en_n stays 0). Default (no magic / floating): both arms.
 //               uio_oe is 0 during reset so the RP2350 can drive the strap
 //               on uio[7:4]; it must release those pins right after reset.
@@ -44,7 +44,7 @@
 //   tx_en_n     out_n arm enable (tx_top en_n) = tx_en unless single-ended.
 //               A disabled arm is parked low.
 //   rx_en       RX analog power enable (role = RX)
-//   dbg_en      det -> ua[2] transmission gate enable (debug strap)
+//   dbg_en      det -> ua[1] transmission gate enable (debug strap)
 //   lna_lo_n    LNA low-gain shunt enable, active low (gate of the PMOS
 //               switch across o2p / o2n): 0 = low gain (magic 4'b1011)
 //   sc_phi1/2   non-overlapping switched-cap clocks, one cycle per sample

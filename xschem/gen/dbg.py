@@ -1,13 +1,13 @@
 """
-Generate the ua[2] debug switch and its testbench.
+Generate the ua[1] debug switch and its testbench.
 
   dbg_tg : thin-oxide transmission gate a <-> b, on when en = 1 (local
            inverter for the PMOS gate). Connects the log detector output
-           'det' to the ua[2] pad in debug mode only (dbg_en from the
+           'det' to the ua[1] pad in debug mode only (dbg_en from the
            digital: magic + uio_in[2] at reset). Off, det sees only the
            switch's off capacitance, so pickup on the pin / board trace /
            probe doesn't reach the ~1 mV signal near sensitivity, and the
-           pad's ~5 pF and leakage are off det. Thin devices: keep ua[2]
+           pad's ~5 pF and leakage are off det. Thin devices: keep ua[1]
            within 0..1.8 V.
   tb_dbg : det modelled as its source (Vdet behind rdet 8k || cdet 5p, as
            log_det) -> dbg_tg -> pad_model -> pin, with an external source
