@@ -1,5 +1,5 @@
 * tx_ls: xschem/tx_ls.sch with {'kn': 14, 'kp': 8, 'wpi': 9, 'wni': 3} (layout/gen/tx_ls.py)
-** sch_path: /Users/mattvenn/asic/ook-asic-radio-txls/xschem/tx_ls.sch
+** sch_path: /foss/designs/ook-asic-radio-tall-stages/xschem/tx_ls.sch
 .subckt tx_ls in A B VDD VAPWR VSS
 *.PININFO VDD:B VAPWR:B VSS:B in:B A:B B:B
 XMi1p ctrl in VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=9 nf=1

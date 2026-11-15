@@ -1,5 +1,5 @@
 * det_cell: xschem/det_cell.sch with {'wd': 1, 'rs': 10000.0, 'cc': 1e-13, 'rb': 200000.0} (layout/gen/det_cell.py)
-** sch_path: /foss/designs/ook/xschem/det_cell.sch
+** sch_path: /foss/designs/ook-asic-radio-tall-stages/xschem/det_cell.sch
 .subckt det_cell inp inn vb out VSS
 *.PININFO VSS:B vb:B inp:B inn:B out:B
 XCc_p gp inp sky130_fd_pr__cap_mim_m3_1 W=6.96733 L=6.96733

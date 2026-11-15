@@ -1,5 +1,5 @@
 * lpf_rc: xschem/lpf_rc.sch with {'lr': 400, 'nc': 2} (layout/gen/lpf_rc.py)
-** sch_path: /foss/designs/ook/xschem/lpf_rc.sch
+** sch_path: /foss/designs/ook-asic-radio-tall-stages/xschem/lpf_rc.sch
 .subckt lpf_rc in out VSS
 *.PININFO VSS:B in:B out:B
 XR1 in out VSS sky130_fd_pr__res_xhigh_po_0p35 L=400 mult=1

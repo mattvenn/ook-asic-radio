@@ -1,5 +1,5 @@
 * comp_ct: xschem/comp_ct.sch with {'w1': 20, 'l1': 1, 'mt1': 10, 'rdeg': 850000.0, 'mta': 2, 'lref1': 68, 'lref2': 204, 'wcl': 22} (lay.write_ref)
-** sch_path: /foss/designs/ook-asic-radio/xschem/comp_ct.sch
+** sch_path: /foss/designs/ook-asic-radio-tall-stages/xschem/comp_ct.sch
 .subckt comp_ct inp inn trim ibias out VDD VSS
 *.PININFO VDD:B VSS:B ibias:B inp:B inn:B trim:B out:B
 XMb ibias ibias VSS VSS sky130_fd_pr__nfet_01v8 L=2 W=2 nf=1

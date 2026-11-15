@@ -1,5 +1,5 @@
 * tx_ls_en: xschem/tx_ls.sch with {'kn': 1, 'kp': 1, 'wpi': 1, 'wni': 0.42} (layout/gen/tx_ls.py)
-** sch_path: /foss/designs/shuttle-ttsky26c/asic-radio/xschem/tx_ls.sch
+** sch_path: /foss/designs/ook-asic-radio-tall-stages/xschem/tx_ls.sch
 .subckt tx_ls_en in A B VDD VAPWR VSS
 *.PININFO VDD:B VAPWR:B VSS:B in:B A:B B:B
 XMi1p ctrl in VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1

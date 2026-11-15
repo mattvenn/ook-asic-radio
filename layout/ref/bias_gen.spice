@@ -1,5 +1,5 @@
 * bias_gen: xschem/bias_gen.sch with {'rref': 10000.0, 'rdiv': 200000.0, 'rtail': 250000.0, 'wpu': 2, 'cc': 1e-12} (lay.write_ref)
-** sch_path: /Users/mattvenn/asic/ook-asic-radio/xschem/bias_gen.sch
+** sch_path: /foss/designs/ook-asic-radio-tall-stages/xschem/bias_gen.sch
 .subckt bias_gen en vcm ib_chain ib_det ib_comp VDD VSS
 *.PININFO VDD:B VSS:B en:B vcm:B ib_chain:B ib_det:B ib_comp:B
 XMeip enb en VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1
