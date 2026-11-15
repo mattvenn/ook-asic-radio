@@ -7,9 +7,10 @@ A job file (Python) defines JOBS = [dict(name=, cmd=, threads=, est=, deps=[...]
   lock:    jobs with the same lock never run together (a shared netlist / output file)
   stagger: (group, s): a job of the group starts at least s after the previous one (scripts that rewrite
            a shared netlist at start, then only read their own copy)
-A job starts when its deps are done, its lock is free, the threads of the running jobs plus its own stay
-within --budget, and the 1-minute load average is below --load (so work running outside the scheduler
-counts too). Each job's output goes to <out>/logs/<name>.log; <out>/status.json has every job's state,
+A job starts when its deps are done, its lock is free, the 1-minute load average plus the threads of jobs
+started in the last 90 s plus its own stay within --load (real CPU: work outside the scheduler counts too,
+and jobs that declare more threads than they use don't block the machine), and the declared threads of
+everything running plus its own stay within --budget (a cap only). Each job's output goes to <out>/logs/<name>.log; <out>/status.json has every job's state,
 exit code, start and end. A restarted scheduler adopts jobs an earlier instance left running (state
 'exited' when they end: their exit status is lost, judge them by their logs). The job file is re-read when it changes, so jobs can be appended while it runs;
 a failed job whose command changed runs again. It exits once nothing is running or waiting and
@@ -20,8 +21,9 @@ Kept moving without anyone watching (2026-11-15):
            limit: long jobs are fine as long as they compute.
   errors:  a round that throws is logged (ERROR + traceback) and the next one carries on; status.json's
            '_sched' entry has a heartbeat (time of the last round) for sim/rerun/watch.py.
-  idle:    with jobs waiting and under half the budget in use for 15 min, one IDLE line says why
-           (deps, locks, load, reservation, stagger), then again every 15 min while it lasts (--idle).
+  idle:    with jobs waiting and the load under half of --load for 15 min, one IDLE line says why
+           (deps, locks, load, reservation, stagger), then again every 15 min while it lasts (--idle);
+           'idle' is a load average under half of --load.
 
     nohup setsid python3 sim/rerun/sched.py sim/rerun/jobs_2026-10-13.py --budget 26 > build/rerun/sched.log 2>&1 &
     python3 sim/rerun/sched.py --status [--out build/rerun]
@@ -36,6 +38,7 @@ import time
 import traceback
 
 H_RESERVE = 3600                                          # jobs this long (s) reserve their threads
+RAMP = 90                                                 # s: a fresh job counts at its declared threads
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 
 
@@ -88,7 +91,7 @@ def show(out):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('jobs', nargs='?')
-    ap.add_argument('--budget', type=int, default=26)
+    ap.add_argument('--budget', type=int, default=56, help='cap on declared threads (real CPU: --load)')
     ap.add_argument('--load', type=float, default=28.0)
     ap.add_argument('--out', default=os.path.join(ROOT, 'build', 'rerun'))
     ap.add_argument('--status', action='store_true')
@@ -148,7 +151,8 @@ def main():
         """One IDLE line (then one every 15 min) while jobs wait and under half the budget is in use."""
         waiting = [n for n in jobs if st[n]['state'] == 'wait']
         used = sum(jobs[m]['threads'] for m in run) + sum(st[m]['threads'] for m in adopted)
-        if not waiting or used >= a.budget / 2:
+        load = os.getloadavg()[0]
+        if not waiting or load >= a.load / 2:
             return None
         since = since or now
         if now - since >= a.idle * 60:
@@ -161,11 +165,11 @@ def main():
                 elif j['lock'] and any(jobs[m]['lock'] == j['lock'] for m in list(run) + list(adopted) if m in jobs):
                     k = f"lock {j['lock']}"
                 elif used + j['threads'] > a.budget:
-                    k = 'threads / reservation'
+                    k = f'declared threads ({used} + {j["threads"]} > --budget {a.budget})'
                 else:
-                    k = f'load {os.getloadavg()[0]:.1f} (limit {a.load:g}) or stagger'
+                    k = f'load / reservation / stagger (load {load:.1f}, limit {a.load:g})'
                 why[k] = why.get(k, 0) + 1
-            log(f'IDLE {used}/{a.budget} threads for {(now - since) / 60:.1f} min, {len(waiting)} waiting: '
+            log(f'IDLE load {load:.1f} of {a.load:g} ({used} threads declared) for {(now - since) / 60:.1f} min, {len(waiting)} waiting: '
                 + '; '.join(f'{v} on {k}' for k, v in sorted(why.items(), key=lambda kv: -kv[1])[:5]))
             since = now                                   # say it again in --idle min if it lasts
         return since
@@ -203,29 +207,33 @@ def main():
         reserved = 0                                      # threads held back for a longer job that didn't fit
         for n in ready:
             j = jobs[n]
-            used = sum(jobs[m]['threads'] for m in run) + sum(st[m]['threads'] for m in adopted) + reserved
-            if used + j['threads'] > a.budget and (run or adopted):
+            now0 = time.time()
+            declared = sum(jobs[m]['threads'] for m in run) + sum(st[m]['threads'] for m in adopted)
+            # real CPU in use: the 1-min load average, plus what was started in the last RAMP s (the load
+            # average hasn't seen it yet). Declared threads only cap the total (--budget): ngspice often
+            # keeps far fewer CPUs busy than its thread count (2026-11-15: 23 declared, load 9).
+            recent = sum(jobs[m]['threads'] for m in run if now0 - st[m].get('start', 0) < RAMP)
+            busy = os.getloadavg()[0] + recent + reserved
+            if (run or adopted) and (busy + j['threads'] > a.load or declared + j['threads'] > a.budget):
                 # don't let shorter jobs keep filling the gap it is waiting for (2026-10-13: an 8-thread
                 # job starved behind 4-thread ones): hold its threads unless it can never fit
                 # (one job at a time: 2026-11-04 three waiting 8-thread jobs each reserved, 24 of 26, and
                 # nothing else started for ~7 h at load 7)
-                if j['est'] >= H_RESERVE and j['threads'] <= a.budget and not reserved:
+                if j['est'] >= H_RESERVE and j['threads'] <= a.load and not reserved:
                     reserved += j['threads']
                 continue
             if j['lock'] and any(jobs[m]['lock'] == j['lock'] for m in list(run) + list(adopted) if m in jobs):
                 continue
             if j.get('stagger') and time.time() - last.get(j['stagger'][0], 0) < j['stagger'][1]:
                 continue
-            ext = max(0.0, os.getloadavg()[0] - used)    # load from work outside the scheduler
-            if (run or adopted) and used + j['threads'] + ext > a.load:
-                continue                                  # a smaller job may still fit (was break: stalled)
             fh = open(os.path.join(a.out, 'logs', n + '.log'), 'w')
             run[n] = subprocess.Popen(['bash', '-c', j['cmd']], cwd=ROOT, stdout=fh, stderr=subprocess.STDOUT,
                                       start_new_session=True)
             st[n].update(state='run', start=time.time(), pid=run[n].pid, cmd=j['cmd'])
             if j.get('stagger'):
                 last[j['stagger'][0]] = time.time()
-            log(f'start {n} ({j["threads"]} thr, est {j["est"] / 60:.0f} min; running {used + j["threads"]})')
+            log(f'start {n} ({j["threads"]} thr, est {j["est"] / 60:.0f} min; load {busy - reserved:.1f} + {j["threads"]}, '
+                f'declared {declared + j["threads"]})')
         # stalled: no CPU in the job's whole session for --stall minutes
         now = time.time()
         for n, p in list(run.items()) + [(n, None) for n in adopted]:
