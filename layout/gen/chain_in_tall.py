@@ -173,5 +173,6 @@ def write_ref(meta):
 
 if __name__ == '__main__':
     b, meta = make()
+    b.flare(small=True, verbose=True)     # via arrays (docs/layout.md "Via arrays"), 1 x 2: the chain input
     b.write(os.path.join(REPO, 'layout', 'chain_in_t.gds'))
     write_ref(meta)

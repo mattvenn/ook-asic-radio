@@ -105,5 +105,7 @@ def write_ref():
 
 
 if __name__ == '__main__':
-    make().write(os.path.join(REPO, 'layout', 'lpf_rc.gds'))
+    b = make()
+    b.flare(small=True, verbose=True)     # via arrays (docs/layout.md "Via arrays"), 1 x 2: the det filter
+    b.write(os.path.join(REPO, 'layout', 'lpf_rc.gds'))
     write_ref()

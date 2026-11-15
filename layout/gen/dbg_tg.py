@@ -95,5 +95,7 @@ def write_ref():
 
 
 if __name__ == '__main__':
-    make().write(os.path.join(REPO, 'layout', 'dbg_tg.gds'))
+    b = make()
+    b.flare()                         # via arrays at every junction (docs/layout.md "Via arrays")
+    b.write(os.path.join(REPO, 'layout', 'dbg_tg.gds'))
     write_ref()

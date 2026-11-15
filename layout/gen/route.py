@@ -702,6 +702,13 @@ def build(place_gds, pins_json, fp_json):
                 # (the met3 bars under / over the macro and the full-width VDPWR bar: '@bar')
                 tag += '@' + ('bar' if L == 'm3' else 'w' if x < 100 else 'm' if x < 290 else 'e')
             R.S.add(L, tag, db.Region(b))
+    # the corner below the west VAPWR strap's bottom end (x 0 to the west VDPWR strap, y < 4.2,
+    # 0.3 under the TX feed sheet):
+    # free metal at the die edge, where a landing's via pads would hang below y = 0 (and get
+    # clipped into DRC errors). Nothing needs it: keep every net out.
+    xv = min(s['x'] for s in FP['straps'] if s['net'] == 'VDPWR')
+    for L in LAYERS:
+        R.add_box(L, "?", [0, 0, xv - 0.3, 4.2])
     # decap areas not laid out (none now): reserve met1, met3, met4 (MOS + MIM); met2 stays free
     for b in FP['blocks'] if False else []:
         if b['cell'].startswith('decap_') and not (b['inst'] == 'xdecd' and b['part'] == 4):
@@ -768,11 +775,35 @@ def main():
                     for t, r in R.S.r[L].items() if t != '?h'} for L in LAYERS}
         json.dump(dump, open(os.path.join(out, 'route_shapes.json'), 'w'))
     clip_to_die(R.ly, R.top)
+    if not only and not os.environ.get('NOFLARE'):
+        flare(R)
     R.ly.write(os.path.join(out, 'tt_um_mattvenn_radio.gds'))
     json.dump(R.report, open(os.path.join(out, 'route_report.json'), 'w'), indent=1)
     bad = [n for n, r in R.report.items() if not r['ok']]
     print(f'routed {len(R.report) - len(bad)} / {len(R.report)}', 'FAILED: ' + ' '.join(bad) if bad else '')
 
+
+
+def flare(R):
+    """Via arrays at every junction of the top-level wiring (docs/layout.md "Via arrays", lay.Block.flare):
+    each single cut / short row the router drew becomes 2 x 2 where it fits, else 1 x 2; on the RF and
+    sensitive nets (rx_p / rx_n, det, lpf, avg = the comparator inputs, vcm) 1 x 2. Net names are the
+    router's own tags. NOFLARE=1 skips it."""
+    from lay import Block, VIA as LVIA
+    b = Block.__new__(Block)
+    b.ly, b.cell, b.name = R.ly, R.top, R.top.name
+
+    def netof(cut, bx):
+        r = db.Region(bx)
+        hit = [t for L in (LVIA[cut][4], LVIA[cut][2]) for t, reg in R.S.r.get(L, {}).items()
+               if t != '?h' and '~' not in t and not reg.interacting(r).is_empty()]
+        nets = [t for t in hit if '.' not in t]        # a routed net's own tag before a block's pin tag
+        return (nets or hit or ['?'])[0]
+    # pads at least one spacing (0.3) plus the half spacing flare keeps inside the die: no new metal
+    # nearer the tile edge than the routing had (the neighbours' metal may sit at their own edge)
+    die = db.Region(R.top.shapes(R.ly.layer(235, 4))).bbox().to_dtype(R.ly.dbu)      # prBoundary
+    left = b.flare(small_nets='rx_[pn]|det|lpf|avg|vcm', netof=netof, outline=die.enlarged(-0.3, -0.3))
+    R.report['_flare_left'] = {'ok': True, 'left': [list(x) for x in left]}
 
 
 def who(R, L, x0, y0, x1, y1):

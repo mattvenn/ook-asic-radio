@@ -579,8 +579,8 @@
   },
   {
    "net": "VDPWR",
-   "x": 5.8,
-   "w": 4.7
+   "x": 8.0,
+   "w": 2.5
   },
   {
    "net": "VAPWR",
@@ -615,7 +615,7 @@
   {
    "net": "VAPWR",
    "x": 0.3,
-   "w": 5
+   "w": 7.2
   }
  ],
  "transform": "x, y = lower-left of the placed bbox. KLayout: t = DCplxTrans(1, rot, mirror, 0, 0); bb = cell.dbbox().transformed(t); place with DCplxTrans(1, rot, mirror, x - bb.left, y - bb.bottom)."

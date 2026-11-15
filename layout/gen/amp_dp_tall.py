@@ -232,6 +232,9 @@ def make(taps=TAPS, name='amp_dp_t'):
         stack(ct, mir(tb, sg))
     b.rect('m4', box(ct.left, -tb.center().y - 0.45, ct.right, tb.center().y + 0.45))
     b.label('m2', tb, 'tail')
+    # via arrays at every junction (docs/layout.md "Via arrays"): the half's own cuts, 1 x 2 (RF),
+    # drawn into the half cell so both halves stay mirror images
+    b.flare(target=h, small=True, verbose=True)
     b.cell.flatten(-1, True)
     for li in b.ly.layer_indexes():
         b.cell.shapes(li).transform(pya.DTrans(0, Hh))

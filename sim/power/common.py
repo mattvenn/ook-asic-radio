@@ -84,7 +84,7 @@ def devices(case):
     return out
 
 
-POS = {'xchain': 'chain', 'xdet': 'log_det', 'xlpf': 'lpf', 'xavg': 'avg_sc', 'xcomp': 'comp_ct',
+POS = {'xrx': 'rx_t', 'xcdet': 'cdet', 'xchain': 'chain', 'xdet': 'log_det', 'xlpf': 'lpf', 'xavg': 'avg_sc', 'xcomp': 'comp_ct',
        'xdac': 'r2r', 'xctrim': 'ctrim', 'xbias': 'bias', 'xdbg': 'dbg_tg', 'xtx.xring': 'tx_ring',
        'xtx.xls': 'tx_ls', 'xtx.xlse_p': 'tx_lse_p', 'xtx.xlse_n': 'tx_lse_n', 'xtx.xdrv_p': 'tx_drv_p',
        'xtx.xdrv_n': 'tx_drv_n'}
