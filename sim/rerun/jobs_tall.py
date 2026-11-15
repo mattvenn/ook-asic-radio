@@ -38,7 +38,7 @@ BLOCKS = ('avg_sc bias_gen comp_ct ctrim_1p dbg_tg det_cell lpf_rc r2r tx_drv tx
           'lna_chain_t log_det_t cdet_t rx_t').split()
 # the exported tile (what the TT action reads); fails unless every stage reports clean
 CT = 'build/lvs/top/check.log'
-J(dict(name='check_top', cmd=f'GDS=$PWD/gds/tt_um_mattvenn_radio.gds tools/osic bash layout/check_top.sh > {CT} 2>&1; cat {CT}; '
+J(dict(name='check_top', cmd=f'mkdir -p build/lvs/top; GDS=$PWD/gds/tt_um_mattvenn_radio.gds tools/osic bash layout/check_top.sh > {CT} 2>&1; cat {CT}; '
        f'grep -q "^precheck PASS" {CT} && grep -A1 "== klayout DRC" {CT} | grep -q "^count 0$" && '
        f'grep -A1 "== magic DRC" {CT} | grep -q "^count 0$" && grep -q "antenna (magic): count 7$" {CT} && grep -q "^LVS PASS" {CT}',
        threads=1, est=600, lock='top'))
@@ -123,7 +123,7 @@ for b, sc in TBS.items():
                lock=LOCK.get(b, f'blk_{b}'), deps=[f'pex_{b}'] if pex else []))
 # the stages: schematic (the same circuit as the tall cells) and the tall cells' extractions; log_det: schematic only
 for b, sc, pexs in (('amp_dp', 'sim/amp_dp/tb_amp_dp.py', ('amp_dp_t',)),
-                    ('amp_dpc', 'sim/amp_dpc/tb_amp_dpc.py', ('amp_dpc_t', 'amp_dpc_ts'))):
+                    ('amp_dpc', 'sim/amp_dpc/tb_amp_dpc.py', ('amp_dpc_t',))):   # amp_dpc_ts (the shunt stage, + lna_lo_n): strip_tt_lo
     J(dict(name=f'tb_{b}', cmd=f'{O} python3 {sc} tt', threads=8, est=300, lock=f'blk_{b}'))
     for px in pexs:
         J(dict(name=f'tb_{b}_pex_{px}', cmd=f'{O} python3 {sc} --pex-file=layout/pex/{px}.spice tt', threads=8, est=300,
