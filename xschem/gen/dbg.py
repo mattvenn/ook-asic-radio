@@ -110,7 +110,7 @@ end
 def tb_dbg():
     s = Sch()
     s.place('sky130_fd_pr/corner.sym', -1000, -620, name='CORNER', only_toplevel='true', corner='tt')
-    s.text(-1000, -760, 'tb_dbg: det (8k || 5p source) -> dbg_tg -> pad_model -> ua[2] pin <- Vext (50 ohm)', 0.5)
+    s.text(-1000, -760, 'tb_dbg: det (8k || 5p source) -> dbg_tg -> pad_model -> ua[1] pin <- Vext (50 ohm)', 0.5)
     s.text(-1000, -710, 'ven = 0 (normal) / 1.8 (debug); results: RESULT lines in the log', 0.3)
     vd = s.place('devices/vsource.sym', -900, -450, name='VDD', value='1.8')
     s.connect(vd, p='VDD', m='GND')
