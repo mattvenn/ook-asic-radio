@@ -2,6 +2,11 @@
 
 Things that aren't chip design work, or that wait for silicon. Add the date and where it came from.
 
+## Tiny Tapeout submission
+- [ ] **Mark the project as dangerous in Tiny Tapeout.** It's an uncertified transmitter (README "Radio regulations",
+  Harald's review point 15): the flag is an extra layer of protection, so it isn't enabled or demoed casually. Find
+  where TT sets it for this shuttle (info.yaml or the submission page) and set it before submitting. (2026-11-14)
+
 ## Long simulation runs (before tape-out and while in fab)
 - [ ] **Multi-day joined run** on the extracted tile, sending a whole code (Harald's review, action 12). Today a
   30 µs on / off pair stands in for it. Run in the background on sim-0 once the tall-chain tile's PEX is in. (2026-11-14)
