@@ -367,7 +367,7 @@ assert len({j['name'] for j in JOBS}) == len(JOBS), 'duplicate job names'
 
 # priority: what the tall chain changes first (the scheduler starts the longest est first; these are short), then
 # the long joined / mixed runs fill the machine
-PRIO = ('gl_models', 'gl', 'check_', 'pex_', 'pexsim', 'stab_t_', 'stabx_', 'mc_chain_', 'gen_noise', 'nt_', 'cw_drop_',
+PRIO = ('gl_models', 'gl', 'net_mixed', 'check_', 'pex_', 'pexsim', 'stab_t_', 'stabx_', 'mc_chain_', 'gen_noise', 'nt_', 'cw_drop_',
         'tile_c', 'tile_rc', 'tile_scan', 'tile_pair', 'strip_', 'tb_amp_', 'back_coupling')
 for j in JOBS:
     if j['name'].startswith(PRIO):
