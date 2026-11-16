@@ -233,6 +233,8 @@ def main():
             run[n] = subprocess.Popen(['bash', '-c', j['cmd']], cwd=ROOT, stdout=fh, stderr=subprocess.STDOUT,
                                       start_new_session=True)
             st[n].update(state='run', start=time.time(), pid=run[n].pid, cmd=j['cmd'])
+            cpu.pop(n, None)                              # a rerun starts its stall clock afresh (2026-11-17: a requeued
+                                                          # job inherited its first run's reading and was killed at once)
             if j.get('stagger'):
                 last[j['stagger'][0]] = time.time()
             log(f'start {n} ({j["threads"]} thr, est {j["est"] / 60:.0f} min; load {busy - reserved:.1f} + {j["threads"]}, '

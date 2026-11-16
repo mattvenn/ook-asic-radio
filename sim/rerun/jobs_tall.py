@@ -259,9 +259,9 @@ for kind in ('sch', 'pex'):
 # the schematic baseband for gen_mixed.py (lpf_rc / avg_sc / comp_ct / r2r subckts, read from
 # build/real/tb_radio_analog.spice): no job wrote it, and the 2026-11-15 clean-out removed the copy the earlier runs
 # had used, so every schematic mixed run failed at once (2026-11-16). build/real, not build/: the tb_tile family
-# rewrites build/tb_radio_analog.spice.
+# rewrites build/tb_radio_analog.spice. xschem exits 1 here even when the netlist is good: judged by the file.
 J(dict(name='net_mixed', cmd="rm -f build/real/tb_radio_analog.spice && tools/osic bash -c 'xschem -n -s -q -o build/real "
-       "xschem/tb_radio_analog.sch' && ! grep -q 'IS MISSING' build/real/tb_radio_analog.spice && for c in lpf_rc avg_sc comp_ct r2r; "
+       "xschem/tb_radio_analog.sch'; test -s build/real/tb_radio_analog.spice && ! grep -q 'IS MISSING' build/real/tb_radio_analog.spice && for c in lpf_rc avg_sc comp_ct r2r; "
        "do grep -q \"^.subckt $c \" build/real/tb_radio_analog.spice || exit 1; done", threads=1, est=60))
 
 
