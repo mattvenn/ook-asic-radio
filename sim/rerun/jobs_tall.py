@@ -256,10 +256,20 @@ for kind in ('sch', 'pex'):
            f'--tag={t} --seed=$s -92 -90 -88 -86 -84; done', threads=1, est=600, deps=[f'nt_{kind}_glo0_none']))
 
 
+# the schematic baseband for gen_mixed.py (lpf_rc / avg_sc / comp_ct / r2r subckts, read from
+# build/real/tb_radio_analog.spice): no job wrote it, and the 2026-11-15 clean-out removed the copy the earlier runs
+# had used, so every schematic mixed run failed at once (2026-11-16). build/real, not build/: the tb_tile family
+# rewrites build/tb_radio_analog.spice.
+J(dict(name='net_mixed', cmd="rm -f build/real/tb_radio_analog.spice && tools/osic bash -c 'xschem -n -s -q -o build/real "
+       "xschem/tb_radio_analog.sch' && ! grep -q 'IS MISSING' build/real/tb_radio_analog.spice && for c in lpf_rc avg_sc comp_ct r2r; "
+       "do grep -q \"^.subckt $c \" build/real/tb_radio_analog.spice || exit 1; done", threads=1, est=60))
+
+
 def mixed(name, args, est, deps=('gen_det',)):
-    J(dict(name=f'mixed_{name}', cmd=f': ; python3 sim/mixed/gen_mixed.py {args} && (tools/osic bash -c "cd build/mixed && ngspice -b '
+    sch = '--pex' not in args                         # the schematic baseband: needs net_mixed's netlist
+    J(dict(name=f'mixed_{name}', cmd=f': {"sch " if sch else ""}; python3 sim/mixed/gen_mixed.py {args} && (tools/osic bash -c "cd build/mixed && ngspice -b '
            f'mixed_{name}.cir > mixed_{name}.log 2>&1"; true) && python3 sim/mixed/plot_mixed.py {name}', threads=1, est=est,
-           deps=list(deps), stagger=('mixed', 10)))
+           deps=list(deps) + (['net_mixed'] if sch else []), stagger=('mixed', 10)))
 
 
 for kind in ('lo', 'lopex'):
