@@ -31,6 +31,19 @@ Things that aren't chip design work, or that wait for silicon. Add the date and 
   - **Cost:** time `rx_t` and the extracted tile first (a short run of each). If `rx_t` manages 5-10 µs/h, run 1's
     RF (19.9 ms) is ~2,000-4,000 run-hours: about one to two weeks on sim-0, in fab rather than before tape-out; run 2
     ~8 days on a few threads, alongside other work. Neither is started.
+- [ ] **Find out why the extracted noise runs are so slow** (2026-11-16, the `chain-tall-stages` verification). The
+  `nt_pex_*` jobs (`sim/logdet/noise_tran.sh`, 3 µs with `gen_noise.py`'s PWL noise, `rx_t` swapped in) took ~14-16 h
+  each against the job file's 10 min: 150-260 ns of sim time per hour. The schematic version takes 1.5 min. Two
+  suspects:
+  - The netlist: `rx_t` (chain + detector, 1.65 MB, ~41,700 R) replaced last run's chain-only extraction (827 KB,
+    ~22,000 R). That alone should cost 2-4x, not ~100x.
+  - The noise file: every noise log, sch and pex, has 80,000 "vnz_n has non-increasing PWL time points" warnings.
+    Repeated or backwards time points can force tiny time steps, which cost more the bigger the netlist. On the same
+    `rx_t` deck a CW input runs at ~3 µs/h (`cw_drop --rx`), ~15x faster than with noise.
+
+  Three 0.5 µs timing runs separate them: the old chain-only deck with the same noise, `rx_t` with the same noise,
+  and `rx_t` with the PWL time points cleaned up. If it's the noise file, fix `gen_noise.py` and check that the
+  schematic det levels don't move. Then put the measured time in `jobs_tall.py`'s `est`.
 - [ ] **Real transient noise** (Harald's review, action 13): VACASK with sky130, or ngspice device noise in transient,
   against today's workaround (an equivalent input noise from a linear analysis, `sim/rx/gen_det.py`, NF 11 dB over
   450 MHz). The case to look for: stage-1 noise driving later stages into limiting. (2026-11-14)
