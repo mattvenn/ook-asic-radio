@@ -207,6 +207,13 @@ def main():
         reserved = 0                                      # threads held back for a longer job that didn't fit
         for n in ready:
             j = jobs[n]
+            # a job held by a lock or its stagger can't start this round: it mustn't reserve threads either
+            # (2026-11-16: mc_chain_ff50, locked behind mc_chain_ss10_pex for hours, held 4 threads and
+            # nothing else started at load 24 with 195 jobs ready)
+            if j['lock'] and any(jobs[m]['lock'] == j['lock'] for m in list(run) + list(adopted) if m in jobs):
+                continue
+            if j.get('stagger') and time.time() - last.get(j['stagger'][0], 0) < j['stagger'][1]:
+                continue
             now0 = time.time()
             declared = sum(jobs[m]['threads'] for m in run) + sum(st[m]['threads'] for m in adopted)
             # real CPU in use: the 1-min load average, plus what was started in the last RAMP s (the load
@@ -221,10 +228,6 @@ def main():
                 # nothing else started for ~7 h at load 7)
                 if j['est'] >= H_RESERVE and j['threads'] <= a.load and not reserved:
                     reserved += j['threads']
-                continue
-            if j['lock'] and any(jobs[m]['lock'] == j['lock'] for m in list(run) + list(adopted) if m in jobs):
-                continue
-            if j.get('stagger') and time.time() - last.get(j['stagger'][0], 0) < j['stagger'][1]:
                 continue
             fh = open(os.path.join(a.out, 'logs', n + '.log'), 'w')
             run[n] = subprocess.Popen(['bash', '-c', j['cmd']], cwd=ROOT, stdout=fh, stderr=subprocess.STDOUT,
