@@ -392,7 +392,7 @@ LPF 2–30 µs: 0.63 / 0.30 mV. Model at −92 dBm: ~1.14 mV.
 
 | Level | Reference | Now | |
 |---|---|---|---|
-| −90 dBm: det swing (LPF), mV | 1.83 (1.04); model 1.80 | 3.09 (3.12); model 1.80 | PASS (noise, below): reruns with three seeds running |
+| −90 dBm: det swing (LPF), mV | 1.83 (1.04); model 1.80 | 3.09 (3.12); model 1.80. Three seeded reruns 1.87 / 2.62 / 2.06; mean of four 2.41 ± 0.55 | PASS: realisation noise (below); `noise_tran` gives 2.24-2.44 |
 | −70 dBm: det swing, mV | 100.75; model 105.6 | 104.20 (LPF 102.32); model 105.58 | PASS (+0.15 dB) |
 | −10 dBm: det off → on, V | 1.4533 → 0.5694 | 1.4499 → 0.5693 | PASS |
 
@@ -417,7 +417,20 @@ it from the process ID): 1.43 mV on 2026-10-13, 1.83 last run, 3.09 now. Split b
   is `noise_tran` to 0.01 mV.
 
 Three more realisations, seeded so they can be repeated (`SEED=1..3 TAG=_s<n> sim/rx/joined.sh`, follow-up jobs
-`joined_-90_s{1,2,3}`, ~4.3 h each), settle it: *running*.
+`joined_-90_s{1,2,3}`, 212-223 min each on 2 threads), measured as `plot_joined.py` does:
+
+| Run | det off, mV | det swing, mV | LPF swing, mV |
+|---|---|---|---|
+| main run (unseeded) | 1451.42 | 3.09 | 3.12 |
+| seed 1 | 1452.93 | 1.87 | 2.15 |
+| seed 2 | 1449.76 | 2.62 | 2.92 |
+| seed 3 | 1448.22 | 2.06 | 2.55 |
+| mean ± sd of the four | 1450.6 ± 2.1 | 2.41 ± 0.55 | 2.69 ± 0.43 |
+
+**Settled: noise.** The four realisations average 2.41 mV, which matches `noise_tran`'s 2.24 / 2.44 mV (old / fixed
+noise file), with a spread of ±0.55 mV per run, as the window statistics predicted. 3.09 is +1.2σ. The last run's
+1.83 and the 2026-10-13 run's 1.43 are −1.1σ and −1.8σ: one run is not enough to compare at −90 dBm. Next time, run the
+seeded set (`SEED=1..3`) and compare means. The noise-only level wanders too (1448.2-1452.9 mV between runs).
 
 ### noise_tran (`sim/logdet/noise_tran.sh`, 3 µs, old noise file)
 
