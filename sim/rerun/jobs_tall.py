@@ -372,3 +372,11 @@ PRIO = ('gl_models', 'gl', 'net_mixed', 'check_', 'pex_', 'pexsim', 'stab_t_', '
 for j in JOBS:
     if j['name'].startswith(PRIO):
         j['est'] = max(j['est'], 20 * H)
+
+# 2026-11-17 02:50: the 10-thread cw_drop runs don't reserve threads (est under sched.py's H_RESERVE, 1 h). With
+# tile_pair_glo0 running (2 ngspice x 8 threads: ~16 on the load average for ~7 CPUs, until ~08:00) a 10-thread
+# job needs load <= 18, so its reservation held the machine near idle with 147 jobs ready. They now start when
+# the load allows (tile_pair_glo0 done, or the queue thinning out).
+for j in JOBS:
+    if j['name'].startswith('cw_drop_') and j['threads'] >= 8:
+        j['est'] = 3000
