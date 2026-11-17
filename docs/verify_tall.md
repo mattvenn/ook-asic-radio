@@ -104,23 +104,39 @@ repeated time), noise only, 3 threads each, sim-0 at load 4-9 of 28:
 
 **The noise file isn't the cause: the old and fixed files take the same time.** It's the netlist and the load:
 - `rx_t` is 3.6× slower than the chain-only extraction, and that is 58× slower than the schematic.
-- At 172 min per 1.2 µs, a 3 µs run is ~7 h on a quiet machine (if the cost is even in time; the full fixed-noise
-  `rx_t` runs, `nt3_rx_t_*`, are running and will say). The main run's took 13-15 h with 12 of them at once
+- A full 3 µs `rx_t` run (`nt3_rx_t_*`, four at once, 3 threads each, load ~15-20) took 416 min, 6.9 h: the cost
+  is even in time (172 min × 2.5 = 430). The main run's took 13-15 h with 12 of them at once
   alongside the extracted MC and stability, the machine at its 28-CPU limit: about 2× from load.
 - The job file's 10 min was never measured. The last run's noise runs used the chain-only deck (~2 h each by this
   table) and their times weren't kept.
 
-The 1.2 µs det levels barely move with the fix (≤ 0.4 mV); over the whole 3 µs window they do (below).
+The 1.2 µs det levels barely move with the fix (≤ 0.4 mV); over the whole 3 µs window they do. Full 3 µs runs, det
+mean over 0.5-3 µs, V:
 
-The fix changes the noise the schematic sees: noise-only det 1.44973 V (3 µs, full gain) against 1.44406 V with the
-old file, +5.7 mV; −90 dBm drop 2.44 mV against 2.24. The old file's repeated points made steps, which add power. So
-`gen_det.py`'s calibration (`SHIFT_DB`, set so that noise alone gives 1.439 V) and `lo_gain.py`'s reference levels
+| Bench | Gain | Noise only, old file | Noise only, fixed | −90 dBm, fixed | Drop at −90, old / fixed, mV |
+|---|---|---|---|---|---|
+| sch | full | 1.44406 | 1.44973 | 1.44729 | 2.24 / 2.44 |
+| sch | low | 1.50975 | 1.51088 | 1.51046 | 0.43 / 0.42 |
+| pex `rx_t` | full | 1.45416 | 1.45751 | 1.45605 | 1.42 / 1.46 |
+| pex `rx_t` | low | 1.48445 | 1.48504 | 1.48476 | 0.29 / 0.28 |
+
+Extracted against schematic drop at −90 dBm with the fixed file: 0.60× full gain (old 0.63×), 0.67× low gain (old
+0.67×), so the `lopex2` calibration (0.672) holds. One noise waveform, one level: the drops are a few tenths of a mV
+on a ±0.1 mV-class mean, so read the ratios to ±0.05.
+
+The fix changes the noise the benches see: noise-only det +5.7 mV (sch) / +3.4 mV (`rx_t`) at full gain, +1.1 /
++0.6 mV at low gain. The old file's repeated points made steps, which add power. So `gen_det.py`'s calibration (`SHIFT_DB`, set so that noise alone gives 1.439 V) and `lo_gain.py`'s reference levels
 should be redone from the fixed noise before the next run. Every comparison in this report is like for like (both
 sides with the old file), so the findings stand.
 
 ## Run times
 
-Per job family, minutes, against `jobs_tall.py`'s estimates as they were for this run. "Measured" is the scheduler's
+Follow-ups (`jobs_tall_follow.py`): 46 jobs, all OK, 13:06 → 22:56 (9.8 h), 146 declared thread-hours. Longest:
+`nt3_rx_t` 416 min (4 × 3 threads), `joined_-90_s*` 212-223 min (2 threads), `timing_rx_t_*` 172 min, `stabx_sf27`
+132-133 min (4 threads; the job file had 6 h), `timing_chain_t_*` 44-48 min; the 25 `lopex2` mixed runs 2.0-2.3 min
+each. Merged into `sim/rerun/durations_tall.json`.
+
+Main run, per job family, minutes, against `jobs_tall.py`'s estimates as they were for this run. "Measured" is the scheduler's
 start to end, so it includes queueing inside a job (a lock, `xargs -P 1`) but not waiting to start. Every job ran
 alongside ~10-25 others on 28 CPUs.
 
