@@ -90,13 +90,27 @@ those terms).
 
 ### Why the extracted noise runs took 14-16 h
 
-*Running.* Cause found: `sim/logdet/gen_noise.py` wrote its PWL times as `{t:.4e}`, 5 significant figures. From 1 µs
-on, 50 ps steps round onto each other: 20,000 of each source's 60,002 points repeat or go back in time (the 80,000
-"non-increasing PWL time points" warnings), across most of `noise_tran.sh`'s 0.5–3 µs window. Fixed: 7 significant
-figures. Timing runs to 1.2 µs (0.2 µs past the first repeated time), old and fixed noise, on the schematic,
-`lna_chain_t` alone and `rx_t`:
+Two suspects (TODO.md): the bigger netlist, and a bug in the noise file. `sim/logdet/gen_noise.py` wrote its PWL
+times as `{t:.4e}`, 5 significant figures, so from 1 µs on, 50 ps steps round onto each other: 20,000 of each
+source's 60,002 points repeat or go back in time (the 80,000 "non-increasing PWL time points" warnings), across most
+of `noise_tran.sh`'s 0.5–3 µs window. Fixed: 7 significant figures. Timing runs to 1.2 µs (0.2 µs past the first
+repeated time), noise only, 3 threads each, sim-0 at load 4-9 of 28:
 
-*Results pending.*
+| Deck | Netlist | Old noise file, min | Fixed noise file, min | Det, old / fixed, V |
+|---|---|---|---|---|
+| schematic | | 0.8 | 0.8 | 1.45225 / 1.45261 |
+| `lna_chain_t` alone (chain-only, as last run) | 0.83 MB | 44.1 | 47.7 | 1.46016 / 1.46047 |
+| `rx_t` (chain + detector) | 1.65 MB | 172.1 | 172.3 | 1.45855 / 1.45879 |
+
+**The noise file isn't the cause: the old and fixed files take the same time.** It's the netlist and the load:
+- `rx_t` is 3.6× slower than the chain-only extraction, and that is 58× slower than the schematic.
+- At 172 min per 1.2 µs, a 3 µs run is ~7 h on a quiet machine (if the cost is even in time; the full fixed-noise
+  `rx_t` runs, `nt3_rx_t_*`, are running and will say). The main run's took 13-15 h with 12 of them at once
+  alongside the extracted MC and stability, the machine at its 28-CPU limit: about 2× from load.
+- The job file's 10 min was never measured. The last run's noise runs used the chain-only deck (~2 h each by this
+  table) and their times weren't kept.
+
+The 1.2 µs det levels barely move with the fix (≤ 0.4 mV); over the whole 3 µs window they do (below).
 
 The fix changes the noise the schematic sees: noise-only det 1.44973 V (3 µs, full gain) against 1.44406 V with the
 old file, +5.7 mV; −90 dBm drop 2.44 mV against 2.24. The old file's repeated points made steps, which add power. So
@@ -146,21 +160,24 @@ alongside ~10-25 others on 28 CPUs.
 
 What the times say:
 - **The critical path was the extracted noise runs** (12 × ~14.7 h at 3 threads each), then the extracted MC (up to
-  8.7 h) and the extracted stability (5.5 h each). Without the noise-run slowdown (fixed above) this run would have
-  taken ~24 h.
+  8.7 h) and the extracted stability (5.5 h each). That is the `rx_t` netlist and the load, not a bug (follow-up
+  timing runs above): expect the same next time unless the noise runs go back to the chain-only deck (~2 h each).
+  A noise run needs a whole `rx_t` only for the detector's own level; the drop ratio against the schematic could
+  come from the chain-only deck plus one `rx_t` pair.
 - **The estimates in `jobs_tall.py` were copied from `jobs_lna_lo.py`**, written when those jobs were added and never
   measured. The old run's `sched.log` / `status.json` weren't kept. Every big miss was an extracted `rx_t` bench:
   `rx_t` (chain + detector, 1.65 MB, ~41,700 R) replaced last run's chain-only extraction (827 KB, ~22,000 R).
   - extracted stability: 35-55 min per case, 6 cases per job, longer as the shunt C grows;
   - extracted MC: 255-523 min against 15 (the schematic: 10-14 min);
-  - extracted noise: 150-260 ns of simulated time per hour; the schematic version takes 1.5 min.
+  - extracted noise: 150-260 ns of simulated time per hour under load, ~420 ns/h at load 4-9; the schematic version
+    takes 1.5 min.
 - `tile_pair` keeps ~6 CPUs busy (two ngspice at ~3.1 each) against 4 declared. The load went to 37-39 on the
   28-CPU quota (the container's cgroup `cpu.max`) and everything ran ~5-10 % slower until it ended.
 - Many short jobs ran 5-10x under their estimates. Harmless, except that a large `est` decides start order.
 
 Put back for the next run:
-- `jobs_tall.py` now takes every job's `est` from `durations_tall.json` (+10 %), and the extracted noise runs
-  from the fixed-noise timing runs above.
+- `jobs_tall.py` now takes every job's `est` from `durations_tall.json` (+10 %), the extracted noise runs
+  included (~16 h: the timing runs showed the fix doesn't speed them up).
 - The priority list no longer raises `est` to 20 h (that hid the real estimate from the scheduler's log and from its
   thread reservation): `sched.py` has a `prio` key for start order and a `reserve` key (the 10-thread `cw_drop`
   runs set it False instead of faking a short `est`).

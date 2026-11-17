@@ -30,7 +30,6 @@ import os
 M642 = 'OSIC_MAGIC=$HOME/.local/magic642/bin'
 O = 'OSIC=tools/osic'
 H = 3600
-NT_PEX_EST = 4 * H                   # placeholder until the fixed-noise timing runs finish
 TB = ('tbnet', 45)                   # tb_tile family: rewrites build/tb_radio_analog.spice at start
 JOBS = []
 J = JOBS.append
@@ -392,11 +391,8 @@ MEASURED = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)
 for j in JOBS:
     if j['name'] in MEASURED:
         j['est'] = max(60, round(MEASURED[j['name']] * 60 * 1.1))
-# the extracted noise runs took 14-16 h because of gen_noise.py's repeated PWL times (fixed 2026-11-17): their
-# 2026-11-16 times don't apply. Fixed-noise times: docs/verify_tall.md (the follow-up timing runs).
-for j in JOBS:
-    if j['name'].startswith('nt_pex_'):
-        j['est'] = NT_PEX_EST
+# the extracted noise runs (nt_pex_*) keep their measured 13-15 h: gen_noise.py's repeated PWL times (fixed
+# 2026-11-17) weren't the cause, the rx_t netlist and the load were (docs/verify_tall.md, follow-up timing runs).
 
 # 2026-11-17 02:50: the 10-thread cw_drop runs don't reserve threads (sched.py 'reserve': False). With
 # tile_pair_glo0 running (2 ngspice x 8 threads: ~16 on the load average for ~7 CPUs, until ~08:00) a 10-thread

@@ -31,7 +31,7 @@ Things that aren't chip design work, or that wait for silicon. Add the date and 
   - **Cost:** time `rx_t` and the extracted tile first (a short run of each). If `rx_t` manages 5-10 µs/h, run 1's
     RF (19.9 ms) is ~2,000-4,000 run-hours: about one to two weeks on sim-0, in fab rather than before tape-out; run 2
     ~8 days on a few threads, alongside other work. Neither is started.
-- [ ] **Find out why the extracted noise runs are so slow** (2026-11-16, the `chain-tall-stages` verification). The
+- [x] **Find out why the extracted noise runs are so slow** (2026-11-16, the `chain-tall-stages` verification). The
   `nt_pex_*` jobs (`sim/logdet/noise_tran.sh`, 3 µs with `gen_noise.py`'s PWL noise, `rx_t` swapped in) took ~14-16 h
   each against the job file's 10 min: 150-260 ns of sim time per hour. The schematic version takes 1.5 min. Two
   suspects:
@@ -44,9 +44,13 @@ Things that aren't chip design work, or that wait for silicon. Add the date and 
   Three 0.5 µs timing runs separate them: the old chain-only deck with the same noise, `rx_t` with the same noise,
   and `rx_t` with the PWL time points cleaned up. If it's the noise file, fix `gen_noise.py` and check that the
   schematic det levels don't move. Then put the measured time in `jobs_tall.py`'s `est`.
-  - **2026-11-17: the noise file.** `gen_noise.py` wrote times to 5 significant figures, so from 1 µs on every other
-    point repeats a time (20,000 per source). Fixed (7 figures); timing runs in `sim/rerun/jobs_tall_follow.py`,
-    results in [verify_tall.md](docs/verify_tall.md) "Follow-ups". The schematic det **does** move with the fixed
+  - **2026-11-17: not the noise file.** Timing to 1.2 µs, old and fixed noise file take the same time: schematic
+    0.8 min, `lna_chain_t` alone 44 / 48 min, `rx_t` 172 / 172 min. So it's the `rx_t` netlist (3.6× the chain-only
+    deck) and ~2× from the main run's load. `jobs_tall.py` keeps the measured ~15 h. Faster next time: run the
+    noise levels on the chain-only deck and only noise-only plus one level on `rx_t`.
+  - **2026-11-17: a bug in the noise file, found on the way.** `gen_noise.py` wrote times to 5 significant figures,
+    so from 1 µs on every other point repeats a time (20,000 per source). Fixed (7 figures); results in
+    [verify_tall.md](docs/verify_tall.md) "Follow-ups". The schematic det **does** move with the fixed
     file (noise-only +5.7 mV at full gain): before the next run, redo `gen_det.py`'s `SHIFT_DB` (noise-only 1.439 V)
     and the `lo_gain.py` reference levels from the fixed noise.
 - [ ] **Real transient noise** (Harald's review, action 13): VACASK with sky130, or ngspice device noise in transient,

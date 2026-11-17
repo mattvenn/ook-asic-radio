@@ -12,8 +12,8 @@ sigma = d / sqrt(2 T).
 
 Times are written to 7 significant figures. They used to be written to 5 ('.4e'), so from 1 us on, 50 ps steps
 rounded onto each other: two points per time, 80,000 "non-increasing PWL time points" warnings per run, a noise
-waveform with half its samples wrong across most of noise_tran.sh's 0.5-3 us window, and (2026-11-17) the cause
-of the extracted rx_t noise runs taking 14-16 h.
+waveform with half its samples wrong across most of noise_tran.sh's 0.5-3 us window. (It wasn't why the extracted
+rx_t noise runs take 14-16 h: old and fixed files time the same, docs/verify_tall.md 2026-11-17.)
 """
 import os
 import sys
