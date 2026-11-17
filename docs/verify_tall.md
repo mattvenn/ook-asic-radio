@@ -20,7 +20,7 @@ end), **1 failed** (a dropped bench, below), 0 stalled.
 | 5 | Gain step (full − low gain), MC | **open - needs Matt's call**: on the block extraction 9.27 dB at tt, **7.58 dB at sf** (0 % ≥ 9 dB), 8.50 at ss 10 °C (8 %). The tile shows ~10.2 dB at tt (CW drops), so the block is ~1 dB pessimistic; sf on the tile is ~8.5 dB by the same offset |
 | 6 | RX sensitivity, extracted | **CHANGED, worse: −1.3 to −2.3 dB** against the U chain (tile pair −92 dBm −1.3 dB, noise runs −2.0 dB, tile CW −2.3 dB). Not in the expected −1 to −1.5 dB. The schematic is unchanged |
 | 7 | Mixed signal, full gain (sch and pex baseband), overload | **pass**, identical pattern to the reference (overload scan event times identical) |
-| 8 | Low-gain mixed signal | sch **pass** (over burst timing 92 / 55 / 38 % at −86 / −88 / −90, reference 90 / 68 / 40). Extracted (`lopex`) **invalid as run** (calibration), rerun as a follow-up |
+| 8 | Low-gain mixed signal | sch **pass** (over burst timing 92 / 55 / 38 % at −86 / −88 / −90, reference 90 / 68 / 40). Extracted: `lopex` invalid as run (calibration); recalibrated rerun `lopex2` 80 / 50 / 20 %, ~1 dB below the schematic (follow-ups) |
 | 9 | Corners, supply, TX, power-up, overload, power delivery | **pass**; TX at the marginal 1.71 / 3.3 V ss / fs points −0.5 / −0.6 dB; power-delivery numbers changed by the re-route (mostly better) |
 
 Findings to decide (Matt):
@@ -59,7 +59,19 @@ A constant ratio is what an SNR loss looks like: the same signal-to-noise as the
 13.4 dB (`lo_gain.py --nf`). It counts all of the loss as SNR and none as detector slope, so it errs on the safe side.
 (At full gain the ratio is 0.632, −2.0 dB: the same loss.)
 
-*Running: 25 runs, 5 levels × 5 seeds.*
+Result (25 runs, 2.0–2.3 min each; schematic baseband; `replay_corr.py` agrees with the event pin 25/25):
+
+| Level, dBm | −84 | −86 | −88 | −90 | −92 |
+|---|---|---|---|---|---|
+| `lopex2` detected, as simulated | 5/5 | 3/5 | 3/5 | 1/5 | 0/5 |
+| `lopex2` over burst timing | 100 % | **80 %** | **50 %** | **20 %** | 0 % |
+| sch (`lo`, item 5) over burst timing | 100 % | 92 % | 55 % | 38 % | 30 % |
+
+The extracted low-gain RX reaches 50 % at ≈ −88 dBm and ~80 % at −86, against ≈ −88.5 and 92 % on the schematic:
+~0.5–1.5 dB worse, consistent with the 1.7 dB NF step at this slope. Five seeds a level (±20 %), so the shape is
+reliable, not the last half dB. Pin order OK in all 25. **Low gain on the extracted chain: reliable at ≈ −85 dBm,
+half the bursts at −88.** Against "detects at −88" that is the same ~half the schematic gives (last run passed it on
+those terms).
 
 ### Why the extracted noise runs took 14-16 h
 
