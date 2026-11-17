@@ -40,7 +40,7 @@ def main():
     ap.add_argument('--json')
     a = ap.parse_args()
     st = json.load(open(f'{a.out}/status.json'))
-    # the job file raises its priority jobs' est to 20 h (start order): read the estimates as written
+    # older job files raised their priority jobs' est to 20 h (start order; now sched.py's 'prio'): read them as written
     src = open(a.jobs).read().replace("j['est'] = max(j['est'], 20 * H)", 'pass')
     ns = {'__file__': a.jobs, '__name__': 'jobs'}
     exec(compile(src, a.jobs, 'exec'), ns)

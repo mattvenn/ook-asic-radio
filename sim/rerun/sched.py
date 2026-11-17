@@ -2,7 +2,11 @@
 
 A job file (Python) defines JOBS = [dict(name=, cmd=, threads=, est=, deps=[...], lock=None), ...]:
   threads: CPUs the job keeps busy (ngspice NT / num_threads; 1 for python, magic, verilator ...)
-  est:     expected wall time, s (longest first: the long runs start early)
+  est:     expected wall time, s (longest first: the long runs start early). Take it from the last run's
+           measured times (sim/rerun/durations.py --json), not a guess.
+  prio:    optional, default 0: higher starts first, ahead of est order (it used to be done by raising est to
+           20 h, which hid the real estimate from the log and the reservation)
+  reserve: optional, default True: False stops a waiting long job holding threads back for itself
   deps:    names that must have finished OK first
   lock:    jobs with the same lock never run together (a shared netlist / output file)
   stagger: (group, s): a job of the group starts at least s after the previous one (scripts that rewrite
@@ -203,7 +207,7 @@ def main():
                 log(f'skip {n} (a dep failed)')
         ready = [n for n, j in jobs.items() if st[n]['state'] == 'wait'
                  and all(st[d]['state'] in ('ok', 'exited') for d in j['deps'])]
-        ready.sort(key=lambda n: -jobs[n]['est'])
+        ready.sort(key=lambda n: (-jobs[n].get('prio', 0), -jobs[n]['est']))
         reserved = 0                                      # threads held back for a longer job that didn't fit
         for n in ready:
             j = jobs[n]
@@ -226,7 +230,7 @@ def main():
                 # job starved behind 4-thread ones): hold its threads unless it can never fit
                 # (one job at a time: 2026-11-04 three waiting 8-thread jobs each reserved, 24 of 26, and
                 # nothing else started for ~7 h at load 7)
-                if j['est'] >= H_RESERVE and j['threads'] <= a.load and not reserved:
+                if j['est'] >= H_RESERVE and j.get('reserve', True) and j['threads'] <= a.load and not reserved:
                     reserved += j['threads']
                 continue
             fh = open(os.path.join(a.out, 'logs', n + '.log'), 'w')

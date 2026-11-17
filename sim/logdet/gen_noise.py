@@ -8,7 +8,12 @@ Density per arm 2.76 nV/rtHz (= 3.9 nV/rtHz differential, the receiver's
 input-referred noise at NF ~11 dB), sampled every 50 ps:
 sigma = d / sqrt(2 T).
 
-    python sim/logdet/gen_noise.py [tstop_s] [seed]
+    python sim/logdet/gen_noise.py [tstop_s] [seed] [out]
+
+Times are written to 7 significant figures. They used to be written to 5 ('.4e'), so from 1 us on, 50 ps steps
+rounded onto each other: two points per time, 80,000 "non-increasing PWL time points" warnings per run, a noise
+waveform with half its samples wrong across most of noise_tran.sh's 0.5-3 us window, and (2026-11-17) the cause
+of the extracted rx_t noise runs taking 14-16 h.
 """
 import os
 import sys
@@ -19,21 +24,21 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 T, D = 50e-12, 2.76e-9
 
 
-def main(tstop=3e-6, seed=7):
+def main(tstop=3e-6, seed=7, out=None):
     rng = np.random.default_rng(seed)
     n = int(round(tstop / T)) + 2
     t = np.arange(n) * T
     sigma = D / np.sqrt(2 * T)
-    with open(os.path.join(ROOT, 'build', 'noise_pwl.inc'), 'w') as fh:
+    with open(out or os.path.join(ROOT, 'build', 'noise_pwl.inc'), 'w') as fh:
         fh.write(f'* white noise per arm, {D * 1e9:.2f} nV/rtHz, T={T * 1e12:.0f} ps, seed {seed}\n')
         for side in 'pn':
             v = rng.normal(0, sigma, n)
             fh.write(f'Vnz_{side} ant_{side} an_{side} pwl(\n')
             for i in range(0, n, 8):
-                fh.write('+ ' + ' '.join(f'{t[j]:.4e} {v[j]:.4e}' for j in range(i, min(i + 8, n))) + '\n')
+                fh.write('+ ' + ' '.join(f'{t[j]:.6e} {v[j]:.4e}' for j in range(i, min(i + 8, n))) + '\n')
             fh.write('+ )\n')
 
 
 if __name__ == '__main__':
     a = sys.argv[1:]
-    main(float(a[0]) if a else 3e-6, int(a[1]) if len(a) > 1 else 7)
+    main(float(a[0]) if a else 3e-6, int(a[1]) if len(a) > 1 else 7, a[2] if len(a) > 2 else None)

@@ -24,9 +24,13 @@ Before the first run on a fresh pod: tools/osic bash sim/mixed/build_so.sh (the 
 threads = ngspice threads. Benches run from build/ read build/.spiceinit (8 threads unless NT / num_threads);
 build/real and build/pexsim read ~/.spiceinit (4)."""
 
+import json
+import os
+
 M642 = 'OSIC_MAGIC=$HOME/.local/magic642/bin'
 O = 'OSIC=tools/osic'
 H = 3600
+NT_PEX_EST = 4 * H                   # placeholder until the fixed-noise timing runs finish
 TB = ('tbnet', 45)                   # tb_tile family: rewrites build/tb_radio_analog.spice at start
 JOBS = []
 J = JOBS.append
@@ -152,7 +156,7 @@ SC_FULL = '2n:0 2n:0.3f 2n:0.5f 2n:0.75f 2n:1f 2n:1.5f'
 J(dict(name='stab_t_tt', cmd=f"tools/osic bash -c \"cd build/pexsim_t && CASES='{SC_FULL}' bash ../../sim/chain/stability.sh\"",
        threads=4, est=2400, deps=['pexsim_t']))
 SC_LO = '2n:0 2n:0.5f 2n:1f 2n:1.5f 2n:2f 2n:3f'
-for c, t in (('ss', 10), ('tt', 27), ('ff', 50)):
+for c, t in (('ss', 10), ('tt', 27), ('ff', 50), ('sf', 27)):      # sf: the smallest gain step (2026-11-17)
     for v in ('1.8', '1.62', '1.98'):
         if v != '1.8' and c != 'ss':
             continue
@@ -249,11 +253,16 @@ for kind, g, tb, lv in NT_CASES:
                deps=['gen_noise', 'netlists'] + (['pexsim'] if kind == 'pex' else [])))
 # mixed signal (RTL + transistor baseband) with the low-gain detector waveform: gen_det --gain from noise_tran's
 # noise-only det with the strap on (NF +0.7 dB, the extracted chain's NF off / on)
+# The extracted ('lopex'): the schematic's gain with the NF raised by the measured drop ratio (lo_gain.py --nf). Mapping
+# rx_t's own detector level through the schematic curve gave -5.59 dB (2026-11-16, invalid: its detector sits lower).
+GL = '$(python3 sim/rx/lo_gain.py build/nt_none_sch_glo0.log 11.7)'
 for kind in ('sch', 'pex'):
     t = 'lo' if kind == 'sch' else 'lopex'
-    gl = f'$(python3 sim/rx/lo_gain.py build/nt_none_{kind}_glo0.log 11.7)'
-    J(dict(name=f'gen_det_{t}', cmd=f'G={gl}; echo gain $G; for s in 1 2 3 4 5; do python3 sim/rx/gen_det.py --gain=$G --nf=11.7 '
-           f'--tag={t} --seed=$s -92 -90 -88 -86 -84; done', threads=1, est=600, deps=[f'nt_{kind}_glo0_none']))
+    nf = '11.7' if kind == 'sch' else '$(python3 sim/rx/lo_gain.py --nf _sch_glo0 _pex_glo0 11.7)'
+    deps = ['nt_sch_glo0_none'] + ([f'nt_pex_glo0_{p}' for p in NT_CASES[-1][3].split()] +
+                                   [f'nt_sch_glo0_{p}' for p in NT_CASES[-1][3].split() if p != 'none'] if kind == 'pex' else [])
+    J(dict(name=f'gen_det_{t}', cmd=f'G={GL} && NF={nf} && echo gain $G nf $NF && for s in 1 2 3 4 5; do python3 sim/rx/gen_det.py '
+           f'--gain=$G --nf=$NF --tag={t} --seed=$s -92 -90 -88 -86 -84; done', threads=1, est=600, deps=deps))
 
 
 # the schematic baseband for gen_mixed.py (lpf_rc / avg_sc / comp_ct / r2r subckts, read from
@@ -328,7 +337,7 @@ for g in ('', ' --vglo=0'):
     lvl = '-88' if g else '-92'
     J(dict(name=f'tile_pair{s}', cmd=f"code=$(grep -o 'comp flips between codes \\[([0-9]*, [0-9]*)' build/rerun_tall/logs/tile_scan{s}.log "
            f"| head -1 | grep -o '[0-9]*)' | tr -d ')'); echo code $code; {O} NT=2 python3 sim/top/tb_tile_joined.py{g} pair {lvl} 30u "
-           f"$code 1 && {O} python3 sim/top/tb_tile_joined.py{g} --no-run pair {lvl}", threads=4, est=9 * H,
+           f"$code 1 && {O} python3 sim/top/tb_tile_joined.py{g} --no-run pair {lvl}", threads=6, est=9 * H,  # threads: two ngspice keep ~6 CPUs busy (was 4: load 37-39 on 28)
            deps=[f'tile_scan{s}'], stagger=TB))
 J(dict(name='tile_lvs', cmd=f'{O} NT=4 python3 sim/top/tb_tile.py lvs', threads=4, est=600, deps=['pex_tile_lvs'], stagger=TB))
 CW = ['--rx', '--rx --levels=-84,-82,-80,-78,-76,-74,-72']
@@ -374,12 +383,25 @@ PRIO = ('gl_models', 'gl', 'net_mixed', 'check_', 'pex_', 'pexsim', 'stab_t_', '
         'tile_c', 'tile_rc', 'tile_scan', 'tile_pair', 'strip_', 'tb_amp_', 'back_coupling')
 for j in JOBS:
     if j['name'].startswith(PRIO):
-        j['est'] = max(j['est'], 20 * H)
+        j['prio'] = 1                 # sched.py: starts ahead of est order (was: est raised to 20 h, which hid it)
 
-# 2026-11-17 02:50: the 10-thread cw_drop runs don't reserve threads (est under sched.py's H_RESERVE, 1 h). With
+# est from the 2026-11-15/17 run's measured times (sim/rerun/durations_tall.json, from sim/rerun/durations.py), +10 %:
+# the estimates above were copied forward unmeasured and were up to ~90x short. A job that didn't run then keeps
+# the estimate above. Times include running alongside ~25 other jobs on 28 CPUs.
+MEASURED = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'durations_tall.json')))
+for j in JOBS:
+    if j['name'] in MEASURED:
+        j['est'] = max(60, round(MEASURED[j['name']] * 60 * 1.1))
+# the extracted noise runs took 14-16 h because of gen_noise.py's repeated PWL times (fixed 2026-11-17): their
+# 2026-11-16 times don't apply. Fixed-noise times: docs/verify_tall.md (the follow-up timing runs).
+for j in JOBS:
+    if j['name'].startswith('nt_pex_'):
+        j['est'] = NT_PEX_EST
+
+# 2026-11-17 02:50: the 10-thread cw_drop runs don't reserve threads (sched.py 'reserve': False). With
 # tile_pair_glo0 running (2 ngspice x 8 threads: ~16 on the load average for ~7 CPUs, until ~08:00) a 10-thread
 # job needs load <= 18, so its reservation held the machine near idle with 147 jobs ready. They now start when
 # the load allows (tile_pair_glo0 done, or the queue thinning out).
 for j in JOBS:
     if j['name'].startswith('cw_drop_') and j['threads'] >= 8:
-        j['est'] = 3000
+        j['reserve'] = False

@@ -44,6 +44,11 @@ Things that aren't chip design work, or that wait for silicon. Add the date and 
   Three 0.5 µs timing runs separate them: the old chain-only deck with the same noise, `rx_t` with the same noise,
   and `rx_t` with the PWL time points cleaned up. If it's the noise file, fix `gen_noise.py` and check that the
   schematic det levels don't move. Then put the measured time in `jobs_tall.py`'s `est`.
+  - **2026-11-17: the noise file.** `gen_noise.py` wrote times to 5 significant figures, so from 1 µs on every other
+    point repeats a time (20,000 per source). Fixed (7 figures); timing runs in `sim/rerun/jobs_tall_follow.py`,
+    results in [verify_tall.md](docs/verify_tall.md) "Follow-ups". The schematic det **does** move with the fixed
+    file (noise-only +5.7 mV at full gain): before the next run, redo `gen_det.py`'s `SHIFT_DB` (noise-only 1.439 V)
+    and the `lo_gain.py` reference levels from the fixed noise.
 - [ ] **Real transient noise** (Harald's review, action 13): VACASK with sky130, or ngspice device noise in transient,
   against today's workaround (an equivalent input noise from a linear analysis, `sim/rx/gen_det.py`, NF 11 dB over
   450 MHz). The case to look for: stage-1 noise driving later stages into limiting. (2026-11-14)
