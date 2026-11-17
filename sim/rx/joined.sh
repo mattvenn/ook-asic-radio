@@ -14,7 +14,8 @@
 # Output: build/joined_<lvl>.raw (10 ns grid via option interp), plot with
 #   sim/rx/plot_joined.py
 # PEX=1: lna_chain and log_det from layout/pex/ (files joined_<lvl>_pex.*). NT=4 sets ngspice threads.
-# SEED=n: trnoise seed (ngspice's rndseed; unset, it's the process ID, so every run is a new realisation).
+# Every run is a new trnoise realisation: neither 'set rndseed' nor '.options seed' makes trnoise repeat
+# (tested 2026-11-17). For repeatable noise use a numpy waveform through a filesource (tb_tile_joined.py pair).
 # TAG=_x: appended to the file names, so repeat runs don't overwrite each other.
 levels=${LEVELS:-"-70 -90"}
 tstop=${TSTOP:-400u}
@@ -62,7 +63,6 @@ Vkey key 0 pwl(0 0 60.000025u 0 60.010025u 1 164.000025u 1 164.010025u 0 268.000
 .options method=GEAR interp
 .control
 ${NT:+set num_threads=$NT}
-${SEED:+set rndseed=$SEED}
 alterparam vemf=$ve
 reset
 tran 10n $tstop 0 50p
