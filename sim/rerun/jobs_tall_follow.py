@@ -62,7 +62,7 @@ for lvl in (-92, -90, -88, -86, -84):
 # ======== 4. joined RX, schematic, -90 dBm again (the main run's 3.09 mV against 1.83 / 1.43 before, model 1.80):
 # three more trnoise realisations, seeded so they can be repeated. ~4.3 h each on 2 threads (joined_-90 took 258 min).
 for s in (1, 2, 3):
-    J(dict(name=f'joined_-90_s{s}', threads=2, est=round(258 * 60 * 1.1), stagger=('joined', 60),
+    J(dict(name=f'joined_-90_s{s}', threads=2, est=round(258 * 60 * 1.1),
            cmd=f"tools/osic bash -c 'cd build && LEVELS=-90 TSTOP=400u NT=2 SEED={s} TAG=_s{s} ../sim/rx/joined.sh' "
                f"&& tr '\\r' '\\n' < build/joined_-90_s{s}.log | grep -q 'No. of Data Rows'"))
 
