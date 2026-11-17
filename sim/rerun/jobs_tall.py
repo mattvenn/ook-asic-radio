@@ -355,7 +355,10 @@ J(dict(name='pwr_mesh05', cmd='tools/osic python3 sim/power/mesh.py A 0.5', thre
 J(dict(name='pwr_mesh10', cmd='tools/osic python3 sim/power/mesh.py A 1.0', threads=1, est=120, deps=['pwr_pex']))
 for s, est in (('r_mesh', 1800), ('ir_rx', 1200), ('em', 900)):
     J(dict(name=f'pwr_{s}', cmd=f'{O} python3 sim/power/{s}.py A', threads=2, est=est, deps=['pwr_mesh05']))
-J(dict(name='pwr_z_ac', cmd=f'{O} python3 sim/power/z_ac.py A', threads=2, est=1800, deps=['pwr_mesh10'], lock='tilemesh'))
+# no lock with pwr_tran_tx (2026-11-17): they write different files in build/power (z_ac_A_* / tran_tx_A*) and only
+# read build/tb_radio_analog.spice; tran_tx uses ~0.9 GB. The 'tilemesh' lock (2026-10-13, no reason given) held
+# z_ac back ~4 h behind it at load 5.
+J(dict(name='pwr_z_ac', cmd=f'{O} python3 sim/power/z_ac.py A', threads=2, est=1800, deps=['pwr_mesh10']))
 J(dict(name='pwr_tran_tx', cmd=f': ; {O} python3 sim/power/tran_tx.py A 30', threads=2, est=2 * H, deps=['pwr_mesh10'], lock='tilemesh'))
 
 # the extracted baseband in the mixed runs (gen_mixed.py --pex reads layout/pex/<block>.spice): after re-extraction
