@@ -4,50 +4,50 @@ X0 amp_dpc_td_0.sp o5p.t5 outn.t3 VSS.t162 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.
 X1 amp_dpc_tsd_0.sn o1n.t17 o2p.t5 VSS.t161 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X2 VSS.t112 ibias.t54 amp_dpc_td_0.sn VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.9 pd=6.6 as=0.45 ps=3.3 w=3 l=0.5
 X3 VSS.t51 ibias.t98 amp_dp_tu_0.tail VSS.t50 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X4 amp_dpc_tu_0.sn o4n.t5 o5p.t0 VSS.t162 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
+X4 amp_dpc_tu_0.sn o4n.t5 o5p.t1 VSS.t162 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X5 o1n.t15 g1p amp_dp_tu_0.tail VSS.t9 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X6 g1p inp.t0 sky130_fd_pr__cap_mim_m3_1 l=61 w=15.88
 X7 amp_dpc_td_0.sp ibias.t9 VSS.t152 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
 X8 VSS.t126 ibias.t38 amp_dp_tu_0.tail VSS.t71 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X9 o3n.t2 o2p.t9 amp_dpc_tu_1.sp VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
+X9 o3n.t1 o2p.t9 amp_dpc_tu_1.sp VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
 X10 amp_dpc_td_1.sp amp_dpc_td_1.sn sky130_fd_pr__cap_mim_m3_1 l=21.33 w=6.8
 X11 amp_dpc_td_0.sp ibias.t7 VSS.t154 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X12 VSS.t79 ibias.t84 amp_dp_tu_0.tail VSS.t78 sky130_fd_pr__nfet_01v8 ad=0.9 pd=6.6 as=0.45 ps=3.3 w=3 l=0.5
 X13 amp_dp_tu_0.tail ibias.t51 VSS.t114 VSS.t44 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X14 amp_dp_tu_0.tail ibias.t99 VSS.t49 VSS.t48 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X15 amp_dpc_tu_1.sn ibias.t23 VSS.t139 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X16 o4n.t1 o3p.t8 amp_dpc_td_1.sp VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
+X16 o4n.t4 o3p.t8 amp_dpc_td_1.sp VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
 X17 amp_dp_tu_0.tail ibias.t39 VSS.t125 VSS.t67 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X18 VSS.t113 ibias.t52 amp_dp_tu_0.tail VSS.t42 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X19 o1p.t0 g1n amp_dp_tu_0.tail VSS.t3 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
-X20 amp_dpc_tu_1.sp o2p.t8 o3n.t0 VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X20 amp_dpc_tu_1.sp o2p.t8 o3n.t2 VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X21 amp_dpc_tsd_0.sa amp_dpc_tsd_0.gi a_14122_10545# VDD.t1 sky130_fd_pr__pfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.15
 X22 VSS.t147 ibias.t14 amp_dpc_tu_0.sn VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X23 VSS.t138 ibias.t24 amp_dpc_tu_1.sn VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X24 amp_dpc_tsd_0.sn ibias.t79 VSS.t87 VSS.t86 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X25 VSS.t107 ibias.t60 amp_dpc_tu_0.sp VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.9 pd=6.6 as=0.45 ps=3.3 w=3 l=0.5
-X26 amp_dpc_td_1.sp o3p.t7 o4n.t0 VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X26 amp_dpc_td_1.sp o3p.t7 o4n.t1 VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X27 o2p.t0 amp_dpc_tsd_0.sa VSS.t0 sky130_fd_pr__res_high_po_1p41 l=0.62
 X28 amp_dpc_tu_0.sn ibias.t15 VSS.t146 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
 X29 amp_dp_tu_0.tail g1n o1p.t7 VSS.t10 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X30 VSS.t85 ibias.t80 amp_dpc_tsd_0.sn VSS.t84 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X31 o3n.t1 o2p.t7 amp_dpc_tu_1.sp VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X31 o3n.t0 o2p.t7 amp_dpc_tu_1.sp VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X32 amp_dpc_td_0.sn amp_dpc_td_0.sp sky130_fd_pr__cap_mim_m3_1 l=21.33 w=6.8
 X33 amp_dpc_tsd_0.gi lna_lo_n.t0 VSS.t25 sky130_fd_pr__res_xhigh_po_0p35 l=2.71
 X34 amp_dp_tu_0.tail g1n o1p.t1 VSS.t4 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X35 VSS.t89 ibias.t78 amp_dpc_tsd_0.sn VSS.t88 sky130_fd_pr__nfet_01v8 ad=0.9 pd=6.6 as=0.45 ps=3.3 w=3 l=0.5
 X36 o5n.t0 o4p.t6 amp_dpc_tu_0.sp VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
-X37 o4n.t4 o3p.t6 amp_dpc_td_1.sp VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X37 o4n.t2 o3p.t6 amp_dpc_td_1.sp VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X38 amp_dpc_tsd_0.sp ibias.t33 VSS.t130 VSS.t69 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
 X39 amp_dpc_td_1.sn ibias.t71 VSS.t90 VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
-X40 amp_dpc_td_0.sn o5n.t5 outp.t1 VSS.t24 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
+X40 amp_dpc_td_0.sn o5n.t5 outp.t0 VSS.t24 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X41 VDD.t17 o2p.t1 VSS.t22 sky130_fd_pr__res_high_po_0p69 l=7.38
 X42 o1p.t2 g1n amp_dp_tu_0.tail VSS.t5 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X43 amp_dp_tu_0.tail ibias.t93 VSS.t60 VSS.t59 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X44 amp_dpc_tu_0.sp o4p.t5 o5n.t1 VSS.t24 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
+X44 amp_dpc_tu_0.sp o4p.t5 o5n.t4 VSS.t24 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X45 amp_dpc_td_0.sp amp_dpc_td_0.sn sky130_fd_pr__cap_mim_m3_1 l=21.33 w=6.8
 X46 amp_dp_tu_0.tail ibias.t91 VSS.t64 VSS.t63 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X47 amp_dpc_td_1.sp o3p.t5 o4n.t3 VSS.t162 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
+X47 amp_dpc_td_1.sp o3p.t5 o4n.t0 VSS.t162 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X48 a_14122_10545# amp_dpc_tsd_0.gi amp_dpc_tsd_0.sa VDD.t2 sky130_fd_pr__pfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.15
 X49 VSS.t41 ibias.t0 ibias.t1 VSS.t40 sky130_fd_pr__nfet_01v8 ad=0.9 pd=6.6 as=0.45 ps=3.3 w=3 l=0.5
 X50 VSS.t103 ibias.t66 amp_dpc_td_1.sn VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.9 pd=6.6 as=0.45 ps=3.3 w=3 l=0.5
@@ -55,7 +55,7 @@ X51 VSS.t32 ibias.t46 amp_dp_tu_0.tail VSS.t31 sky130_fd_pr__nfet_01v8 ad=0.45 p
 X52 VSS.t58 ibias.t94 amp_dp_tu_0.tail VSS.t57 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X53 amp_dpc_tu_0.sp amp_dpc_tu_0.sn sky130_fd_pr__cap_mim_m3_1 l=21.33 w=6.8
 X54 amp_dp_tu_0.tail g1n o1p.t3 VSS.t6 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
-X55 o4p.t1 o3n.t8 amp_dpc_td_1.sn VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
+X55 o4p.t0 o3n.t8 amp_dpc_td_1.sn VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
 X56 o1p.t16 VDD.t16 VSS.t2 sky130_fd_pr__res_high_po_1p41 l=3.14
 X57 amp_dpc_td_1.sp ibias.t19 VSS.t142 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X58 VSS.t75 ibias.t86 amp_dp_tu_0.tail VSS.t74 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
@@ -65,12 +65,12 @@ X61 amp_dpc_td_0.sn ibias.t55 VSS.t37 VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd
 X62 amp_dpc_tsd_0.sn amp_dpc_tsd_0.sp sky130_fd_pr__cap_mim_m3_1 l=21.33 w=6.8
 X63 VSS.t141 ibias.t20 amp_dpc_td_1.sp VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X64 amp_dp_tu_0.tail ibias.t87 VSS.t73 VSS.t33 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X65 amp_dpc_td_1.sn o3n.t7 o4p.t0 VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X65 amp_dpc_td_1.sn o3n.t7 o4p.t4 VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X66 VSS.t109 ibias.t58 amp_dpc_td_0.sn VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X67 amp_dp_tu_0.tail ibias.t85 VSS.t77 VSS.t76 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X68 VSS.t111 ibias.t56 amp_dpc_td_0.sn VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X69 VSS.t47 ibias.t100 amp_dp_tu_0.tail VSS.t46 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X70 amp_dpc_tu_1.sn o2n.t6 o3p.t4 VSS.t162 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
+X70 amp_dpc_tu_1.sn o2n.t6 o3p.t3 VSS.t162 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X71 VSS.t136 ibias.t26 amp_dpc_tu_1.sn VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X72 VSS.t122 ibias.t42 amp_dp_tu_0.tail VSS.t61 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X73 vcm.t0 g1n VSS.t19 sky130_fd_pr__res_high_po_0p35 l=19.14
@@ -81,8 +81,8 @@ X77 VSS.t124 ibias.t40 amp_dp_tu_0.tail VSS.t65 sky130_fd_pr__nfet_01v8 ad=0.45 
 X78 VDD.t8 amp_dpc_tsd_0.gi VDD.t7 VDD.t6 sky130_fd_pr__pfet_01v8 ad=1.5 pd=10.6 as=0 ps=0 w=5 l=5
 X79 amp_dp_tu_0.tail ibias.t53 VSS.t30 VSS.t28 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
 X80 amp_dpc_tu_1.sn ibias.t27 VSS.t35 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
-X81 o4p.t4 o3n.t6 amp_dpc_td_1.sn VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
-X82 VDD.t12 outp.t4 VSS.t20 sky130_fd_pr__res_high_po_0p69 l=7.38
+X81 o4p.t1 o3n.t6 amp_dpc_td_1.sn VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X82 VDD.t12 outp.t3 VSS.t20 sky130_fd_pr__res_high_po_0p69 l=7.38
 X83 amp_dpc_tu_1.sn ibias.t25 VSS.t137 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X84 amp_dpc_tu_0.sp ibias.t63 VSS.t105 VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X85 amp_dpc_tsd_0.sa amp_dpc_tsd_0.gi a_14122_10545# VDD.t3 sky130_fd_pr__pfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.15
@@ -102,7 +102,7 @@ X98 VSS.t129 ibias.t34 amp_dp_tu_0.tail VSS.t78 sky130_fd_pr__nfet_01v8 ad=0.9 p
 X99 amp_dp_tu_0.tail ibias.t49 VSS.t116 VSS.t48 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X100 VSS.t81 ibias.t82 amp_dpc_tsd_0.sn VSS.t80 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X101 o1n.t11 g1p amp_dp_tu_0.tail VSS.t5 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
-X102 outn.t0 o5p.t8 amp_dpc_td_0.sp VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
+X102 outn.t2 o5p.t8 amp_dpc_td_0.sp VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
 X103 VDD.t18 o5n.t3 VSS.t20 sky130_fd_pr__res_high_po_0p69 l=7.38
 X104 amp_dpc_tu_1.sp amp_dpc_tu_1.sn sky130_fd_pr__cap_mim_m3_1 l=21.33 w=6.8
 X105 o1n.t3 g1p amp_dp_tu_0.tail VSS.t13 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
@@ -113,15 +113,15 @@ X109 VSS.t151 ibias.t10 amp_dpc_tu_0.sn VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.9 p
 X110 amp_dp_tu_0.tail g1p o1n.t12 VSS.t6 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X111 ibias.t3 ibias.t2 VSS.t39 VSS.t38 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
 X112 amp_dp_tu_0.tail ibias.t95 VSS.t56 VSS.t55 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X113 amp_dpc_tu_1.sp o2p.t6 o3n.t4 VSS.t24 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
-X114 amp_dpc_td_0.sp o5p.t7 outn.t2 VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X113 amp_dpc_tu_1.sp o2p.t6 o3n.t3 VSS.t24 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
+X114 amp_dpc_td_0.sp o5p.t7 outn.t0 VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X115 a_14122_10545# amp_dpc_tsd_0.gi amp_dpc_tsd_0.sa VDD.t4 sky130_fd_pr__pfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.15
 X116 VSS.t133 ibias.t30 amp_dpc_tsd_0.sp VSS.t84 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X117 amp_dp_tu_0.tail g1p o1n.t4 VSS.t14 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X118 VSS.t135 ibias.t28 amp_dpc_tsd_0.sp VSS.t88 sky130_fd_pr__nfet_01v8 ad=0.9 pd=6.6 as=0.45 ps=3.3 w=3 l=0.5
 X119 amp_dp_tu_0.tail g1p o1n.t6 VSS.t16 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X120 VSS.t101 ibias.t68 amp_dpc_td_1.sn VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X121 o5p.t2 o4n.t8 amp_dpc_tu_0.sn VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
+X121 o5p.t3 o4n.t8 amp_dpc_tu_0.sn VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
 X122 o2n.t0 a_14122_10545# VSS.t1 sky130_fd_pr__res_high_po_1p41 l=0.62
 X123 outn.t1 o5p.t6 amp_dpc_td_0.sp VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X124 amp_dpc_td_1.sp ibias.t21 VSS.t27 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
@@ -138,7 +138,7 @@ X134 o1p.t4 g1n amp_dp_tu_0.tail VSS.t7 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 a
 X135 amp_dpc_tu_1.sp ibias.t73 VSS.t95 VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X136 amp_dp_tu_0.tail ibias.t41 VSS.t123 VSS.t63 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X137 amp_dp_tu_0.tail ibias.t89 VSS.t68 VSS.t67 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X138 amp_dpc_tu_0.sn o4n.t7 o5p.t1 VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X138 amp_dpc_tu_0.sn o4n.t7 o5p.t0 VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X139 VSS.t145 ibias.t16 amp_dpc_td_1.sp VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.9 pd=6.6 as=0.45 ps=3.3 w=3 l=0.5
 X140 VSS.t43 ibias.t102 amp_dp_tu_0.tail VSS.t42 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X141 VSS.t120 ibias.t44 amp_dp_tu_0.tail VSS.t57 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
@@ -146,19 +146,19 @@ X142 o1p.t8 g1n amp_dp_tu_0.tail VSS.t11 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 
 X143 amp_dp_tu_0.tail g1p o1n.t8 VSS.t18 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X144 VSS.t94 ibias.t74 amp_dpc_tu_1.sp VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X145 VSS.t104 ibias.t64 amp_dpc_tu_0.sp VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X146 outp.t2 o5n.t8 amp_dpc_td_0.sn VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
+X146 outp.t4 o5n.t8 amp_dpc_td_0.sn VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
 X147 amp_dpc_tsd_0.sp o1p.t19 o2n.t3 VSS.t159 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X148 amp_dp_tu_0.tail g1n o1p.t5 VSS.t8 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X149 amp_dpc_tsd_0.sa amp_dpc_tsd_0.gi a_14122_10545# VDD.t5 sky130_fd_pr__pfet_01v8 ad=0.9 pd=6.6 as=0.45 ps=3.3 w=3 l=0.15
 X150 amp_dpc_td_1.sp ibias.t17 VSS.t144 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X151 VSS.t127 ibias.t36 amp_dp_tu_0.tail VSS.t74 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X152 amp_dpc_td_0.sp ibias.t5 VSS.t156 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X153 o5p.t3 VDD.t20 VSS.t21 sky130_fd_pr__res_high_po_0p69 l=7.38
+X153 o5p.t4 VDD.t20 VSS.t21 sky130_fd_pr__res_high_po_0p69 l=7.38
 X154 amp_dpc_tu_0.sp ibias.t65 VSS.t99 VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
 X155 amp_dp_tu_0.tail g1n o1p.t9 VSS.t12 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X156 amp_dpc_td_1.sn amp_dpc_td_1.sp sky130_fd_pr__cap_mim_m3_1 l=21.33 w=6.8
-X157 VDD.t11 o3n.t3 VSS.t20 sky130_fd_pr__res_high_po_0p69 l=7.38
-X158 amp_dpc_td_0.sn o5n.t7 outp.t0 VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X157 VDD.t11 o3n.t4 VSS.t20 sky130_fd_pr__res_high_po_0p69 l=7.38
+X158 amp_dpc_td_0.sn o5n.t7 outp.t1 VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X159 VSS.t153 ibias.t8 amp_dpc_td_0.sp VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X160 amp_dp_tu_0.tail ibias.t37 VSS.t34 VSS.t33 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X161 o1p.t6 g1n amp_dp_tu_0.tail VSS.t9 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
@@ -171,24 +171,24 @@ X167 VSS.t149 ibias.t12 amp_dpc_tu_0.sn VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 
 X168 VSS.t140 ibias.t22 amp_dpc_tu_1.sn VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.9 pd=6.6 as=0.45 ps=3.3 w=3 l=0.5
 X169 o1p.t10 g1n amp_dp_tu_0.tail VSS.t13 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X170 o1p.t12 g1n amp_dp_tu_0.tail VSS.t15 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
-X171 o5n.t4 o4p.t8 amp_dpc_tu_0.sp VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
-X172 outp.t3 o5n.t6 amp_dpc_td_0.sn VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X171 o5n.t1 o4p.t8 amp_dpc_tu_0.sp VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
+X172 outp.t2 o5n.t6 amp_dpc_td_0.sn VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X173 amp_dpc_tsd_0.sp o1p.t17 o2n.t5 VSS.t161 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X174 amp_dpc_tu_0.sn ibias.t13 VSS.t148 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X175 amp_dpc_tu_0.sn ibias.t11 VSS.t150 VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X176 g1p vcm.t1 VSS.t23 sky130_fd_pr__res_high_po_0p35 l=19.14
 X177 VSS.t54 ibias.t96 amp_dp_tu_0.tail VSS.t31 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X178 o2p.t2 o1n.t20 amp_dpc_tsd_0.sn VSS.t158 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
-X179 o3p.t3 o2n.t9 amp_dpc_tu_1.sn VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
+X179 o3p.t1 o2n.t9 amp_dpc_tu_1.sn VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=1.5 ps=10.6 w=5 l=0.15
 X180 amp_dp_tu_0.tail g1n o1p.t11 VSS.t14 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X181 amp_dp_tu_0.tail g1n o1p.t13 VSS.t16 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X182 amp_dpc_tu_0.sp o4p.t7 o5n.t2 VSS.t24 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
-X183 o4n.t2 VDD.t13 VSS.t21 sky130_fd_pr__res_high_po_0p69 l=7.38
+X183 o4n.t3 VDD.t13 VSS.t21 sky130_fd_pr__res_high_po_0p69 l=7.38
 X184 amp_dpc_tsd_0.sp ibias.t31 VSS.t132 VSS.t82 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X185 amp_dpc_td_1.sn ibias.t69 VSS.t98 VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X186 amp_dp_tu_0.tail ibias.t97 VSS.t53 VSS.t52 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X187 amp_dpc_tsd_0.sn o1n.t19 o2p.t3 VSS.t159 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
-X188 amp_dpc_tu_1.sn o2n.t8 o3p.t1 VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X188 amp_dpc_tu_1.sn o2n.t8 o3p.t0 VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X189 VSS.t131 ibias.t32 amp_dpc_tsd_0.sp VSS.t80 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X190 o1p.t14 g1n amp_dp_tu_0.tail VSS.t17 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X191 VDD.t9 o1n.t0 VSS.t2 sky130_fd_pr__res_high_po_1p41 l=3.14
@@ -200,13 +200,13 @@ X196 g1n inn.t0 sky130_fd_pr__cap_mim_m3_1 l=61 w=15.88
 X197 a_14122_10545# amp_dpc_tsd_0.gi amp_dpc_tsd_0.sa VDD.t0 sky130_fd_pr__pfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.15
 X198 VSS.t66 ibias.t90 amp_dp_tu_0.tail VSS.t65 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X199 o2p.t4 o1n.t18 amp_dpc_tsd_0.sn VSS.t160 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
-X200 o3p.t0 o2n.t7 amp_dpc_tu_1.sn VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X200 o3p.t2 o2n.t7 amp_dpc_tu_1.sn VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X201 amp_dp_tu_0.tail g1n o1p.t15 VSS.t18 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=0.75 ps=5.3 w=5 l=0.15
 X202 amp_dp_tu_0.tail ibias.t103 VSS.t29 VSS.t28 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
 X203 amp_dpc_tu_1.sp ibias.t77 VSS.t91 VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.9 ps=6.6 w=3 l=0.5
 X204 amp_dp_tu_0.tail ibias.t45 VSS.t119 VSS.t55 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
-X205 o5p.t4 o4n.t6 amp_dpc_tu_0.sn VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
-X206 o3p.t2 VDD.t14 VSS.t21 sky130_fd_pr__res_high_po_0p69 l=7.38
+X205 o5p.t2 o4n.t6 amp_dpc_tu_0.sn VSS.t162 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
+X206 o3p.t4 VDD.t14 VSS.t21 sky130_fd_pr__res_high_po_0p69 l=7.38
 X207 amp_dp_tu_0.tail g1p o1n.t14 VSS.t8 sky130_fd_pr__nfet_01v8 ad=0.75 pd=5.3 as=0.75 ps=5.3 w=5 l=0.15
 X208 amp_dpc_tu_1.sp ibias.t75 VSS.t93 VSS.t36 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
 X209 VSS.t143 ibias.t18 amp_dpc_td_1.sp VSS.t26 sky130_fd_pr__nfet_01v8 ad=0.45 pd=3.3 as=0.45 ps=3.3 w=3 l=0.5
@@ -262,8 +262,8 @@ R48 outn.n8 outn.n1 4.55338
 R49 outn.n15 outn.n0 4.55338
 R50 outn.n15 outn.n14 4.5005
 R51 outn.n8 outn.n7 4.5005
-R52 outn.n5 outn.t2 3.6005
-R53 outn.n5 outn.t0 3.6005
+R52 outn.n5 outn.t0 3.6005
+R53 outn.n5 outn.t2 3.6005
 R54 outn.n12 outn.t3 3.6005
 R55 outn.n12 outn.t1 3.6005
 R56 outn.n16 outn.t4 3.31268
@@ -298,11 +298,11 @@ R84 o5p.n12 o5p.n5 4.55338
 R85 o5p.n19 o5p.n4 4.55338
 R86 o5p.n19 o5p.n18 4.5005
 R87 o5p.n12 o5p.n11 4.5005
-R88 o5p.n9 o5p.t1 3.6005
-R89 o5p.n9 o5p.t2 3.6005
-R90 o5p.n16 o5p.t0 3.6005
-R91 o5p.n16 o5p.t4 3.6005
-R92 o5p.n20 o5p.t3 3.31268
+R88 o5p.n9 o5p.t0 3.6005
+R89 o5p.n9 o5p.t3 3.6005
+R90 o5p.n16 o5p.t1 3.6005
+R91 o5p.n16 o5p.t2 3.6005
+R92 o5p.n20 o5p.t4 3.31268
 R93 o5p o5p.n2 2.76478
 R94 o5p o5p.n20 2.59529
 R95 o5p.n8 o5p.n5 1.08791
@@ -338,11 +338,11 @@ R124 o4n.n11 o4n.n4 4.55338
 R125 o4n.n18 o4n.n3 4.55338
 R126 o4n.n18 o4n.n17 4.5005
 R127 o4n.n11 o4n.n10 4.5005
-R128 o4n.n8 o4n.t0 3.6005
-R129 o4n.n8 o4n.t1 3.6005
-R130 o4n.n15 o4n.t3 3.6005
-R131 o4n.n15 o4n.t4 3.6005
-R132 o4n.n19 o4n.t2 3.31268
+R128 o4n.n8 o4n.t1 3.6005
+R129 o4n.n8 o4n.t4 3.6005
+R130 o4n.n15 o4n.t0 3.6005
+R131 o4n.n15 o4n.t2 3.6005
+R132 o4n.n19 o4n.t3 3.31268
 R133 o4n o4n.n2 2.76478
 R134 o4n.n20 o4n.n19 2.20467
 R135 o4n.n7 o4n.n4 1.08791
@@ -377,11 +377,11 @@ R163 o3p.n12 o3p.n5 4.55338
 R164 o3p.n19 o3p.n4 4.55338
 R165 o3p.n19 o3p.n18 4.5005
 R166 o3p.n12 o3p.n11 4.5005
-R167 o3p.n9 o3p.t1 3.6005
-R168 o3p.n9 o3p.t3 3.6005
-R169 o3p.n16 o3p.t4 3.6005
-R170 o3p.n16 o3p.t0 3.6005
-R171 o3p.n20 o3p.t2 3.31268
+R167 o3p.n9 o3p.t0 3.6005
+R168 o3p.n9 o3p.t1 3.6005
+R169 o3p.n16 o3p.t3 3.6005
+R170 o3p.n16 o3p.t2 3.6005
+R171 o3p.n20 o3p.t4 3.31268
 R172 o3p o3p.n2 2.76478
 R173 o3p o3p.n20 2.59529
 R174 o3p.n8 o3p.n5 1.08791
@@ -412,12 +412,12 @@ R198 outp.n8 outp.n1 4.55338
 R199 outp.n15 outp.n0 4.55338
 R200 outp.n15 outp.n14 4.5005
 R201 outp.n8 outp.n7 4.5005
-R202 outp.n3 outp.t0 3.6005
-R203 outp.n3 outp.t2 3.6005
-R204 outp.n10 outp.t1 3.6005
-R205 outp.n10 outp.t3 3.6005
+R202 outp.n3 outp.t1 3.6005
+R203 outp.n3 outp.t4 3.6005
+R204 outp.n10 outp.t0 3.6005
+R205 outp.n10 outp.t2 3.6005
 R206 outp.n11 outp.n0 3.54039
-R207 outp.n16 outp.t4 3.31245
+R207 outp.n16 outp.t3 3.31245
 R208 outp outp.n16 2.59529
 R209 outp.n4 outp.n1 1.0884
 R210 outp.n16 outp.n15 0.357643
@@ -448,8 +448,8 @@ R234 o5n.n18 o5n.n3 4.55338
 R235 o5n.n18 o5n.n17 4.5005
 R236 o5n.n11 o5n.n10 4.5005
 R237 o5n.n6 o5n.t2 3.6005
-R238 o5n.n6 o5n.t4 3.6005
-R239 o5n.n13 o5n.t1 3.6005
+R238 o5n.n6 o5n.t1 3.6005
+R239 o5n.n13 o5n.t4 3.6005
 R240 o5n.n13 o5n.t0 3.6005
 R241 o5n.n14 o5n.n3 3.54039
 R242 o5n.n19 o5n.t3 3.31245
@@ -486,10 +486,10 @@ R272 o4p.n12 o4p.n5 4.55338
 R273 o4p.n19 o4p.n4 4.55338
 R274 o4p.n19 o4p.n18 4.5005
 R275 o4p.n12 o4p.n11 4.5005
-R276 o4p.n7 o4p.t0 3.6005
-R277 o4p.n7 o4p.t1 3.6005
+R276 o4p.n7 o4p.t4 3.6005
+R277 o4p.n7 o4p.t0 3.6005
 R278 o4p.n14 o4p.t2 3.6005
-R279 o4p.n14 o4p.t4 3.6005
+R279 o4p.n14 o4p.t1 3.6005
 R280 o4p.n15 o4p.n4 3.54039
 R281 o4p.n20 o4p.t3 3.31245
 R282 o4p o4p.n2 2.76478
@@ -526,12 +526,12 @@ R312 o3n.n11 o3n.n4 4.55338
 R313 o3n.n18 o3n.n3 4.55338
 R314 o3n.n18 o3n.n17 4.5005
 R315 o3n.n11 o3n.n10 4.5005
-R316 o3n.n6 o3n.t0 3.6005
-R317 o3n.n6 o3n.t2 3.6005
-R318 o3n.n13 o3n.t4 3.6005
-R319 o3n.n13 o3n.t1 3.6005
+R316 o3n.n6 o3n.t2 3.6005
+R317 o3n.n6 o3n.t1 3.6005
+R318 o3n.n13 o3n.t3 3.6005
+R319 o3n.n13 o3n.t0 3.6005
 R320 o3n.n14 o3n.n3 3.54039
-R321 o3n.n19 o3n.t3 3.31245
+R321 o3n.n19 o3n.t4 3.31245
 R322 o3n o3n.n2 2.76478
 R323 o3n.n20 o3n.n19 2.20467
 R324 o3n.n7 o3n.n4 1.0884
@@ -14010,202 +14010,202 @@ R13796 VSS.n1972 VSS.n1971 0.0020625
 R13797 VSS.n5881 VSS.n0 0.0020625
 R13798 VSS.n4509 VSS.n4432 0.00161607
 R13799 VSS.n5562 VSS.n5561 0.00161607
-C0 o1n g1p 1.37735f
-C1 o3n amp_dpc_tu_1.sn 0
-C2 o2p amp_dpc_tsd_0.sa 0.20178f
-C3 o4n o5p 0.41892f
-C4 ibias amp_dpc_tsd_0.gi 0.00945f
-C5 amp_dpc_tsd_0.sa a_14122_10545# 3.31468f
-C6 VDD vcm 0.01516f
-C7 o3n amp_dpc_tsd_0.sn 0.00108f
-C8 o1p amp_dpc_tsd_0.sa 0.00302f
-C9 amp_dpc_tu_0.sp amp_dpc_td_0.sn 0.39924f
-C10 inn vcm 0.668f
-C11 o2n amp_dpc_tu_1.sp 0.08173f
-C12 outp amp_dpc_tu_0.sp 0.00226f
-C13 o2p a_14122_10545# 0.07388f
-C14 o4p ibias 0.18641f
-C15 o5p amp_dpc_tu_0.sp 0.02033f
-C16 o2p o1p 0.01897f
-C17 o2n o1n 0.0118f
-C18 o3n amp_dpc_tu_1.sp 5.952f
-C19 vcm amp_dp_tu_0.tail 0.00456f
-C20 VDD ibias 1.91964f
-C21 amp_dpc_td_0.sp ibias 1.66155f
-C22 outp amp_dpc_td_0.sn 5.62877f
-C23 VDD amp_dpc_tsd_0.gi 5.13611f
-C24 inn ibias 0
-C25 o5p amp_dpc_td_0.sn 0.059f
-C26 ibias amp_dpc_tsd_0.sp 1.70055f
-C27 o4n o3n 0
-C28 outn amp_dpc_tu_0.sn 0.00226f
-C29 outp o5p 0.00353f
-C30 o5n outn 0
-C31 o3n amp_dpc_td_1.sn 0.67635f
-C32 amp_dpc_tsd_0.sp amp_dpc_tsd_0.gi 1.77874f
-C33 o1p g1p 0.23155f
-C34 o2n amp_dpc_tsd_0.sa 0.02058f
-C35 ibias amp_dp_tu_0.tail 8.76908f
-C36 o3p ibias 0.20646f
-C37 o4p VDD 4.19492f
-C38 inp inn 2.83975f
-C39 o3p amp_dpc_tsd_0.gi 0.00174f
-C40 vcm g1n 0.48889f
-C41 o2p o2n 0.22164f
-C42 ibias amp_dpc_tu_1.sn 1.72368f
-C43 amp_dpc_tu_1.sn amp_dpc_tsd_0.gi 0.05125f
-C44 o2n a_14122_10545# 0.45634f
-C45 amp_dpc_td_0.sp VDD 3.5954f
-C46 ibias amp_dpc_tsd_0.sn 1.74542f
-C47 o2n o1p 0.43927f
-C48 vcm o1n 0.00139f
-C49 o2p o3n 0.41674f
-C50 amp_dpc_tsd_0.sn amp_dpc_tsd_0.gi 0.76932f
-C51 o4p o3p 0.00353f
-C52 ibias amp_dpc_td_1.sp 1.67939f
-C53 VDD amp_dpc_tsd_0.sp 4.8548f
-C54 ibias g1n 0.34755f
-C55 ibias amp_dpc_tu_1.sp 1.67938f
-C56 VDD amp_dp_tu_0.tail 0.01554f
-C57 outn amp_dpc_td_0.sn 0.49599f
-C58 o3p VDD 9.15242f
-C59 outp outn 0.02936f
-C60 amp_dpc_tu_1.sp amp_dpc_tsd_0.gi 0.02903f
-C61 ibias amp_dpc_tu_0.sn 1.72369f
-C62 ibias o1n 0.41343f
-C63 VDD amp_dpc_tu_1.sn 4.61737f
-C64 o5n ibias 0.18641f
-C65 o5p outn 0.42039f
-C66 amp_dp_tu_0.tail amp_dpc_tsd_0.sp 0.00424f
-C67 o3p amp_dpc_tsd_0.sp 0.00108f
-C68 o4p amp_dpc_td_1.sp -0
-C69 o1n amp_dpc_tsd_0.gi 0
-C70 o4n ibias 0.19863f
-C71 amp_dpc_tsd_0.sp amp_dpc_tu_1.sn 0.33732f
-C72 ibias amp_dpc_td_1.sn 1.72375f
-C73 VDD amp_dpc_tsd_0.sn 5.2459f
-C74 o4p amp_dpc_tu_1.sp 0.00226f
-C75 lna_lo_n amp_dpc_tsd_0.gi 0.04044f
-C76 VDD amp_dpc_td_1.sp 3.6104f
-C77 amp_dpc_tsd_0.sn amp_dpc_tsd_0.sp 2.52049f
-C78 o3p amp_dpc_tu_1.sn 5.62512f
-C79 o4p amp_dpc_tu_0.sn 0
-C80 VDD g1n 2.7698f
-C81 o4p o5n 0.41688f
-C82 o2n o3n 0.00216f
-C83 ibias amp_dpc_tu_0.sp 1.67944f
-C84 o4p o4n 0.02959f
-C85 VDD amp_dpc_tu_1.sp 3.96327f
-C86 inn g1n 1.1547f
-C87 amp_dpc_tsd_0.sa amp_dpc_tsd_0.gi 0.34677f
-C88 amp_dp_tu_0.tail amp_dpc_tsd_0.sn 0.00424f
-C89 amp_dpc_tsd_0.sp g1n 0
-C90 o4p amp_dpc_td_1.sn 5.62988f
-C91 o2p ibias 0.18641f
-C92 VDD o1n 5.20002f
-C93 VDD amp_dpc_tu_0.sn 4.6028f
-C94 o5n VDD 2.43399f
-C95 vcm g1p 0.33201f
-C96 amp_dpc_td_0.sp amp_dpc_tu_0.sn 0.39924f
-C97 amp_dpc_tu_1.sp amp_dpc_tsd_0.sp 0
-C98 o3p amp_dpc_td_1.sp 0.69486f
-C99 o2p amp_dpc_tsd_0.gi 0.17326f
-C100 o4n VDD 5.11272f
-C101 amp_dp_tu_0.tail g1n 1.36166f
-C102 o1n amp_dpc_tsd_0.sp 0.03765f
-C103 amp_dpc_tu_1.sn amp_dpc_td_1.sp 0.39924f
-C104 ibias amp_dpc_td_0.sn 1.7083f
-C105 VDD amp_dpc_td_1.sn 4.33279f
-C106 lna_lo_n VDD 0.74742f
-C107 ibias o1p 0.31337f
-C108 amp_dpc_tsd_0.gi a_14122_10545# 0.57651f
-C109 outp ibias 0.14156f
-C110 o3p amp_dpc_tu_1.sp 0.02033f
-C111 o4p amp_dpc_tu_0.sp 0.70755f
-C112 o1p amp_dpc_tsd_0.gi 0
-C113 o5p ibias 0.20646f
-C114 o1n amp_dp_tu_0.tail 14.6721f
-C115 amp_dpc_tu_1.sp amp_dpc_tu_1.sn 2.52049f
-C116 lna_lo_n amp_dpc_tsd_0.sp 0.00678f
-C117 ibias g1p 0.36773f
-C118 VDD amp_dpc_tsd_0.sa 0.87503f
-C119 o3p o4n 0.42039f
-C120 VDD amp_dpc_tu_0.sp 3.95365f
-C121 amp_dpc_td_0.sp amp_dpc_tu_0.sp 0
-C122 amp_dpc_tsd_0.sn amp_dpc_tu_1.sp 0.31763f
-C123 o3p amp_dpc_td_1.sn 0.059f
-C124 o4n amp_dpc_tu_1.sn 0.00226f
-C125 VDD o2p 4.95917f
-C126 o1n amp_dpc_tsd_0.sn 0.71823f
-C127 amp_dpc_tu_1.sp amp_dpc_td_1.sp 0
-C128 lna_lo_n amp_dpc_tu_1.sn 0.01473f
-C129 VDD a_14122_10545# 0.38186f
-C130 inp g1p 1.6562f
-C131 amp_dpc_td_1.sp amp_dpc_tu_0.sn 0.39924f
-C132 o2p amp_dpc_tsd_0.sp -0
-C133 VDD amp_dpc_td_0.sn 4.31779f
-C134 o2n ibias 0.19855f
-C135 VDD o1p 9.4094f
-C136 amp_dpc_td_0.sp amp_dpc_td_0.sn 2.52049f
-C137 o1n g1n 0.20146f
-C138 outp VDD 2.31246f
-C139 o4n amp_dpc_td_1.sp 6.35849f
-C140 outp amp_dpc_td_0.sp 0
-C141 o2n amp_dpc_tsd_0.gi 4.23613f
-C142 o5p VDD 9.15242f
-C143 o2p amp_dp_tu_0.tail 0
-C144 amp_dpc_td_1.sn amp_dpc_td_1.sp 2.52049f
-C145 o5p amp_dpc_td_0.sp 0.69486f
-C146 o1p amp_dpc_tsd_0.sp 0.7537f
-C147 ibias o3n 0.18641f
-C148 VDD g1p 0.20507f
-C149 o2p amp_dpc_tu_1.sn 0
-C150 amp_dpc_tsd_0.sn amp_dpc_tsd_0.sa 1.21882f
-C151 o5n amp_dpc_tu_0.sn 0
-C152 o3n amp_dpc_tsd_0.gi 0.00174f
-C153 amp_dpc_tu_1.sp amp_dpc_td_1.sn 0.39924f
-C154 inn g1p 1.09217f
-C155 outn ibias 0.14213f
-C156 o1p amp_dp_tu_0.tail 14.6004f
-C157 o4n amp_dpc_tu_0.sn 0.67264f
-C158 o5n o4n 0.00216f
-C159 amp_dpc_tu_0.sp amp_dpc_td_1.sp 0
-C160 o2p amp_dpc_tsd_0.sn 6.6943f
-C161 o5n amp_dpc_td_1.sn 0.00226f
-C162 o4n amp_dpc_td_1.sn 0.49599f
-C163 amp_dpc_tsd_0.sn a_14122_10545# 0.58933f
-C164 amp_dp_tu_0.tail g1p 1.74265f
-C165 amp_dpc_tu_1.sp amp_dpc_tsd_0.sa 0
-C166 o4p o3n 0.4168f
-C167 VDD o2n 5.33445f
-C168 o1p amp_dpc_tsd_0.sn 0.10631f
-C169 o1n amp_dpc_tsd_0.sa 0.00213f
-C170 o2p amp_dpc_tu_1.sp 0.74277f
-C171 amp_dpc_tu_0.sp amp_dpc_tu_0.sn 2.52049f
-C172 o5n amp_dpc_tu_0.sp 5.952f
-C173 o2n amp_dpc_tsd_0.sp 5.6272f
-C174 vcm ibias 0.43896f
-C175 VDD o3n 2.43399f
-C176 o4n amp_dpc_tu_0.sp 0.0183f
-C177 o1p g1n 1.32787f
-C178 o2p o1n 0.43718f
-C179 amp_dpc_tsd_0.sn g1p 0
-C180 amp_dpc_tu_1.sp a_14122_10545# 0.0613f
-C181 o5p amp_dpc_td_1.sp 0.00226f
-C182 amp_dpc_td_1.sn amp_dpc_tu_0.sp 0.39924f
-C183 outn VDD 5.07555f
-C184 o2n amp_dp_tu_0.tail 0
-C185 o3p o2n 0.41879f
-C186 outn amp_dpc_td_0.sp 6.35738f
-C187 g1p g1n 4.56609f
-C188 o1n o1p 2.07078f
-C189 o5n amp_dpc_td_0.sn 0.67635f
-C190 o2n amp_dpc_tu_1.sn 0.66767f
-C191 o5n outp 0.4168f
-C192 o3p o3n 0.02546f
-C193 o5p amp_dpc_tu_0.sn 5.62512f
-C194 o5n o5p 0.02546f
-C195 o2n amp_dpc_tsd_0.sn 0.11998f
+C0 o1n o1p 2.07078f
+C1 o3p amp_dpc_td_1.sp 0.69486f
+C2 ibias o3p 0.20646f
+C3 o2p amp_dpc_tsd_0.gi 0.17326f
+C4 amp_dpc_tsd_0.sp VDD 4.8548f
+C5 ibias amp_dpc_td_1.sp 1.67939f
+C6 o1p amp_dp_tu_0.tail 14.6004f
+C7 o2p amp_dpc_tsd_0.sn 6.6943f
+C8 amp_dpc_tsd_0.gi amp_dpc_tu_1.sp 0.02903f
+C9 o4p amp_dpc_tu_0.sn 0
+C10 inp inn 2.83975f
+C11 outp amp_dpc_tu_0.sp 0.00226f
+C12 g1p inp 1.6562f
+C13 o1p amp_dpc_tsd_0.gi 0
+C14 lna_lo_n amp_dpc_tsd_0.sp 0.00678f
+C15 amp_dpc_tsd_0.sn amp_dpc_tu_1.sp 0.31763f
+C16 amp_dpc_tu_1.sn VDD 4.61737f
+C17 VDD amp_dpc_tsd_0.sa 0.87503f
+C18 o5p amp_dpc_tu_0.sp 0.02033f
+C19 amp_dpc_td_1.sp amp_dpc_tu_0.sn 0.39924f
+C20 ibias inn 0
+C21 ibias amp_dpc_tu_0.sn 1.72369f
+C22 o1p amp_dpc_tsd_0.sn 0.10631f
+C23 ibias g1p 0.36773f
+C24 o2p amp_dpc_tu_1.sp 0.74277f
+C25 o4p VDD 4.19492f
+C26 o4n amp_dpc_tu_1.sn 0.00226f
+C27 o1n o2n 0.0118f
+C28 o1p o2p 0.01897f
+C29 o4p o5n 0.41688f
+C30 o3p VDD 9.15242f
+C31 outp amp_dpc_td_0.sn 5.62877f
+C32 lna_lo_n amp_dpc_tu_1.sn 0.01473f
+C33 amp_dpc_td_1.sp VDD 3.6104f
+C34 o2n amp_dp_tu_0.tail 0
+C35 o4p o4n 0.02959f
+C36 VDD a_14122_10545# 0.38186f
+C37 o5p amp_dpc_td_0.sn 0.059f
+C38 ibias VDD 1.91964f
+C39 g1p inn 1.09217f
+C40 ibias amp_dpc_td_0.sp 1.66155f
+C41 o3p o4n 0.42039f
+C42 ibias o5n 0.18641f
+C43 o4n amp_dpc_td_1.sp 6.35849f
+C44 o1n g1n 0.20146f
+C45 o2n amp_dpc_tsd_0.gi 4.23613f
+C46 ibias o4n 0.19863f
+C47 vcm o1n 0.00139f
+C48 amp_dpc_tu_1.sp amp_dpc_td_1.sn 0.39924f
+C49 amp_dpc_tu_0.sn VDD 4.6028f
+C50 o2n amp_dpc_tsd_0.sn 0.11998f
+C51 VDD g1p 0.20507f
+C52 g1n amp_dp_tu_0.tail 1.36166f
+C53 amp_dpc_tu_0.sn amp_dpc_td_0.sp 0.39924f
+C54 o5n amp_dpc_tu_0.sn 0
+C55 vcm amp_dp_tu_0.tail 0.00456f
+C56 o2p o2n 0.22164f
+C57 o3n amp_dpc_tsd_0.gi 0.00174f
+C58 o4n amp_dpc_tu_0.sn 0.67264f
+C59 o1n amp_dpc_tsd_0.sp 0.03765f
+C60 o3n amp_dpc_tsd_0.sn 0.00108f
+C61 amp_dpc_td_0.sp VDD 3.5954f
+C62 o2n amp_dpc_tu_1.sp 0.08173f
+C63 amp_dpc_tsd_0.sp amp_dp_tu_0.tail 0.00424f
+C64 o5n VDD 2.43399f
+C65 o3n o2p 0.41674f
+C66 o1p o2n 0.43927f
+C67 o4n VDD 5.11272f
+C68 o1n amp_dpc_tsd_0.sa 0.00213f
+C69 o5n o4n 0.00216f
+C70 amp_dpc_tsd_0.sp amp_dpc_tsd_0.gi 1.77874f
+C71 lna_lo_n VDD 0.74742f
+C72 outn amp_dpc_td_0.sn 0.49599f
+C73 o3n amp_dpc_tu_1.sp 5.952f
+C74 amp_dpc_td_1.sn amp_dpc_tu_0.sp 0.39924f
+C75 ibias outp 0.14156f
+C76 amp_dpc_tsd_0.sp amp_dpc_tsd_0.sn 2.52049f
+C77 o5p amp_dpc_td_1.sp 0.00226f
+C78 o1p g1n 1.32787f
+C79 ibias o5p 0.20646f
+C80 amp_dpc_tsd_0.sp o2p -0
+C81 ibias o1n 0.41343f
+C82 amp_dpc_tu_1.sn amp_dpc_tsd_0.gi 0.05125f
+C83 amp_dpc_tsd_0.sa amp_dpc_tsd_0.gi 0.34677f
+C84 o3n amp_dpc_td_1.sn 0.67635f
+C85 amp_dpc_tsd_0.sp amp_dpc_tu_1.sp 0
+C86 amp_dpc_tsd_0.sa amp_dpc_tsd_0.sn 1.21882f
+C87 ibias amp_dp_tu_0.tail 8.76908f
+C88 o5p amp_dpc_tu_0.sn 5.62512f
+C89 o1p amp_dpc_tsd_0.sp 0.7537f
+C90 o3p amp_dpc_tsd_0.gi 0.00174f
+C91 amp_dpc_tu_1.sn o2p 0
+C92 o2p amp_dpc_tsd_0.sa 0.20178f
+C93 o1n g1p 1.37735f
+C94 amp_dpc_tsd_0.gi a_14122_10545# 0.57651f
+C95 ibias amp_dpc_tsd_0.gi 0.00945f
+C96 outp VDD 2.31246f
+C97 amp_dpc_tu_0.sp amp_dpc_td_0.sn 0.39924f
+C98 o3n o2n 0.00216f
+C99 outp amp_dpc_td_0.sp 0
+C100 amp_dpc_tu_1.sn amp_dpc_tu_1.sp 2.52049f
+C101 o5n outp 0.4168f
+C102 amp_dpc_tsd_0.sa amp_dpc_tu_1.sp 0
+C103 a_14122_10545# amp_dpc_tsd_0.sn 0.58933f
+C104 g1p amp_dp_tu_0.tail 1.74265f
+C105 o5p VDD 9.15242f
+C106 ibias amp_dpc_tsd_0.sn 1.74542f
+C107 o5p amp_dpc_td_0.sp 0.69486f
+C108 o1p amp_dpc_tsd_0.sa 0.00302f
+C109 o5n o5p 0.02546f
+C110 o2p a_14122_10545# 0.07388f
+C111 ibias o2p 0.18641f
+C112 o1n VDD 5.20002f
+C113 o4p amp_dpc_tu_1.sp 0.00226f
+C114 o4n o5p 0.41892f
+C115 o3p amp_dpc_tu_1.sp 0.02033f
+C116 VDD amp_dp_tu_0.tail 0.01554f
+C117 ibias outn 0.14213f
+C118 amp_dpc_td_1.sp amp_dpc_tu_1.sp 0
+C119 a_14122_10545# amp_dpc_tu_1.sp 0.0613f
+C120 g1p amp_dpc_tsd_0.sn 0
+C121 ibias amp_dpc_tu_1.sp 1.67938f
+C122 amp_dpc_tsd_0.sp o2n 5.6272f
+C123 vcm g1n 0.48889f
+C124 ibias o1p 0.31337f
+C125 o4p amp_dpc_td_1.sn 5.62988f
+C126 VDD amp_dpc_tsd_0.gi 5.13611f
+C127 o3p amp_dpc_td_1.sn 0.059f
+C128 outn amp_dpc_tu_0.sn 0.00226f
+C129 VDD amp_dpc_tsd_0.sn 5.2459f
+C130 amp_dpc_td_1.sp amp_dpc_td_1.sn 2.52049f
+C131 ibias amp_dpc_td_1.sn 1.72375f
+C132 amp_dpc_tu_1.sn o2n 0.66767f
+C133 o2n amp_dpc_tsd_0.sa 0.02058f
+C134 amp_dpc_tsd_0.sp g1n 0
+C135 VDD o2p 4.95917f
+C136 o1p g1p 0.23155f
+C137 lna_lo_n amp_dpc_tsd_0.gi 0.04044f
+C138 o4p amp_dpc_tu_0.sp 0.70755f
+C139 outn VDD 5.07555f
+C140 outn amp_dpc_td_0.sp 6.35738f
+C141 o3p o2n 0.41879f
+C142 VDD amp_dpc_tu_1.sp 3.96327f
+C143 o3n amp_dpc_tu_1.sn 0
+C144 outp o5p 0.00353f
+C145 o5n outn 0
+C146 amp_dpc_td_1.sp amp_dpc_tu_0.sp 0
+C147 ibias amp_dpc_tu_0.sp 1.67944f
+C148 o2n a_14122_10545# 0.45634f
+C149 ibias o2n 0.19855f
+C150 o1p VDD 9.4094f
+C151 o3n o4p 0.4168f
+C152 o3n o3p 0.02546f
+C153 VDD amp_dpc_td_1.sn 4.33279f
+C154 amp_dpc_tu_0.sn amp_dpc_tu_0.sp 2.52049f
+C155 ibias o3n 0.18641f
+C156 ibias amp_dpc_td_0.sn 1.7083f
+C157 o5n amp_dpc_td_1.sn 0.00226f
+C158 ibias g1n 0.34755f
+C159 amp_dpc_tsd_0.sp amp_dpc_tu_1.sn 0.33732f
+C160 vcm ibias 0.43896f
+C161 o4n amp_dpc_td_1.sn 0.49599f
+C162 o1n amp_dp_tu_0.tail 14.6721f
+C163 VDD amp_dpc_tu_0.sp 3.95365f
+C164 o3p amp_dpc_tsd_0.sp 0.00108f
+C165 VDD o2n 5.33445f
+C166 amp_dpc_td_0.sp amp_dpc_tu_0.sp 0
+C167 g1n inn 1.1547f
+C168 g1p g1n 4.56609f
+C169 o5n amp_dpc_tu_0.sp 5.952f
+C170 o1n amp_dpc_tsd_0.gi 0
+C171 ibias amp_dpc_tsd_0.sp 1.70055f
+C172 vcm inn 0.668f
+C173 vcm g1p 0.33201f
+C174 o4n amp_dpc_tu_0.sp 0.0183f
+C175 o1n amp_dpc_tsd_0.sn 0.71823f
+C176 outp outn 0.02936f
+C177 o3n VDD 2.43399f
+C178 VDD amp_dpc_td_0.sn 4.31779f
+C179 o1n o2p 0.43718f
+C180 o3p amp_dpc_tu_1.sn 5.62512f
+C181 o5p outn 0.42039f
+C182 amp_dpc_td_0.sp amp_dpc_td_0.sn 2.52049f
+C183 VDD g1n 2.7698f
+C184 amp_dp_tu_0.tail amp_dpc_tsd_0.sn 0.00424f
+C185 o5n amp_dpc_td_0.sn 0.67635f
+C186 amp_dpc_tu_1.sn amp_dpc_td_1.sp 0.39924f
+C187 amp_dpc_tsd_0.sa a_14122_10545# 3.31468f
+C188 vcm VDD 0.01516f
+C189 ibias amp_dpc_tu_1.sn 1.72368f
+C190 o4p o3p 0.00353f
+C191 o2p amp_dp_tu_0.tail 0
+C192 o3n o4n 0
+C193 amp_dpc_tsd_0.gi amp_dpc_tsd_0.sn 0.76932f
+C194 o4p amp_dpc_td_1.sp -0
+C195 ibias o4p 0.18641f
 C196 inn VSS 16.46761f
 C197 inp VSS 16.7005f
 C198 lna_lo_n VSS 0.89692f
@@ -15106,12 +15106,12 @@ C1092 o3n.n0 VSS 0.4231f
 C1093 o3n.t7 VSS 0.19075f
 C1094 o3n.n1 VSS 0.21119f
 C1095 o3n.n2 VSS 0.23902f
-C1096 o3n.t3 VSS 1.33575f
+C1096 o3n.t4 VSS 1.33575f
 C1097 o3n.n3 VSS 0.41615f
 C1098 o3n.n4 VSS 0.3435f
 C1099 o3n.n5 VSS 0.00733f
-C1100 o3n.t0 VSS 0.11005f
-C1101 o3n.t2 VSS 0.11005f
+C1100 o3n.t2 VSS 0.11005f
+C1101 o3n.t1 VSS 0.11005f
 C1102 o3n.n6 VSS 0.24222f
 C1103 o3n.n7 VSS 0.10488f
 C1104 o3n.n8 VSS 0.02203f
@@ -15119,8 +15119,8 @@ C1105 o3n.n9 VSS 0.01274f
 C1106 o3n.n10 VSS 0.04103f
 C1107 o3n.n11 VSS 0.09436f
 C1108 o3n.n12 VSS 0.01726f
-C1109 o3n.t4 VSS 0.11005f
-C1110 o3n.t1 VSS 0.11005f
+C1109 o3n.t3 VSS 0.11005f
+C1110 o3n.t0 VSS 0.11005f
 C1111 o3n.n13 VSS 0.24222f
 C1112 o3n.n14 VSS 0.03223f
 C1113 o3n.n15 VSS 0.02203f
@@ -15141,8 +15141,8 @@ C1127 o4p.t3 VSS 1.53053f
 C1128 o4p.n4 VSS 0.47684f
 C1129 o4p.n5 VSS 0.39359f
 C1130 o4p.n6 VSS 0.0084f
-C1131 o4p.t0 VSS 0.12609f
-C1132 o4p.t1 VSS 0.12609f
+C1131 o4p.t4 VSS 0.12609f
+C1132 o4p.t0 VSS 0.12609f
 C1133 o4p.n7 VSS 0.27754f
 C1134 o4p.n8 VSS 0.12018f
 C1135 o4p.n9 VSS 0.02525f
@@ -15151,7 +15151,7 @@ C1137 o4p.n11 VSS 0.04701f
 C1138 o4p.n12 VSS 0.10812f
 C1139 o4p.n13 VSS 0.01977f
 C1140 o4p.t2 VSS 0.12609f
-C1141 o4p.t4 VSS 0.12609f
+C1141 o4p.t1 VSS 0.12609f
 C1142 o4p.n14 VSS 0.27754f
 C1143 o4p.n15 VSS 0.03693f
 C1144 o4p.n16 VSS 0.02525f
@@ -15171,7 +15171,7 @@ C1157 o5n.n3 VSS 0.41614f
 C1158 o5n.n4 VSS 0.34349f
 C1159 o5n.n5 VSS 0.00733f
 C1160 o5n.t2 VSS 0.11004f
-C1161 o5n.t4 VSS 0.11004f
+C1161 o5n.t1 VSS 0.11004f
 C1162 o5n.n6 VSS 0.24221f
 C1163 o5n.n7 VSS 0.10488f
 C1164 o5n.n8 VSS 0.02203f
@@ -15179,7 +15179,7 @@ C1165 o5n.n9 VSS 0.01274f
 C1166 o5n.n10 VSS 0.04103f
 C1167 o5n.n11 VSS 0.09436f
 C1168 o5n.n12 VSS 0.01726f
-C1169 o5n.t1 VSS 0.11004f
+C1169 o5n.t4 VSS 0.11004f
 C1170 o5n.t0 VSS 0.11004f
 C1171 o5n.n13 VSS 0.24221f
 C1172 o5n.n14 VSS 0.03223f
@@ -15189,12 +15189,12 @@ C1175 o5n.n17 VSS 0.0311f
 C1176 o5n.n18 VSS 0.14982f
 C1177 o5n.n19 VSS 1.71503f
 C1178 o5n.n20 VSS 0.82193f
-C1179 outp.t4 VSS 1.37356f
+C1179 outp.t3 VSS 1.37356f
 C1180 outp.n0 VSS 0.42793f
 C1181 outp.n1 VSS 0.35322f
 C1182 outp.n2 VSS 0.00754f
-C1183 outp.t0 VSS 0.11316f
-C1184 outp.t2 VSS 0.11316f
+C1183 outp.t1 VSS 0.11316f
+C1184 outp.t4 VSS 0.11316f
 C1185 outp.n3 VSS 0.24907f
 C1186 outp.n4 VSS 0.10785f
 C1187 outp.n5 VSS 0.02266f
@@ -15202,8 +15202,8 @@ C1188 outp.n6 VSS 0.0131f
 C1189 outp.n7 VSS 0.04219f
 C1190 outp.n8 VSS 0.09703f
 C1191 outp.n9 VSS 0.01775f
-C1192 outp.t1 VSS 0.11316f
-C1193 outp.t3 VSS 0.11316f
+C1192 outp.t0 VSS 0.11316f
+C1193 outp.t2 VSS 0.11316f
 C1194 outp.n10 VSS 0.24907f
 C1195 outp.n11 VSS 0.03314f
 C1196 outp.n12 VSS 0.02266f
@@ -15219,23 +15219,23 @@ C1205 o3p.t7 VSS 0.24369f
 C1206 o3p.n1 VSS 0.2698f
 C1207 o3p.n2 VSS 0.30536f
 C1208 o3p.n3 VSS 1.5402f
-C1209 o3p.t2 VSS 1.70701f
+C1209 o3p.t4 VSS 1.70701f
 C1210 o3p.n4 VSS 0.43882f
 C1211 o3p.n5 VSS 0.43882f
 C1212 o3p.n6 VSS 0.01627f
 C1213 o3p.n7 VSS 0.02815f
-C1214 o3p.t1 VSS 0.14059f
+C1214 o3p.t0 VSS 0.14059f
 C1215 o3p.n8 VSS 0.13401f
-C1216 o3p.t3 VSS 0.14059f
+C1216 o3p.t1 VSS 0.14059f
 C1217 o3p.n9 VSS 0.30944f
 C1218 o3p.n10 VSS 0.00937f
 C1219 o3p.n11 VSS 0.05241f
 C1220 o3p.n12 VSS 0.12055f
 C1221 o3p.n13 VSS 0.01627f
 C1222 o3p.n14 VSS 0.02815f
-C1223 o3p.t4 VSS 0.14059f
+C1223 o3p.t3 VSS 0.14059f
 C1224 o3p.n15 VSS 0.13401f
-C1225 o3p.t0 VSS 0.14059f
+C1225 o3p.t2 VSS 0.14059f
 C1226 o3p.n16 VSS 0.30944f
 C1227 o3p.n17 VSS 0.00937f
 C1228 o3p.n18 VSS 0.05241f
@@ -15248,23 +15248,23 @@ C1234 o4n.n0 VSS 0.44629f
 C1235 o4n.t7 VSS 0.20121f
 C1236 o4n.n1 VSS 0.22277f
 C1237 o4n.n2 VSS 0.25212f
-C1238 o4n.t2 VSS 1.40942f
+C1238 o4n.t3 VSS 1.40942f
 C1239 o4n.n3 VSS 0.36232f
 C1240 o4n.n4 VSS 0.36232f
 C1241 o4n.n5 VSS 0.01344f
 C1242 o4n.n6 VSS 0.02324f
-C1243 o4n.t0 VSS 0.11608f
+C1243 o4n.t1 VSS 0.11608f
 C1244 o4n.n7 VSS 0.11065f
-C1245 o4n.t1 VSS 0.11608f
+C1245 o4n.t4 VSS 0.11608f
 C1246 o4n.n8 VSS 0.25549f
 C1247 o4n.n9 VSS 0.00773f
 C1248 o4n.n10 VSS 0.04328f
 C1249 o4n.n11 VSS 0.09953f
 C1250 o4n.n12 VSS 0.01344f
 C1251 o4n.n13 VSS 0.02324f
-C1252 o4n.t3 VSS 0.11608f
+C1252 o4n.t0 VSS 0.11608f
 C1253 o4n.n14 VSS 0.11065f
-C1254 o4n.t4 VSS 0.11608f
+C1254 o4n.t2 VSS 0.11608f
 C1255 o4n.n15 VSS 0.25549f
 C1256 o4n.n16 VSS 0.00773f
 C1257 o4n.n17 VSS 0.04328f
@@ -15279,23 +15279,23 @@ C1265 o5p.t7 VSS 0.24368f
 C1266 o5p.n1 VSS 0.26979f
 C1267 o5p.n2 VSS 0.30535f
 C1268 o5p.n3 VSS 1.54016f
-C1269 o5p.t3 VSS 1.70696f
+C1269 o5p.t4 VSS 1.70696f
 C1270 o5p.n4 VSS 0.43881f
 C1271 o5p.n5 VSS 0.43881f
 C1272 o5p.n6 VSS 0.01627f
 C1273 o5p.n7 VSS 0.02815f
-C1274 o5p.t1 VSS 0.14058f
+C1274 o5p.t0 VSS 0.14058f
 C1275 o5p.n8 VSS 0.134f
-C1276 o5p.t2 VSS 0.14058f
+C1276 o5p.t3 VSS 0.14058f
 C1277 o5p.n9 VSS 0.30943f
 C1278 o5p.n10 VSS 0.00937f
 C1279 o5p.n11 VSS 0.05241f
 C1280 o5p.n12 VSS 0.12055f
 C1281 o5p.n13 VSS 0.01627f
 C1282 o5p.n14 VSS 0.02815f
-C1283 o5p.t0 VSS 0.14058f
+C1283 o5p.t1 VSS 0.14058f
 C1284 o5p.n15 VSS 0.134f
-C1285 o5p.t4 VSS 0.14058f
+C1285 o5p.t2 VSS 0.14058f
 C1286 o5p.n16 VSS 0.30943f
 C1287 o5p.n17 VSS 0.00937f
 C1288 o5p.n18 VSS 0.05241f
@@ -15306,9 +15306,9 @@ C1292 outn.n0 VSS 0.38398f
 C1293 outn.n1 VSS 0.38398f
 C1294 outn.n2 VSS 0.01424f
 C1295 outn.n3 VSS 0.02463f
-C1296 outn.t2 VSS 0.12302f
+C1296 outn.t0 VSS 0.12302f
 C1297 outn.n4 VSS 0.11726f
-C1298 outn.t0 VSS 0.12302f
+C1298 outn.t2 VSS 0.12302f
 C1299 outn.n5 VSS 0.27077f
 C1300 outn.n6 VSS 0.0082f
 C1301 outn.n7 VSS 0.04586f

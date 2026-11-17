@@ -2,18 +2,18 @@
 .subckt bias_gen en vcm ib_chain ib_det ib_comp VDD VSS
 X0 VDD.t21 pr pr VDD.t20 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X1 ota d1 VSS.t10 VSS.t9 sky130_fd_pr__nfet_01v8 ad=0.6 pd=4.6 as=0.6 ps=4.6 w=2 l=2
-X2 ib_chain.t59 pr VDD.t15 VDD.t14 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X2 ib_chain.t8 pr VDD.t15 VDD.t14 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X3 pr pr VDD.t124 VDD.t71 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X4 pr pr VDD.t114 VDD.t65 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X5 VDD.t118 pr ib_chain.t5 VDD.t59 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X5 VDD.t118 pr ib_chain.t31 VDD.t59 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X6 pr pr VDD.t72 VDD.t71 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X7 pr pr VDD.t112 VDD.t42 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X8 VDD.t132 pr pr VDD.t20 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X9 VDD.t110 pr ib_chain.t39 VDD.t50 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X10 ib_chain.t36 pr VDD.t135 VDD.t14 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X9 VDD.t110 pr ib_chain.t13 VDD.t50 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X10 ib_chain.t42 pr VDD.t135 VDD.t14 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X11 pr pr VDD.t66 VDD.t65 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X12 VDD.t60 pr ib_chain.t22 VDD.t59 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X13 VDD.t51 pr ib_chain.t55 VDD.t50 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X12 VDD.t60 pr ib_chain.t5 VDD.t59 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X13 VDD.t51 pr ib_chain.t49 VDD.t50 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X14 pr pr VDD.t43 VDD.t42 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X15 rt0 pb VSS.t19 sky130_fd_pr__res_xhigh_po_0p35 l=8.47
 X16 rd4 rd3 VSS.t14 sky130_fd_pr__res_xhigh_po_0p35 l=9.03
@@ -22,50 +22,50 @@ X18 pr ota x VSS.t3 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=1.5 ps=10.6 w=5 l=
 X19 pr en.t3 VDD.t178 VDD.t177 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.6 as=0.3 ps=2.6 w=1 l=0.15
 X20 pr pr VDD.t154 VDD.t65 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X21 rt2 rt1 VSS.t26 sky130_fd_pr__res_xhigh_po_0p35 l=8.47
-X22 VDD.t156 pr ib_chain.t41 VDD.t59 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X22 VDD.t156 pr ib_chain.t22 VDD.t59 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X23 rd6 vcm.t1 VSS.t28 sky130_fd_pr__res_xhigh_po_0p35 l=9.03
 X24 pr pr VDD.t152 VDD.t42 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X25 VDD.t149 pr ib_chain.t33 VDD.t50 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X26 ib_chain.t13 pr VDD.t107 VDD.t44 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X25 VDD.t149 pr ib_chain.t1 VDD.t50 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X26 ib_chain.t45 pr VDD.t107 VDD.t44 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X27 VDD.t174 rd7 VSS.t20 sky130_fd_pr__res_xhigh_po_0p35 l=9.03
-X28 ib_chain.t16 pr VDD.t102 VDD.t32 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X28 ib_chain.t38 pr VDD.t102 VDD.t32 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X29 VDD.t104 pr pr VDD.t36 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X30 VDD.t98 pr pr VDD.t24 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X31 pr pr VDD.t95 VDD.t18 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X32 VDD.t37 pr pr VDD.t36 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X33 ib_chain.t56 pr VDD.t45 VDD.t44 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X34 ib_chain.t0 pr VDD.t33 VDD.t32 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X33 ib_chain.t6 pr VDD.t45 VDD.t44 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X34 ib_chain.t53 pr VDD.t33 VDD.t32 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X35 VDD.t25 pr pr VDD.t24 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X36 pr pr VDD.t19 VDD.t18 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X37 VDD.t187 VDD.t186 VDD.t187 VDD.t83 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0 ps=0 w=2 l=1
 X38 rd0 rd1 VSS.t17 sky130_fd_pr__res_xhigh_po_0p35 l=9.03
-X39 VDD.t126 pr ib_chain.t24 VDD.t77 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X40 ib_chain.t47 pr VDD.t146 VDD.t44 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X39 VDD.t126 pr ib_chain.t43 VDD.t77 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X40 ib_chain.t9 pr VDD.t146 VDD.t44 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X41 pr pr VDD.t122 VDD.t69 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X42 VDD.t143 pr pr VDD.t36 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X43 VDD.t120 pr ib_chain.t7 VDD.t63 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X43 VDD.t120 pr ib_chain.t11 VDD.t63 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X44 ib_det.t1 pr VDD.t84 VDD.t83 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X45 vref rd3 VSS.t15 sky130_fd_pr__res_xhigh_po_0p35 l=9.03
-X46 ib_chain.t28 pr VDD.t141 VDD.t32 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X46 ib_chain.t26 pr VDD.t141 VDD.t32 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X47 VDD.t138 pr pr VDD.t24 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X48 VDD.t78 pr ib_chain.t52 VDD.t77 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X48 VDD.t78 pr ib_chain.t15 VDD.t77 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X49 pr pr VDD.t131 VDD.t18 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X50 pr pr VDD.t70 VDD.t69 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X51 VDD.t64 pr ib_chain.t20 VDD.t63 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X52 VDD.t92 pr ib_chain.t51 VDD.t12 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X51 VDD.t64 pr ib_chain.t21 VDD.t63 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X52 VDD.t92 pr ib_chain.t3 VDD.t12 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X53 VDD.t192 VDD.t191 VDD.t192 VDD.t83 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0 ps=0 w=2 l=1
-X54 VDD.t164 pr ib_chain.t12 VDD.t77 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X54 VDD.t164 pr ib_chain.t57 VDD.t77 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X55 pr pr VDD.t160 VDD.t69 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X56 VDD.t13 pr ib_chain.t1 VDD.t12 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X57 VDD.t158 pr ib_chain.t32 VDD.t63 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X56 VDD.t13 pr ib_chain.t47 VDD.t12 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X57 VDD.t158 pr ib_chain.t40 VDD.t63 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X58 vref VSS.t0 sky130_fd_pr__cap_mim_m3_1 l=22.035 w=22.035
 X59 VDD.t9 pr pr VDD.t8 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X60 tail x ota VDD.t0 sky130_fd_pr__pfet_01v8 ad=1.2 pd=8.6 as=1.2 ps=8.6 w=4 l=1
 X61 VDD.t106 pr pr VDD.t40 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X62 ib_chain.t38 pr VDD.t109 VDD.t48 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X63 VDD.t134 pr ib_chain.t35 VDD.t12 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X62 ib_chain.t36 pr VDD.t109 VDD.t48 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X63 VDD.t134 pr ib_chain.t41 VDD.t12 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X64 pr pr VDD.t99 VDD.t26 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X65 ib_chain.t54 pr VDD.t49 VDD.t48 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X65 ib_chain.t48 pr VDD.t49 VDD.t48 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X66 VDD.t54 pr pr VDD.t8 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X67 VDD.t88 pr pr VDD.t4 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X68 VDD.t41 pr pr VDD.t40 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
@@ -73,62 +73,62 @@ X69 pr ota x VSS.t5 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=1.5 ps=10.6 w=5 l=
 X70 pr pr VDD.t27 VDD.t26 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X71 VDD.t5 pr pr VDD.t4 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X72 VDD.t151 pr pr VDD.t8 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X73 VDD.t128 pr ib_chain.t26 VDD.t81 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X74 ib_chain.t49 pr VDD.t148 VDD.t48 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X73 VDD.t128 pr ib_chain.t28 VDD.t81 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X74 ib_chain.t0 pr VDD.t148 VDD.t48 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X75 VDD.t145 pr pr VDD.t40 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X76 pr pr VDD.t116 VDD.t26 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X77 VDD.t173 pb tail VDD.t172 sky130_fd_pr__pfet_01v8 ad=0.6 pd=4.6 as=0.3 ps=2.3 w=2 l=1
-X78 VDD.t82 pr ib_chain.t46 VDD.t81 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X78 VDD.t82 pr ib_chain.t14 VDD.t81 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X79 xr x VSS.t36 sky130_fd_pr__res_high_po_0p69 l=9.5
 X80 VDD.t130 pr pr VDD.t4 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X81 pr pr VDD.t97 VDD.t22 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X82 VDD.t94 pr ib_chain.t45 VDD.t16 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X83 VDD.t166 pr ib_chain.t10 VDD.t81 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X82 VDD.t94 pr ib_chain.t19 VDD.t16 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X83 VDD.t166 pr ib_chain.t56 VDD.t81 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X84 pr pr VDD.t23 VDD.t22 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X85 pb pb VDD.t168 VDD.t10 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.6 ps=4.6 w=2 l=1
-X86 VDD.t17 pr ib_chain.t57 VDD.t16 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X86 VDD.t17 pr ib_chain.t59 VDD.t16 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X87 enb en.t2 VSS.t33 VSS.t32 sky130_fd_pr__nfet_01v8 ad=0.15 pd=1.6 as=0.15 ps=1.6 w=0.5 l=0.15
-X88 ib_chain.t6 pr VDD.t119 VDD.t61 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X88 ib_chain.t32 pr VDD.t119 VDD.t61 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X89 pr pr VDD.t137 VDD.t22 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X90 VDD.t113 pr pr VDD.t55 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X91 tsw en.t0 VSS.t35 VSS.t34 sky130_fd_pr__nfet_01v8 ad=0.3 pd=2.6 as=0.3 ps=2.6 w=1 l=0.15
 X92 dsw en.t1 VSS.t31 VSS.t30 sky130_fd_pr__nfet_01v8 ad=0.3 pd=2.6 as=0.3 ps=2.6 w=1 l=0.15
-X93 VDD.t136 pr ib_chain.t37 VDD.t16 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X93 VDD.t136 pr ib_chain.t27 VDD.t16 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X94 VDD.t56 pr pr VDD.t55 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X95 ib_chain.t19 pr VDD.t62 VDD.t61 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X95 ib_chain.t20 pr VDD.t62 VDD.t61 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X96 d1 vref tail VDD.t1 sky130_fd_pr__pfet_01v8 ad=1.2 pd=8.6 as=1.2 ps=8.6 w=4 l=1
 X97 x ota pr VSS.t2 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=1.5 ps=10.6 w=5 l=0.5
-X98 ib_chain.t4 pr VDD.t117 VDD.t57 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X98 ib_chain.t29 pr VDD.t117 VDD.t57 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X99 ota enb VSS.t12 VSS.t11 sky130_fd_pr__nfet_01v8 ad=0.3 pd=2.6 as=0.3 ps=2.6 w=1 l=0.15
-X100 ib_chain.t31 pr VDD.t157 VDD.t61 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X100 ib_chain.t23 pr VDD.t157 VDD.t61 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X101 VDD.t153 pr pr VDD.t55 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X102 ib_chain.t21 pr VDD.t58 VDD.t57 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X102 ib_chain.t4 pr VDD.t58 VDD.t57 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X103 rt0 rt1 VSS.t29 sky130_fd_pr__res_xhigh_po_0p35 l=8.47
 X104 rd4 vcm.t0 VSS.t18 sky130_fd_pr__res_xhigh_po_0p35 l=9.03
-X105 VDD.t103 pr ib_chain.t17 VDD.t34 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X105 VDD.t103 pr ib_chain.t39 VDD.t34 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X106 rt2 tsw VSS.t27 sky130_fd_pr__res_xhigh_po_0p35 l=8.47
-X107 ib_chain.t18 pr VDD.t100 VDD.t28 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X107 ib_chain.t46 pr VDD.t100 VDD.t28 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X108 rd6 rd7 VSS.t21 sky130_fd_pr__res_xhigh_po_0p35 l=9.03
 X109 pr pr VDD.t87 VDD.t2 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X110 ib_chain.t40 pr VDD.t155 VDD.t57 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X111 VDD.t35 pr ib_chain.t58 VDD.t34 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X112 ib_chain.t3 pr VDD.t29 VDD.t28 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X110 ib_chain.t34 pr VDD.t155 VDD.t57 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X111 VDD.t35 pr ib_chain.t54 VDD.t34 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X112 ib_chain.t50 pr VDD.t29 VDD.t28 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X113 pr pr VDD.t3 VDD.t2 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X114 VDD.t123 pr pr VDD.t6 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X115 VDD.t101 pr ib_chain.t15 VDD.t30 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X115 VDD.t101 pr ib_chain.t37 VDD.t30 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X116 vref VSS.t1 sky130_fd_pr__cap_mim_m3_1 l=22.035 w=22.035
 X117 rd0 dsw VSS.t13 sky130_fd_pr__res_xhigh_po_0p35 l=9.03
-X118 VDD.t142 pr ib_chain.t29 VDD.t34 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X118 VDD.t142 pr ib_chain.t12 VDD.t34 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X119 tail pb VDD.t171 VDD.t170 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.6 ps=4.6 w=2 l=1
-X120 ib_chain.t42 pr VDD.t139 VDD.t28 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X120 ib_chain.t30 pr VDD.t139 VDD.t28 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X121 pr pr VDD.t115 VDD.t2 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X122 VDD.t31 pr ib_chain.t30 VDD.t30 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X122 VDD.t31 pr ib_chain.t51 VDD.t30 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X123 VDD.t7 pr pr VDD.t6 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X124 ota VSS.t6 sky130_fd_pr__cap_mim_m3_1 l=22.035 w=22.035
 X125 vref rd1 VSS.t16 sky130_fd_pr__res_xhigh_po_0p35 l=9.03
 X126 x ota pr VSS.t4 sky130_fd_pr__nfet_01v8 ad=1.5 pd=10.6 as=1.5 ps=10.6 w=5 l=0.5
 X127 VDD.t129 pr pr VDD.t73 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X128 ib_chain.t23 pr VDD.t125 VDD.t75 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X128 ib_chain.t17 pr VDD.t125 VDD.t75 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X129 xr VSS.t23 VSS.t22 sky130_fd_pr__res_high_po_0p69 l=9.5
 X130 VDD.t121 pr pr VDD.t67 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X131 ib_comp.t0 pr VDD.t90 VDD.t89 sky130_fd_pr__pfet_01v8 ad=0.6 pd=4.6 as=0.3 ps=2.3 w=2 l=1
@@ -136,36 +136,36 @@ X132 d1 d1 VSS.t8 VSS.t7 sky130_fd_pr__nfet_01v8 ad=0.6 pd=4.6 as=0.6 ps=4.6 w=2
 X133 VDD.t161 pr pr VDD.t6 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X134 VDD.t74 pr pr VDD.t73 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X135 vcm.t3 VSS.t24 sky130_fd_pr__cap_mim_m3_1 l=22.035 w=22.035
-X136 VDD.t140 pr ib_chain.t43 VDD.t30 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X137 ib_chain.t27 pr VDD.t76 VDD.t75 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X136 VDD.t140 pr ib_chain.t25 VDD.t30 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X137 ib_chain.t52 pr VDD.t76 VDD.t75 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X138 VDD.t68 pr pr VDD.t67 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X139 VDD.t167 pr pr VDD.t73 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X140 ib_chain.t11 pr VDD.t163 VDD.t75 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X140 ib_chain.t33 pr VDD.t163 VDD.t75 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X141 VDD.t159 pr pr VDD.t67 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X142 ib_chain.t50 pr VDD.t91 VDD.t10 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X142 ib_chain.t2 pr VDD.t91 VDD.t10 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X143 VDD.t185 VDD.t183 VDD.t184 VDD.t180 sky130_fd_pr__pfet_01v8 ad=0.6 pd=4.6 as=0 ps=0 w=2 l=1
-X144 ib_chain.t2 pr VDD.t11 VDD.t10 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X144 ib_chain.t55 pr VDD.t11 VDD.t10 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X145 pr pr VDD.t111 VDD.t52 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X146 VDD.t182 VDD.t179 VDD.t181 VDD.t180 sky130_fd_pr__pfet_01v8 ad=0.6 pd=4.6 as=0 ps=0 w=2 l=1
-X147 VDD.t108 pr ib_chain.t14 VDD.t46 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X147 VDD.t108 pr ib_chain.t35 VDD.t46 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X148 pr pr VDD.t105 VDD.t38 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X149 vcm.t2 VSS.t25 sky130_fd_pr__cap_mim_m3_1 l=22.035 w=22.035
 X150 pr pr VDD.t53 VDD.t52 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X151 pr pr VDD.t39 VDD.t38 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X152 VDD.t47 pr ib_chain.t8 VDD.t46 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X153 ib_chain.t34 pr VDD.t133 VDD.t10 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X152 VDD.t47 pr ib_chain.t7 VDD.t46 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X153 ib_chain.t24 pr VDD.t133 VDD.t10 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X154 VDD.t190 VDD.t188 VDD.t189 VDD.t180 sky130_fd_pr__pfet_01v8 ad=0.6 pd=4.6 as=0 ps=0 w=2 l=1
 X155 VDD.t169 pb pb VDD.t12 sky130_fd_pr__pfet_01v8 ad=0.6 pd=4.6 as=0.3 ps=2.3 w=2 l=1
 X156 pr pr VDD.t150 VDD.t52 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X157 ib_chain.t25 pr VDD.t127 VDD.t79 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X158 VDD.t147 pr ib_chain.t48 VDD.t46 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X157 ib_chain.t44 pr VDD.t127 VDD.t79 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X158 VDD.t147 pr ib_chain.t10 VDD.t46 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X159 pr pr VDD.t144 VDD.t38 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X160 VDD.t86 pr ib_det.t0 VDD.t85 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X161 ib_chain.t53 pr VDD.t80 VDD.t79 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X161 ib_chain.t16 pr VDD.t80 VDD.t79 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X162 VDD.t96 pr pr VDD.t20 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
-X163 ib_chain.t44 pr VDD.t93 VDD.t14 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X163 ib_chain.t18 pr VDD.t93 VDD.t14 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 X164 enb en.t4 VDD.t176 VDD.t175 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.6 as=0.3 ps=2.6 w=1 l=0.15
-X165 ib_chain.t9 pr VDD.t165 VDD.t79 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
+X165 ib_chain.t58 pr VDD.t165 VDD.t79 sky130_fd_pr__pfet_01v8 ad=0.3 pd=2.3 as=0.3 ps=2.3 w=2 l=1
 R0 vcm.n5 vcm.n4 50.6672
 R1 vcm.n15 vcm.n14 50.6672
 R2 vcm.n21 vcm.n20 17.8167
@@ -267,66 +267,66 @@ R97 ib_chain.n27 ib_chain.n26 120.434
 R98 ib_chain.n25 ib_chain.n24 120.434
 R99 ib_chain.n23 ib_chain.n22 120.434
 R100 ib_chain.n21 ib_chain.n20 120.434
-R101 ib_chain.n39 ib_chain.t46 14.7755
-R102 ib_chain.n39 ib_chain.t53 14.7755
-R103 ib_chain.n41 ib_chain.t52 14.7755
-R104 ib_chain.n41 ib_chain.t27 14.7755
-R105 ib_chain.n43 ib_chain.t20 14.7755
-R106 ib_chain.n43 ib_chain.t19 14.7755
-R107 ib_chain.n45 ib_chain.t22 14.7755
-R108 ib_chain.n45 ib_chain.t21 14.7755
-R109 ib_chain.n47 ib_chain.t55 14.7755
-R110 ib_chain.n47 ib_chain.t54 14.7755
-R111 ib_chain.n56 ib_chain.t8 14.7755
-R112 ib_chain.n56 ib_chain.t56 14.7755
-R113 ib_chain.n54 ib_chain.t58 14.7755
-R114 ib_chain.n54 ib_chain.t0 14.7755
-R115 ib_chain.n52 ib_chain.t30 14.7755
-R116 ib_chain.n52 ib_chain.t3 14.7755
-R117 ib_chain.n50 ib_chain.t57 14.7755
-R118 ib_chain.n50 ib_chain.t59 14.7755
-R119 ib_chain.n49 ib_chain.t1 14.7755
-R120 ib_chain.n49 ib_chain.t2 14.7755
-R121 ib_chain.n17 ib_chain.t10 14.7755
-R122 ib_chain.n17 ib_chain.t9 14.7755
-R123 ib_chain.n15 ib_chain.t12 14.7755
-R124 ib_chain.n15 ib_chain.t11 14.7755
-R125 ib_chain.n13 ib_chain.t32 14.7755
-R126 ib_chain.n13 ib_chain.t31 14.7755
-R127 ib_chain.n11 ib_chain.t41 14.7755
-R128 ib_chain.n11 ib_chain.t40 14.7755
-R129 ib_chain.n9 ib_chain.t33 14.7755
-R130 ib_chain.n9 ib_chain.t49 14.7755
-R131 ib_chain.n7 ib_chain.t48 14.7755
-R132 ib_chain.n7 ib_chain.t47 14.7755
-R133 ib_chain.n5 ib_chain.t29 14.7755
-R134 ib_chain.n5 ib_chain.t28 14.7755
-R135 ib_chain.n3 ib_chain.t43 14.7755
-R136 ib_chain.n3 ib_chain.t42 14.7755
-R137 ib_chain.n1 ib_chain.t37 14.7755
-R138 ib_chain.n1 ib_chain.t36 14.7755
-R139 ib_chain.n0 ib_chain.t35 14.7755
-R140 ib_chain.n0 ib_chain.t34 14.7755
-R141 ib_chain.n36 ib_chain.t26 14.7755
-R142 ib_chain.n36 ib_chain.t25 14.7755
-R143 ib_chain.n34 ib_chain.t24 14.7755
-R144 ib_chain.n34 ib_chain.t23 14.7755
-R145 ib_chain.n32 ib_chain.t7 14.7755
-R146 ib_chain.n32 ib_chain.t6 14.7755
-R147 ib_chain.n30 ib_chain.t5 14.7755
-R148 ib_chain.n30 ib_chain.t4 14.7755
-R149 ib_chain.n28 ib_chain.t39 14.7755
-R150 ib_chain.n28 ib_chain.t38 14.7755
-R151 ib_chain.n26 ib_chain.t14 14.7755
-R152 ib_chain.n26 ib_chain.t13 14.7755
-R153 ib_chain.n24 ib_chain.t17 14.7755
-R154 ib_chain.n24 ib_chain.t16 14.7755
-R155 ib_chain.n22 ib_chain.t15 14.7755
-R156 ib_chain.n22 ib_chain.t18 14.7755
-R157 ib_chain.n20 ib_chain.t45 14.7755
-R158 ib_chain.n20 ib_chain.t44 14.7755
-R159 ib_chain.n19 ib_chain.t51 14.7755
-R160 ib_chain.n19 ib_chain.t50 14.7755
+R101 ib_chain.n39 ib_chain.t14 14.7755
+R102 ib_chain.n39 ib_chain.t16 14.7755
+R103 ib_chain.n41 ib_chain.t15 14.7755
+R104 ib_chain.n41 ib_chain.t52 14.7755
+R105 ib_chain.n43 ib_chain.t21 14.7755
+R106 ib_chain.n43 ib_chain.t20 14.7755
+R107 ib_chain.n45 ib_chain.t5 14.7755
+R108 ib_chain.n45 ib_chain.t4 14.7755
+R109 ib_chain.n47 ib_chain.t49 14.7755
+R110 ib_chain.n47 ib_chain.t48 14.7755
+R111 ib_chain.n56 ib_chain.t7 14.7755
+R112 ib_chain.n56 ib_chain.t6 14.7755
+R113 ib_chain.n54 ib_chain.t54 14.7755
+R114 ib_chain.n54 ib_chain.t53 14.7755
+R115 ib_chain.n52 ib_chain.t51 14.7755
+R116 ib_chain.n52 ib_chain.t50 14.7755
+R117 ib_chain.n50 ib_chain.t59 14.7755
+R118 ib_chain.n50 ib_chain.t8 14.7755
+R119 ib_chain.n49 ib_chain.t47 14.7755
+R120 ib_chain.n49 ib_chain.t55 14.7755
+R121 ib_chain.n17 ib_chain.t56 14.7755
+R122 ib_chain.n17 ib_chain.t58 14.7755
+R123 ib_chain.n15 ib_chain.t57 14.7755
+R124 ib_chain.n15 ib_chain.t33 14.7755
+R125 ib_chain.n13 ib_chain.t40 14.7755
+R126 ib_chain.n13 ib_chain.t23 14.7755
+R127 ib_chain.n11 ib_chain.t22 14.7755
+R128 ib_chain.n11 ib_chain.t34 14.7755
+R129 ib_chain.n9 ib_chain.t1 14.7755
+R130 ib_chain.n9 ib_chain.t0 14.7755
+R131 ib_chain.n7 ib_chain.t10 14.7755
+R132 ib_chain.n7 ib_chain.t9 14.7755
+R133 ib_chain.n5 ib_chain.t12 14.7755
+R134 ib_chain.n5 ib_chain.t26 14.7755
+R135 ib_chain.n3 ib_chain.t25 14.7755
+R136 ib_chain.n3 ib_chain.t30 14.7755
+R137 ib_chain.n1 ib_chain.t27 14.7755
+R138 ib_chain.n1 ib_chain.t42 14.7755
+R139 ib_chain.n0 ib_chain.t41 14.7755
+R140 ib_chain.n0 ib_chain.t24 14.7755
+R141 ib_chain.n36 ib_chain.t28 14.7755
+R142 ib_chain.n36 ib_chain.t44 14.7755
+R143 ib_chain.n34 ib_chain.t43 14.7755
+R144 ib_chain.n34 ib_chain.t17 14.7755
+R145 ib_chain.n32 ib_chain.t11 14.7755
+R146 ib_chain.n32 ib_chain.t32 14.7755
+R147 ib_chain.n30 ib_chain.t31 14.7755
+R148 ib_chain.n30 ib_chain.t29 14.7755
+R149 ib_chain.n28 ib_chain.t13 14.7755
+R150 ib_chain.n28 ib_chain.t36 14.7755
+R151 ib_chain.n26 ib_chain.t35 14.7755
+R152 ib_chain.n26 ib_chain.t45 14.7755
+R153 ib_chain.n24 ib_chain.t39 14.7755
+R154 ib_chain.n24 ib_chain.t38 14.7755
+R155 ib_chain.n22 ib_chain.t37 14.7755
+R156 ib_chain.n22 ib_chain.t46 14.7755
+R157 ib_chain.n20 ib_chain.t19 14.7755
+R158 ib_chain.n20 ib_chain.t18 14.7755
+R159 ib_chain.n19 ib_chain.t3 14.7755
+R160 ib_chain.n19 ib_chain.t2 14.7755
 R161 ib_chain.n40 ib_chain 4.1585
 R162 ib_chain ib_chain.n58 3.18175
 R163 ib_chain.n38 ib_chain.n18 3.06631
@@ -6999,157 +6999,157 @@ R6829 VSS.n464 VSS.n346 0.00931137
 R6830 VSS.n914 VSS.n508 0.00883333
 R6831 VSS.n923 VSS.n499 0.00466667
 R6832 VSS.n955 VSS.n954 0.00133333
-C0 x d1 0.70651f
-C1 vref ota 1.79489f
-C2 rd4 rd6 0.25146f
-C3 rt2 rt0 0.2514f
-C4 x rd6 0
-C5 tsw vcm 0.98639f
-C6 rd4 VDD 0.00668f
-C7 pb rd0 0.00449f
-C8 enb tsw 0.5399f
-C9 d1 dsw 0.04853f
-C10 x VDD 0.65053f
-C11 vref ib_chain 0.00881f
-C12 pr ib_det 0.24215f
-C13 rd6 rt0 0
-C14 rt2 tsw 0.00705f
-C15 VDD dsw 0.17987f
-C16 tail d1 0.3666f
-C17 x ota 2.77885f
-C18 rt1 pb 0.25182f
-C19 VDD rt0 0.07641f
-C20 rd0 vcm 0
-C21 ota rd1 0
-C22 d1 tsw 0.54924f
-C23 ota dsw 0.10542f
-C24 ib_comp vcm 0.04101f
-C25 tail VDD 1.83363f
-C26 x ib_chain 0
-C27 rd6 tsw 0
-C28 pb en 0.11425f
-C29 rt2 xr 0.06645f
-C30 x rd7 0.02085f
-C31 VDD tsw 0.01464f
-C32 tail ota 1.14713f
-C33 pr vref 0.42208f
-C34 ota tsw 0.55736f
-C35 enb en 2.01298f
-C36 pb vcm 0.12604f
-C37 rd3 x 0.0175f
-C38 xr VDD 0.00353f
-C39 pb enb 0.02024f
-C40 rd4 pr 0
-C41 VDD rd0 0.00306f
-C42 pr x 2.84424f
-C43 rd3 rd1 0.25146f
-C44 VDD ib_comp 0.72936f
-C45 rd3 dsw 0
-C46 pr rd1 0.001f
-C47 rd7 tsw 0.00148f
-C48 pr dsw 2.78336f
-C49 d1 en 0
-C50 pr rt0 0
-C51 pb d1 0.04944f
-C52 rd4 vref 0.25167f
-C53 vref x 0.09418f
-C54 pr tail 0.26815f
-C55 rd6 pb 0.00606f
-C56 VDD en 0.85629f
-C57 ib_chain ib_comp 0.10651f
-C58 rd3 tsw 0.00147f
-C59 vref rd1 0.00299f
-C60 pb VDD 3.4865f
-C61 pr tsw 0.22575f
-C62 vref dsw 0.25583f
-C63 ota en 0.8105f
-C64 vref rt0 0.00158f
-C65 enb d1 0.0077f
-C66 pb ota 0.85341f
-C67 rd4 x 0
-C68 vref tail 0.69247f
-C69 rt1 rd7 0
-C70 VDD vcm 0.80242f
-C71 ib_det ib_comp 3.16526f
-C72 pr xr 0
-C73 x rd1 0.0175f
-C74 enb VDD 0.43939f
-C75 pb ib_chain 0
-C76 x dsw 0.14785f
-C77 vref tsw 2.27689f
-C78 pr rd0 0
-C79 rd4 rt0 0
-C80 ota vcm 0.09759f
-C81 x rt0 0
-C82 pr ib_comp 0.10313f
-C83 rd7 pb 0.0718f
-C84 dsw rd1 0.25192f
-C85 rt2 VDD 0.00171f
-C86 enb ota 1.35598f
-C87 x tail 0.74313f
-C88 ib_chain vcm 0.10848f
-C89 vref xr 0
-C90 d1 VDD 0.38112f
-C91 rd4 tsw 0
-C92 vref rd0 0.25212f
-C93 tail dsw 0.16702f
-C94 x tsw 1.12248f
-C95 rd6 VDD 0.28773f
-C96 rd7 vcm 0.25167f
-C97 rd3 pb 0
-C98 pr en 0.72658f
-C99 tsw rd1 0.00147f
-C100 d1 ota 1.03138f
-C101 pr pb 0.79641f
-C102 dsw tsw 0.13501f
-C103 tsw rt0 0.00123f
-C104 ib_det vcm 0.05776f
-C105 x xr 0.00304f
-C106 ota VDD 0.76f
-C107 rd3 vcm 0.25424f
-C108 x rd0 0
-C109 tail tsw 0.00333f
-C110 vref en 0.00186f
-C111 pr vcm 0.32509f
-C112 VDD ib_chain 23.3285f
-C113 vref pb 0.47818f
-C114 pr enb 0.13863f
-C115 xr rt0 0
-C116 dsw rd0 0.0189f
-C117 rt1 x 0.02457f
-C118 rt2 pr 0
-C119 ota ib_chain 0
-C120 vref vcm 1.35691f
-C121 rd4 pb 0.00606f
-C122 x pb 0.16089f
-C123 pr d1 0.07556f
-C124 VDD ib_det 0.75697f
-C125 vref enb 0.00939f
-C126 tsw rd0 0
-C127 pr rd6 0
-C128 dsw en 1.29125f
-C129 pb rd1 0
-C130 pb dsw 3.22202f
-C131 pr VDD 79.8672f
-C132 pb rt0 0.01043f
-C133 rt1 tsw 0.25358f
-C134 rd4 vcm 0.00147f
-C135 x vcm 1.03543f
-C136 tail en 0.01232f
-C137 pr ota 4.04019f
-C138 vref d1 0.90448f
-C139 x enb 0
-C140 tail pb 1.65282f
-C141 ib_chain ib_det 0.50547f
-C142 vcm rd1 0.00261f
-C143 vref rd6 0
-C144 tsw en 0.45153f
-C145 dsw vcm 0.22602f
-C146 enb dsw 0.09704f
-C147 pb tsw 0.31933f
-C148 rt2 x 0
-C149 pr ib_chain 11.513f
-C150 vref VDD 0.90372f
+C0 tsw en 0.45153f
+C1 dsw vcm 0.22602f
+C2 rt2 x 0
+C3 enb dsw 0.09704f
+C4 pb tsw 0.31933f
+C5 pr ib_chain 11.513f
+C6 vref VDD 0.90372f
+C7 vref ota 1.79489f
+C8 x d1 0.70651f
+C9 rd4 rd6 0.25146f
+C10 rt2 rt0 0.2514f
+C11 x rd6 0
+C12 tsw vcm 0.98639f
+C13 d1 dsw 0.04853f
+C14 rd4 VDD 0.00668f
+C15 pb rd0 0.00449f
+C16 enb tsw 0.5399f
+C17 pr ib_det 0.24215f
+C18 x VDD 0.65053f
+C19 vref ib_chain 0.00881f
+C20 rd6 rt0 0
+C21 rt2 tsw 0.00705f
+C22 VDD dsw 0.17987f
+C23 x ota 2.77885f
+C24 tail d1 0.3666f
+C25 rt1 pb 0.25182f
+C26 VDD rt0 0.07641f
+C27 rd0 vcm 0
+C28 ota rd1 0
+C29 d1 tsw 0.54924f
+C30 ota dsw 0.10542f
+C31 ib_comp vcm 0.04101f
+C32 tail VDD 1.83363f
+C33 x ib_chain 0
+C34 rd6 tsw 0
+C35 pb en 0.11425f
+C36 rt2 xr 0.06645f
+C37 x rd7 0.02085f
+C38 VDD tsw 0.01464f
+C39 tail ota 1.14713f
+C40 pr vref 0.42208f
+C41 ota tsw 0.55736f
+C42 pb vcm 0.12604f
+C43 enb en 2.01298f
+C44 rd3 x 0.0175f
+C45 xr VDD 0.00353f
+C46 pb enb 0.02024f
+C47 rd4 pr 0
+C48 VDD rd0 0.00306f
+C49 pr x 2.84424f
+C50 rd3 rd1 0.25146f
+C51 VDD ib_comp 0.72936f
+C52 rd3 dsw 0
+C53 pr rd1 0.001f
+C54 rd7 tsw 0.00148f
+C55 pr dsw 2.78336f
+C56 d1 en 0
+C57 pr rt0 0
+C58 pb d1 0.04944f
+C59 rd4 vref 0.25167f
+C60 vref x 0.09418f
+C61 pr tail 0.26815f
+C62 rd6 pb 0.00606f
+C63 VDD en 0.85629f
+C64 ib_chain ib_comp 0.10651f
+C65 rd3 tsw 0.00147f
+C66 vref rd1 0.00299f
+C67 pb VDD 3.4865f
+C68 pr tsw 0.22575f
+C69 vref dsw 0.25583f
+C70 ota en 0.8105f
+C71 vref rt0 0.00158f
+C72 enb d1 0.0077f
+C73 pb ota 0.85341f
+C74 rd4 x 0
+C75 vref tail 0.69247f
+C76 rt1 rd7 0
+C77 VDD vcm 0.80242f
+C78 ib_det ib_comp 3.16526f
+C79 pr xr 0
+C80 x rd1 0.0175f
+C81 enb VDD 0.43939f
+C82 pb ib_chain 0
+C83 pr rd0 0
+C84 x dsw 0.14785f
+C85 vref tsw 2.27689f
+C86 rd4 rt0 0
+C87 ota vcm 0.09759f
+C88 x rt0 0
+C89 pr ib_comp 0.10313f
+C90 rd7 pb 0.0718f
+C91 dsw rd1 0.25192f
+C92 rt2 VDD 0.00171f
+C93 enb ota 1.35598f
+C94 x tail 0.74313f
+C95 ib_chain vcm 0.10848f
+C96 vref xr 0
+C97 d1 VDD 0.38112f
+C98 rd4 tsw 0
+C99 vref rd0 0.25212f
+C100 tail dsw 0.16702f
+C101 x tsw 1.12248f
+C102 rd6 VDD 0.28773f
+C103 rd7 vcm 0.25167f
+C104 rd3 pb 0
+C105 pr en 0.72658f
+C106 tsw rd1 0.00147f
+C107 d1 ota 1.03138f
+C108 pr pb 0.79641f
+C109 dsw tsw 0.13501f
+C110 tsw rt0 0.00123f
+C111 ib_det vcm 0.05776f
+C112 x xr 0.00304f
+C113 ota VDD 0.76f
+C114 rd3 vcm 0.25424f
+C115 x rd0 0
+C116 tail tsw 0.00333f
+C117 vref en 0.00186f
+C118 pr vcm 0.32509f
+C119 VDD ib_chain 23.3285f
+C120 vref pb 0.47818f
+C121 pr enb 0.13863f
+C122 xr rt0 0
+C123 dsw rd0 0.0189f
+C124 rt1 x 0.02457f
+C125 rt2 pr 0
+C126 ota ib_chain 0
+C127 vref vcm 1.35691f
+C128 rd4 pb 0.00606f
+C129 x pb 0.16089f
+C130 pr d1 0.07556f
+C131 VDD ib_det 0.75697f
+C132 vref enb 0.00939f
+C133 tsw rd0 0
+C134 pr rd6 0
+C135 dsw en 1.29125f
+C136 pb rd1 0
+C137 pb dsw 3.22202f
+C138 pr VDD 79.8672f
+C139 pb rt0 0.01043f
+C140 rt1 tsw 0.25358f
+C141 rd4 vcm 0.00147f
+C142 x vcm 1.03543f
+C143 tail en 0.01232f
+C144 tail pb 1.65282f
+C145 pr ota 4.04019f
+C146 vref d1 0.90448f
+C147 ib_chain ib_det 0.50547f
+C148 x enb 0
+C149 vcm rd1 0.00261f
+C150 vref rd6 0
 C151 vcm VSS 19.56149f
 C152 en VSS 4.68748f
 C153 ib_comp VSS 7.10335f
@@ -7832,7 +7832,7 @@ C829 VDD.n544 VSS 0.0087f
 C830 VDD.n545 VSS 0.0087f
 C831 VDD.n546 VSS 0.0087f
 C832 VDD.n547 VSS 0.0087f
-C833 VDD.n548 VSS 0.32033f
+C833 VDD.n548 VSS 0.32032f
 C834 VDD.n549 VSS 0.0087f
 C835 VDD.n550 VSS 0.02174f
 C836 VDD.n551 VSS 0.02174f
@@ -9226,7 +9226,7 @@ C2223 VDD.n1891 VSS 0.0087f
 C2224 VDD.n1892 VSS 0.0087f
 C2225 VDD.n1893 VSS 0.0087f
 C2226 VDD.n1894 VSS 0.0087f
-C2227 VDD.n1895 VSS 0.32033f
+C2227 VDD.n1895 VSS 0.32032f
 C2228 VDD.n1896 VSS 0.37501f
 C2229 VDD.n1897 VSS 0.35678f
 C2230 VDD.n1898 VSS 0.0087f
@@ -9613,122 +9613,122 @@ C2610 VDD.n2279 VSS 0.0087f
 C2611 VDD.n2280 VSS 0.01578f
 C2612 VDD.n2281 VSS 0.01291f
 C2613 VDD.n2282 VSS 3.85572f
-C2614 ib_chain.t35 VSS 0.0418f
-C2615 ib_chain.t34 VSS 0.0418f
+C2614 ib_chain.t41 VSS 0.0418f
+C2615 ib_chain.t24 VSS 0.0418f
 C2616 ib_chain.n0 VSS 0.09122f
-C2617 ib_chain.t37 VSS 0.0418f
-C2618 ib_chain.t36 VSS 0.0418f
+C2617 ib_chain.t27 VSS 0.0418f
+C2618 ib_chain.t42 VSS 0.0418f
 C2619 ib_chain.n1 VSS 0.08854f
 C2620 ib_chain.n2 VSS 1.41787f
-C2621 ib_chain.t43 VSS 0.0418f
-C2622 ib_chain.t42 VSS 0.0418f
+C2621 ib_chain.t25 VSS 0.0418f
+C2622 ib_chain.t30 VSS 0.0418f
 C2623 ib_chain.n3 VSS 0.08854f
 C2624 ib_chain.n4 VSS 0.93016f
-C2625 ib_chain.t29 VSS 0.0418f
-C2626 ib_chain.t28 VSS 0.0418f
+C2625 ib_chain.t12 VSS 0.0418f
+C2626 ib_chain.t26 VSS 0.0418f
 C2627 ib_chain.n5 VSS 0.08854f
 C2628 ib_chain.n6 VSS 0.93016f
-C2629 ib_chain.t48 VSS 0.0418f
-C2630 ib_chain.t47 VSS 0.0418f
+C2629 ib_chain.t10 VSS 0.0418f
+C2630 ib_chain.t9 VSS 0.0418f
 C2631 ib_chain.n7 VSS 0.08854f
 C2632 ib_chain.n8 VSS 0.93016f
-C2633 ib_chain.t33 VSS 0.0418f
-C2634 ib_chain.t49 VSS 0.0418f
+C2633 ib_chain.t1 VSS 0.0418f
+C2634 ib_chain.t0 VSS 0.0418f
 C2635 ib_chain.n9 VSS 0.08854f
 C2636 ib_chain.n10 VSS 0.93016f
-C2637 ib_chain.t41 VSS 0.0418f
-C2638 ib_chain.t40 VSS 0.0418f
+C2637 ib_chain.t22 VSS 0.0418f
+C2638 ib_chain.t34 VSS 0.0418f
 C2639 ib_chain.n11 VSS 0.08854f
 C2640 ib_chain.n12 VSS 0.93016f
-C2641 ib_chain.t32 VSS 0.0418f
-C2642 ib_chain.t31 VSS 0.0418f
+C2641 ib_chain.t40 VSS 0.0418f
+C2642 ib_chain.t23 VSS 0.0418f
 C2643 ib_chain.n13 VSS 0.08854f
 C2644 ib_chain.n14 VSS 0.93016f
-C2645 ib_chain.t12 VSS 0.0418f
-C2646 ib_chain.t11 VSS 0.0418f
+C2645 ib_chain.t57 VSS 0.0418f
+C2646 ib_chain.t33 VSS 0.0418f
 C2647 ib_chain.n15 VSS 0.08854f
 C2648 ib_chain.n16 VSS 0.93016f
-C2649 ib_chain.t10 VSS 0.0418f
-C2650 ib_chain.t9 VSS 0.0418f
+C2649 ib_chain.t56 VSS 0.0418f
+C2650 ib_chain.t58 VSS 0.0418f
 C2651 ib_chain.n17 VSS 0.08854f
 C2652 ib_chain.n18 VSS 1.05777f
-C2653 ib_chain.t51 VSS 0.0418f
-C2654 ib_chain.t50 VSS 0.0418f
+C2653 ib_chain.t3 VSS 0.0418f
+C2654 ib_chain.t2 VSS 0.0418f
 C2655 ib_chain.n19 VSS 0.09122f
-C2656 ib_chain.t45 VSS 0.0418f
-C2657 ib_chain.t44 VSS 0.0418f
+C2656 ib_chain.t19 VSS 0.0418f
+C2657 ib_chain.t18 VSS 0.0418f
 C2658 ib_chain.n20 VSS 0.08854f
 C2659 ib_chain.n21 VSS 1.41787f
-C2660 ib_chain.t15 VSS 0.0418f
-C2661 ib_chain.t18 VSS 0.0418f
+C2660 ib_chain.t37 VSS 0.0418f
+C2661 ib_chain.t46 VSS 0.0418f
 C2662 ib_chain.n22 VSS 0.08854f
 C2663 ib_chain.n23 VSS 0.93016f
-C2664 ib_chain.t17 VSS 0.0418f
-C2665 ib_chain.t16 VSS 0.0418f
+C2664 ib_chain.t39 VSS 0.0418f
+C2665 ib_chain.t38 VSS 0.0418f
 C2666 ib_chain.n24 VSS 0.08854f
 C2667 ib_chain.n25 VSS 0.93016f
-C2668 ib_chain.t14 VSS 0.0418f
-C2669 ib_chain.t13 VSS 0.0418f
+C2668 ib_chain.t35 VSS 0.0418f
+C2669 ib_chain.t45 VSS 0.0418f
 C2670 ib_chain.n26 VSS 0.08854f
 C2671 ib_chain.n27 VSS 0.93016f
-C2672 ib_chain.t39 VSS 0.0418f
-C2673 ib_chain.t38 VSS 0.0418f
+C2672 ib_chain.t13 VSS 0.0418f
+C2673 ib_chain.t36 VSS 0.0418f
 C2674 ib_chain.n28 VSS 0.08854f
 C2675 ib_chain.n29 VSS 0.93016f
-C2676 ib_chain.t5 VSS 0.0418f
-C2677 ib_chain.t4 VSS 0.0418f
+C2676 ib_chain.t31 VSS 0.0418f
+C2677 ib_chain.t29 VSS 0.0418f
 C2678 ib_chain.n30 VSS 0.08854f
 C2679 ib_chain.n31 VSS 0.93016f
-C2680 ib_chain.t7 VSS 0.0418f
-C2681 ib_chain.t6 VSS 0.0418f
+C2680 ib_chain.t11 VSS 0.0418f
+C2681 ib_chain.t32 VSS 0.0418f
 C2682 ib_chain.n32 VSS 0.08854f
 C2683 ib_chain.n33 VSS 0.93016f
-C2684 ib_chain.t24 VSS 0.0418f
-C2685 ib_chain.t23 VSS 0.0418f
+C2684 ib_chain.t43 VSS 0.0418f
+C2685 ib_chain.t17 VSS 0.0418f
 C2686 ib_chain.n34 VSS 0.08854f
 C2687 ib_chain.n35 VSS 0.93016f
-C2688 ib_chain.t26 VSS 0.0418f
-C2689 ib_chain.t25 VSS 0.0418f
+C2688 ib_chain.t28 VSS 0.0418f
+C2689 ib_chain.t44 VSS 0.0418f
 C2690 ib_chain.n36 VSS 0.08854f
 C2691 ib_chain.n37 VSS 0.99275f
 C2692 ib_chain.n38 VSS 1.24643f
-C2693 ib_chain.t46 VSS 0.0418f
-C2694 ib_chain.t53 VSS 0.0418f
+C2693 ib_chain.t14 VSS 0.0418f
+C2694 ib_chain.t16 VSS 0.0418f
 C2695 ib_chain.n39 VSS 0.08854f
 C2696 ib_chain.n40 VSS 1.25784f
-C2697 ib_chain.t52 VSS 0.0418f
-C2698 ib_chain.t27 VSS 0.0418f
+C2697 ib_chain.t15 VSS 0.0418f
+C2698 ib_chain.t52 VSS 0.0418f
 C2699 ib_chain.n41 VSS 0.08854f
 C2700 ib_chain.n42 VSS 0.93016f
-C2701 ib_chain.t20 VSS 0.0418f
-C2702 ib_chain.t19 VSS 0.0418f
+C2701 ib_chain.t21 VSS 0.0418f
+C2702 ib_chain.t20 VSS 0.0418f
 C2703 ib_chain.n43 VSS 0.08854f
 C2704 ib_chain.n44 VSS 0.93016f
-C2705 ib_chain.t22 VSS 0.0418f
-C2706 ib_chain.t21 VSS 0.0418f
+C2705 ib_chain.t5 VSS 0.0418f
+C2706 ib_chain.t4 VSS 0.0418f
 C2707 ib_chain.n45 VSS 0.08854f
 C2708 ib_chain.n46 VSS 0.93016f
-C2709 ib_chain.t55 VSS 0.0418f
-C2710 ib_chain.t54 VSS 0.0418f
+C2709 ib_chain.t49 VSS 0.0418f
+C2710 ib_chain.t48 VSS 0.0418f
 C2711 ib_chain.n47 VSS 0.08854f
 C2712 ib_chain.n48 VSS 0.90938f
-C2713 ib_chain.t1 VSS 0.0418f
-C2714 ib_chain.t2 VSS 0.0418f
+C2713 ib_chain.t47 VSS 0.0418f
+C2714 ib_chain.t55 VSS 0.0418f
 C2715 ib_chain.n49 VSS 0.09122f
-C2716 ib_chain.t57 VSS 0.0418f
-C2717 ib_chain.t59 VSS 0.0418f
+C2716 ib_chain.t59 VSS 0.0418f
+C2717 ib_chain.t8 VSS 0.0418f
 C2718 ib_chain.n50 VSS 0.08854f
 C2719 ib_chain.n51 VSS 1.41787f
-C2720 ib_chain.t30 VSS 0.0418f
-C2721 ib_chain.t3 VSS 0.0418f
+C2720 ib_chain.t51 VSS 0.0418f
+C2721 ib_chain.t50 VSS 0.0418f
 C2722 ib_chain.n52 VSS 0.08854f
 C2723 ib_chain.n53 VSS 0.93016f
-C2724 ib_chain.t58 VSS 0.0418f
-C2725 ib_chain.t0 VSS 0.0418f
+C2724 ib_chain.t54 VSS 0.0418f
+C2725 ib_chain.t53 VSS 0.0418f
 C2726 ib_chain.n54 VSS 0.08854f
 C2727 ib_chain.n55 VSS 0.94799f
-C2728 ib_chain.t8 VSS 0.0418f
-C2729 ib_chain.t56 VSS 0.0418f
+C2728 ib_chain.t7 VSS 0.0418f
+C2729 ib_chain.t6 VSS 0.0418f
 C2730 ib_chain.n56 VSS 0.08822f
 C2731 ib_chain.n57 VSS 0.72481f
 C2732 ib_chain.n58 VSS 0.71343f
