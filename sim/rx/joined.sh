@@ -14,13 +14,15 @@
 # Output: build/joined_<lvl>.raw (10 ns grid via option interp), plot with
 #   sim/rx/plot_joined.py
 # PEX=1: lna_chain and log_det from layout/pex/ (files joined_<lvl>_pex.*). NT=4 sets ngspice threads.
+# SEED=n: trnoise seed (ngspice's rndseed; unset, it's the process ID, so every run is a new realisation).
+# TAG=_x: appended to the file names, so repeat runs don't overwrite each other.
 levels=${LEVELS:-"-70 -90"}
 tstop=${TSTOP:-400u}
 # noise: 2.76 nV/rtHz per arm (3.9 differential ~ NF 11 dB), white, 50 ps samples
 nz=$(python3 -c "import math; print(2.76e-9*math.sqrt(1/(2*50e-12)))")
 for lvl in $levels; do
   ve=$(python3 -c "import math; print(math.sqrt(8*73*1e-3*10**($lvl/10)))")
-  name=joined_$lvl${PEX:+_pex}
+  name=joined_$lvl${PEX:+_pex}${TAG:-}
   f=$name.spice
   sed -e '/^\.control/,/^\.endc/d' -e '/^\.end$/d' \
       -e 's/^Vant_p emf_p acm .*/Bant_p emf_p acm V = v(key) * vemf\/2 * sin(2*pi*f0*time)/' \
@@ -60,6 +62,7 @@ Vkey key 0 pwl(0 0 60.000025u 0 60.010025u 1 164.000025u 1 164.010025u 0 268.000
 .options method=GEAR interp
 .control
 ${NT:+set num_threads=$NT}
+${SEED:+set rndseed=$SEED}
 alterparam vemf=$ve
 reset
 tran 10n $tstop 0 50p

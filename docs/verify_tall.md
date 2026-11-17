@@ -16,8 +16,8 @@ end), **1 failed** (a dropped bench, below), 0 stalled.
 | 1 | Digital: RTL / GL cocotb, TT top, formal, eqy, pinout, vectors, e2e | **pass**, identical to the reference |
 | 2 | Layout signoff: 36 blocks, tile check, xor | **pass**: every block DRC 0 (magic + KLayout), antenna 0, LVS PASS; tile precheck PASS, antenna 7 (the macro's own), LVS PASS; exported tile metal identical |
 | 3 | Per-block benches, sch / pex | **pass**: the unchanged blocks identical; the tall stages as their design note |
-| 4 | Chain stability, extracted `rx_t` | **pass**: full gain stable to 0.75 fF at every corner and supply, low gain to 1.5 fF (better than the U chain). sf added as a follow-up |
-| 5 | Gain step (full − low gain), MC | **open - needs Matt's call**: on the block extraction 9.27 dB at tt, **7.58 dB at sf** (0 % ≥ 9 dB), 8.50 at ss 10 °C (8 %). The tile shows ~10.2 dB at tt (CW drops), so the block is ~1 dB pessimistic; sf on the tile is ~8.5 dB by the same offset |
+| 4 | Chain stability, extracted `rx_t` | **pass**: full gain stable to 0.75 fF at every corner and supply, low gain to 1.5 fF (better than the U chain); sf (follow-up) full to 1 fF, low to 3 fF |
+| 5 | Gain step (full − low gain), MC | **open - needs Matt's call** (low gain stable at sf to 3 fF, follow-up): on the block extraction 9.27 dB at tt, **7.58 dB at sf** (0 % ≥ 9 dB), 8.50 at ss 10 °C (8 %). The tile shows ~10.2 dB at tt (CW drops), so the block is ~1 dB pessimistic; sf on the tile is ~8.5 dB by the same offset |
 | 6 | RX sensitivity, extracted | **CHANGED, worse: −1.3 to −2.3 dB** against the U chain (tile pair −92 dBm −1.3 dB, noise runs −2.0 dB, tile CW −2.3 dB). Not in the expected −1 to −1.5 dB. The schematic is unchanged |
 | 7 | Mixed signal, full gain (sch and pex baseband), overload | **pass**, identical pattern to the reference (overload scan event times identical) |
 | 8 | Low-gain mixed signal | sch **pass** (over burst timing 92 / 55 / 38 % at −86 / −88 / −90, reference 90 / 68 / 40). Extracted: `lopex` invalid as run (calibration); recalibrated rerun `lopex2` 80 / 50 / 20 %, ~1 dB below the schematic (follow-ups) |
@@ -25,7 +25,8 @@ end), **1 failed** (a dropped bench, below), 0 stalled.
 
 Findings to decide (Matt):
 1. **The gain step on the extracted chain** (item 5). The last run passed it with "low gain still stabilises the chain
-   at sf". This run had no extracted stability at sf: added as a follow-up (below).
+   at sf". The follow-up checked that on the extracted `rx_t`: low gain at sf is stable to 3 fF (below), so the
+   condition holds. The step itself is still short of 9 dB at sf.
 2. **The extracted RX is ~2 dB worse than the U chain** (item 6), though its schematic gain is the same and its
    extracted chain alone (`lna_chain_t`) has 0.37 dB more gain than the U. The loss is in `rx_t`: the detector's
    inputs and the tap wiring load the chain. Block `rx_t` −4.9 dB against its schematic, the tile −1.5 dB.
@@ -36,7 +37,21 @@ Run on sim-0 after the main run (`sim/rerun/jobs_tall_follow.py`).
 
 ### Low-gain stability at sf 27 °C, extracted `rx_t`
 
-*Running (est. ~5.5 h, results ~18:40).*
+`stabx_sf27_v1.8_glo{0,1.8}`: the same bench and cases as "Chain stability, extracted" (section 3), at sf 27 °C 1.8 V. 133 min
+each on 4 threads (the job file guessed 6 h).
+
+| Gain | 0 | 0.3 fF | 0.5 fF | 0.75 fF | 1 fF | 1.5 fF | 2 fF | 3 fF |
+|---|---|---|---|---|---|---|---|---|
+| full: result | ok | ok | ok | ok | ok | OSC 0.01 | | |
+| full: gain at 434 MHz, dB | 71.07 | 72.93 | 74.44 | 76.78 | 79.95 | 98.23 | | |
+| low: result | ok | | ok | | ok | **ok** | ok | ok |
+| low: gain at 434 MHz, dB | 63.53 | | 64.47 | | 65.41 | 66.32 | 67.10 | 67.83 |
+
+**Pass.** Low gain at sf is stable to 3 fF, the widest margin of any corner (ss 10 °C oscillates at 3 fF), so the
+condition the last run passed the gain step on holds: switching to low gain still stabilises the chain at sf. Full
+gain at sf is stable to 1 fF (1.5 fF still ringing, 7.8 mV late p-p, but decaying: growth 0.009). The gain step at
+C = 0 is 7.53 dB, matching the MC's 7.58 dB at sf. At 3 fF the low-gain response peaks 9.6 dB above its 434 MHz gain
+(at 502 MHz), so 3 fF is near its edge.
 
 ### Extracted low-gain mixed runs, recalibrated (`lopex2`)
 
@@ -269,6 +284,8 @@ with the growth.
 | tt 27 °C 1.8 V | **low** | ok | | ok | | ok | **ok** | ok | ok |
 | ff 50 °C 1.8 V | full | ok | ok | ok | ok | ok | ok | | |
 | ff 50 °C 1.8 V | **low** | ok | | ok | | ok | **ok** | ok | ok |
+| sf 27 °C 1.8 V (follow-up) | full | ok | ok | ok | ok | ok | OSC 0.01 | | |
+| sf 27 °C 1.8 V (follow-up) | **low** | ok | | ok | | ok | **ok** | ok | ok |
 | `lna_chain_t` alone, tt | full | ok | ok | ok | ok | OSC 1.01 | OSC 1.00 | | |
 
 **Pass.** Full gain is stable to 0.75 fF everywhere (budget 0.1 fF); low gain to 1.5 fF everywhere, against 1 fF on
@@ -358,11 +375,32 @@ LPF 2–30 µs: 0.63 / 0.30 mV. Model at −92 dBm: ~1.14 mV.
 
 | Level | Reference | Now | |
 |---|---|---|---|
-| −90 dBm: det swing (LPF), mV | 1.83 (1.04); model 1.80 | **3.09** (3.12); model 1.80 | CHANGED: +1.26 mV, ~2.5σ of the two-chip window's ±0.5 mV. `trnoise` isn't repeatable (one realisation per run: 1.43 on 2026-10-13, 1.83, now 3.09), and the schematic CW at the pads is unchanged (−90 dBm 4.97 vs 4.92 mV), so not the chain. Worth a second run |
+| −90 dBm: det swing (LPF), mV | 1.83 (1.04); model 1.80 | 3.09 (3.12); model 1.80 | PASS (noise, below): reruns with three seeds running |
 | −70 dBm: det swing, mV | 100.75; model 105.6 | 104.20 (LPF 102.32); model 105.58 | PASS (+0.15 dB) |
 | −10 dBm: det off → on, V | 1.4533 → 0.5694 | 1.4499 → 0.5693 | PASS |
 
 The comparator edge times at −10 dBm weren't re-measured.
+
+**The −90 dBm swing (3.09 mV) is within the run-to-run noise.** Each run is one `trnoise` realisation (ngspice seeds
+it from the process ID): 1.43 mV on 2026-10-13, 1.83 last run, 3.09 now. Split by chip, the det (V) in this run:
+
+| Window | off 20–60 µs | on 62–164 µs | off 166–268 µs | on 270–372 µs | off 374–400 µs |
+|---|---|---|---|---|---|
+| det mean, mV | 1450.54 | 1447.74 | 1451.95 | 1448.92 | 1450.73 |
+
+- The two chips give 3.50 and 1.92 mV against their neighbouring off windows: the chips differ from each other by as
+  much as this run differs from the last.
+- The noise-only level wanders by ~0.6 mV rms from one ~100 µs window to the next (the six off windows of the −90 and
+  −70 runs: 1450.5–1452.1 mV, the same in both). A swing from three off and two on windows is ±0.55 mV.
+- The model's 1.80 mV isn't the right yardstick. The transistor-level noise bench (`noise_tran`, same schematic
+  chain and detector) gives a −90 dBm drop of 2.24 mV (old noise file) / 2.44 (fixed), unchanged from the last run;
+  `gen_det.py` is ~1.3× low there (at −92 too: 1.54 against 1.15). Against ~2.3 mV, 3.09 is +1.4σ; 1.43 and 1.83 are
+  −1.6σ and −0.9σ.
+- The chain didn't change the signal: the schematic CW at the pads is the same (−90 dBm 4.97 against 4.92 mV), and so
+  is `noise_tran` to 0.01 mV.
+
+Three more realisations, seeded so they can be repeated (`SEED=1..3 TAG=_s<n> sim/rx/joined.sh`, follow-up jobs
+`joined_-90_s{1,2,3}`, ~4.3 h each), settle it: *running*.
 
 ### noise_tran (`sim/logdet/noise_tran.sh`, 3 µs, old noise file)
 
