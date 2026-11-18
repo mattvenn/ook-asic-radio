@@ -17,13 +17,13 @@ end), **1 failed** (a dropped bench, below), 0 stalled.
 | 2 | Layout signoff: 36 blocks, tile check, xor | **pass**: every block DRC 0 (magic + KLayout), antenna 0, LVS PASS; tile precheck PASS, antenna 7 (the macro's own), LVS PASS; exported tile metal identical |
 | 3 | Per-block benches, sch / pex | **pass**: the unchanged blocks identical; the tall stages as their design note |
 | 4 | Chain stability, extracted `rx_t` | **pass**: full gain stable to 0.75 fF at every corner and supply, low gain to 1.5 fF (better than the U chain); sf (follow-up) full to 1 fF, low to 3 fF |
-| 5 | Gain step (full − low gain), MC | **open - needs Matt's call** (low gain stable at sf to 3 fF, follow-up): on the block extraction 9.27 dB at tt, **7.58 dB at sf** (0 % ≥ 9 dB), 8.50 at ss 10 °C (8 %). The tile shows ~10.2 dB at tt (CW drops), so the block is ~1 dB pessimistic; sf on the tile is ~8.5 dB by the same offset |
-| 6 | RX sensitivity, extracted | **CHANGED, worse: −1.3 to −2.3 dB** against the U chain (tile pair −92 dBm −1.3 dB, noise runs −2.0 dB, tile CW −2.3 dB). Not in the expected −1 to −1.5 dB. The schematic is unchanged |
+| 5 | Gain step (full − low gain), MC | **accepted (Matt, 2026-11-18)**; low gain stable at sf to 3 fF (follow-up): on the block extraction 9.27 dB at tt, **7.58 dB at sf** (0 % ≥ 9 dB), 8.50 at ss 10 °C (8 %). The tile shows ~10.2 dB at tt (CW drops), so the block is ~1 dB pessimistic; sf on the tile is ~8.5 dB by the same offset |
+| 6 | RX sensitivity, extracted | **CHANGED, worse: −1.3 to −2.3 dB, accepted (Matt, 2026-11-18)** against the U chain (tile pair −92 dBm −1.3 dB, noise runs −2.0 dB, tile CW −2.3 dB). Not in the expected −1 to −1.5 dB. The schematic is unchanged |
 | 7 | Mixed signal, full gain (sch and pex baseband), overload | **pass**, identical pattern to the reference (overload scan event times identical) |
 | 8 | Low-gain mixed signal | sch **pass** (over burst timing 92 / 55 / 38 % at −86 / −88 / −90, reference 90 / 68 / 40). Extracted: `lopex` invalid as run (calibration); recalibrated rerun `lopex2` 80 / 50 / 20 %, ~1 dB below the schematic (follow-ups) |
 | 9 | Corners, supply, TX, power-up, overload, power delivery | **pass**; TX at the marginal 1.71 / 3.3 V ss / fs points −0.5 / −0.6 dB; power-delivery numbers changed by the re-route (mostly better) |
 
-Findings to decide (Matt):
+Findings (Matt, 2026-11-18: both accepted. Less risk of oscillation is worth a little sensitivity):
 1. **The gain step on the extracted chain** (item 5). The last run passed it with "low gain still stabilises the chain
    at sf". The follow-up checked that on the extracted `rx_t`: low gain at sf is stable to 3 fF (below), so the
    condition holds. The step itself is still short of 9 dB at sf.
