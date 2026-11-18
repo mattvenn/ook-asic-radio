@@ -85,7 +85,12 @@ the RX block swapped for each version below, gain from the antenna EMF to every 
   detector sat next to its taps.
 - **What would win it back:** shorter taps. That needs a detector whose inputs line up with the chain's taps
   (`docs/tall_stages_2026-11.md`, "Taps": det_cells turned 90° at a 16.1 µm pitch, or re-pinned in chain order).
-  Halving the tap C would give back about half. Not done: the 2 dB was accepted (Matt, 2026-11-18).
+  Halving the tap C would give back about half.
+- **Left as it is (Matt, 2026-11-18).** The tap load is also stability margin: the stability results were
+  measured with it, and the chain alone (~4.7 dB more gain) oscillates at 1 fF where `rx_t` is stable to 0.75 fF
+  and rings at 1 fF only at ss. Options if the sensitivity is wanted later: re-route the channel (wider shield
+  spacing, ~0.4-0.6 dB on the tile, est.) or a pitch-matched det_cell (~0.8-1 dB, a full rerun), each with a
+  stage-gain trim to hold the coupling margin.
 
 ### Extracted low-gain mixed runs, recalibrated (`lopex2`)
 
