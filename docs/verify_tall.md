@@ -53,6 +53,40 @@ gain at sf is stable to 1 fF (1.5 fF still ringing, 7.8 mV late p-p, but decayin
 C = 0 is 7.53 dB, matching the MC's 7.58 dB at sf. At 3 fF the low-gain response peaks 9.6 dB above its 434 MHz gain
 (at 502 MHz), so 3 fF is near its edge.
 
+### Where the extracted RX loses its gain: the tap wiring (2026-11-18)
+
+`sim/chain/tap_loss.py`: the stability bench's AC at 434 MHz (tt 27 °C, full gain, 2 nH, real decap, C = 0) with
+the RX block swapped for each version below, gain from the antenna EMF to every tap. Results in `build/tap_loss/`.
+
+| Version | o1, dB | o2, dB | o3, dB | o4, dB | o5, dB | out, dB |
+|---|---|---|---|---|---|---|
+| schematic (chain + detector) | 11.54 | 24.40 | 37.59 | 50.78 | 63.98 | 76.57 |
+| chain extracted, no detector | 12.15 | 24.16 | 37.09 | 50.06 | 63.00 | 75.79 |
+| chain extracted + schematic detector (ideal tap wires) | 12.12 | 24.03 | 36.85 | 49.72 | 62.55 | 75.21 |
+| `rx_t` extracted (chain, detector, tap wiring) | 11.96 | 22.82 | 34.73 | 46.77 | 58.96 | 71.06 |
+| chain + detector + the tap nets' extra C to ground (lumped) | 11.97 | 23.04 | 35.06 | 47.23 | 59.48 | 71.61 |
+
+- **The tap wiring costs 4.15 dB of the block's 5.5 dB.** Extracting the chain costs 0.78 dB and the detector's
+  inputs 0.58 dB. The tap wiring takes the remaining 4.15 dB.
+- **It's capacitance to ground.** Each tap runs up to ~60 µm along a shielded track to its detector, because the
+  detectors sit at a 20.8 µm pitch against the chain's 11.7 µm. That adds 14–32 fF per tap net (o1p 31.7 fF down to
+  outn 14.1 fF). Put back as lumped C to ground, it reproduces 3.6 of the 4.15 dB.
+- **Every tap from o2 on costs about 0.5–0.9 dB:**
+
+| Lumped C on one tap only | o1 | o2 | o3 | o4 | o5 | out |
+|---|---|---|---|---|---|---|
+| Extra C on the pair, fF | 31.7 / 27.4 | 25.2 / 23.6 | 23.2 / 21.6 | 20.5 / 17.5 | 17.4 / 13.9 | 14.6 / 14.1 |
+| Gain lost at out, dB | 0.12 | 0.90 | 0.80 | 0.69 | 0.56 | 0.51 |
+
+  Roughly 0.035 dB per fF of tap load. o1 costs little: stage 1's output drives stage 2's large input already.
+- **The tile loses less than the block.** The tile extraction loses 1.5 dB against its schematic where the block
+  loses 4.9, and that block-against-tile gap was already known. If the tap wiring takes the same share of the
+  tile's loss (75 %), that is ~1.1 dB, close to the 1.3–2.3 dB the RX lost against the U chain. The U chain's
+  detector sat next to its taps.
+- **What would win it back:** shorter taps. That needs a detector whose inputs line up with the chain's taps
+  (`docs/tall_stages_2026-11.md`, "Taps": det_cells turned 90° at a 16.1 µm pitch, or re-pinned in chain order).
+  Halving the tap C would give back about half. Not done: the 2 dB was accepted (Matt, 2026-11-18).
+
 ### Extracted low-gain mixed runs, recalibrated (`lopex2`)
 
 The `lopex` runs' `--gain` came from `sim/rx/lo_gain.py`, which maps a noise-only detector level through the
