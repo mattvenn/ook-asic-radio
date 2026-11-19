@@ -603,6 +603,48 @@ put 6.6 dB too much signal at the detector. Rerun as `lopex2` (follow-ups).
 | RX blocks dd p-p / 434 MHz | 5.96–6.16 / 0.21–0.22 mV | 5.42–5.80 / 0.26–0.28 mV | PASS |
 | det at 434 MHz (keyed) | 3.48 mV | **1.49 mV** | CHANGED (better) |
 
+### Power delivery, case B (2026-11-18)
+
+Case B is the other way TT can place the tile: the VDPWR and VAPWR strap pairs swap positions (tile N or FS, and the
+pin order, aren't known yet; `sim/power/pdn.py` CASES). VGND is the same in both cases. The same jobs as case A
+(`sim/rerun/jobs_case_b.py`), on the same tile. Results in `build/power/*_B*`.
+
+| Item | Case A | Case B | |
+|---|---|---|---|
+| R to `rx_t` VDPWR / VAPWR / VGND (mean) | 3.68 / 5.71 / 3.90 Ω | 4.13 / 5.47 / 3.90 Ω | PASS (+0.45 Ω on VDPWR) |
+| R tx_drv_p VAPWR / VGND (mean) | 0.83 / 0.74 Ω | 0.59 / 0.74 Ω | PASS (better) |
+| R comp_ct VDPWR / VGND (mean) | 6.94 / 4.36 Ω | 7.60 / 4.36 Ω | PASS |
+| Worst R on VDPWR (decap_d) | 32.10 / 61.84 Ω (mean / worst) | 30.97 / 60.71 Ω | PASS (decap, no DC load) |
+| IR, RX on: `rx_t` VDPWR / VGND (mean / worst) | 13.94 / 17.63, 12.59 / 15.41 mV | 15.32 / 19.05, 12.59 / 15.41 mV | PASS (+1.4 mV) |
+| IR, RX on: comp_ct VDPWR (mean) | 3.75 mV | 5.23 mV | PASS |
+| IR at tx_drv_p, VAPWR avg / peak (mean) | 7.7 / 21.4 mV | 4.6 / 12.7 mV | PASS (better) |
+| EM VAPWR (TX average, 13.3 mA) | mcon 68.5 %, via4 47.4 %, m3 38.0 % | mcon 68.5 %, m1 37.7 %, m3 37.1 %, via4 28.9 % | PASS (same mcon point; via4 better) |
+| EM VGND (TX average) | mcon 40.1 % | mcon 40.1 % | PASS (same) |
+| \|Z\| at 434 MHz (Zdd): comp_ct / avg_sc / bias | 16.39 / 14.90 / 29.94 Ω | 17.03 / 15.60 / 30.71 Ω | PASS (+0.6-0.8 Ω) |
+| TX → det at 434 MHz | 0.111 Ω | 0.116 Ω | PASS |
+| TX keyed: tx_drv_p / tx_drv_n dd p-p | 28.84 / 23.23 mV | 26.20 / 20.62 mV | PASS (better) |
+| RX blocks dd p-p / 434 MHz | 5.42–5.80 / 0.26–0.28 mV | 5.42–5.78 / 0.27–0.28 mV | PASS (same) |
+| det at 434 MHz (TX keyed) | 1.49 mV | 1.52 mV | PASS |
+
+**Either placement is fine.** Case B moves about 0.5 Ω of VDPWR resistance onto the RX side and takes about the same
+off the TX's VAPWR feed. The RX's worst VDPWR drop goes from 17.6 to 19.1 mV (1 % of 1.8 V), and the TX couples into det
+the same (1.52 against 1.49 mV at 434 MHz). Nothing in this section depends on which way TT places the tile.
+
+Run times (`build/rerun_case_b/sched.log`, 2026-11-18 21:10 → 02:52, 5.7 h; 2 threads for the ngspice jobs):
+
+| Job | Case B, min | Case A, min |
+|---|---|---|
+| pwr_pex | 0.2 | 0.3 |
+| pwr_mesh05 / pwr_mesh10 | 0.2 / 0.2 | 0.2 / 0.2 |
+| pwr_em | 4.0 | 4.9 |
+| pwr_ir_rx | 12.5 | 17.6 |
+| pwr_z_ac | 42.2 | 57.4 |
+| pwr_r_mesh | 46.7 | 79.8 |
+| pwr_tran_tx | 342.1 | 398.3 |
+
+Case B ran alone on the machine, so each job was 15-40 % faster than in the main run (case A, loaded). The jobs file's
+estimate (case A + 10 %) was 8.5 h; the whole run took 5.7 h, nearly all of it `pwr_tran_tx`.
+
 ## Expected differences (from the job file), found
 
 - RX ~1-1.5 dB down on the extracted tile: found −1.3 dB (tile pair), −2.0 dB (noise), −2.3 dB (tile CW). A little
