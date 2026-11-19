@@ -31,6 +31,30 @@ Things that aren't chip design work, or that wait for silicon. Add the date and 
   - **Cost:** time `rx_t` and the extracted tile first (a short run of each). If `rx_t` manages 5-10 µs/h, run 1's
     RF (19.9 ms) is ~2,000-4,000 run-hours: about one to two weeks on sim-0, in fab rather than before tape-out; run 2
     ~8 days on a few threads, alongside other work. Neither is started.
+  - **2026-11-19: timed on idle sim-0.** 2 µs at −90 dBm (fixed noise, full gain), four runs at once (12 of 28
+    CPUs; `build/piece_timing/`):
+
+    | Deck | 2 threads, min | 4 threads, min | Speed, µs/h |
+    |---|---|---|---|
+    | `rx_t` extracted (chain + detector + tap wiring) | 216 | 221 | 0.55 |
+    | `lna_chain_t` extracted + schematic detector | 58 | 58 | 2.07 |
+
+    More threads don't help, so pieces should run on 1-2 threads each, as many at once as fit. With 20 µs pieces
+    plus 3 µs warm-up, run 1's 19.9 ms of RF is ~42,000 run-hours on `rx_t` (~4 months at 14 at once) and ~11,000
+    on the chain-only deck (~33 days at 14, ~16 days at 28 if 1 thread is as fast and a full machine doesn't slow
+    each run; neither is measured yet). Neither fits a week as planned: shorten the stimulus or the extracted part.
+  - **2026-11-19, plan changed (Matt): 16 chips to the slicer, not a whole code to the LED.** The GL sims are trusted
+    for the slicer, correlator, pairing and LED, so the extracted run only has to show the analog path delivers the
+    right chip bits. Chips 3-18 of code 0 (`0000011010110111`: 8 on, 8 off, runs of 1-5) at **−85 dBm**, clear of
+    the edge so a fail means something. **Pass: ≤ 3 of the 16 chips wrong on the slicer's best phase** (Matt), the
+    correlator's 30/127 budget scaled to 16. The system model (`model/chip16_err.py`, 80 windows a case) at −85 dBm:
+    chip errors 6.9 % tt, 11.1 % tt + extracted loss (NF +2.2 dB), 13.0 % fs 50 °C + extracted loss; worst window 1 /
+    3 / 3 errors, so a fail means the extracted path is clearly worse than the model. "All 16 correct" would fail
+    about 1 run in 3 here (needs about −78 dBm). The mixed bench starts with
+    the trim at its settled code from the model and a short noise-only lead-in. ~1.9 ms of RF with warm-up: ~925
+    run-hours chain-only + lumped tap C (1.4-2.8 days), ~3,500 on `rx_t` (5-10 days). Run 2 (unbroken tile) shrinks
+    to 2 chips around a piece boundary. Before choosing the deck: time chain-only + lumped tap C, 1 thread, 28 at
+    once, and compare its det with `rx_t`.
 - [x] **Find out why the extracted noise runs are so slow** (2026-11-16, the `chain-tall-stages` verification). The
   `nt_pex_*` jobs (`sim/logdet/noise_tran.sh`, 3 µs with `gen_noise.py`'s PWL noise, `rx_t` swapped in) took ~14-16 h
   each against the job file's 10 min: 150-260 ns of sim time per hour. The schematic version takes 1.5 min. Two
