@@ -45,13 +45,17 @@ Things that aren't chip design work, or that wait for silicon. Add the date and 
     each run; neither is measured yet). Neither fits a week as planned: shorten the stimulus or the extracted part.
   - **2026-11-19, plan changed (Matt): 16 chips to the slicer, not a whole code to the LED.** The GL sims are trusted
     for the slicer, correlator, pairing and LED, so the extracted run only has to show the analog path delivers the
-    right chip bits. Chips 3-18 of code 0 (`0000011010110111`: 8 on, 8 off, runs of 1-5) at **−85 dBm**, clear of
+    right chip bits. **Chips 68-83 of code 0** (`1011010111100010`, Matt 2026-11-20) at **−85 dBm**, clear of
     the edge so a fail means something. **Pass: ≤ 3 of the 16 chips wrong on the slicer's best phase** (Matt), the
-    correlator's 30/127 budget scaled to 16. The system model (`model/chip16_err.py`, 80 windows a case) at −85 dBm:
-    chip errors 6.9 % tt, 11.1 % tt + extracted loss (NF +2.2 dB), 13.0 % fs 50 °C + extracted loss; worst window 1 /
-    3 / 3 errors, so a fail means the extracted path is clearly worse than the model. "All 16 correct" would fail
-    about 1 run in 3 here (needs about −78 dBm). The mixed bench starts with
-    the trim at its settled code from the model and a short noise-only lead-in. ~1.9 ms of RF with warm-up: ~925
+    correlator's 30/127 budget scaled to 16. The system model (`model/chip16_err.py`, tt + extracted loss, NF +2.2
+    dB, 80 windows) at −85 dBm: 1.0 chips wrong expected in this window, P(≤ 3) 99.9 %.
+    The first choice, chips 3-18 (`0000011010110111`), was wrong: they follow the 64-chip gap, where the
+    slicer's threshold average and trim have seen only noise, so the first five zeros are coin flips (model ~50 %
+    each) and chip 18, the fourth 1 of a run, is wrong 80 % of the time: 3.7 expected, P(≤ 3) 46 % whatever the
+    circuit. The schematic dry run got exactly those (4, 5, 6, 18 wrong). The model numbers first quoted here (6.9 /
+    11.1 / 13.0 % chip errors) were for code 0x5A over whole bursts, not this window. Errors pile up on runs: the
+    threshold follows a long run and the trim servo pulls the comparator to 50 %. The mixed bench's 2.08 ms lead-in
+    is the code's chips 47-66, built from simulated chips of the same value. ~1.9 ms of RF with warm-up: ~925
     run-hours chain-only + lumped tap C (1.4-2.8 days), ~3,500 on `rx_t` (5-10 days). Run 2 (unbroken tile) shrinks
     to 2 chips around a piece boundary. Before choosing the deck: time chain-only + lumped tap C, 1 thread, 28 at
     once, and compare its det with `rx_t`.
