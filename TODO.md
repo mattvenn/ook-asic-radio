@@ -85,8 +85,8 @@ Things that aren't chip design work, or that wait for silicon. Add the date and 
       flat within a chip without noise), build the 38-chip det waveform, extracted mixed bench + slicer check
       (~5 h; connectivity and gain, passes trivially at −85); same on the schematic for the extracted-vs-schematic
       swing. (2) Margin: schematic deck with noise at −87.2 dBm (extracted NF +2.2 dB) and lower, ~2 h each.
-    - `sim/top/tb_tile_joined.py` `noise_file` writes times with `%.6g`: the same repeated-time bug as above
-      from 10 µs on (its 30 µs pair runs); not checked or fixed. ~1.9 ms of RF with warm-up: ~925
+    - `sim/top/tb_tile_joined.py` `noise_file` wrote times with `%.6g`: the same repeated-time bug, from 10 µs
+      on. Fixed 2026-11-20 (8cb3622); the pair results hold (`docs/verify_tall.md` "Joined RX pair"). ~1.9 ms of RF with warm-up: ~925
     run-hours chain-only + lumped tap C (1.4-2.8 days), ~3,500 on `rx_t` (5-10 days). Run 2 (unbroken tile) shrinks
     to 2 chips around a piece boundary. Before choosing the deck: time chain-only + lumped tap C, 1 thread, 28 at
     once, and compare its det with `rx_t`.
