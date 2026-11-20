@@ -40,14 +40,15 @@ sys.path.insert(0, os.path.join(ROOT, 'tools'))
 TAG = os.environ.get('CHIP16_TAG', 'chip16')    # chip16sch: the dry run on the schematic deck (CHIP16_BASE)
 OUT = os.path.join(ROOT, 'build', TAG)
 PD = os.path.join(OUT, 'pieces')
-# the RX: lna_chain_t extracted + schematic detector + each tap net's extra C from rx_t's extraction as lumped C to
-# ground (sim/chain/tap_loss.py 'lumped', 0.55 dB more gain than rx_t at 434 MHz; docs/verify_tall.md 2026-11-18),
-# swapped into tb_logdet_pex.spice by `chip16.py mkbase`. rx_t itself ran at 0.107 us/h a piece with 28 at once:
-# ~27 days for the record; this deck 0.50 us/h, ~6 days (2026-11-20, build/chip16_ab). Matt: no more than a week.
-BASE = os.environ.get('CHIP16_BASE', os.path.join(ROOT, 'build', 'tb_logdet_lump.spice'))
+# the RX: rx_t extracted (chain, detector, tap wiring) swapped into tb_logdet (sim/chain/mk_pex_rx.py). Not run: with
+# noise it is ~0.107 us/h a piece with 28 at once, ~22-27 days for the record (2026-11-20, TODO.md). The faster
+# alternative, `chip16.py mkbase` -> build/tb_logdet_lump.spice (lna_chain_t extracted + schematic detector + the tap
+# nets' extra C lumped, ~6 days, run at -85.5 dBm for its 0.55 dB over rx_t), was judged not worth it (Matt).
+BASE = os.environ.get('CHIP16_BASE', os.path.join(ROOT, 'build', 'tb_logdet_pex.spice'))
 SCHED = os.path.join(ROOT, 'build', f'rerun_{TAG}')
 
-LEVEL = -85.5               # Matt's -85 dBm, less the 0.55 dB the lumped deck has over rx_t
+LEVEL = float(os.environ.get('CHIP16_LEVEL', -85))   # Matt: -85 dBm
+LEVEL = int(LEVEL) if LEVEL == int(LEVEL) else LEVEL  # file names: det_-85_chip16.inc as before
 CODE = 0
 FIRST, LAST = 68, 83        # the 16 chips tested (model/chip16_err.py)
 C0, C1 = 67, 84             # chips simulated
@@ -145,7 +146,7 @@ def deck(k, base):
 def prep():
     os.makedirs(PD, exist_ok=True)
     base = open(BASE).read()
-    assert TAG != 'chip16' or re.search(r'^Cx_o1p ', base, re.M), 'BASE is not the lumped deck (chip16.py mkbase)'
+    assert TAG != 'chip16' or re.search(r'^x1 .* rx_t$', base, re.M), 'BASE has no rx_t'
     init = re.sub(r'num_threads=\d+', 'num_threads=1', open(os.path.join(ROOT, '.spiceinit')).read())
     open(os.path.join(PD, '.spiceinit'), 'w').write(init)
     n = int(round(TREC / DT)) + 2

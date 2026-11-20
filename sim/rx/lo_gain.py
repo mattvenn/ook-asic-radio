@@ -1,13 +1,14 @@
 """The gen_det.py --gain that puts its noise-only detector level at a transistor-level one.
 
 gen_det maps the RF power (signal + noise at NF over B_RF) through the CW detector curve shifted by
-SHIFT_DB, calibrated so the noise alone gives the full-gain noise_tran.sh level (1.439 V). With the
+SHIFT_DB, calibrated so the noise alone gives the full-gain noise_tran.sh level (1.44973 V since 2026-11-20). With the
 LNA low-gain strap on, signal and noise both arrive lower at the detector: --gain is that shift,
 found here from noise_tran.sh's noise-only det with the strap on (VGLO=0).
 
     python3 sim/rx/lo_gain.py <det noise-only V> [nf_dB]      or     python3 sim/rx/lo_gain.py <nt_none*.log> [nf_dB]
 
-Prints the gain (dB). Self-check: the full-gain level (1.43904 V) at NF 11 gives ~0.
+Prints the gain (dB). Self-check: the full-gain level (1.44973 V) at NF 11 gives ~0. Fixed-noise levels (2026-11-17,
+build_tall/rerun_tall_follow/logs/nt3_*): schematic noise-only 1.44973 V full gain, 1.51088 V low gain.
 
 The extracted rx_t (chain + its own extracted detector) can't be calibrated this way: its detector sits at another
 level (noise-only, low gain: 1.484 V against the schematic's 1.510 V), and mapping that through the schematic curve
