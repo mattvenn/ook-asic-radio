@@ -99,7 +99,10 @@ def noise_file(tstop, seed):
     path = os.path.join(B, f'tile_pair_noise_{seed}.txt')
     t = np.arange(0, seconds(tstop) + 1e-9, 50e-12)
     x = np.random.default_rng(seed).normal(0, NZ, (len(t), 2))
-    np.savetxt(path, np.column_stack([t, x]), fmt='%.6g')
+    # times to 10 figures: '%.6g' (until 2026-11-20) resolved only 100 ps from 10 us on, so every other 50 ps
+    # sample landed on its neighbour's time: the noise was wrong over 10-30 us of every pair run (det floor
+    # 1.5-5 mV lower at -92 dBm; off - on within the window scatter, docs/verify_tall.md "Joined RX pair")
+    np.savetxt(path, np.column_stack([t, x]), fmt=['%.10e', '%.6g', '%.6g'])
     return path
 
 

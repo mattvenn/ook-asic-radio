@@ -443,6 +443,25 @@ det off − on, mV, by window after key-on:
 
 LPF 2–30 µs: 0.63 / 0.30 mV. Model at −92 dBm: ~1.14 mV.
 
+**The noise was wrong from 10 µs on (found 2026-11-20).** `noise_file` wrote times with `%.6g`, which resolves only
+100 ps from 10 µs, so half the steps of `build_tall/tile_pair_noise_1.txt` over 10–30 µs are zero (every other 50 ps
+sample lands on its neighbour's time); none before 10 µs. The same bug cost the chip16 dry run a +10 mV det offset.
+Both runs of a pair read the same file, so off − on mostly cancels it. Per window, from the raw files:
+
+| Window | −92 dBm: det, no signal, V | −92 dBm: off − on, mV | −88 dBm low gain: det, no signal, V | −88 dBm low gain: off − on, mV |
+|---|---|---|---|---|
+| 2–5 µs (good noise) | 1.4419 | 1.06 | 1.4846 | 0.50 |
+| 5–10 µs (good noise) | 1.4416 | 1.04 | 1.4846 | 0.46 |
+| 10–15 µs | 1.4367 | 0.87 | 1.4836 | 0.46 |
+| 15–20 µs | 1.4390 | 0.80 | 1.4841 | 0.44 |
+| 20–25 µs | 1.4403 | 1.11 | 1.4842 | 0.43 |
+| 25–30 µs | 1.4381 | 1.15 | 1.4839 | 0.50 |
+
+The noise floor drops 1.5–5 mV after 10 µs at −92 dBm (more noise in band); off − on stays within the window
+scatter. On the good-noise windows alone: **~1.05 mV at −92 dBm** (model 1.14), 0.48 mV low gain at −88 dBm. The
+conclusion (the signal reaches det at about the model's size on the extracted tile) stands. The October run
+(`docs/verify_system_2.md`, 1.36 mV) had the same bug. Fixed in `tb_tile_joined.py`; not rerun.
+
 ### Joined RX, schematic (`sim/rx/joined.sh`, 400 µs, `trnoise`; `sim/rx/plot_joined.py`)
 
 | Level | Reference | Now | |
