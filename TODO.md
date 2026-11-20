@@ -55,7 +55,38 @@ Things that aren't chip design work, or that wait for silicon. Add the date and 
     circuit. The schematic dry run got exactly those (4, 5, 6, 18 wrong). The model numbers first quoted here (6.9 /
     11.1 / 13.0 % chip errors) were for code 0x5A over whole bursts, not this window. Errors pile up on runs: the
     threshold follows a long run and the trim servo pulls the comparator to 50 %. The mixed bench's 2.08 ms lead-in
-    is the code's chips 47-66, built from simulated chips of the same value. ~1.9 ms of RF with warm-up: ~925
+    is the code's chips 47-66, built from simulated chips of the same value.
+  - **2026-11-20 status: no long run going; next step waiting on Matt.**
+    - Schematic dry run (`CHIP16_TAG=chip16sch CHIP16_BASE=build_tall/tb_logdet.spice`, chips 68-83, −85 dBm):
+      **0 of 16 wrong** (phase 4; other phases 0-2). Jobs: 28 pieces 58-61 min, join 0.2, mixed 46.0, check 0.2.
+      Seams between pieces: ±1.7 mV mean, ~9 mV rms at 10 ns (~1 mV over 1 µs), not shrinking over the 3 µs
+      warm-up; small against the ±2.9 mV per-chip signal.
+    - **`rx_t` with noise is too slow for a week.** With the machine full (28 runs, 1 thread each; the VM's 30
+      CPUs are a 16-core Ryzen 7950X) each run slows ~3×. Measured µs of sim per hour per run
+      (`build/chip16_ab`, `build/chip16_nn`):
+
+      | Deck, noise, runs × threads | Per run, µs/h | Machine, µs/h | 1953 µs of record, days |
+      |---|---|---|---|
+      | `rx_t`, filesource, 28 × 1 | 0.107 | 3.0 | 27 |
+      | `rx_t`, PWL, 28 × 1 | 0.130 | 3.64 | 22 |
+      | `rx_t`, PWL, 14 × 2 | 0.239 | 3.34 | 24 |
+      | `rx_t`, PWL, 1 alone | 0.41 | - | - |
+      | `rx_t`, filesource, 1 alone | 0.32 | - | - |
+      | chain + schematic det + lumped tap C, PWL, 28 × 1 | 0.504 | 14.1 | 5.8 |
+      | `rx_t`, **no noise**, 50 ps max step, 28 × 1 | 1.24 | 34.8 | 2.3 |
+
+      Matt: no test longer than a week. The chain-only deck (a9fbe58: `chip16.py` BASE / LEVEL now point at it,
+      −85.5 dBm) was started and stopped: it only joins pieces already tested apart. **Revert BASE / LEVEL to
+      `rx_t` / −85 or to whatever the next step needs.**
+    - **Noise-free `rx_t` needs a max step ≤ 100 ps** (1.5 µs of a 1 chip at −85 dBm, quiet machine): det drop
+      from no-signal (1.48935 V) 4.68 mV at 50 ps (2215 s), 4.31 at 100 ps (1475 s), 2.76 at 200 ps (1004 s),
+      0 with no limit (56 s: steps over the carrier). 50 ps not checked against finer.
+    - **Proposed (not started):** (1) noise-free `rx_t` end to end: short on / off / edge runs at 50 ps (det is
+      flat within a chip without noise), build the 38-chip det waveform, extracted mixed bench + slicer check
+      (~5 h; connectivity and gain, passes trivially at −85); same on the schematic for the extracted-vs-schematic
+      swing. (2) Margin: schematic deck with noise at −87.2 dBm (extracted NF +2.2 dB) and lower, ~2 h each.
+    - `sim/top/tb_tile_joined.py` `noise_file` writes times with `%.6g`: the same repeated-time bug as above
+      from 10 µs on (its 30 µs pair runs); not checked or fixed. ~1.9 ms of RF with warm-up: ~925
     run-hours chain-only + lumped tap C (1.4-2.8 days), ~3,500 on `rx_t` (5-10 days). Run 2 (unbroken tile) shrinks
     to 2 chips around a piece boundary. Before choosing the deck: time chain-only + lumped tap C, 1 thread, 28 at
     once, and compare its det with `rx_t`.
