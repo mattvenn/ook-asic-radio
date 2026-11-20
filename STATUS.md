@@ -13,6 +13,8 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 **Design review with Harald Pretl (2026-11-13): `docs/review_harald_2026-11-13.md`, "Where it stands".** Done: eqy (on `main`); AC margin, RC loads (not worth it) and bond wires (branch `chain-stability-ac`); the straight tall chain and its tile (branch `chain-tall-stages`); local decap. Not doing: the 60 dB option. Shelved: resistive-feedback input. Open, on [TODO.md](TODO.md): long runners (12, 13, once the tile PEX is in), adapter board, EM chamber.
 
+**Trim DAC driver resistance: accepted, change on any macro re-harden (Matt, 2026-11-12; `docs/verify_trim_dac.md`, branch `trim-dac`).** The macro's `trim_out` buffers (`clkdlybuf4s25_1`, 4.7 k / 2.5 k) make the r2r step down 11–18 LSB at 127/128, and make every step in the operating band ~1.3× coarser. That costs a little at the edge: mixed −92 dBm 96/104 vs 103/104 ideal, fs 50 °C e2e ~85 vs ~92 %, −94 dBm about half as likely. **If `radio_digital` is ever re-hardened, drive `trim_out[7:0]` with `buf_8`** (step 1.03×). Bring-up: trim sweep (bringup.md R14).
+
 **LNA low-gain strap: verified on sim-0 2026-11-04 / 05, `docs/verify_lna_lo.md`. All 9 items pass; items 2 (overload), 4 and 5 after follow-ups on 2026-11-06. Not merged to `main` yet.**
 - Passing: GL 16/16, formal, TT precheck, stability (low gain decays at ≥ 1 fF everywhere), extracted tile, FasterCap,
   substrate. The full rerun matches 2026-10-13, with chain / RX −0.5…−0.7 dB extracted as predicted.

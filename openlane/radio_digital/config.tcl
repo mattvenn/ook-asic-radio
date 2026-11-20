@@ -30,6 +30,10 @@ set ::env(RUN_KLAYOUT_DRC) 0
 
 # Don't put clock buffers on the outputs
 set ::env(PL_RESIZER_BUFFER_OUTPUT_PORTS) 0
+# NEXT RE-HARDEN: trim_out[7:0] drive the r2r trim DAC's 2R legs and today leave the macro through
+# sky130_fd_sc_hd__clkdlybuf4s25_1 (~4.7 k / 2.5 k): the DAC steps ~1.3x coarser and loses a little sensitivity.
+# Drive them with sky130_fd_sc_hd__buf_8 instead (e.g. instantiated in the RTL top) and check the netlist.
+# docs/verify_trim_dac.md "If the macro is re-hardened" (Matt, 2026-11-12).
 
 # Allow use of specific sky130 cells
 set ::env(SYNTH_READ_BLACKBOX_LIB) 1
