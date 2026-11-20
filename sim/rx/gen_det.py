@@ -6,8 +6,8 @@ mapped to the log detector's output voltage.
 
 Mapping: the 6-stage chain + log_det CW transfer (sim/logdet/transfer_cw.txt),
 shifted by -3.8 dB so that the noise-only level matches the transistor-level
-noise run (det = 1.439 V with the noise floor alone; see
-sim/logdet/noise_tran_results.txt). Writes build/det_<level>.inc (a PWL
+noise run (det = 1.44973 V with the noise floor alone: docs/verify_tall.md, fixed noise file;
+was 1.439 V, sim/logdet/noise_tran_results.txt). Writes build/det_<level>.inc (a PWL
 source 'Vdet det 0') and build/det_<level>.npz (chips, timing).
 
     python sim/rx/gen_det.py -94 -70
@@ -33,7 +33,9 @@ R = 1e6                  # detector samples per second (1 us blocks)
 B_RF, NF_DB = 450e6, 11.0
 SPC = 104                # samples per chip (1040 clocks at 10 MHz)
 LEAD, TAIL = 1500, 500   # us
-SHIFT_DB = -3.8
+SHIFT_DB = -5.01            # noise alone -> 1.44973 V: noise_tran.sh, schematic, full gain, fixed noise file, tall chain
+                            # (2026-11-20; was -3.8 for 1.439 V, before the tall chain and with gen_noise's repeated
+                            # times; the curve is straight in dB here, so only det's DC level moves, not the swing)
 CODE = 0x5A
 
 
