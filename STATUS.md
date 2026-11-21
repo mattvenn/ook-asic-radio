@@ -7,6 +7,8 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
+**Device noise in transient (Harald's review action 13, 2026-11-21, `docs/verify_tall.md` §5 "Device noise in transient"): the workaround is optimistic.** Per-device PWL noise sources in ngspice (`sim/noise/`) hurt ~0.9 dB more than the same NF injected at the antenna (noise from inside the chain skips the input network's band shape). ngspice's NF 11.0 also leaves out all 1/f (NaN in the pad switch): real NF 11.6 dB thermal, 12.5 dB with 1/f. Sensitivity is likely ~1.5 dB (up to ~2 dB) worse than the mixed bench says: −92 dBm 95 % → about −90.5 dBm. Next (TODO.md): recalibrate `gen_det.py` to the device-noise level and rerun the paired check.
+
 **Mixed signal after the `SHIFT_DB` recalibration (2026-11-21, `docs/verify_tall.md` §5 "Full gain after the `SHIFT_DB` recalibration"): pass.** `gen_det.py` now puts det at the fixed-noise level (+11.6 mV). Full-gain set rerun, 118 jobs OK: −92 dBm extracted 6/6, schematic 95 % over burst timing (20 paired seeds); the old calibration was ~0.4 dB optimistic at the edge (−94 dBm 55 → 40 %). No conclusion changes. Action 12 (whole code through the extracted RX) closed 2026-11-20: TODO.md.
 
 **Tile rebuilt with the tall chain (2026-11-14, branch `chain-tall-stages`, not merged): floorplan "RX in the corner", RX `ua[3]`/`ua[2]`, dbg `ua[1]`, TX `ua[4]`/`ua[5]` (`analog_pins: 6`). DRC 0 (magic + KLayout), precheck PASS, LVS match, antenna = the macro's 7. Next: tile PEX and the system runs. `docs/tall_stages_2026-11.md` "The tile".**

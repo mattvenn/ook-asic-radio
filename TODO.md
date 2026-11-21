@@ -23,9 +23,17 @@ Things that aren't chip design work, or that wait for silicon. Add the date and 
     `docs/verify_tall.md` "Joined RX pair"), and `gen_det.py`'s `SHIFT_DB` was set for the old noise (now −5.01 dB).
   - The scripts (`sim/rx/chip16.py`, `sim/rerun/jobs_chip16.py`, `model/chip16_err.py`) are in git history
     (commit 3c7ea1e). Why the extracted noise runs are slow: `docs/verify_tall.md`.
-- [ ] **Real transient noise** (Harald's review, action 13): VACASK with sky130, or ngspice device noise in transient,
+- [x] **Real transient noise** (Harald's review, action 13): VACASK with sky130, or ngspice device noise in transient,
   against today's workaround (an equivalent input noise from a linear analysis, `sim/rx/gen_det.py`, NF 11 dB over
   450 MHz). The case to look for: stage-1 noise driving later stages into limiting. (2026-11-14)
+  - Done 2026-11-21 in ngspice with per-device PWL noise sources (`sim/noise/`; VACASK can't read the sky130 models
+    without a parser build that isn't possible on the pod), `docs/verify_tall.md` §5 "Device noise in transient".
+    Device noise costs ~0.9 dB more than the same NF injected at the antenna, and ngspice's NF 11.0 leaves out 1/f
+    (a NaN in the pad switch): real NF 11.6 (thermal) / 12.5 dB (with 1/f). Sensitivity likely ~1.5 dB (up to ~2 dB)
+    worse than the mixed bench says.
+- [ ] **Recalibrate `gen_det.py` to device noise** (follows action 13): put the noise-only det at the device-noise
+  level (Dth, 1.43715 V; or Dall 1.42679 V as the bound), rerun the −92 / −94 dBm paired check to get the sensitivity
+  cost directly instead of from the swings.
 
 ## Bring-up hardware
 - [ ] **RX adapter board** for the TT breakout (Harald's review, action 14; [bringup.md](docs/bringup.md)): SMD

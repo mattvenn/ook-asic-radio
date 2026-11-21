@@ -581,6 +581,57 @@ put det 11.6 mV below where the transistor-level detector sits, so the earlier s
 optimistic. Nothing changes in the conclusions: **−92 dBm holds (95 % over burst timing schematic, 6/6 extracted),
 −94 dBm stays a best case.** Low gain was not rerun: its det moves by 1.1 mV (`sim/rx/lo_gain.py`'s notes).
 
+### Device noise in transient (Harald's review, action 13, 2026-11-21)
+
+The question: every transient bench injects one equivalent input noise source per antenna arm, sized from a linear
+noise analysis (`sim/logdet/gen_noise.py`, 2.76 nV/√Hz per arm, NF 11.0 dB). Does noise that starts inside the devices
+behave the same once it goes through the real nonlinear chain?
+
+VACASK has real transient noise but can't read the sky130 ngspice models in the image's build (that needs
+`-DCADNIP_PARSERS=ON` and its Rust / Boost / SuperLU / KLU dependencies, none on the pod, no root). So this is done in
+ngspice instead: `sim/noise/dev_noise.py` gives each device that matters (24 devices, 99.9 % of the output noise power)
+its own repeatable PWL noise current source, across drain-source for MOSFETs and across the terminals for resistors.
+It's sized so that each source alone gives the same 434 MHz output noise as that device does in `.noise`:
+S_i = onoise_dev² / |H_dev|², where H_dev comes from AC current injected at the same place. Thermal and 1/f go into
+separate files, white to 10 GHz, with the same Gaussian stream per device. `sim/noise/run_devnoise.sh` then runs
+`noise_tran.sh` (3 µs, det averaged over 0.5–3 µs) on the schematic chain + log_det at full gain, tt: 52 runs, 3 seeds
+per set (A: seed 7 only). Results: `sim/noise/devnoise_results.txt`.
+
+**Found on the way: ngspice's NF 11.0 dB leaves out all the 1/f noise.** The pad's 5 V pass device (`xpad_*.xm1`,
+Vds = 0) gives NaN thermal noise, and the NaN drops every 1/f contribution from ngspice's total (checked: without the
+pad, the per-device sum matches the total; with it, the total equals the sum without 1/f). With the pad switch at 4kT·gds
+(gds 30 mS, ~33 Ω) the thermal NF is **11.56 dB** (+0.53), and with 1/f **12.47 dB** (+1.44). Stage 1's 1/f corner is
+~180 MHz in sky130's BSIM4, so at 434 MHz its 1/f is still 7.9 pA/√Hz against 12.4 pA/√Hz thermal. The biggest sources:
+the antenna's own resistance (21.3 pA/√Hz), the pad's R2 (18.2), stage 1's pair (12.4 thermal, 7.9 1/f).
+(The `.noise` deck needs the repo `.spiceinit` in its directory: without it `~/.spiceinit`'s `ngbehavior=hsa` gives a
+different gain and NF.)
+
+| Set | Noise | Det, no signal, V | Out rms, V | Swing −94 dBm, mV | −90 | −85 |
+|---|---|---|---|---|---|---|
+| A | injected, NF 11.0 (today's workaround) | 1.44973 | 0.568 | −1.16 | −2.44 | −6.56 |
+| Bth | injected, NF 11.56 | 1.44710 | 0.582 | −0.76 | −1.81 | −5.37 |
+| Ball | injected, NF 12.47 | 1.43762 | 0.628 | −0.68 | −1.59 | −4.70 |
+| **Dth** | device sources, thermal (NF 11.56 at 434 MHz) | **1.43715** | **0.631** | **−0.66** | **−1.55** | **−4.62** |
+| **Dall** | device sources, thermal + 1/f (NF 12.47) | 1.42679 | 0.678 | −0.55 | −1.30 | −3.90 |
+
+Swing = det(level) − det(no signal), averaged over seeds. A reproduces the `SHIFT_DB` calibration level exactly
+(1.44973 V). Seed scatter: ±1 mV on the no-signal level, ±0.3 mV on the −94 dBm swing.
+
+**Device noise hurts more than the same NF injected at the antenna.** Dth has Bth's NF at 434 MHz, but it behaves like
+Ball, ~0.9 dB more injected noise: out rms +0.7 dB, the no-signal det 10 mV lower, the swing 0.6–0.7 dB smaller at every
+level. The reason: noise injected at the antenna goes through the input network (pad, ESD, coupling capacitors) and
+stage 1's band shape, but noise that starts at stage 1 and later stages doesn't, so the log detector sees more wideband
+noise power for the same in-band NF. That is physical, not an artefact of the method. Against today's workaround (A),
+the swings are ~1.5 dB smaller with thermal device noise (at −85 dBm, where seed scatter is lowest) and ~2.2 dB smaller
+with 1/f as well. Dall is an upper bound: its 1/f is white at its 434 MHz level, too high above 434 MHz.
+
+**What it means:** the mixed-signal sensitivity numbers (built on `gen_det.py` with the NF-11 injected noise) are
+probably ~1.5 dB optimistic, up to ~2 dB with 1/f. −92 dBm at 95 % over burst timing would move to about −90.5 dBm, and
+the 50 % point from about −93.7 to about −92 dBm. This is an estimate from the swings, not a rerun of the detection
+check. Not done: recalibrating `gen_det.py` to the device-noise level (Dth) and rerunning the −92 / −94 dBm paired check
+would give the number directly. Limits: schematic, full gain, tt, 3 seeds; the sources are sized at the idle operating
+point (not cyclostationary) and the detector's own baseband 1/f isn't in them.
+
 Low gain, schematic det model (`gen_det.py --gain` −12.21 dB, reference −12.26), schematic baseband. Detected as
 simulated, then over burst timing by `sim/mixed/replay_corr.py` (RTL phases and one sample later; the replay agrees
 with the simulated event pin in 70/70 runs):
