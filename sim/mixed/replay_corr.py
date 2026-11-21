@@ -8,7 +8,7 @@ gold(0x5A), threshold 97, the max over the window where the burst has fully arri
 odd offsets are what the RTL would score for a burst one sample (13 us) later, so the average over both is
 the detection rate for a burst arriving at a random time.
 
-    python3 sim/mixed/replay_corr.py <tag> <level> [<level> ...]     e.g.  lo -88 -90   (mixed_<lvl>_s<1..20>_<tag>.raw)
+    python3 sim/mixed/replay_corr.py <tag> <level> [<level> ...]     e.g.  lo -88 -90   (mixed_<lvl>_s<1..40>_<tag>.raw)
     level may carry a suffix, e.g. -92_pex for mixed_-92_pex_s<n>_<tag>.raw
 """
 import os
@@ -65,7 +65,7 @@ def main(tag, levels):
     for lvl in levels:
         n = agree = d_even = d_odd = 0
         print(f'{lvl} dBm ({tag}): seed, sim event | max score at offsets 0..7 | RTL phases (even) / 1 sample later (odd)')
-        for s in range(1, 21):
+        for s in range(1, 41):
             path = os.path.join(ROOT, 'build', 'mixed', f'mixed_{lvl}_s{s}_{tag}.raw')
             if not os.path.exists(path):
                 continue

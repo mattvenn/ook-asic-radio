@@ -7,6 +7,8 @@ Repo: github.com/mattvenn/ook-asic-radio (`main`).
 
 ## Start here
 
+**Mixed signal after the `SHIFT_DB` recalibration (2026-11-21, `docs/verify_tall.md` §5 "Full gain after the `SHIFT_DB` recalibration"): pass.** `gen_det.py` now puts det at the fixed-noise level (+11.6 mV). Full-gain set rerun, 118 jobs OK: −92 dBm extracted 6/6, schematic 95 % over burst timing (20 paired seeds); the old calibration was ~0.4 dB optimistic at the edge (−94 dBm 55 → 40 %). No conclusion changes. Action 12 (whole code through the extracted RX) closed 2026-11-20: TODO.md.
+
 **Tile rebuilt with the tall chain (2026-11-14, branch `chain-tall-stages`, not merged): floorplan "RX in the corner", RX `ua[3]`/`ua[2]`, dbg `ua[1]`, TX `ua[4]`/`ua[5]` (`analog_pins: 6`). DRC 0 (magic + KLayout), precheck PASS, LVS match, antenna = the macro's 7. Next: tile PEX and the system runs. `docs/tall_stages_2026-11.md` "The tile".**
 
 **Straight tall chain (2026-11-13, branch `chain-tall-stages`, not merged): `docs/tall_stages_2026-11.md`.** Review action 8: `lna_chain_t` (input section + 6 tall stages, shunt built into stage 2) **124.0 × 63.5 µm, fits the 145.4 µm slot with 21.4 µm spare**; clean, LVS match. Extracted: +0.37 dB over today's U (tt / ss 10 °C), same stability edge (0.75 fF tt, 0.5 fF ss 10 °C added out → pad), own coupling 0 aF, output ~120 µm from the input. Open: move and re-pin log_det to the new tap positions; substrate solve.

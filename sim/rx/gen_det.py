@@ -17,6 +17,7 @@ source 'Vdet det 0') and build/det_<level>.npz (chips, timing).
     python sim/rx/gen_det.py --gain=-10.2 --nf=11.7 --tag=lo -88   (LNA low-gain strap: signal and noise both
                                                   --gain dB lower at the detector, NF --nf; files det_-88_lo.*;
                                                   set --gain so det noise-only matches noise_tran.sh VGLO=0)
+    python sim/rx/gen_det.py --shift=-3.8 --tag=old --seed=6 -92   (another SHIFT_DB, same noise as without it)
 """
 import os
 import sys
@@ -44,7 +45,7 @@ def det_curve():
     return rows[:, 0], rows[:, 1]
 
 
-def main(levels, seed=42, gap_ms=None, strong=-10.0, gain=0.0, nf=NF_DB, tag=''):
+def main(levels, seed=42, gap_ms=None, strong=-10.0, gain=0.0, nf=NF_DB, tag='', shift=SHIFT_DB):
     chips = gold(CODE).astype(bool)
     burst = np.repeat(chips, SPC)
     on = np.concatenate([np.zeros(LEAD, bool), burst, np.zeros(TAIL, bool)])
@@ -69,10 +70,10 @@ def main(levels, seed=42, gap_ms=None, strong=-10.0, gain=0.0, nf=NF_DB, tag='')
                      1j * rng.standard_normal(len(s), dtype=np.float32)) * np.float32(np.sqrt(n_var / 2))
             p[i:i + len(seg)] = rxm.block_mean(np.abs(x) ** 2, up)
         dbm = 10 * np.log10(p) + 30
-        v = np.interp(dbm + SHIFT_DB + gain, pin, vdet)
+        v = np.interp(dbm + shift + gain, pin, vdet)
         t = np.arange(len(v)) / R
         with open(os.path.join(ROOT, 'build', f'det_{name}.inc'), 'w') as fh:
-            fh.write(f'* detector waveform, {lvl} dBm, code 0x{CODE:02X}, NF {nf} dB / {B_RF/1e6:.0f} MHz, gain {gain:+g} dB\n')
+            fh.write(f'* detector waveform, {lvl} dBm, code 0x{CODE:02X}, NF {nf} dB / {B_RF/1e6:.0f} MHz, gain {gain:+g} dB, shift {shift:+g} dB\n')
             fh.write('Vdet det 0 pwl(\n')
             for k in range(0, len(t), 8):
                 fh.write('+ ' + ' '.join(f'{t[j]:.6e} {v[j]:.6f}' for j in range(k, min(k + 8, len(t)))) + '\n')
@@ -89,4 +90,4 @@ if __name__ == '__main__':
     opt = dict(a[2:].split('=') for a in sys.argv[1:] if a.startswith('--') and '=' in a)
     main([float(a) for a in sys.argv[1:] if not a.startswith('--')] or [-94, -70], int(opt.get('seed', 42)),
          float(opt['overload']) if 'overload' in opt else None, float(opt.get('strong', -10)),
-         float(opt.get('gain', 0)), float(opt.get('nf', NF_DB)), opt.get('tag', ''))
+         float(opt.get('gain', 0)), float(opt.get('nf', NF_DB)), opt.get('tag', ''), float(opt.get('shift', SHIFT_DB)))

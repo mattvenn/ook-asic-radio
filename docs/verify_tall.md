@@ -546,6 +546,41 @@ Overload (weak-burst event after a −10 dBm burst, ms):
 
 Identical (finding #13 as restated 2026-11-06: ~2–3 dB desensitisation for ~1 ms, no dead time).
 
+### Full gain after the `SHIFT_DB` recalibration (2026-11-20/21)
+
+`gen_det.py`'s `SHIFT_DB` went from −3.8 to −5.01 dB (commit 3c7ea1e), so the mixed bench's noise-only det sits at the
+fixed-noise schematic level, 1.44973 V instead of 1.438 V: +11.6 mV of DC level, the same swing (the detector curve is
+straight in dB here). The comparator's common mode moves with it, so the full-gain set above was rerun
+(`sim/rerun/jobs_shift_ab.py`, which is `jobs_shift.py` plus the check below; 118 jobs, 0 failed, sim-0, logs
+`build/rerun_shift/logs/`). The first run of `jobs_shift.py` was lost with its pod; this is a full rerun.
+
+| Level | Before (table above) | Recalibrated | |
+|---|---|---|---|
+| −70 / −90 dBm | detect | detect | PASS |
+| −92 sch, 5 seeds | 5/5 | 3/5 (s4, s5 miss) | see the paired check |
+| −92 pex, base + 5 seeds | 6/6 | **6/6** | PASS |
+| −94 sch / pex (information) | 3/6 / 3/6 | 2/6 / 3/6 (pex base, s1, s3) | statistics of 6 |
+| −70 trim bits swapped | PIN ORDER PROBLEM | PIN ORDER PROBLEM | PASS |
+| Pin order, every other run | OK | OK | PASS |
+| Overload gaps | 0.3 / 0.4 / 0.5 ms missed | 0.3 / 0.4 ms missed, 0.5 ms detected | PASS (0.5 ms is at threshold) |
+
+Paired check: 3/5 at −92 dBm on the schematic baseband can be chance (best correlator scores 93–106 against 97), so 20
+more seeds (6–25) at −92 and −94 dBm were run with the new and the old `SHIFT_DB` on the same noise (`gen_det.py
+--shift=`, tags `new` / `old`; 80 runs, 2.2 min each), read with `sim/mixed/replay_corr.py` (which agrees with the
+simulated event pin in 80/80):
+
+| | −92 new | −92 old | −94 new | −94 old |
+|---|---|---|---|---|
+| Detected as simulated | 18/20 | 19/20 | 6/20 | 9/20 |
+| Over burst timing | **95 %** | 98 % | **40 %** | 55 % |
+| Best score over the 8 offsets, old − new | | +0.45 ± 0.55 | | +1.35 ± 0.45 (old higher in 13/20, lower in 3) |
+
+The recalibration costs a little at the edge: at −94 dBm about 1.35 score points (~3σ), and the score falls ~3 points
+per dB between −92 and −94 dBm, so **~0.4 dB**. At −92 dBm the difference is within the scatter. The old `SHIFT_DB`
+put det 11.6 mV below where the transistor-level detector sits, so the earlier schematic-baseband numbers were ~0.4 dB
+optimistic. Nothing changes in the conclusions: **−92 dBm holds (95 % over burst timing schematic, 6/6 extracted),
+−94 dBm stays a best case.** Low gain was not rerun: its det moves by 1.1 mV (`sim/rx/lo_gain.py`'s notes).
+
 Low gain, schematic det model (`gen_det.py --gain` −12.21 dB, reference −12.26), schematic baseband. Detected as
 simulated, then over burst timing by `sim/mixed/replay_corr.py` (RTL phases and one sample later; the replay agrees
 with the simulated event pin in 70/70 runs):
