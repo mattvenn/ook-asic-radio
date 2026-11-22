@@ -11,5 +11,7 @@ PRE=
 # 2026.05 image's 8.3.642; 8.3.684 drops node-to-substrate C from ext2spice output)
 if [ -n "${OSIC_MAGIC:-}" ]; then PRE="export PATH=$OSIC_MAGIC:\$PATH; "; fi
 if [ -n "${OSIC_PDK_ROOT:-}" ]; then PRE="${PRE}export PDK_ROOT=$OSIC_PDK_ROOT PDKPATH=$OSIC_PDK_ROOT/sky130A; "; fi
-exec env -u FOSS_INIT_DONE -u PDKPATH -u SPICE_USERINIT_DIR -u KLAYOUT_PATH -u STD_CELL_LIBRARY \
+# exit with the command's status, not grep's (grep's hid failures, 2026-11-22)
+env -u FOSS_INIT_DONE -u PDKPATH -u SPICE_USERINIT_DIR -u KLAYOUT_PATH -u STD_CELL_LIBRARY \
   PDK=sky130A bash -lc "$PRE$(printf '%q ' "$@")" 2>&1 | grep -v '^\[INFO\]'
+exit "${PIPESTATUS[0]}"

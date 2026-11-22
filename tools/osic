@@ -17,6 +17,8 @@ esac
 # with the tracked one at the repo root
 repo=$(cd "$(dirname "$0")/.." && pwd -P)
 [ -d "$repo/build" ] && cp "$repo/.spiceinit" "$repo/build/.spiceinit"
-exec docker run --rm -i --user "$(id -u):$(id -g)" \
+# exit with the command's status, not grep's (grep's hid failures, 2026-11-22)
+docker run --rm -i --user "$(id -u):$(id -g)" \
   -v "$HOST_ROOT:/foss/designs" -e PDK=sky130A -w "$inner" \
   --entrypoint /bin/bash "$IMAGE" -lc "$(printf '%q ' "$@")" 2>&1 | grep -v '^\[INFO\]'
+exit "${PIPESTATUS[0]}"

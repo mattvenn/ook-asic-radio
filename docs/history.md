@@ -3,6 +3,26 @@
 Moved out of STATUS.md (2026-10-08) to keep the start-up read short. Sections are in the order they were
 written; grep for the block or topic you need.
 
+## 2026-11-22: `tools/osic` exit status fixed, tall-cell GDS drift explained
+
+STATUS.md open item 4 as it stood:
+
+**`tools/osic` lost the exit status** (found 2026-11-22): `tools/osic-inimage` pipes the command through
+`grep -v '^\[INFO\]'`, so the caller gets grep's status. A failing command looks like success, e.g. the layout
+generators running without `build/pyold` (below). Fix with `pipefail` / `PIPESTATUS`, but check first which job
+files rely on a tolerated failure (most already add `; true`). Not changed while a scheduler run used it.
+- Resolved the same day: the tall-chain generators "not reproducing their GDS" was this pod missing `build/pyold`
+  (gdsfactory 8.5.0 for the pcells). On the image's 9.x some pcell edges round to the other side of the 5 nm grid.
+  With 8.5.0 every tall cell regenerates XOR 0 at HEAD. `lay.py` now refuses to run without it and
+  `tools/pod_setup.sh` installs it ([docs/layout.md](docs/layout.md) step 1).
+
+Fixed the same day: `tools/osic`, `tools/osic-mac` and `tools/osic-inimage` no longer `exec` into the pipe; they
+run it and `exit "${PIPESTATUS[0]}"`. Checked: `true` 0, `false` 1, `exit 3` 3, a command with no output keeps its
+status, `[INFO]` lines are still filtered, and a layout generator without `build/pyold` now exits 1. Callers that
+tolerate failure were checked first: every mixed-signal job wraps its ngspice (which exits 1 after a cosim run) in
+`; true`, and the `subprocess.run` calls in the testbench scripts don't check the status. Old job files whose
+`tools/osic ... && <check>` chains used to carry on after a failing step now stop there, which is what they meant.
+
 ## STATUS.md as it stood on 2026-11-21 (moved here 2026-11-22)
 
 The "Start here" log and the state summary from 2026-10-08 to 2026-11-21, kept as they were. Pin numbers, the U chain

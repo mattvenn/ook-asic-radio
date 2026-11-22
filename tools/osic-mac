@@ -16,6 +16,8 @@ PDKARGS=(); PRE=
 if [ -n "${OSIC_PDK_ROOT:-}" ]; then
   PDKARGS=(-v "$OSIC_PDK_ROOT:/pdkci:ro"); PRE='export PDK_ROOT=/pdkci PDKPATH=/pdkci/sky130A; '
 fi
-exec docker run --rm -i -v "$REPO:$REPO" -v /Users/mattvenn/asic/.designinit:/foss/designs/.designinit:ro "${PDKARGS[@]}" \
+# exit with the command's status, not grep's (grep's hid failures, 2026-11-22)
+docker run --rm -i -v "$REPO:$REPO" -v /Users/mattvenn/asic/.designinit:/foss/designs/.designinit:ro "${PDKARGS[@]}" \
   -e PDK=sky130A -w "$REPO" --entrypoint /bin/bash hpretl/iic-osic-tools:2026.05 -lc "$PRE$(printf '%q ' "$@")" 2>&1 \
   | grep -v '^\[INFO\]'
+exit "${PIPESTATUS[0]}"

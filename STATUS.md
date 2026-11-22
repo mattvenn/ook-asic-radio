@@ -46,15 +46,7 @@ design: **TODO.md**. Repo: github.com/mattvenn/ook-asic-radio (`main`, the only 
    (Matt, 2026-11-22). The explainer stays at −92 dBm / 80 m for now (Matt's call); `info.yaml` Matt will update.
 2. **TT submission:** mark the project as dangerous; RX adapter board; EM chamber booking (TODO.md).
 3. **After any layout change:** `layout/export_tt.sh`, push, and the GitHub `gds` action (TT precheck) must pass.
-4. **`tools/osic` on the pod loses the exit status** (found 2026-11-22): `tools/osic-inimage` pipes the command through
-   `grep -v '^\[INFO\]'`, so the caller gets grep's status. A failing command looks like success, e.g. the layout
-   generators running without `build/pyold` (below). Fix with `pipefail` / `PIPESTATUS`, but check first which job
-   files rely on a tolerated failure (most already add `; true`). Not changed while a scheduler run used it.
-   - Resolved the same day: the tall-chain generators "not reproducing their GDS" was this pod missing `build/pyold`
-     (gdsfactory 8.5.0 for the pcells). On the image's 9.x some pcell edges round to the other side of the 5 nm grid.
-     With 8.5.0 every tall cell regenerates XOR 0 at HEAD. `lay.py` now refuses to run without it and
-     `tools/pod_setup.sh` installs it ([docs/layout.md](docs/layout.md) step 1).
-5. Not blocking, from before the tall chain (check they still apply before acting): the macro's max-slew warnings
+4. Not blocking, from before the tall chain (check they still apply before acting): the macro's max-slew warnings
    (marginal, mostly ss); layout compromises for Matt to sign off (decap as laid out ~43 pF VAPWR / 11 pF VDPWR
    against 50 / 30 targets, `sc_phi` 10–20 µm from the avg / comp inputs, det / lpf not shielded).
 
@@ -74,7 +66,7 @@ radios), wire-as-matching antenna, SDR bench tests, the tunable TX ring
   session transcripts (`prompts.md`).
 
 ## How to run things
-- **sim-0** (k8s pod inside the image, no docker): on a new pod run `bash tools/pod_setup.sh` first (git identity + push via `$GITHUB_TOKEN` from the pod spec, magic 8.3.642, pyvisa; prints the CPU quota). `tools/osic` / `tools/osic-mac` run commands directly via `tools/osic-inimage`; system `python3` has numpy and cocotb. The pod has 28 CPUs / 64 GB: **the threads of all running ngspice add up to ≤ 28** (tile-pex decks up to 3 at once at 8 threads; small decks single-threaded, up to ~24). Long batches: `sim/rerun/sched.py`. Check `/sys/fs/cgroup/cpu.max` on a new pod. Extract with magic 8.3.642: `OSIC_MAGIC=$HOME/.local/magic642/bin tools/osic bash layout/pex.sh <block>` (the image's 8.3.684 drops substrate C).
+- **sim-0** (k8s pod inside the image, no docker): on a new pod run `bash tools/pod_setup.sh` first (git identity + push via `$GITHUB_TOKEN` from the pod spec, magic 8.3.642, pyvisa; prints the CPU quota). `tools/osic` / `tools/osic-mac` run commands directly via `tools/osic-inimage`; system `python3` has numpy and cocotb. The pod has 28 CPUs / 64 GB: **the threads of all running ngspice add up to ≤ 28** (tile-pex decks up to 3 at once at 8 threads; small decks single-threaded, up to ~24). Long batches: `sim/rerun/sched.py`. `tools/osic` returns the command's own exit status (since 2026-11-22; before, it was grep's and failures looked like success). Check `/sys/fs/cgroup/cpu.max` on a new pod. Extract with magic 8.3.642: `OSIC_MAGIC=$HOME/.local/magic642/bin tools/osic bash layout/pex.sh <block>` (the image's 8.3.684 drops substrate C).
 - cocotb: `cd verilog/test && PATH=$HOME/work/asic-workshop/venv/bin:/usr/bin:/bin make` (~12 min); gate level: add `GL=1 SIM_BUILD=sim_build_gl COCOTB_RESULTS_FILE=results_gl.xml` (~35 min; the default netlist is `macros/radio_digital/radio_digital.nl.v`). On the Mac: `tools/osic-mac bash -c 'cd verilog/test && make COCOTB_CONFIG=cocotb-config ...'` (RTL ~8 min, GL ~17 min). Run it as `bash -c 'cd verilog/test && …'`: `make -C` breaks the Makefile's `$(PWD)`, and a backgrounded `cd` may not stick. With the login PATH, oss-cad-suite's python (no numpy) gets picked up and the run dies at import. `COCOTB_TEST_FILTER` takes one test name (a `|` alternative matched nothing).
 - Generators: `python3 xschem/gen/<x>.py`. Netlist: `tools/osic bash -c 'xschem -n -s -q -o build xschem/<tb>.sch'` (grep the netlist for `IS MISSING`).
 - Simulate in `build/` via `tools/osic`. Analysis/plots: `~/work/asic-workshop/venv/bin/python` (system python has no numpy).
