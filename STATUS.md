@@ -42,8 +42,8 @@ design: **TODO.md**. Repo: github.com/mattvenn/ook-asic-radio (`main`, the only 
 
 ## Open
 
-1. **Public numbers:** README, `docs/info.md`, `docs/how_it_works.md` and the explainer still say −92 dBm and about
-   80 m. With device noise it's −90 dBm reliable and about 70 m (Matt to decide, 2026-11-22).
+1. **Public numbers:** README, `docs/info.md` and `docs/how_it_works.md` updated to −90 dBm reliable and about 70 m
+   (Matt, 2026-11-22). The explainer stays at −92 dBm / 80 m for now (Matt's call); `info.yaml` Matt will update.
 2. **TT submission:** mark the project as dangerous; RX adapter board; EM chamber booking (TODO.md).
 3. **After any layout change:** `layout/export_tt.sh`, push, and the GitHub `gds` action (TT precheck) must pass.
 4. **`tools/osic` on the pod loses the exit status** (found 2026-11-22): `tools/osic-inimage` pipes the command through

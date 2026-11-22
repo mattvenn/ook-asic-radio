@@ -21,14 +21,14 @@ The transmitter switches a 433 MHz carrier on and off, and that is all it does. 
 
 Because of that, the transmitter needs no crystal or PLL. It is a free-running ring of inverters, and if it lands anywhere in 330–560 MHz the receiver still works. 433 MHz was chosen for its ecosystem: cheap SDRs, `rtl_433`, and garage remotes as test signals.
 
-**dBm** is power on a log scale: 0 dBm = 1 mW, and every −10 dB is 10× less power (−30 dBm = 1 µW). Voltage changes more slowly: −20 dB is 10× less voltage. The transmitter puts out about +4 dBm. At 1 m the receiver sees about −32 dBm (the bench measurement, −44 dBm with the old 1.8 V transmitter, plus the new one's 12 dB), and it can still detect a signal at about −92 dBm. That is 60 dB lower: a million times less power, or 1,000× less voltage. On the same path model that is about 80 m.
+**dBm** is power on a log scale: 0 dBm = 1 mW, and every −10 dB is 10× less power (−30 dBm = 1 µW). Voltage changes more slowly: −20 dB is 10× less voltage. The transmitter puts out about +4 dBm. At 1 m the receiver sees about −32 dBm (the bench measurement, −44 dBm with the old 1.8 V transmitter, plus the new one's 12 dB), and it can still reliably detect a signal at about −90 dBm. That is about 60 dB lower: a million times less power, or 1,000× less voltage. On the same path model that is about 70 m.
 
 ### Finding a signal weaker than the noise
 Near the sensitivity limit, "carrier on" moves the detector output by only ~1 mV, and the noise is about as large. A single on/off decision there is barely better than a coin flip. So we don't send single bits:
 
 - Each 7-bit code (DIP switches) selects a **[Gold code](https://en.wikipedia.org/wiki/Gold_code)**: a fixed, noise-like pattern of 127 on/off slots called *chips*. One chip is 104 µs, so one burst is 13.2 ms.
 - The receiver makes one 1-bit decision per chip and compares the last 127 decisions with its own code's pattern. The **score** is how many match. Chance gives ~64 out of 127; **≥ 97 counts as a detection** (6σ above chance).
-- At −92 dBm the comparator is right only ~80 % of the time, but that is still enough to score ~104.
+- Near the limit (−92 dBm in the older model) the comparator is right only ~80 % of the time, but that is still enough to score ~104.
 - The TX sends the burst 3 times. The RX toggles the LED only if 2 of the 3 bursts arrive with the right spacing, then ignores the code for ~1 s. Other codes, remote controls and noise don't toggle it.
 
 ### Where the threshold goes
@@ -90,14 +90,14 @@ None of this has been measured on this chip yet: see [bringup.md](bringup.md).
 
 | Spec | Value | From |
 |---|---|---|
-| Sensitivity, at the pins | −92 dBm | Mixed-signal on the tall chain: 95 % over burst timing on the schematic baseband, 6/6 extracted, after the `SHIFT_DB` recalibration ([verify_tall.md](verify_tall.md)). Device noise in transient suggests ~1.5 dB worse (same report, §5); being checked |
+| Sensitivity, at the pins | −90 dBm reliable, 50 % at ~−92.3 dBm | Mixed-signal on the tall chain, schematic baseband, with the detector model fitted to transistor-level device-noise runs, 20 seeds per level ([verify_tall.md](verify_tall.md) §5). The earlier model with an assumed NF of 11 dB gave −92 dBm reliable (95 %, and 6/6 extracted), ~1.5–2 dB optimistic |
 | | for ≥ 99 % of chips at every 1.8 V corner, 10–50 °C | Schematic Monte Carlo of the comparator alone (200 mismatch samples per corner); each sample's trim step mapped to dBm with the model. Not extracted ([verify_supply_mc.md](verify_supply_mc.md) "Trim redesign candidates") |
 | | −94 dBm about half the time on a typical chip | Model (27/48 sends) and mixed-signal (2/6) |
 | | −90 dBm at 85 °C (outside the verified range) | Schematic ([verify_system_2.md](verify_system_2.md)) |
 | Input band | 330–560 MHz, covering the TX ring's spread | Schematic (chain gain) |
 | Input impedance | **Not matched.** Each input sees a 2 pF coupling capacitor into stage 1's gate, biased through 20 kΩ to vcm, behind the pad, ESD and TT analog mux: high impedance and mostly capacitive, not the ~100 Ω differential a dipole or a 50 Ω cable expects. The ~11 dB noise figure is quoted against a 73 Ω source, so it already includes the effect of the mismatch. No band-pass either: the chain hears everything in 330–560 MHz and is only weakly filtered outside it (pad roll-off, coupling-cap high-pass) | Design; pad model rough ([review_harald_2026-11-13.md](review_harald_2026-11-13.md) points 1–2) |
 | Chain gain at 434 MHz | 73–81 dB over corners and temperature (76.7 nominal) | Schematic; each extracted stage is 0.2–0.45 dB below its schematic. The low-gain shunt (off) costs a further 0.65–0.8 dB extracted |
-| Low-gain strap (`uio[7:4]` = `1011` at reset) | 10.1–11.9 dB less chain gain (sf to tt); NF +0.4–1.0 dB; sensitivity reliable at ~−86 dBm, 50 % at ~−89 (vs −92) | Full GDS extraction (gain; the block extraction gives 8.5–11.1 dB), extracted chain (NF), mixed signal (sensitivity, [verify_lna_lo.md](verify_lna_lo.md)). The chain then tolerates ~2.5× the out → in coupling before it oscillates (1–2 fF at ss 10 °C vs 0.5–1 fF) ([handoff_lna_lo.md](archive/handoff_lna_lo.md)) |
+| Low-gain strap (`uio[7:4]` = `1011` at reset) | 10.1–11.9 dB less chain gain (sf to tt); NF +0.4–1.0 dB; sensitivity reliable at ~−86 dBm, 50 % at ~−89 (vs −92 on the same, older model; expect ~1.5–2 dB worse with device noise) | Full GDS extraction (gain; the block extraction gives 8.5–11.1 dB), extracted chain (NF), mixed signal (sensitivity, [verify_lna_lo.md](verify_lna_lo.md)). The chain then tolerates ~2.5× the out → in coupling before it oscillates (1–2 fF at ss 10 °C vs 0.5–1 fF) ([handoff_lna_lo.md](archive/handoff_lna_lo.md)) |
 | Noise figure | 9.4–12 dB | Schematic |
 | Detector slope | 10–14 mV per dB, falling with power, over ~70 dB | Schematic |
 | Detector at idle | 1.49 V | Extracted (1.50–1.54 V schematic corners) |
@@ -117,7 +117,7 @@ None of this has been measured on this chip yet: see [bringup.md](bringup.md).
 | One send | 3 bursts, each followed by 64 off chips: 59.6 ms | RTL |
 | Detection | score ≥ 97 of 127 chips, 2 of the 3 bursts at the right spacing; then the code is ignored for ~1 s | RTL |
 | Signal at 1 m | ~−32 dBm | Bench path loss (−44 dBm at 1 m with the old 1.8 V ring) + 12 dB for the new TX |
-| Range | ~80 m, line of sight | Estimate: −92 dBm sensitivity on the bench path loss (1/d^1.89) |
+| Range | ~70 m, line of sight | Estimate: −90 dBm sensitivity on the bench path loss (1/d^1.89, measured to 4 m), then the two-ray ground-reflection model (boards 1 m up) |
 | With fading (±10 dB) | every send gets through down to −90 dBm | Model |
 | False toggles | 0 | Model |
 | Raw mode (RP2350 data) | a few kbps, DC-balanced coding (Manchester) | Estimate from the filter and the average time constant |
@@ -171,7 +171,7 @@ Left: gain to each stage output, peaking around 433 MHz. Middle: rejection of co
 At −70 dBm (fully joined transistor-level run): the detector output, then the filtered signal crossing the slow average, then the comparator output.
 ![RX at -70 dBm](../sim/plots/rx_joined.png)
 
-At −92 dBm the signal is buried in noise. Here the real RTL servo drives the real DAC and comparator: the trim code settles and dithers, and the burst is still detected.
+At −92 dBm (older noise model) the signal is buried in noise. Here the real RTL servo drives the real DAC and comparator: the trim code settles and dithers, and the burst is still detected.
 ![RX at -92 dBm](../sim/plots/mixed_-92.png)
 
 ### Support

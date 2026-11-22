@@ -4,7 +4,7 @@ This file is used to generate your project datasheet.
 
 ## How it works
 
-A 433 MHz on-off-keyed (OOK) radio. Two boards running this project talk to each other using bare-wire dipole antennas and no other external parts. The estimated range is about 80 m in good conditions; it hasn't been measured yet.
+A 433 MHz on-off-keyed (OOK) radio. Two boards running this project talk to each other using bare-wire dipole antennas and no other external parts. The estimated range is about 70 m in good conditions; it hasn't been measured yet.
 
 This project was designed with an AI agent (Claude) doing most of the work, with Matt Venn setting the direction, checking it and signing off ([made with Claude](https://claude.com/claude-code)). The design log and session transcripts are in the repo.
 
@@ -15,7 +15,7 @@ This project was designed with an AI agent (Claude) doing most of the work, with
 In brief:
 
 - **TX:** an on-chip ring oscillator (~433 MHz) is keyed on and off with a 127-chip Gold code chosen by the 7 DIP switches. The burst is sent three times, by antiphase drivers into a dipole on `ua[4]` / `ua[5]` (about +3 dBm).
-- **RX:** a differential amplifier chain on `ua[3]` / `ua[2]` feeds a log detector and a self-trimming comparator. The digital logic correlates the comparator bits against the RX's own code. When it hears 2 of the 3 bursts, it toggles the decimal-point LED. Simulated sensitivity is about −92 dBm.
+- **RX:** a differential amplifier chain on `ua[3]` / `ua[2]` feeds a log detector and a self-trimming comparator. The digital logic correlates the comparator bits against the RX's own code. When it hears 2 of the 3 bursts, it toggles the decimal-point LED. Simulated sensitivity is about −90 dBm (reliable detection, including the transistors' own noise).
 
 More detail, all in the [project repository](https://github.com/mattvenn/ook-asic-radio):
 

@@ -7,7 +7,7 @@
 Two boards with the same chip talk to each other over the air. Each one has two bare wires for an antenna and no other
 external parts. The transmitter keys an on-chip oscillator on and off (on-off keying, OOK) with a code set on 7 DIP
 switches. The receiver amplifies what the antenna picks up by about 80 dB, turns it into a stream of bits and looks for
-the same code. When it hears it, it toggles an LED. The estimated range is about 80 m in good conditions; it hasn't
+the same code. When it hears it, it toggles an LED. The estimated range is about 70 m in good conditions; it hasn't
 been measured yet.
 
 The chip is a [Tiny Tapeout](https://tinytapeout.com) project: six tiles (3 × 2) of a shared chip on the SkyWater
@@ -90,8 +90,10 @@ from the Python model in [model/](model/), formal and equivalence checks in [for
 
 - [docs/verification.md](docs/verification.md): how every check is run, with links to the results.
 - [docs/verify_tall.md](docs/verify_tall.md): the latest full re-verification of the extracted design.
-- Simulated receiver sensitivity is −92 dBm (full gain, typical); a newer device-noise simulation suggests it may be
-  about 1.5 dB worse, which is being checked.
+- Simulated receiver sensitivity (full gain, typical chip, including the transistors' own noise): reliable detection at
+  −90 dBm, half the sends detected at about −92.3 dBm. The earlier figure of −92 dBm reliable came from a model with an
+  assumed noise figure, which turned out ~1.5–2 dB optimistic
+  ([verify_tall.md, "Device noise in the mixed bench"](docs/verify_tall.md#device-noise-in-the-mixed-bench-action-13-follow-up-2026-11-22)).
 
 ## Bring-up
 
