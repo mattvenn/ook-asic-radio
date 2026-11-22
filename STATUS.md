@@ -47,7 +47,14 @@ design: **TODO.md**. Repo: github.com/mattvenn/ook-asic-radio (`main`, the only 
    cost directly (TODO.md).
 2. **TT submission:** mark the project as dangerous; RX adapter board; EM chamber booking (TODO.md).
 3. **After any layout change:** `layout/export_tt.sh`, push, and the GitHub `gds` action (TT precheck) must pass.
-4. Not blocking, from before the tall chain (check they still apply before acting): the macro's max-slew warnings
+4. **The tall-chain generators no longer reproduce their committed GDS** (found 2026-11-22). Rerunning
+   `layout/gen/amp_dp_tall.py`, `amp_dpc_tall.py`, `log_det_tall.py`, `lna_chain_tall.py` or `rx_tall.py` gives
+   extra met1 / met2 / layer 95 shapes against `layout/*_t.gds` (e.g. `amp_dp_t` 0.08 / 0.04 / 0.03 µm²
+   met1 / met2 / 95). It was already like that before the 2026-11-22 cleanup. Likely cause: a shared `lay.py` change after the via-array
+   work (`flare(outline=)`, 32c2bc7) without regenerating the cells. The committed GDS and the tile are fine;
+   the risk is a regenerated cell coming out different unnoticed. Before regenerating any tall cell: find which
+   shapes differ and why, then either fix the generator or regenerate and re-verify.
+5. Not blocking, from before the tall chain (check they still apply before acting): the macro's max-slew warnings
    (marginal, mostly ss); layout compromises for Matt to sign off (decap as laid out ~43 pF VAPWR / 11 pF VDPWR
    against 50 / 30 targets, `sc_phi` 10–20 µm from the avg / comp inputs, det / lpf not shielded).
 
