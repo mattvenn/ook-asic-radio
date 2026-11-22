@@ -97,7 +97,7 @@ change that. Demos should be cabled with attenuators, or done in a shielded room
 - 9–11: later, once 4–6 have reported.
 - 12 and up: only after any LNA changes are made.
 
-## Where it stands (2026-11-14)
+## Where it stands (2026-11-14, actions 12 and 13 updated 2026-11-22)
 
 | Action | State |
 |---|---|
@@ -110,7 +110,9 @@ change that. Demos should be cabled with attenuators, or done in a shielded room
 | 9 Local decap | Done (Matt). |
 | 10 60 dB option | Not doing it (Matt): the strap is the fallback. |
 | 11 Resistive-feedback input | Shelved. |
-| 12, 13 Long runners, 14 Adapter board, 15 EM chamber | On the to-do list ([TODO.md](../TODO.md)). 12 and 13 are due now that the LNA has changed, once the tile PEX is in. |
+| 12 Whole code through the extracted RX | Closed (Matt, 2026-11-20): not feasible (~22–27 days on sim-0), and its parts are covered by the joined schematic RX, the extracted CW drop, the extracted-tile noisy pair and the mixed runs on the extracted baseband ([TODO.md](../TODO.md)). |
+| 13 Transient noise | Done 2026-11-21 in ngspice, not VACASK (VACASK can't read the sky130 ngspice models without a parser build that wasn't possible on sim-0): each noisy device gets its own PWL noise source sized from `.noise` (`sim/noise/`). **Device noise hurts more than the workaround:** ~0.9 dB more than the same NF injected at the antenna (noise from inside the chain skips the input network's band shape), and ngspice's NF 11.0 left out all 1/f (a NaN in the pad switch): real NF 11.6 dB thermal, 12.5 dB with 1/f. Sensitivity is probably ~1.5 dB (up to ~2 dB) worse than the mixed bench says. [verify_tall.md](verify_tall.md) §5 "Device noise in transient". Follow-up on [TODO.md](../TODO.md): recalibrate the mixed bench to it. |
+| 14 Adapter board, 15 EM chamber | On the to-do list ([TODO.md](../TODO.md)). |
 | Point 10 Comparator (more differential, push-pull) | Shelved (Matt, 2026-11-14). |
 | Point 11 Multiple vias | Rule in `docs/layout.md` "Checklist" (flared junction with a via array, Matt's sketch); sweep of every block and the tile handed off: branch `via-arrays`, [handoff_via_arrays.md](archive/handoff_via_arrays.md). |
 

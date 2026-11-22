@@ -2,8 +2,8 @@
 
 xschem/tb_logdet.sch (pad models, 6-stage chain, log_det, ideal bias), no noise, no CM interference
 (vcmi 0). One ngspice per level and view, single-threaded, in parallel: det averaged over the last
-200 ns of 1 us, minus the same run with no signal. --pex swaps in layout/pex/lna_chain.spice and
-layout/pex/log_det.spice.
+200 ns of 1 us, minus the same run with no signal. the extracted view swaps in layout/pex/lna_chain.spice and
+layout/pex/log_det.spice (the U chain, removed 2026-11-22: use --rx).
 
     python3 sim/chain/cw_drop.py [--corner=tt] [--jobs=10] [--blocks=lna_chain,log_det | --rx] [--levels=-90]
 --rx: the extracted rx_t (layout/pex/rx_t.spice: chain + detector + tap wiring) in place of both blocks.
@@ -93,6 +93,8 @@ if __name__ == '__main__':
         subprocess.run([sys.executable, os.path.join(HERE, 'mk_pex_rx.py'), f0, f1], cwd=ROOT, check=True)
         RXSRC.append(open(f1).read())
         BLOCKS[:] = ['rx_t']
+    elif True in views and not all(os.path.exists(os.path.join(ROOT, 'layout', 'pex', b + '.spice')) for b in BLOCKS):
+        sys.exit(f'--blocks: {", ".join(BLOCKS)}: the U chain extractions were removed on 2026-11-22 (git history has them: git show 36ebdcd:layout/pex/<file>); use --rx')
     tasks = [(src, pex, lvl, corner) for pex in views for lvl in LEVELS]
     with ThreadPoolExecutor(jobs) as ex:
         res = list(ex.map(one, tasks))

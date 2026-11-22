@@ -6,7 +6,7 @@ differentially (1 V AC); outputs loaded by a schematic amp_dpc (stage 2). Measur
 differential output: gain at 434 MHz, peak gain and where, the -3 dB corner, the AC
 imbalance |v(outp) + v(outn)| / |v(outp) - v(outn)| at 434 MHz; op: output CM, supply
 current.
---pex swaps in layout/pex/amp_dp.spice (layout/pex.sh amp_dp).
+--pex swaps in layout/pex/amp_dp_t.spice (the tall cell, layout/pex.sh amp_dp_t; the U chain's amp_dp.spice was removed 2026-11-22).
 --pex-file=<path> swaps in another extraction instead (e.g. layout/pex/amp_dp_t.spice, the tall
 cell; its .subckt name is read from the file). --temp=<C> sets the temperature (default 27).
 --fingers writes the schematic's pair and tail as separate nf=1 fingers (as drawn and as
@@ -63,7 +63,7 @@ def subckt(cell, name, prm, fingers=False):
 
 def deck(corner, mode):
     pex = mode == 'pex'
-    pf = PEXFILE or os.path.join(ROOT, 'layout', 'pex', 'amp_dp.spice')
+    pf = PEXFILE or os.path.join(ROOT, 'layout', 'pex', 'amp_dp_t.spice')
     pdut = re.search(r'^\.subckt (\S+)', open(pf).read(), re.M).group(1) if pex else ''
     dut = pdut if pex else 'amp_dp_sch'
     return f"""* tb_amp_dp ({mode}), {corner}

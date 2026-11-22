@@ -1,4 +1,5 @@
-# usage: python3 sim/chain/mk_pex_tb.py build/real/tb_chain.spice layout/pex/lna_chain.spice build/pexsim/tb_chain.spice
+# usage: python3 sim/chain/mk_pex_tb.py build/real/tb_chain.spice <extracted lna_chain subckt> build/pexsim/tb_chain.spice
+# (today: layout/pex/lna_chain_t.spice renamed to lna_chain, as sim/rerun/jobs_tall.py does)
 # tb_chain.spice with the lna_chain subckt replaced by the extracted one (layout/pex/lna_chain.spice)
 import re, sys
 src, pex, out = sys.argv[1:4]

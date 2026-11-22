@@ -30,6 +30,8 @@ VLO = 1.8        # lna_lo_n: 1.8 full gain, --lo: 0 (the shunt on)
 
 
 def dut(kind):
+    if kind != 'strip' and not os.path.exists(os.path.join(PEX, 'lna_chain.spice' if kind == 'u' else 'amp_dp.spice')):
+        sys.exit(f'{kind}: the U chain extractions were removed on 2026-11-22 (git history has them: git show 36ebdcd:layout/pex/<file>)')
     if kind == 'strip':
         # with the shunt built into stage 2 (amp_dpc_ts) the strip has an lna_lo_n port
         hdr = re.search(r'^\.subckt chain_strip_t ([^\n]*)', open(os.path.join(PEX, 'chain_strip_t.spice')).read(), re.M).group(1)

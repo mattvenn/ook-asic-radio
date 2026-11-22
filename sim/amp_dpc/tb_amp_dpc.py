@@ -9,7 +9,7 @@ schematic copy of the next stage. Measures, on the differential output:
   - op: output common mode, supply current;
   - the AC imbalance at 434 MHz, |v(outp) + v(outn)| / |v(outp) - v(outn)|, which shows
     asymmetric parasitics (inn / outn cross the cell).
---pex swaps in layout/pex/amp_dpc.spice (layout/pex.sh amp_dpc).
+--pex swaps in layout/pex/amp_dpc_t.spice (the tall cell, layout/pex.sh amp_dpc_t; the U chain's amp_dpc.spice was removed 2026-11-22).
 --pex-file=<path> swaps in another extraction instead (e.g. layout/pex/amp_dpc_t.spice, the tall
 cell; its .subckt name is read from the file). --temp=<C> sets the temperature (default 27).
 --fingers writes the schematic's pair and tails as separate nf=1 fingers (as drawn and as
@@ -64,7 +64,7 @@ def subckt(name, fingers=False):
 
 def deck(corner, mode):
     pex = mode == 'pex'
-    pf = PEXFILE or os.path.join(ROOT, 'layout', 'pex', 'amp_dpc.spice')
+    pf = PEXFILE or os.path.join(ROOT, 'layout', 'pex', 'amp_dpc_t.spice')
     pdut = re.search(r'^\.subckt (\S+)', open(pf).read(), re.M).group(1) if pex else ''
     dut = pdut if pex else 'amp_dpc_x'
     return f"""* tb_amp_dpc ({mode}), {corner}

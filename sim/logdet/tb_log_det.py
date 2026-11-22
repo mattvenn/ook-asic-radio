@@ -3,7 +3,7 @@
 VDD 1.8, ibias_det 2 uA, taps t1..t5 quiet (inputs at 0 V: they're AC coupled), t6 driven
 differentially at 433.92 MHz with amplitude a (peak, each side +-a/2). det averaged over
 the last 100 ns of 600 ns, for a = 0 (idle), 1, 10, 100 mV.
---pex swaps in layout/pex/log_det.spice.
+--pex swaps in layout/pex/log_det.spice (the U chain's detector, removed 2026-11-22: use sim/chain/cw_drop.py --rx).
 
     python sim/logdet/tb_log_det.py [--pex] [corner]
 """
@@ -85,6 +85,9 @@ def run(corner, pex):
 if __name__ == '__main__':
     args = sys.argv[1:]
     pex = '--pex' in args
+    if pex and not os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../layout/pex/log_det.spice')):
+        sys.exit('--pex: layout/pex/log_det.spice was the U chain\'s detector, removed 2026-11-22 (git show 36ebdcd:layout/pex/log_det.spice). '
+                 'log_det_t has no extraction of its own: use sim/chain/cw_drop.py --rx.')
     corner = next((a for a in args if not a.startswith('-')), 'tt')
     r = run(corner, pex)
     idle = r['det_0']
