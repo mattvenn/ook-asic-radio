@@ -11,6 +11,8 @@ A 433 MHz on-off-keyed (OOK) radio. Two boards running this project talk to each
 - **TX:** an on-chip ring oscillator (~433 MHz) is keyed on and off with a 127-chip Gold code chosen by the 7 DIP switches. The burst is sent three times, by antiphase drivers into a dipole on `ua[4]` / `ua[5]`.
 - **RX:** a differential amplifier chain on `ua[3]` / `ua[2]` feeds a log detector and a self-trimming comparator. The digital logic correlates the comparator bits against the RX's own code. When it hears 2 of the 3 bursts, it toggles the decimal-point LED.
 
+More about this project on the Zero to ASIC Course site: [zerotoasiccourse.com/radio](https://zerotoasiccourse.com/radio).
+
 The full description covers theory, specs, schematics and layout: [docs/how_it_works.md](https://github.com/mattvenn/ook-asic-radio/blob/main/docs/how_it_works.md).
 
 ## How to test
