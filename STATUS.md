@@ -27,14 +27,13 @@ design: **TODO.md**. Repo: github.com/mattvenn/ook-asic-radio (`main`, the only 
 - **Last full re-verification: [docs/verify_tall.md](docs/verify_tall.md)** (2026-11-15/17, 442 jobs, all pass
   or accepted). Two accepted findings (Matt, 2026-11-18): the extracted RX is ~2 dB less sensitive than the old U
   chain (less risk of oscillation is worth it), and the full − low gain step is 7.6 dB at sf (block extraction).
-- **Sensitivity, full gain, tt:** −92 dBm is the quoted figure (95 % over burst timing on the schematic baseband,
-  6/6 extracted, after the `SHIFT_DB` recalibration, 2026-11-21); −94 dBm is a best case. Low gain: 50 % at about
-  −88.5 dBm.
-- **Device noise in transient (Harald's review action 13, 2026-11-21): those numbers are probably ~1.5 dB
-  optimistic** (up to ~2 dB with 1/f). Real NF is 11.6 dB thermal / 12.5 dB with 1/f, not ngspice's 11.0 (a NaN in
-  the pad switch drops 1/f), and noise from inside the chain costs ~0.9 dB more than the same NF injected at the
-  antenna. [docs/verify_tall.md](docs/verify_tall.md) §5 "Device noise in transient".
-- **Comparator mismatch:** H135 trim gives −92 dBm for ≥ 99 % of chips at every 1.8 V corner
+- **Sensitivity, full gain, tt: −90 dBm reliable, 50 % at about −92.3 dBm** with device noise (Harald's review action
+  13 and its follow-up, 2026-11-21/22: the mixed bench refitted to the transistor-level device-noise runs, 20 seeds,
+  schematic baseband; [docs/verify_tall.md](docs/verify_tall.md) §5 "Device noise in the mixed bench"). That is
+  ~1.5–2 dB worse than the −92 dBm reliable / −93.7 dBm 50 % quoted before, from the model with injected noise (NF 11).
+  With 1/f as an upper bound: reliable at −90, 50 % at about −91.1 dBm. Low gain (not rerun with device noise): 50 % at
+  about −88.5 dBm with the old model, so expect ~−87.
+- **Comparator mismatch:** H135 trim gives −92 dBm (the old model, before device noise) for ≥ 99 % of chips at every 1.8 V corner
   ([docs/verify_supply_mc.md](docs/verify_supply_mc.md)).
 - **Trim DAC drive:** accepted (Matt, 2026-11-12). If `radio_digital` is ever re-hardened, drive `trim_out[7:0]`
   with `buf_8` ([docs/verify_trim_dac.md](docs/verify_trim_dac.md)).
@@ -43,17 +42,18 @@ design: **TODO.md**. Repo: github.com/mattvenn/ook-asic-radio (`main`, the only 
 
 ## Open
 
-1. **Recalibrate `gen_det.py` to device noise** and rerun the −92 / −94 dBm paired check, to get the sensitivity
-   cost directly (TODO.md).
+1. **Public numbers:** README, `docs/info.md`, `docs/how_it_works.md` and the explainer still say −92 dBm and about
+   80 m. With device noise it's −90 dBm reliable and about 70 m (Matt to decide, 2026-11-22).
 2. **TT submission:** mark the project as dangerous; RX adapter board; EM chamber booking (TODO.md).
 3. **After any layout change:** `layout/export_tt.sh`, push, and the GitHub `gds` action (TT precheck) must pass.
-4. **The tall-chain generators no longer reproduce their committed GDS** (found 2026-11-22). Rerunning
-   `layout/gen/amp_dp_tall.py`, `amp_dpc_tall.py`, `log_det_tall.py`, `lna_chain_tall.py` or `rx_tall.py` gives
-   extra met1 / met2 / layer 95 shapes against `layout/*_t.gds` (e.g. `amp_dp_t` 0.08 / 0.04 / 0.03 µm²
-   met1 / met2 / 95). It was already like that before the 2026-11-22 cleanup. Likely cause: a shared `lay.py` change after the via-array
-   work (`flare(outline=)`, 32c2bc7) without regenerating the cells. The committed GDS and the tile are fine;
-   the risk is a regenerated cell coming out different unnoticed. Before regenerating any tall cell: find which
-   shapes differ and why, then either fix the generator or regenerate and re-verify.
+4. **`tools/osic` on the pod loses the exit status** (found 2026-11-22): `tools/osic-inimage` pipes the command through
+   `grep -v '^\[INFO\]'`, so the caller gets grep's status. A failing command looks like success, e.g. the layout
+   generators running without `build/pyold` (below). Fix with `pipefail` / `PIPESTATUS`, but check first which job
+   files rely on a tolerated failure (most already add `; true`). Not changed while a scheduler run used it.
+   - Resolved the same day: the tall-chain generators "not reproducing their GDS" was this pod missing `build/pyold`
+     (gdsfactory 8.5.0 for the pcells). On the image's 9.x some pcell edges round to the other side of the 5 nm grid.
+     With 8.5.0 every tall cell regenerates XOR 0 at HEAD. `lay.py` now refuses to run without it and
+     `tools/pod_setup.sh` installs it ([docs/layout.md](docs/layout.md) step 1).
 5. Not blocking, from before the tall chain (check they still apply before acting): the macro's max-slew warnings
    (marginal, mostly ss); layout compromises for Matt to sign off (decap as laid out ~43 pF VAPWR / 11 pF VDPWR
    against 50 / 30 targets, `sc_phi` 10–20 µm from the avg / comp inputs, det / lpf not shielded).

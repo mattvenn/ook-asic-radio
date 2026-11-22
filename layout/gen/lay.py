@@ -12,6 +12,12 @@ sys.path.insert(0, os.path.join(PDKDIR, 'libs.tech', 'klayout', 'python'))
 os.environ.pop('PDK', None)          # gdsfactory would try to import a PDK module of that name
 warnings.filterwarnings('ignore')
 import gdsfactory as _gf             # noqa: E402
+if not os.path.abspath(_gf.__file__).startswith(os.path.join(REPO, 'build', 'pyold') + os.sep):
+    # the image's gdsfactory 9.x: its pcells snap differently, so cells come out 5 nm off their GDS (2026-11-22)
+    print(f'lay.py: gdsfactory from {os.path.dirname(_gf.__file__)}, need 8.5.0 in build/pyold: '
+          f'run tools/osic bash tools/kpcell_setup.sh', file=sys.stderr)
+    sys.stderr.flush()
+    os._exit(1)                      # SystemExit inside klayout -b -r doesn't always give a non-zero status
 _gf.logger.remove()                  # silence the gf 7->8 deprecation chatter
 from cells import sky130             # noqa: E402
 sky130()

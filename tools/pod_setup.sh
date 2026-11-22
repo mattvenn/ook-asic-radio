@@ -32,6 +32,11 @@ fi
 echo "magic: $("$P/bin/magic" --version) in $P/bin"
 
 python3 -c 'import pyvisa' 2>/dev/null || pip install --user -q pyvisa
+# gdsfactory 8.5.0 for the sky130 pcells (layout/gen/lay.py refuses to run without it: the image's 9.x gives
+# cells 5 nm off their committed GDS)
+cd "$REPO"; mkdir -p build
+[ -d build/pyold/gdsfactory ] || bash tools/kpcell_setup.sh > build/kpcell_setup.log 2>&1
+echo "gdsfactory for the pcells: $(ls build/pyold | grep -o 'gdsfactory-[0-9.]*' | head -1)"
 python3 -c 'import numpy, cocotb, pyvisa; print("python: numpy", numpy.__version__, "cocotb", cocotb.__version__, "pyvisa ok")'
 
 # CPU quota: nproc shows the node, not the pod. Each ngspice uses 8 threads: run ~quota/3 at once.

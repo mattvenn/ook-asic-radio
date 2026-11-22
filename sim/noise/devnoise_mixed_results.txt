@@ -1,0 +1,16 @@
+# Mixed bench with gen_det.py fitted to the transistor noise runs (sim/noise/cal_gen_det.py, sim/rerun/jobs_devnoise.py),
+# schematic baseband, full gain, tt, seeds 6-25 (same noise for every tag). sim/mixed/replay_corr.py, 2026-11-22.
+new -92: detects 18/20 as simulated, 20/20 one sample later: 95 % over burst timing
+new -94: detects 6/20 as simulated, 10/20 one sample later: 40 % over burst timing
+afit -90: detects 20/20 as simulated, 20/20 one sample later: 100 % over burst timing
+afit -92: detects 20/20 as simulated, 20/20 one sample later: 100 % over burst timing
+afit -94: detects 16/20 as simulated, 17/20 one sample later: 82 % over burst timing
+dth -86: detects 20/20 as simulated, 20/20 one sample later: 100 % over burst timing
+dth -88: detects 20/20 as simulated, 20/20 one sample later: 100 % over burst timing
+dth -90: detects 20/20 as simulated, 20/20 one sample later: 100 % over burst timing
+dth -92: detects 10/20 as simulated, 13/20 one sample later: 58 % over burst timing
+dth -94: detects 0/20 as simulated, 3/20 one sample later: 8 % over burst timing
+dall -86: detects 20/20 as simulated, 20/20 one sample later: 100 % over burst timing
+dall -88: detects 20/20 as simulated, 20/20 one sample later: 100 % over burst timing
+dall -90: detects 19/20 as simulated, 20/20 one sample later: 98 % over burst timing
+dall -92: detects 1/20 as simulated, 2/20 one sample later: 8 % over burst timing

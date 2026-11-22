@@ -628,9 +628,50 @@ with 1/f as well. Dall is an upper bound: its 1/f is white at its 434 MHz level,
 **What it means:** the mixed-signal sensitivity numbers (built on `gen_det.py` with the NF-11 injected noise) are
 probably ~1.5 dB optimistic, up to ~2 dB with 1/f. −92 dBm at 95 % over burst timing would move to about −90.5 dBm, and
 the 50 % point from about −93.7 to about −92 dBm. This is an estimate from the swings, not a rerun of the detection
-check. Not done: recalibrating `gen_det.py` to the device-noise level (Dth) and rerunning the −92 / −94 dBm paired check
-would give the number directly. Limits: schematic, full gain, tt, 3 seeds; the sources are sized at the idle operating
+check; the direct number is in the next subsection (2026-11-22): −90 dBm reliable, 50 % at about −92.3 dBm. Limits: schematic, full gain, tt, 3 seeds; the sources are sized at the idle operating
 point (not cyclostationary) and the detector's own baseband 1/f isn't in them.
+
+### Device noise in the mixed bench (action 13 follow-up, 2026-11-22)
+
+`gen_det.py` maps the block power of signal + injected noise (NF 11) to det through an old CW curve
+(`sim/logdet/transfer_cw.txt`, 5 dB steps, a kink at −80 dBm), so raising its NF doesn't reproduce the transistor
+result: the model's swings go up and down with NF as the noise level crosses the kink. Instead
+`sim/noise/cal_gen_det.py` fits the model to each transistor run on both things that matter: `--shift` puts the
+no-signal det at the run's level, and a new signal-only gain `--sig` (dB; NF and `--sig` are the same knob once det is
+fixed) matches its swings at −94 / −90 / −85 dBm, weighted by the seed scatter:
+
+| Fit to | `--shift` | `--sig` | Model swings −94 / −90 / −85, mV | Transistor swings, mV |
+|---|---|---|---|---|
+| A, injected NF 11 | −5.01 (= `SHIFT_DB`) | +0.90 | −0.89 / −2.21 / −6.62 | −1.16 / −2.44 / −6.56 |
+| Dth, device noise, thermal | −3.71 | −1.94 | −0.53 / −1.37 / −4.65 | −0.66 / −1.55 / −4.62 |
+| Dall, + 1/f (upper bound) | −2.95 | −3.52 | −0.51 / −1.26 / −3.91 | −0.55 / −1.30 / −3.90 |
+
+The A fit lands on today's `SHIFT_DB`; with `--sig=0` the model's swings for A are 0.63–0.83× the transistor's, so the
+model used for every mixed result so far was ~0.9 dB pessimistic on the signal.
+
+Then the mixed bench (`sim/rerun/jobs_devnoise.py`: schematic baseband, full gain, tt, seeds 6–25 on the same noise as
+the `new` / `old` paired check, 240 runs, 0 failed, sim-0), read with `sim/mixed/replay_corr.py` (agrees with the
+simulated event pin in every run). Over burst timing (`sim/noise/devnoise_mixed_results.txt`):
+
+| Model | −86 | −88 | −90 | −92 | −94 dBm |
+|---|---|---|---|---|---|
+| `new` (today's model, the published −92 dBm) | | | | 95 % | 40 % |
+| `afit` (fitted to A) | | | 100 % | 100 % | 82 % |
+| **`dth` (fitted to device noise)** | 100 % | 100 % | **100 %** | **58 %** | 8 % |
+| `dall` (device noise + 1/f, bound) | 100 % | 100 % | 98 % | 8 % | |
+
+**With device noise, full gain on the schematic baseband is reliable at −90 dBm and 50 % at about −92.3 dBm**
+(−91.1 with the 1/f bound), against −92 / −93.7 dBm published: **~1.5–2 dB worse**, as the swing estimate said. Paired
+on the same noise, device noise costs ~2.5 dB against the A fit, but the A fit also removes the model's ~0.9 dB of
+pessimism, so the net change against the published numbers is the smaller one. The edge is steep: `dth` goes from 100 %
+to 58 % to 8 % in 2 dB steps. On the path model (two-ray, boards 1 m up) −90 instead of −92 dBm is about 70 m instead of
+80 m.
+
+Limits: schematic baseband only (the extracted baseband was 6/6 at −92 with the old model and wasn't rerun), full gain,
+tt, 20 seeds per point (±11 % binomial at 50 %); low gain not rerun (expect the same ~1.5–2 dB on its −86 / −88.5 dBm);
+the fit rests on the 3-seed transistor runs of the previous subsection.
+
+### Low gain (schematic det model)
 
 Low gain, schematic det model (`gen_det.py --gain` −12.21 dB, reference −12.26), schematic baseband. Detected as
 simulated, then over burst timing by `sim/mixed/replay_corr.py` (RTL phases and one sample later; the replay agrees

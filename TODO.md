@@ -31,9 +31,12 @@ Things that aren't chip design work, or that wait for silicon. Add the date and 
     Device noise costs ~0.9 dB more than the same NF injected at the antenna, and ngspice's NF 11.0 leaves out 1/f
     (a NaN in the pad switch): real NF 11.6 (thermal) / 12.5 dB (with 1/f). Sensitivity likely ~1.5 dB (up to ~2 dB)
     worse than the mixed bench says.
-- [ ] **Recalibrate `gen_det.py` to device noise** (follows action 13): put the noise-only det at the device-noise
+- [x] **Recalibrate `gen_det.py` to device noise** (follows action 13): put the noise-only det at the device-noise
   level (Dth, 1.43715 V; or Dall 1.42679 V as the bound), rerun the −92 / −94 dBm paired check to get the sensitivity
   cost directly instead of from the swings.
+  - Done 2026-11-22: the model fitted on both det level and swings (`sim/noise/cal_gen_det.py`), 240 mixed runs.
+    Full gain is reliable at −90 dBm, 50 % at about −92.3 dBm (was −92 / −93.7): `docs/verify_tall.md` §5 "Device
+    noise in the mixed bench".
 
 ## Bring-up hardware
 - [ ] **RX adapter board** for the TT breakout (Harald's review, action 14; [bringup.md](docs/bringup.md)): SMD

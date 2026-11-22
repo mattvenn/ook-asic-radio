@@ -6,6 +6,7 @@ Developed on `tx_drv` first; the same steps apply to every analog block.
 1. **One-time setup:** `tools/osic bash tools/kpcell_setup.sh`.
    - The sky130 KLayout pcells in the PDK (Mabrains, `libs.tech/klayout/python/cells`) need gdsfactory 8.x, but the tools image has 9.x.
    - This installs gdsfactory 8.5 into `build/pyold`, which `layout/gen/lay.py` puts first on `sys.path`. The pip copy of `klayout` is removed so KLayout's own module wins.
+   - Without it the pcells still run, on 9.x, but some edges come out 5 nm off (pcell coordinates round to the other side of the 5 nm grid): on 2026-11-22 every tall-chain cell regenerated with extra met1 / met2 / NPC slivers until 8.5 was installed, then XOR 0. `lay.py` now stops with a message if gdsfactory isn't the `build/pyold` copy, and `tools/pod_setup.sh` installs it on a new pod. Note: through `tools/osic` on the pod the exit status is lost (see STATUS.md), so read the output.
 2. **Generate:** `tools/osic klayout -b -r layout/gen/<block>.py` writes `layout/<block>.gds`.
    - `layout/gen/lay.py`:
      - `Fet` wraps a pcell (W total, split over nf) and reads its terminals from the geometry: met1 S/D strips, gate pads, guard ring outer/hole, diffusion;
