@@ -32,7 +32,8 @@ design: **TODO.md**. Repo: github.com/mattvenn/ook-asic-radio (`main`, the only 
   schematic baseband; [docs/verify_tall.md](docs/verify_tall.md) §5 "Device noise in the mixed bench"). That is
   ~1.5–2 dB worse than the −92 dBm reliable / −93.7 dBm 50 % quoted before, from the model with injected noise (NF 11).
   With 1/f as an upper bound: reliable at −90, 50 % at about −91.1 dBm. Low gain (not rerun with device noise): 50 % at
-  about −88.5 dBm with the old model, so expect ~−87.
+  about −88.5 dBm with the old model, so expect ~−87. The extracted baseband and low gain won't be rerun with device
+  noise (Matt, 2026-11-22).
 - **Comparator mismatch:** H135 trim gives −92 dBm (the old model, before device noise) for ≥ 99 % of chips at every 1.8 V corner
   ([docs/verify_supply_mc.md](docs/verify_supply_mc.md)).
 - **Trim DAC drive:** accepted (Matt, 2026-11-12). If `radio_digital` is ever re-hardened, drive `trim_out[7:0]`
