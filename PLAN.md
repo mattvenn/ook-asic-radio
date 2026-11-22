@@ -135,7 +135,7 @@ The pins as built (2026-11-22). The source of truth is `info.yaml`; `tools/check
 - **Data mode (secondary):** Gold sync, length, Manchester payload, CRC-8, sent 3×.
 
 ## Repo layout
-See README.md "Layout of this repo".
+See README.md "Repo layout".
 
 ## Phases
 **Phase 0: channel and TX measurement (done)**
