@@ -372,7 +372,7 @@ const DOC = REPO + 'docs/how_it_works.md#';
 const SCH = n => 'https://xschem-viewer.com/?file=' + REPO + 'xschem/' + n + '.sch';
 // 3D view of the block's layout, as linked from layout/README.md (the GDS has the same name as the schematic)
 const GDS = (n, dir = 'layout') => 'https://gds-viewer.tinytapeout.com/?url=https://raw.githubusercontent.com/mattvenn/ook-asic-radio/main/' + dir + '/' + n + '.gds';
-const SENS = -92, SENS_T = '−' + -SENS + ' dBm';   // ≥ 99 % of chips at every corner, 10–50 °C (docs/verify_2026-10-13.md); −94 dBm is a best case
+const SENS = -92, SENS_T = '−' + -SENS + ' dBm';   // ≥ 99 % of chips at every corner, 10–50 °C (docs/archive/verify_2026-10-13.md); −94 dBm is a best case
 let D = null;                       // decoded payload
 const S = {level: 'link', focus: null, block: null, p: -56,   // -56 dBm: ~10 m on the path model (new TX), where the page opens
            step: 0, playing: true};
@@ -406,7 +406,7 @@ const HGT = 1, LAMBDA = 299.792458 / 433.92, DB = 4 * HGT * HGT / LAMBDA;
 /* The bench sweep used the old ttsky25b ring on a 1.8 V pad (-8.5 dBm into 50 ohm, ~200 mV swing). The new TX has 3.3 V
    drivers on both arms; after the pads ~1.2 V p-p across the dipole (tb_tx, tt): +3.1 (extracted tile, rc) to +4.3 dBm
    (schematic, all corners) into a 73 ohm dipole model
-   (docs/verify_2026-10-11.md), so ~+3.5 dBm: 12 dB more. Every received power and distance here is the bench path loss
+   (docs/archive/verify_2026-10-11.md), so ~+3.5 dBm: 12 dB more. Every received power and distance here is the bench path loss
    shifted up by that: an estimate until silicon. */
 const BENCH_TX_DBM = -8.5, TX_DBM = 3.5, TX_DB = TX_DBM - BENCH_TX_DBM;
 const WAVE_S = 22, WAVE_N = 32;   // link scene: wavefront spacing on screen (scene units) and how many can be in flight

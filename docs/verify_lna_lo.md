@@ -1,6 +1,6 @@
 # Verification of the LNA low-gain strap (branch `lna-lo-shunt`, sim-0, 2026-11-04 / 05)
 
-The handoff's 9 items (`docs/handoff_lna_lo.md` "Verification to run here"), run on sim-0. Job list:
+The handoff's 9 items (`docs/archive/handoff_lna_lo.md` "Verification to run here"), run on sim-0. Job list:
 `sim/rerun/jobs_lna_lo.py` (the 2026-10-13 set plus the new checks), scheduler `sim/rerun/sched.py`. Logs:
 `build/rerun_lnalo/logs/` on sim-0. Final count: 425 OK, 24 ended under an earlier scheduler instance (exit code lost,
 each checked by its log), 0 failed.

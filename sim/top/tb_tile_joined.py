@@ -13,7 +13,7 @@ switching point, found first with DC operating points (avg = lpf: both sc clocks
     python3 sim/top/tb_tile_joined.py pair -92 [30u] [code] [seed]   on / off pair (~15 h each, in parallel)
     python3 sim/top/tb_tile_joined.py --no-run pair -92       analyse build/tile_pair_-92_{on,off}.raw
 
-pair: the stand-in for the full run (~8 days on sim-0), docs/verify_2026-10-11.md. Two short runs,
+pair: the stand-in for the full run (~8 days on sim-0), docs/archive/verify_2026-10-11.md. Two short runs,
 keyed on at 1 us and on to the end, one with the signal and one without (vemf = 0), with the same
 RF noise. ngspice 47 doesn't repeat trnoise between runs (.options seed, set rndseed and setseed all
 fail), so the pair replaces it with one noise waveform from numpy (seeded; same sigma and 50 ps step)

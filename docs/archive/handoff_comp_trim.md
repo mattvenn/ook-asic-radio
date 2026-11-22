@@ -4,9 +4,9 @@ Prompt for a new session (written 2026-10-13 on the Linux host, where this ran o
 
 ---
 
-Finding 1 of [verify_system_2.md](verify_system_2.md) is the biggest yield loss in the receiver: comparator mismatch
+Finding 1 of [verify_system_2.md](../verify_system_2.md) is the biggest yield loss in the receiver: comparator mismatch
 against a trim that is only fine on one side. Your job: **finish choosing a `comp_ct` trim design (options 2 + 3 of
-[verify_supply_mc.md](verify_supply_mc.md) §2.2), stop at the decision gate for Matt, then implement it** if he picks
+[verify_supply_mc.md](../verify_supply_mc.md) §2.2), stop at the decision gate for Matt, then implement it** if he picks
 one.
 
 **Git: work on a branch, `comp-trim`** (`git switch -c comp-trim` from an up-to-date `main`). Commit there at the
@@ -16,8 +16,8 @@ how it gets merged. Other sessions keep pushing to `main`, so rebase onto it bef
 ## Read first
 - `docs/agent_start.md`, `STATUS.md`, `docs/sim_learnings.md` (ngspice traps, **including the Monte Carlo seed
   trap added 2026-10-13**).
-- [verify_supply_mc.md](verify_supply_mc.md) §2.2, "Rerun (2026-10-13)" and the options below it.
-- [verify_system_2.md](verify_system_2.md) "Findings", row 1.
+- [verify_supply_mc.md](../verify_supply_mc.md) §2.2, "Rerun (2026-10-13)" and the options below it.
+- [verify_system_2.md](../verify_system_2.md) "Findings", row 1.
 
 ## sim-0
 - New pod: `bash tools/pod_setup.sh`, then check `/sys/fs/cgroup/cpu.max` (28 CPUs expected). The threads of all
@@ -146,4 +146,4 @@ picks one, or decides to keep today's design.
   samples). Port the fix from `tb_comp_ct.py` (one sample per ngspice run, its own `.options seed`) and rerun
   them. Their verdicts (both fine) are unlikely to change.
 - The rest of the open list (extraction disagreement, `tx_ls_en`, TT supply tolerances) is in
-  [verify_system_2.md](verify_system_2.md) "Findings". The cheapest is looking up TT's supply tolerances.
+  [verify_system_2.md](../verify_system_2.md) "Findings". The cheapest is looking up TT's supply tolerances.

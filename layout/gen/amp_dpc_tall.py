@@ -1,5 +1,5 @@
 # amp_dpc_t: chain stages 2..6 as a tall, thin cell, for a straight chain (Harald Pretl's
-# review, action 8; docs/handoff_tall_stages.md). Same circuit, PARAMS and reference as
+# review, action 8; docs/archive/handoff_tall_stages.md). Same circuit, PARAMS and reference as
 # amp_dpc (layout/gen/amp_dpc.py; xschem/gen/chain.py:amp_dpc):
 #   Mp / Mn   nfet W 20 nf 4 L 0.15: D outn / outp, G inp / inn, S sp / sn
 #   Mtail_p/n nfet 3 x (W 6 nf 2) L 0.5 per side (drawn as one nf 6, W 18): D sp / sn, G nb

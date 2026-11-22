@@ -1,4 +1,4 @@
-"""Verification of branch lna-lo-shunt (docs/handoff_lna_lo.md), sim-0 (28 CPUs, fresh pod 2026-11-04).
+"""Verification of branch lna-lo-shunt (docs/archive/handoff_lna_lo.md), sim-0 (28 CPUs, fresh pod 2026-11-04).
     nohup setsid python3 sim/rerun/sched.py sim/rerun/jobs_lna_lo.py --budget 26 --out build/rerun_lnalo > build/rerun_lnalo/sched.log 2>&1 &
 Results: build/rerun_lnalo/logs/<name>.log (+ each script's own outputs); write-up docs/verify_lna_lo.md.
 Before the first run on a fresh pod: tools/osic bash sim/mixed/build_so.sh (the mixed jobs read its obj dir).

@@ -24,7 +24,6 @@ test/sim_build
 test/__pycache__/
 test/gate_level_netlist.v
 openlane/*/runs
-mag/*.def
 build/
 verilog/test/sim_build_gl/
 verilog/test/results_gl.xml

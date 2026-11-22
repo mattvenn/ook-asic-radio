@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Via audit (read-only): single cuts and single rows of cuts, per block and cut layer.
 
-Harald Pretl's review point 11 (docs/handoff_via_arrays.md): every junction between two metals
+Harald Pretl's review point 11 (docs/archive/handoff_via_arrays.md): every junction between two metals
 should be a cut array (>= 2 x 2 where it fits), never one cut. This counts, per GDS and per cut
 layer (mcon, via1, via2, via3):
 

@@ -1,6 +1,6 @@
 """Full verification rerun after the H135 comparator / tile rebuild (plan_verify_gaps 4.2), sim-0 (28 CPUs).
     nohup setsid python3 sim/rerun/sched.py sim/rerun/jobs_2026-10-13.py --budget 26 > build/rerun/sched.log 2>&1 &
-Results: build/rerun/logs/<name>.log (+ each script's own outputs); write-up docs/verify_2026-10-13.md.
+Results: build/rerun/logs/<name>.log (+ each script's own outputs); write-up docs/archive/verify_2026-10-13.md.
 threads = ngspice threads (NT / num_threads). Joined RX and the long tile runs use NT 2-4: ngspice gains
 little past that, so more runs at fewer threads use the machine better.
 Shared files: lock = whole run (build/tb_tx.spice, cw_drop's names, the power mesh), stagger = start only

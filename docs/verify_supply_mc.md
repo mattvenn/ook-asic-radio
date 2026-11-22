@@ -1,6 +1,6 @@
 # Supply sweeps and mismatch, 2026-10-12 (sim-0)
 
-Phase 2 of [plan_verify_gaps.md](plan_verify_gaps.md): gaps G1 (supply never varied at system level) and G2
+Phase 2 of [plan_verify_gaps.md](archive/plan_verify_gaps.md): gaps G1 (supply never varied at system level) and G2
 (no mismatch on the comparator path). `main` after d198dbe, ring `NINV` 22, sim-0, IIC-OSIC-TOOLS 2026.09
 (ngspice 47). Supplies: VDPWR 1.71 / 1.80 / 1.89 V, VAPWR 3.0 / 3.3 / 3.6 V (the plan's ±5 % / ±10 %; the TT
 board tolerances were not looked up, so these may be wider than real).
@@ -186,7 +186,7 @@ estimates.
 10.9 mV·µm, so σVt ≈ 5.4 mV per device), ~28 % the nfet_lvt input and trim pairs, ~22 % the nfet current
 sources (Mta_sa / sb, Mt1).
 
-Options for Gate 2 (options 2 + 3 being tried, 2026-10-13: `sim/comp_ct/trim_curve.py`, [handoff_comp_trim.md](handoff_comp_trim.md)):
+Options for Gate 2 (options 2 + 3 being tried, 2026-10-13: `sim/comp_ct/trim_curve.py`, [handoff_comp_trim.md](archive/handoff_comp_trim.md)):
 1. **Bigger mirror**: Mp1 / Mp2 at 4× area halves their term (e.g. W 8 L 2); pfet_01v8 (A_Vt 5.9) instead of
    lvt helps too if headroom allows. Then the nfet terms: input pair, Mta pair.
 2. **Centre the operating point in the linear part of the trim**: today nominal sits at the knee (code 112),
@@ -197,7 +197,7 @@ Options for Gate 2 (options 2 + 3 being tried, 2026-10-13: `sim/comp_ct/trim_cur
 
 ### Trim redesign candidates (2026-10-13, sim-0, branch `comp-trim`): gate for Matt
 
-[handoff_comp_trim.md](handoff_comp_trim.md) steps 1–5. Every candidate: trim pair M3 / M4 W 2 → 8. Tags give
+[handoff_comp_trim.md](archive/handoff_comp_trim.md) steps 1–5. Every candidate: trim pair M3 / M4 W 2 → 8. Tags give
 Rdeg and vref: **A** 1.2 MΩ, **B** 1.0, **E** 0.8, **G** 0.9 MΩ; **C / F / G** add option 1's mirror (Mp1 / Mp2
 W 4 L 1 → W 8 L 2); the number is vref (124 = 1.24 V). Curves: `trim_curve.py` + `trim_summary.py`; Monte Carlo:
 `tb_comp_ct.py --mc 200 --jobs 24 --step` (200 distinct samples, **no duplicate rows in any run**; `mc_bins.py`).

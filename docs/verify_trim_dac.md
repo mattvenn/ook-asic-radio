@@ -1,6 +1,6 @@
 # Trim DAC linearity with the real bit drivers (2026-11-12, branch `trim-dac`)
 
-From [handoff_trim_dac.md](handoff_trim_dac.md). The tt08 scope capture of the reused R2R DAC steps *down* at the
+From [handoff_trim_dac.md](archive/handoff_trim_dac.md). The tt08 scope capture of the reused R2R DAC steps *down* at the
 127 → 128 carry. Question: is that here too, and does it cost sensitivity?
 
 **Answer: yes, it's here, and it costs a little at the edge. Decision (Matt, 2026-11-12): accept it for this

@@ -1,6 +1,6 @@
 # Stretch goal: record and replay a 433.92 MHz fixed-code fob
 
-Work plan with review gates: [plan_ring_tune.md](plan_ring_tune.md). **Not pursued (2026-10-12): considered too much of a stretch goal for this shuttle; the ring stays untrimmed (`NINV`).**
+Work plan with review gates: [plan_ring_tune.md](archive/plan_ring_tune.md). **Not pursued (2026-10-12): considered too much of a stretch goal for this shuttle; the ring stays untrimmed (`NINV`).**
 
 What it would take to record a garage-door fob with the RX and replay it with the TX so a commercial receiver
 accepts it. **No new sims were run.** Every number here comes from results already in the repo (PLAN.md,
@@ -213,7 +213,7 @@ tile routes.
 | **3. Full trim + ring LDO** | option 2 + a regulator for the ring | Removes the supply sensitivity (board 1.5 %, ripple spurs): superhet robust. A new analog block with its own loop and decap; the biggest job. |
 
 **Timing:** the TX-frequency decision is STATUS next step 1, and tapeout is Nov 2026. The extracted-tile
-checks were signed off on 2026-10-11 (docs/verify_2026-10-11.md), so option 2 means about one TX-corner
+checks were signed off on 2026-10-11 (docs/archive/verify_2026-10-11.md), so option 2 means about one TX-corner
 iteration plus a macro re-harden, and then rerunning those checks.
 
 **Open questions** that only sims can settle:

@@ -13,7 +13,7 @@
 | `openlane/radio_digital/pin_order.cfg` | N: clk, rst_n, ui_in, uio_*, uo_out. S: trim_out, comp_in, sc_phi1/2, rx_en, tx_en |
 | `verilog/test/vectors/README.md` | One-line fix: the LFSR "output = MSB" wording was wrong. In the `lfsr2` integers, stage 1 is bit 6 and the output (stage 7) is bit 0 |
 
-`openlane/radio_digital/config.tcl` still names `r2r_dac_control` and its files. Update DESIGN_NAME/VERILOG_FILES before hardening. I didn't edit it because it was outside my scope.
+(Since resolved: the macro is hardened with LibreLane from `openlane/radio_digital/config.json`; the OpenLane 1 `config.tcl` that still named `r2r_dac_control` was removed on 2026-11-22.)
 
 ## Ports
 `clk, rst_n, ui_in[7:0], uio_in[7:0], uo_out[7:0], uio_out[7:0], uio_oe[7:0], comp_in, trim_out[7:0], tx_en, rx_en, sc_phi1, sc_phi2`. These are as suggested.

@@ -1,5 +1,5 @@
 # Top level: the 3x2 3v3 analog tile (tt_um_mattvenn_radio).
-# Template pins from mag/tt_analog_3x2_3v3.def, blocks placed as layout/floorplan/floorplan.json,
+# Template pins from layout/floorplan/tt_analog_3x2_3v3.def (TT's tt-support-tools), blocks placed as layout/floorplan/floorplan.json,
 # the TX blocks grouped in a tx_top subcell (LVS against xschem/tx_top.sch), power straps.
 #   tools/osic-mac klayout -b -r layout/gen/top.py
 # Writes build/top/tt_um_mattvenn_radio_place.gds (layout/gen/route.py routes it) and build/top/pins.json (every block pin in tile um).
@@ -15,10 +15,10 @@ from lay import REPO, L, PIN, LBL, Block, snap  # noqa: E402
 
 TOP = 'tt_um_mattvenn_radio'
 FP = json.load(open(os.path.join(REPO, 'layout/floorplan/floorplan.json')))
-DEF = os.path.join(REPO, 'mag/tt_analog_3x2_3v3.def')
+DEF = os.path.join(REPO, 'layout/floorplan/tt_analog_3x2_3v3.def')
 OUT = os.path.join(REPO, 'build/top')
 W, H = FP['tile']['w'], FP['tile']['h']
-STRAP_Y0, STRAP_Y1 = 5.0, 220.76          # as mag/tcl/tt-analog-draw.tcl (within 10 um of both edges)
+STRAP_Y0, STRAP_Y1 = 5.0, 220.76          # as TT's tt-analog-draw.tcl (within 10 um of both edges)
 
 
 def template_pins():

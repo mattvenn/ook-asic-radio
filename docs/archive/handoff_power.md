@@ -9,7 +9,7 @@ The tile is assembled and routed. Your job: **measure how well power is delivere
 ## Read first
 - `docs/agent_start.md` (rules for agents on this repo), `STATUS.md`.
 - `docs/layout.md`: "Power: how the TT PDN connects", "Current limits: EM and IR", the tx_drv current table.
-- `docs/handoff_toplevel.md`: what the tile is made of (blocks, placements, straps, nets).
+- `docs/archive/handoff_toplevel.md`: what the tile is made of (blocks, placements, straps, nets).
 
 ## Tools
 - Mac: `tools/osic-mac <cmd>` from the repo root (Linux: `tools/osic`).

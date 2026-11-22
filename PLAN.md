@@ -130,21 +130,7 @@ Area, cost and legality are not constraints. Workflow: measure, then model, then
 - **Data mode (secondary):** Gold sync, length, Manchester payload, CRC-8, sent 3×.
 
 ## Repo layout
-This follows the TT analog template flow of `mattvenn/tt08-analog-r2r-dac-3v3`, updated to ttsky26d (see README.md):
-```
-asic-radio/
-  info.yaml docs/info.md src/project.v   TT project files (src/project.v = LVS stub)
-  .github/workflows/                     gds + docs (@ttsky26d), lvs (magic/netgen)
-  mag/                                   Magic layout; make start / drc / lvs (2x2 + VAPWR template)
-  gds/ lef/                              layout outputs
-  xschem/ sim/                           analog schematics, testbenches, ngspice runs
-  verilog/rtl verilog/gl verilog/test    digital macro radio_digital; cocotb tests + vectors/
-  openlane/radio_digital/                hardening config for the digital macro
-  model/                                 bit-exact Python model + RX studies; exports verilog/test/vectors
-  bench/ stim/                           phase-0 bench tools, data, recorded RF stimuli
-  tools/osic                             run IIC-OSIC-TOOLS headless from the repo
-  PLAN.md docs/slicer.md
-```
+See README.md "Layout of this repo".
 
 ## Phases
 **Phase 0: channel and TX measurement (done)**
@@ -157,7 +143,7 @@ See the tables above.
   - `model/e2e.py`, end to end:
     - all sends detected to −94 dBm in noise, −90 dBm with ±10 dB fading, −70 dBm with a bursty −60 dBm interferer (partial to −90);
     - zero false toggles (wrong-code RX on 75 sends, 9 signal-free records).
-  - `verilog/test/vectors/`: 9 RX scenarios + the TX code table, with the timing contract in `verilog/verilog/test/vectors/README.md`.
+  - `verilog/test/vectors/`: 9 RX scenarios + the TX code table, with the timing contract in `verilog/test/vectors/README.md`.
   - `docs/slicer.md`: how the comparator/servo works.
 - **Still to model:** data mode (Gold sync + Manchester + CRC, secondary) and the raw modes (pass-throughs). Do these alongside the RTL.
 - Choose the DAC range, bit width, sample rate and time constants. Confirm sensitivity stays ~−90 dBm and the slicer works from −40 to −90 dBm with the recordings.

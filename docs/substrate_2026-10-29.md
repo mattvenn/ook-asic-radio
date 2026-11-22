@@ -6,7 +6,7 @@ The chain has 73–81 dB of gain. At ss 10 °C, 0.5 fF of asymmetric out_p → p
 - **Wires (kpex 2.5D):** ≤ 0.3 aF asymmetric from the output wires, ~13–20 aF from the st5 / st6 source plates (an upper bound).
 - **Substrate:** an out_p → pad_p equivalent of **~1e-5 fF**, ~10,000× under the 0.1 fF budget, and still ~100× under it with the substrate conductances divided by 100.
 
-Substrate feedback isn't a stability risk for this layout. What it can't rule out is coupling off the die (bond wires, package, PCB, the antenna), which is what the lna_lo strap is for (`docs/handoff_lna_lo.md`).
+Substrate feedback isn't a stability risk for this layout. What it can't rule out is coupling off the die (bond wires, package, PCB, the antenna), which is what the lna_lo strap is for (`docs/archive/handoff_lna_lo.md`).
 
 ## 1. Wire coupling: kpex 2.5D
 
@@ -142,7 +142,7 @@ Equivalent out_p → pad_p coupling of the substrate network, fF, at 434 MHz (wo
 3. **No wire R** in the kpex CC netlist (optimistic gain, slightly pessimistic feedback).
 4. **No taps assumed outside the tile.**
 5. **Thin features on the 1 µm grid** (the Rb strip, thin tap rings), hence the halved-grid check.
-6. **Main's layout, not the final one.** The lna_lo shunt (`docs/handoff_lna_lo.md`) sits at the moat's turn end, ~100 µm from the input section and next to where o2 already crosses. Rerun on the final layout to confirm.
+6. **Main's layout, not the final one.** The lna_lo shunt (`docs/archive/handoff_lna_lo.md`) sits at the moat's turn end, ~100 µm from the input section and next to where o2 already crosses. Rerun on the final layout to confirm.
 7. **Off-die paths aren't covered:** bond wires, package, PCB, the antenna.
 
 ## Rerun

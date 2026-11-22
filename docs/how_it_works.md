@@ -56,7 +56,7 @@ These were measured on an existing chip (ttsky25b) that has a ring oscillator, u
 ### Models
 - `bench/scheme_compare.py` compared three signalling schemes on the same receiver model with noise, fading and a bursty interferer. Gold-127 correlation won in every case, so it is what the chip uses.
   ![scheme comparison](../bench/data/scheme_compare.png)
-- `model/` holds a bit-exact Python model of the whole link. It is the reference that the RTL is tested against. End to end with the H135 comparator at tt, every send is detected at −92 dBm in noise (48/48) and about half at −94 dBm (27/48) ([verify_2026-10-13.md](verify_2026-10-13.md)). With ±10 dB fading (default model settings), every send gets through down to −90 dBm. There are zero false toggles.
+- `model/` holds a bit-exact Python model of the whole link. It is the reference that the RTL is tested against. End to end with the H135 comparator at tt, every send is detected at −92 dBm in noise (48/48) and about half at −94 dBm (27/48) ([verify_2026-10-13.md](archive/verify_2026-10-13.md)). With ±10 dB fading (default model settings), every send gets through down to −90 dBm. There are zero false toggles.
   ![end to end](../model/e2e.png)
 
 ### Specs
@@ -77,7 +77,7 @@ None of this has been measured on this chip yet: see [bringup.md](bringup.md).
 | Spec | Value | From |
 |---|---|---|
 | Frequency | ~448 MHz typical; 332–545 MHz over process corners and supply | Silicon est.: extracted × 0.866 / × 0.845, the factors from the ttsky25b rings (518 MHz measured, 598 simulated). STATUS.md, [verify_supply_mc.md](verify_supply_mc.md) |
-| Power into the dipole (73 Ω) | +3.1 dBm typical (+2.7 at 50 °C, +3.5 at 10 °C) | Extracted (whole tile, RC). [verify_2026-10-11.md](verify_2026-10-11.md) |
+| Power into the dipole (73 Ω) | +3.1 dBm typical (+2.7 at 50 °C, +3.5 at 10 °C) | Extracted (whole tile, RC). [verify_2026-10-11.md](archive/verify_2026-10-11.md) |
 | | +4.1 to +4.3 dBm at all corners | Schematic |
 | Power vs VAPWR | −1.2 / +1.1 dB at 3.0 / 3.6 V | Schematic |
 | Phase between the arms | within 1.2° | Schematic (PLAN.md) |
@@ -90,14 +90,14 @@ None of this has been measured on this chip yet: see [bringup.md](bringup.md).
 
 | Spec | Value | From |
 |---|---|---|
-| Sensitivity, at the pins | −92 dBm | Mixed-signal: 6/6 on the schematic and 6/6 on the extracted baseband ([verify_2026-10-13.md](verify_2026-10-13.md)) |
+| Sensitivity, at the pins | −92 dBm | Mixed-signal: 6/6 on the schematic and 6/6 on the extracted baseband ([verify_2026-10-13.md](archive/verify_2026-10-13.md)) |
 | | for ≥ 99 % of chips at every 1.8 V corner, 10–50 °C | Schematic Monte Carlo of the comparator alone (200 mismatch samples per corner); each sample's trim step mapped to dBm with the model. Not extracted ([verify_supply_mc.md](verify_supply_mc.md) "Trim redesign candidates") |
 | | −94 dBm about half the time on a typical chip | Model (27/48 sends) and mixed-signal (2/6) |
 | | −90 dBm at 85 °C (outside the verified range) | Schematic ([verify_system_2.md](verify_system_2.md)) |
 | Input band | 330–560 MHz, covering the TX ring's spread | Schematic (chain gain) |
 | Input impedance | **Not matched.** Each input sees a 2 pF coupling capacitor into stage 1's gate, biased through 20 kΩ to vcm, behind the pad, ESD and TT analog mux: high impedance and mostly capacitive, not the ~100 Ω differential a dipole or a 50 Ω cable expects. The ~11 dB noise figure is quoted against a 73 Ω source, so it already includes the effect of the mismatch. No band-pass either: the chain hears everything in 330–560 MHz and is only weakly filtered outside it (pad roll-off, coupling-cap high-pass) | Design; pad model rough ([review_harald_2026-11-13.md](review_harald_2026-11-13.md) points 1–2) |
 | Chain gain at 434 MHz | 73–81 dB over corners and temperature (76.7 nominal) | Schematic; each extracted stage is 0.2–0.45 dB below its schematic. The low-gain shunt (off) costs a further 0.65–0.8 dB extracted |
-| Low-gain strap (`uio[7:4]` = `1011` at reset) | 10.1–11.9 dB less chain gain (sf to tt); NF +0.4–1.0 dB; sensitivity reliable at ~−86 dBm, 50 % at ~−89 (vs −92) | Full GDS extraction (gain; the block extraction gives 8.5–11.1 dB), extracted chain (NF), mixed signal (sensitivity, [verify_lna_lo.md](verify_lna_lo.md)). The chain then tolerates ~2.5× the out → in coupling before it oscillates (1–2 fF at ss 10 °C vs 0.5–1 fF) ([handoff_lna_lo.md](handoff_lna_lo.md)) |
+| Low-gain strap (`uio[7:4]` = `1011` at reset) | 10.1–11.9 dB less chain gain (sf to tt); NF +0.4–1.0 dB; sensitivity reliable at ~−86 dBm, 50 % at ~−89 (vs −92) | Full GDS extraction (gain; the block extraction gives 8.5–11.1 dB), extracted chain (NF), mixed signal (sensitivity, [verify_lna_lo.md](verify_lna_lo.md)). The chain then tolerates ~2.5× the out → in coupling before it oscillates (1–2 fF at ss 10 °C vs 0.5–1 fF) ([handoff_lna_lo.md](archive/handoff_lna_lo.md)) |
 | Noise figure | 9.4–12 dB | Schematic |
 | Detector slope | 10–14 mV per dB, falling with power, over ~70 dB | Schematic |
 | Detector at idle | 1.49 V | Extracted (1.50–1.54 V schematic corners) |
@@ -105,7 +105,7 @@ None of this has been measured on this chip yet: see [bringup.md](bringup.md).
 | Envelope filter | 14 kHz RC low-pass | Schematic |
 | Slow average | τ 0.42 ms | Extracted (0.45 ms schematic) |
 | Trim step | 0.136–0.147 mV per LSB, 8 bits | Schematic corners; 0.136 extracted |
-| Overload | −10 dBm is fine; a weak signal is missed for 0.25–0.3 ms after it | Mixed-signal ([verify_2026-10-13.md](verify_2026-10-13.md)) |
+| Overload | −10 dBm is fine; a weak signal is missed for 0.25–0.3 ms after it | Mixed-signal ([verify_2026-10-13.md](archive/verify_2026-10-13.md)) |
 | VDPWR current | 2.99 mA | Extracted (whole tile); 2.84–2.91 mA schematic corners |
 
 **Link**

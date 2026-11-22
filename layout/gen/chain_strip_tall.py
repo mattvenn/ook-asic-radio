@@ -1,5 +1,5 @@
 # chain_strip_t: a throwaway strip to try the tall stages in a straight chain
-# (docs/handoff_tall_stages.md): amp_dp_t, then 5 x amp_dpc_t, abutted with no wiring between
+# (docs/archive/handoff_tall_stages.md): amp_dp_t, then 5 x amp_dpc_t, abutted with no wiring between
 # them; stages 2, 4, 6 flipped (MX) so each stage's outn lands on the next stage's inn. No input
 # section. Ports: stage 1's inputs, stage 6's outputs, the taps o1..o5 (the met4 columns' top
 # ends), nb, VDD, VSS. LVS reference: the two cells' references, st1 to st6 in series.

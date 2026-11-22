@@ -3,7 +3,7 @@
 Harald Pretl's review ([review_harald_2026-11-13.md](review_harald_2026-11-13.md), point 5, action 8) suggested a straight
 chain of tall, thin stages in place of the U fold. This job laid out the two stage cells in tall form and abutted them
 into a stage strip, to find out whether a straight chain fits the U's slot (145.4 × 70.5 µm). Brief:
-[handoff_tall_stages.md](handoff_tall_stages.md). Branch `chain-tall-stages`. Nothing in the chain, the tile or the
+[handoff_tall_stages.md](archive/handoff_tall_stages.md). Branch `chain-tall-stages`. Nothing in the chain, the tile or the
 floorplan changed: these are new cells beside the old ones.
 
 **Result: the whole chain is drawn straight, and it fits, with room to spare.** `lna_chain_t` is the input section,

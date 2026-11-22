@@ -18,7 +18,7 @@ rebase onto it before handing back.
 ## Read first
 - `docs/agent_start.md`, `STATUS.md`, `docs/sim_learnings.md` (ngspice traps, **especially the Monte Carlo
   seed trap**).
-- [slicer.md](slicer.md) (how the servo works), [verify_supply_mc.md](verify_supply_mc.md) §2.2 (H135, the trim
+- [slicer.md](../slicer.md) (how the servo works), [verify_supply_mc.md](../verify_supply_mc.md) §2.2 (H135, the trim
   window, code spread), `docs/layout.md` "r2r".
 - `sim/dac/tb_r2r.py` (block bench), `sim/dac/ladder_model.py` (numpy model, below), `sim/mixed/gen_mixed.py`
   (RTL servo → real r2r → real comp_ct).
@@ -28,7 +28,7 @@ rebase onto it before handing back.
   running ngspice processes must add up to ≤ 28.
 - Run long jobs in the background and end the turn, so Matt can keep talking. Don't edit a script while it runs.
 - The DAC decks are tiny (resistors plus 8 cells). Only the mixed-signal runs are long (hours each, see
-  [verify_system_2.md](verify_system_2.md)), so start those as early as you can.
+  [verify_system_2.md](../verify_system_2.md)), so start those as early as you can.
 
 ## Where it stands (analysis 2026-11-12, no simulations yet)
 
@@ -117,8 +117,8 @@ run −92 dBm at the worst corner with the worst-percentile curve from step 3.
 **6. Report to Matt (gate).** One short table: driver R per corner; worst DNL at 127/128 and 191/192; the share of
 chips with gaps; the mixed-signal result at 127/128 and 191/192 against ideal drivers. Then one of these
 recommendations:
-- **No action** (expected). Add a line to `STATUS.md` and to [verify_system_2.md](verify_system_2.md)
-  "Findings", note the bring-up check below in [bringup.md](bringup.md), and stop.
+- **No action** (expected). Add a line to `STATUS.md` and to [verify_system_2.md](../verify_system_2.md)
+  "Findings", note the bring-up check below in [bringup.md](../bringup.md), and stop.
 - **Fix on the analog side, keeping the macro unchanged**, only if step 4 or 5 shows a real loss. Options, cheapest
   first; don't implement until Matt picks one:
   - **(a) Stronger re-drivers in the analog area.** Put 8 × `sky130_fd_sc_hd__buf_4` (or `inv_4` pairs) on VDPWR /

@@ -1,7 +1,7 @@
 # Plan: close the verification gaps
 
 Where these come from: a review of [verify_2026-10-11.md](verify_2026-10-11.md) against
-[verification.md](verification.md). Every check the plan lists passes. This plan adds the checks the plan
+[verification.md](../verification.md). Every check the plan lists passes. This plan adds the checks the plan
 doesn't have yet. The tunable TX ring was dropped on 2026-10-12 ([plan_ring_tune.md](plan_ring_tune.md)), and the
 ring stays at `NINV` 22 (STATUS.md next step 1).
 

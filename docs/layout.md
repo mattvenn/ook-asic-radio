@@ -383,7 +383,7 @@ Source: `$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom
 
 ## Via arrays (2026-11, branch `via-arrays`)
 Harald Pretl's review point 11: every metal-to-metal junction should be a cut array (≥ 2 × 2 where it fits), never
-one cut. Handoff: `docs/handoff_via_arrays.md`.
+one cut. Handoff: `docs/archive/handoff_via_arrays.md`.
 
 **Audit:** `python3 tools/via_audit.py [--md] [--list] [block ...]` (KLayout, read-only, ~5 s for everything). Per
 GDS and cut layer it groups cuts closer than 0.25 µm into clusters and counts the clusters, the single cuts and the

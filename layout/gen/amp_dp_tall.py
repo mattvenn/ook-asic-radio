@@ -1,5 +1,5 @@
 # amp_dp_t: chain stage 1 as a tall, thin cell that abuts amp_dpc_t (layout/gen/amp_dpc_tall.py;
-# docs/handoff_tall_stages.md). Same circuit, PARAMS and reference as amp_dp
+# docs/archive/handoff_tall_stages.md). Same circuit, PARAMS and reference as amp_dp
 # (layout/gen/amp_dp.py; xschem/gen/chain.py:amp_dp):
 #   Mp / Mn  nfet W 80 L 0.15: D outn / outp, G inp / inn, S tail (16 x 5 um fingers each)
 #   Mtail    nfet 20 x (W 6 nf 2) L 0.5: D tail, G nb, S VSS (2 x nf 20, 3 um fingers)

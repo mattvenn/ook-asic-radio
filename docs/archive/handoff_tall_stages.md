@@ -1,6 +1,6 @@
 # Handoff: tall, thin chain stages, a sketch for a straight chain (branch `chain-tall-stages`)
 
-From Harald Pretl's design review ([review_harald_2026-11-13.md](review_harald_2026-11-13.md), action 8). Written
+From Harald Pretl's design review ([review_harald_2026-11-13.md](../review_harald_2026-11-13.md), action 8). Written
 2026-11-13. Paste the prompt at the end into a session on sim-0.
 
 ## Why
@@ -107,7 +107,7 @@ much to spare or how much short. Also, from the strip, give the x of each tap (o
 ## Prompt
 
 ```
-Read docs/agent_start.md, then docs/handoff_tall_stages.md, and do it on branch chain-tall-stages
+Read docs/agent_start.md, then docs/archive/handoff_tall_stages.md, and do it on branch chain-tall-stages
 (git fetch && git checkout -b chain-tall-stages origin/main). New cells only: don't change the existing chain,
 its cells or the floorplan. Push in small commits; stop and report when the two cells (and the strip, if they
 come out) are done, or if a cell can't get near its target width.

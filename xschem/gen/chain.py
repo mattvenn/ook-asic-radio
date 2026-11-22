@@ -21,7 +21,7 @@ detector) and its testbench:
   lna_shunt : o2p - Rh - PMOS - Rh - o2n, gate through Rg (+ Mcap to VDD, ~40 MHz) from pin g. On (g = 0)
               it loads stage 2 for ~11 dB less chain gain (the fallback if the
               chain oscillates); off, it costs ~0.2 dB. Sizing:
-              sim/chain/lna_lo.sh (docs/handoff_lna_lo.md).
+              sim/chain/lna_lo.sh (docs/archive/handoff_lna_lo.md).
   tb_chain  : the tb_lna front end (dipole, pad_model) -> lna_chain.
 
     python xschem/gen/chain.py

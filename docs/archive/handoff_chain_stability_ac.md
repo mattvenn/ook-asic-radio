@@ -1,6 +1,6 @@
 # Handoff: chain stability, AC margin, RC loads and bond-wire coupling (branch `chain-stability-ac`)
 
-From Harald Pretl's design review ([review_harald_2026-11-13.md](review_harald_2026-11-13.md), actions 4, 5 and 6).
+From Harald Pretl's design review ([review_harald_2026-11-13.md](../review_harald_2026-11-13.md), actions 4, 5 and 6).
 Written 2026-11-13. Paste the prompt at the end into a session on sim-0.
 
 ## Why
@@ -139,7 +139,7 @@ Use these everywhere, so (A), (B) and (C) can be compared:
 ## Prompt
 
 ```
-Read docs/agent_start.md, then docs/handoff_chain_stability_ac.md, and do it on branch chain-stability-ac
+Read docs/agent_start.md, then docs/archive/handoff_chain_stability_ac.md, and do it on branch chain-stability-ac
 (git fetch && git checkout chain-stability-ac). Simulation only: no changes to the design files. Push results to
 that branch in small commits; stop and report with numbers when (A), (B) and (C) are done, or if AC and the kick
 test disagree.

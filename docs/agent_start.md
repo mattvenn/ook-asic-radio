@@ -4,8 +4,8 @@ Several Claude sessions work on this repo at once, all pushing to `main`. Keep t
 read small: context spent on setup is context not spent on the block.
 
 ## Rules
-- **Only work on what Matt assigned you.** The leaf-block list in STATUS.md "Start here" says
-  what's done; if it's unclear whether a block is taken, ask.
+- **Only work on what Matt assigned you.** STATUS.md says what the design is and what's open;
+  if it's unclear whether something is taken, ask.
 - **Branch names say what the work is** (`chain-stability-ac`, `digital-eqy`, `tall-stages-handoff`).
   Never push an auto-generated name (`claude/busy-johnson-7it97w` and the like): if the session gave you
   one, rename it (`git branch -m <old> <new>`) before the first push. A handoff names its branch: use that.
@@ -15,7 +15,7 @@ read small: context spent on setup is context not spent on the block.
   it. If you change it, regenerate the blocks that use it and XOR their GDS against the committed
   ones (they must come out identical), then push the change on its own, early.
 - **Tools:** on the Linux host `tools/osic <cmd>`; on Matt's Mac `tools/osic-mac <cmd>` (from the
-  repo root). Sim scripts take `OSIC=$PWD/tools/osic-mac`. Don't run ngspice jobs in parallel.
+  repo root). Sim scripts take `OSIC=$PWD/tools/osic-mac`. On sim-0 the threads of all running ngspice add up to ≤ 28 (`sim/rerun/sched.py` keeps to that); on the Mac, two at once.
 
 ## What to read (and what not to)
 - `STATUS.md`: all of it (short). Per-block history is in `docs/history.md`: grep it for your
@@ -35,8 +35,8 @@ read small: context spent on setup is context not spent on the block.
 - DRC 0 in both magic and KLayout, antenna 0, LVS match (`layout/check.sh <block>`).
 - PEX (`layout/pex.sh <block>`) and a `sim/<dir>/tb_<block>.py [--pex]` comparing schematic vs
   extracted on what the block must do.
-- One section or table row in `docs/layout.md` (results + lessons others can reuse), one line in
-  STATUS.md's leaf-block list, `python3 tools/gds_links.py` for the viewer link.
+- One section or table row in `docs/layout.md` (results + lessons others can reuse), STATUS.md
+  updated if the block changes the design's state (move what it supersedes to `docs/history.md`), `python3 tools/gds_links.py` for the viewer link.
 - Fetch, rebase, push. Report the numbers briefly.
 
 ## Example prompt

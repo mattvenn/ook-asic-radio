@@ -1,7 +1,7 @@
 # Chain stability: small-signal margin, RC loads and bond-wire coupling (2026-11-13)
 
 This doc answers actions 4, 5 and 6 of [Harald Pretl's design review](review_harald_2026-11-13.md), from the
-handoff [handoff_chain_stability_ac.md](handoff_chain_stability_ac.md). It is simulation only: nothing in `xschem/`,
+handoff [handoff_chain_stability_ac.md](archive/handoff_chain_stability_ac.md). It is simulation only: nothing in `xschem/`,
 `layout/` or `gds/` changed. Every variant is a netlist edit made by a script.
 
 ## Summary

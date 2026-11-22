@@ -13,7 +13,7 @@ baseline. Commit and push as you go (small commits; other sessions push to `main
 - `docs/agent_start.md` (rules), `STATUS.md`.
 - **`docs/power.md`**: the benchmark, the method, the what-ifs and the recommendation. All numbers
   below come from there.
-- `docs/handoff_toplevel.md`: how the tile is built (blocks, straps, nets, routing intent).
+- `docs/archive/handoff_toplevel.md`: how the tile is built (blocks, straps, nets, routing intent).
 - `docs/layout.md`: "Power: how the TT PDN connects", "Current limits: EM and IR" (the EM table).
 
 ## Rules for this job
@@ -61,7 +61,7 @@ Target: every EM line in `em.py` under 50 % of the limit (≥ 2× margin, `docs/
   mid straps (x ~278) straight to avg_sc, comp_ct, lpf, log_det, Ctrim / r2r and bias**, so no block's
   current runs through another block's rails. Trim decap parts 1, 3, 4 where the trunks need room
   (Matt agreed decap can go). Avoid met4 over MIM top plates; keep the lpf / avg / trim analog nodes'
-  shielding intent from `docs/handoff_toplevel.md`.
+  shielding intent from `docs/archive/handoff_toplevel.md`.
 - Expected (estimate, not simulated): RX R to roughly a quarter (avg_sc / comp_ct VGND ~15–20 Ω).
 
 ### 3. Only if 2 can't reach the mid straps

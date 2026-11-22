@@ -3,8 +3,120 @@
 Moved out of STATUS.md (2026-10-08) to keep the start-up read short. Sections are in the order they were
 written; grep for the block or topic you need.
 
+## STATUS.md as it stood on 2026-11-21 (moved here 2026-11-22)
+
+The "Start here" log and the state summary from 2026-10-08 to 2026-11-21, kept as they were. Pin numbers, the U chain
+and branch names in it are of their time: STATUS.md has the current state.
+
+
+Read **PLAN.md** for the decisions and their evidence. This file is the "pick up from here" note: summary, next steps, how to run things. Per-block
+detail and the history behind each result: **docs/history.md** (read the section you need, not the whole file).
+New agents: start with **docs/agent_start.md**.
+Repo: github.com/mattvenn/ook-asic-radio (`main`).
+
+### Start here
+
+**Device noise in transient (Harald's review action 13, 2026-11-21, `docs/verify_tall.md` §5 "Device noise in transient"): the workaround is optimistic.** Per-device PWL noise sources in ngspice (`sim/noise/`) hurt ~0.9 dB more than the same NF injected at the antenna (noise from inside the chain skips the input network's band shape). ngspice's NF 11.0 also leaves out all 1/f (NaN in the pad switch): real NF 11.6 dB thermal, 12.5 dB with 1/f. Sensitivity is likely ~1.5 dB (up to ~2 dB) worse than the mixed bench says: −92 dBm 95 % → about −90.5 dBm. Next (TODO.md): recalibrate `gen_det.py` to the device-noise level and rerun the paired check.
+
+**Mixed signal after the `SHIFT_DB` recalibration (2026-11-21, `docs/verify_tall.md` §5 "Full gain after the `SHIFT_DB` recalibration"): pass.** `gen_det.py` now puts det at the fixed-noise level (+11.6 mV). Full-gain set rerun, 118 jobs OK: −92 dBm extracted 6/6, schematic 95 % over burst timing (20 paired seeds); the old calibration was ~0.4 dB optimistic at the edge (−94 dBm 55 → 40 %). No conclusion changes. Action 12 (whole code through the extracted RX) closed 2026-11-20: TODO.md.
+
+**Tile rebuilt with the tall chain (2026-11-14, branch `chain-tall-stages`, not merged): floorplan "RX in the corner", RX `ua[3]`/`ua[2]`, dbg `ua[1]`, TX `ua[4]`/`ua[5]` (`analog_pins: 6`). DRC 0 (magic + KLayout), precheck PASS, LVS match, antenna = the macro's 7. Next: tile PEX and the system runs. `docs/tall_stages_2026-11.md` "The tile".**
+
+**Straight tall chain (2026-11-13, branch `chain-tall-stages`, not merged): `docs/tall_stages_2026-11.md`.** Review action 8: `lna_chain_t` (input section + 6 tall stages, shunt built into stage 2) **124.0 × 63.5 µm, fits the 145.4 µm slot with 21.4 µm spare**; clean, LVS match. Extracted: +0.37 dB over today's U (tt / ss 10 °C), same stability edge (0.75 fF tt, 0.5 fF ss 10 °C added out → pad), own coupling 0 aF, output ~120 µm from the input. Open: move and re-pin log_det to the new tap positions; substrate solve.
+
+**Design review with Harald Pretl (2026-11-13): `docs/review_harald_2026-11-13.md`, "Where it stands".** Done: eqy (on `main`); AC margin, RC loads (not worth it) and bond wires (branch `chain-stability-ac`); the straight tall chain and its tile (branch `chain-tall-stages`); local decap. Not doing: the 60 dB option. Shelved: resistive-feedback input. Open, on [TODO.md](TODO.md): long runners (12, 13, once the tile PEX is in), adapter board, EM chamber.
+
+**Trim DAC driver resistance: accepted, change on any macro re-harden (Matt, 2026-11-12; `docs/verify_trim_dac.md`, branch `trim-dac`).** The macro's `trim_out` buffers (`clkdlybuf4s25_1`, 4.7 k / 2.5 k) make the r2r step down 11–18 LSB at 127/128, and make every step in the operating band ~1.3× coarser. That costs a little at the edge: mixed −92 dBm 96/104 vs 103/104 ideal, fs 50 °C e2e ~85 vs ~92 %, −94 dBm about half as likely. **If `radio_digital` is ever re-hardened, drive `trim_out[7:0]` with `buf_8`** (step 1.03×). Bring-up: trim sweep (bringup.md R14).
+
+**Chain stability, small-signal (2026-11-13, branch `chain-stability-ac`): `docs/stability_ac_2026-11.md`.** 10.7 dB (schematic) / 13.7 dB (extracted) gain margin at the 0.1 fF coupling budget, worst corner; K ≥ 10.5; bond-wire coupling doesn't oscillate at any k; RC loads not worth it (≤ ×1.09); actions 8–10 not needed for stability.
+
+**LNA low-gain strap: verified on sim-0 2026-11-04 / 05, `docs/verify_lna_lo.md`. All 9 items pass; items 2 (overload), 4 and 5 after follow-ups on 2026-11-06. Not merged to `main` yet.**
+- Passing: GL 16/16, formal, TT precheck, stability (low gain decays at ≥ 1 fF everywhere), extracted tile, FasterCap,
+  substrate. The full rerun matches 2026-10-13, with chain / RX −0.5…−0.7 dB extracted as predicted.
+- **(4) MC on the step: pass on the full GDS extraction** (Matt, 2026-11-06): 11.9 dB at tt, 10.1 dB at sf 27 °C. The
+  block extraction (finding #5's pessimistic bound) gives 8.46 dB at sf, but low gain still stabilises the chain
+  there (edge 0.75–1 fF → > 2 fF), so a slightly relaxed spec passes too. No redesign. Follow-up in the doc.
+- **(5) Low-gain sensitivity: pass, as the model predicts** (Matt, 2026-11-06): over burst timing 90 % at −86 dBm,
+  68 % at −88, 40 % at −90 (50 % ≈ −89; model ≈ −88.5). The first count's dip (−88 7/20, −90 16/20) was the
+  bench's fixed burst timing against the slicer's 4 phases (`sim/mixed/replay_corr.py`), not the strap.
+- **(2) Overload gap scan: pass** (Matt, 2026-11-06): its moved misses were burst-timing coin flips at threshold. No
+  dead time: a −10 dBm burst costs the next one ~2–3 dB for ~1 ms, recovered by ~5 ms (finding #13 restated).
+- The mixed-signal bench was fixed on the way: a d_cosim lost-edge artefact (`docs/sim_learnings.md`).
+
+**LNA low-gain strap (2026-10-29, branch `lna-lo-shunt`): design and layout.** A reset strap (`uio[7:4]` = `1011`) switches a shunt across stage 2's outputs: ~10 dB less chain gain, ~2.5× the out → in coupling margin, a fallback in case the chain oscillates. Re-hardened macro (new `lna_lo_n` pin), re-routed and exported tile (router: 2 × 2 cuts on 1 µm power vias). Coupling measured: wires (kpex) and substrate (3D solve) far below the 0.1 fF budget (`docs/substrate_2026-10-29.md`). Start from **`docs/archive/handoff_lna_lo.md`**.
+
+**State (2026-10-10): the 3x2 tile is assembled and routed (all 111 nets, decaps in) with the power fix merged and exported to `gds/` / `lef/`: magic + KLayout DRC 0, LVS clean, TT precheck pass. Extracted-tile sims done (`docs/archive/handoff_sim.md`): the c-mode anomalies were floating pin stubs (tied off in `sim/top/tb_tile.py`), the TX loss is fixed (tx_ls kn 14 / kp 8, TX corner re-floorplanned; extracted RC +3.18 dBm). Power delivery benchmarked and fixed (`docs/power.md` "After the fix"): every EM line < 50 %, RX ground 57–67 → 8–14 Ω. How to run every check: `docs/verification.md`. Details: docs/history.md, docs/layout.md "Top level".**
+- **Full re-verification 2026-10-13/14 after the H135 comparator rebuild (branch `comp-trim`): `docs/archive/verify_2026-10-13.md`.** 261 jobs OK, 0 failed: everything as 2026-10-11 except by design (comparator: −92 dBm for ≥ 99 % of chips, −94 dBm a best case), amp_dp / amp_dpc extracted −0.2 / −0.45 dB (re-extracted with magic 8.3.642), and new finding #13 (overload recovery 0.25–0.3 ms, was < 0.1; restated 2026-11-06: no dead time, ~2–3 dB desensitisation for ~1 ms, `docs/verify_lna_lo.md`). GitHub lvs action fixed and passing.
+- **Full re-verification (2026-10-11, sim-0, image 2026.09): `docs/archive/verify_2026-10-11.md`.** Everything passes against the docs: RTL / GL 15/15, vectors bit-identical, tile and block signoff, all 14 block tests sch + pex, corners, power (R / IR / EM / |Z| identical to "After the fix"). First c / rc tile runs on the power-fix layout: RX 2.985 mA, det −60 dBm 1.206 V, TX +3.13 dBm rc at 519 MHz. New: TX at 10 / 50 °C (rc +3.47 / +2.67 dBm), overload −10 dBm (follows the keying, averager recovers in ~1.3 ms), mixed signal on the extracted baseband (−94 and −92 dBm detect), joined RX −90 dBm (matches the model after a plot-window fix). **Moved:** mixed −94 dBm on the schematic no longer detects with ngspice 47 (at the edge; −92 passes): quote −92 dBm. **Tool traps:** magic 8.3.684 drops substrate C in ext2spice (extract with 8.3.642); sim-0 has an 8-CPU quota (≤ 3 ngspice).
+- **Floorplan:** `layout/floorplan/pins.md` / `floorplan.json` (layout 5: comp_ct and r2r flipped to MYR90, macro pins level with what they connect to; `docs/floorplan_spec.md` "Chosen floorplan"). Pin moves per block: `docs/layout.md` "Pin moves for the floorplan".
+- **Macro:** `macros/radio_digital/` (GDS, LEF, DEF, netlists), from `openlane/radio_digital` (`PIN_ORDER.md`). Signoff clean; RTL and GL cocotb 15/15 on the final netlist.
+- **RX:** every block is transistor level with real PDK passives and a real bias generator.
+  - Chain: pad → 6-stage NMOS diff-pair limiting chain.
+  - Detector: successive-detection log detector → 14 kHz RC LPF (2.95 MΩ / 3.7 pF).
+  - Comparator side: switched-cap average (τ ~0.45 ms) → continuous comparator; trim from the reused R2R ladder, driven by the RTL servo.
+  - **Confirmed three ways:** the fully joined transistor-level run (antenna → comparator) matches the split model. Corners 10–50 °C give a worst case of **≈ −92…−93 dBm**. And the **mixed-signal run** (RTL servo → real `r2r` → real `comp_ct`) detects −70 and −92 dBm bursts, on the schematic and the extracted baseband (−94 dBm is at the edge: detected extracted, missed schematic with ngspice 47; 2026-10-11).
+- **TX:** xschem blocks, +4.14…+4.26 dBm at all corners (+3.75…+4.55 over 10–50 °C; extracted tile rc +2.67…+3.47 dBm), both arms low when off, single-ended fallback (`tx_en_n`). VAPWR decap ~43 pF as laid out (42.6 pF, `decap_ac.sh`; target 50, see step 5).
+- **Digital:** **clock-gated** (`rd_cg.v`, one `sky130_fd_sc_hd__dlclkp_1` per 127-bit chip register), hardened with LibreLane at **200 × 220 µm** (2026-10-09; was 260 × 190).
+  - Signoff clean (DRC, LVS, antenna 0; timing met at all corners). Re-checked on the shipped GDS / DEF 2026-10-23 (a re-harden doesn't reproduce the layout): `openlane/radio_digital/signoff/`.
+  - **RTL suite 15/15 and gate-level suite 15/15** on the hardened netlist (`make GL=1`).
+- **Top level:** `radio_analog` (all analog blocks + bias + decap) and the `tt_um_mattvenn_radio` schematic; ua[0]/[1] RX, ua[2] debug (det via a debug-only TG), ua[3]/[4] TX (reassigned 2026-10-09; was TX 0/1, RX 2/3, debug 4).
+- **Power delivery benchmark** (2026-10-10, `docs/power.md`, `sim/power/`): the TT PDN modelled from tt-multiplexer (switched VDPWR / VAPWR on two met5 stripes each from gates west of the tile). RX R to the supply: VGND 57–67 Ω (avg_sc, comp_ct), VDPWR 27–32 Ω, flat to 500 MHz (decaps sit behind the mesh); chain IR ~36 mV. **EM fail: the west VAPWR strap (1.2 µm met4, one via4 column) carries the TX current at 2× the limit.** What-ifs: wider west straps fix the TX EM (via4 210 → 62 %) but not the RX (its ground current runs through other blocks' rails). **Next: `docs/archive/handoff_power_fix.md`** (TX strap / rail feed / via3, dedicated RX trunks; baseline in `sim/power/results/2026-10-10/`).
+- **Power fix** (2026-10-10, merged d5cd604, exported ff129bc; `docs/power.md` "After the fix"): wider west / east straps, TX driver VAPWR and VGND feeds along each rail, one supply trunk per RX block. EM: every line < 50 % (VAPWR via4 210 → 42 %, met4 202 → 29 %; the mcon at 71 % is a point-injection artefact, ~9 % real). RX VGND avg_sc 67 → 14 Ω, comp_ct 57 → 8 Ω; RX |Z| 2–3× lower; TX → RX into log_det 8.5× lower; TX VAPWR drop 29 → 6 mV avg. DRC 0, LVS match, precheck pass. tx_ring / tx_ls VDPWR 7.3 / 16.7 → 1.8 / 3.5 Ω (`VDPWR_TX` 2 µm). End-to-end deck (lvs) unchanged from the pre-fix layout. Open: the c / rc tile runs on this layout.
+- **Area** (`sim/area/area_netlist.py`): the analog needs ~49k µm² of the ~57k left beside the macro in the 3x2 (493 × 226 µm): **85 %**, 93 % of the tile. The VAPWR decap (~18k µm²) is the biggest block.
+- **Operating range 10–50 °C only.**
+- **Layout flow (KLayout pcells → DRC/LVS → PEX → block test) works end to end on `tx_drv`.** See `docs/layout.md` for the steps, power/PDN rules, EM table and lessons.
+  - **tx_drv v2:** 40.9 × 27.6 µm; DRC (Magic + KLayout) and LVS clean. EM-sized from measured currents.
+  - **Block test** (`sim/tx/tb_tx_drv.py [--pex]`): −0.32 dB vs schematic.
+  - **Policy:** each block gets a small `tb_<block>` (schematic vs extracted). One end-to-end run on the full extracted design at the end.
+  - **Power pins:** met4 straps (≥ 1.2 µm, full height) on both the left and the right of the tile.
+  - **TX blocks:** `tx_drv`, `tx_ls`, `tx_ls_en` laid out with the row builder `layout/gen/rows.py`; all clean. Previews: `layout/README.md` (TT GDS viewer links).
+  - **Level shifter:** tx_ls **kn 14 / kp 8** (was 10 / 4, 2026-10-10): the extracted tile lost 1.5 dB to the p arm's duty under the real a / b load. `tb_tx` +4.14…+4.26 dBm at all corners; extracted tile RC **+3.18 dBm** (was +2.11). TX corner re-floorplanned (tx_ls beside the ring, the two tx_ls_en underneath). Details: docs/history.md "Extracted-tile sims".
+  - **Ring:** `tx_ring` laid out, **folded into two rows** so there's no long feedback wire (std cells, 17.9 × 7.0 µm, clean). Extracted 529.9 MHz tt → **~459 MHz on silicon** (×0.866), +5.8 % on 433.92. The ring is untrimmed and the RX band is 330–560 MHz, so this is fine. 24 inverters would give ~422.
+  - **Plan (Matt, 2026-10-08):** a first take on every leaf block, then floorplan the whole tile; assemble `tx_top` as part of that floorplan.
+    - Outputs exit the bottom of the tile: ua[3] = 78.7, ua[4] = 59.3 µm in the 3x2 DEF, so the TX goes there (pins reassigned 2026-10-09).
+    - The digital macro's `tx_en`/`tx_en_n` leave its west edge near the bottom.
+  - **Leaf blocks done** (`layout/README.md` has viewer links):
+    - TX: `tx_drv`, `tx_ls`, `tx_ls_en`, `tx_ring`.
+    - Trim DAC: `r2r` (the tt08 layout reused; extracted error ≤ 0.02 LSB).
+    - RX: `avg_sc` **v2** (2.35k µm², was 3.25k; mirrored phi/phib channel with shields: extracted clock-coupling imbalance on cs/out 0.2 → ≤ 0.011 fF, extracted hold drift ±1.8 → +0.07 mV over 20 cycles, i.e. static offset ~4 → ~0.15 mV; τ 0.423 ms); `lpf_rc` and `dbg_tg` (other sessions).
+    - Also by other sessions: the decaps.
+    - **`bias_gen`:** done, 80.2 × 49.1 µm (3.9k µm²): mirror array (123 units, ABBA common centroid) under Cc + 2 × Cvcm, the small devices (rows.py), the resistors under one Cvref. Clean; extracted currents and vcm within 0.1 % of the schematic over VDD 1.7–1.9 V, 10–50 °C (`sim/bias/tb_bias_gen.py`). Schematic changes: Cvcm / Cvref as 2 × 22 µm units, 5 array dummies `Mdum`, Rref as two 5 kΩ halves. Details in `docs/layout.md`.
+    - **`comp_ct`:** done, v2 **73.5 × 42.0 µm (3.08k µm², was 5.0k)**: trim pair next to the main pair (out/o2 → d1/d2 coupling 7.4 / 6.2 fF → 0), bias tails folded into 4.55 µm fingers, Cl (2 × 22 × 11) + Cref over the resistor ring. Clean. **v3 (2026-10-13): H135 trim** (mirror W 8 L 2, trim pair W 8, Rdeg 0.85 MΩ, vref 1.35 V), same footprint, inp pin moved (5a); extracted balance code 184 at CM 1.0 V, trim 0.136 mV/LSB. Matching dummies are in the schematic (`Mdn*`/`Mdp*`).
+    - **`det_cell`** (another agent) / **`log_det`:** done, **compacted to 2 rows × 3 cells: 87.3 × 31.0 µm (2.7k µm², was 5.4k bbox)**. The rows share the VSS rail (bottom row mirrored), so the inputs face out top and bottom, with t1 and t6 on opposite corners. The vb replica (Rs_b drawn like the cells' Rs) and Rdet sit in an end column under Cdet. VDD is a met3 strip down the right edge. Clean.
+      - Extracted idle det 1.520 → 1.489 V (high-po contact term per segment: Rs/Rdet ~10 % high); 100 mV on t6 −1.56 → −1.46 mV. Unchanged from the 1 × 6 layout.
+    - **`lna_chain`:** done (2026-10-09), folded as a U for the tile: **145.36 × 70.47 µm**, R180 at (13.14, 6.5), input section over ua[0] / ua[1], stages 3–6 back across a 14 µm guard-ring moat. Clean. Extracted late-stage → input coupling 0 aF. Stable at tt / ss 10 °C, with gain 0.44 / 0.47 dB below the straight chain (the o2 turn). Details in `docs/layout.md` "lna_chain".
+
+**Re-verified (2026-10-08 evening): rdeg 2 MΩ, decap blocks, chain stability.** Details in docs/history.md, "Re-verify: rdeg 2 MΩ, decaps, chain stability".
+- Trim step at the operating point (DAC 0.8–1.2 V) is **0.062–0.076 mV/LSB at all corners, 10–50 °C**. e2e at −94 dBm: tt 11/12, fs 50 °C 8/12, ff 50 °C 10/12; −92 dBm 12/12.
+- Decaps: **50.06 pF** (VAPWR) and **29.9 pF** (VDPWR), flat to 434 MHz and over ±10 % supply.
+- `tb_radio_analog`: unchanged. Mixed-signal −94 dBm (real servo loop) still detects the burst. Bias OTA loop: PM ~90° at all corners. R/C corners: trim step 0.056–0.085 mV/LSB.
+- **Chain layout rule:** keep chain output → input coupling (pad or stage-2 input) **≤ 0.1 fF** asymmetric. At the highest-gain corner (ss 10 °C, 81 dB), 0.2 fF gives +2.8 dB of peaking near 600 MHz and **0.5 fF oscillates** (1 fF at tt). Supply/ground L up to 5 nH with the 30 pF decap is fine.
+
+**Next steps, in order (before the shuttle):**
+1. ~~Decide the TX frequency~~: **keep `NINV` 22** (Matt, 2026-10-12). The tunable ring (`docs/archive/plan_ring_tune.md`) was not pursued. Predicted **~448 MHz on silicon (+3 %)**: tile RC 519 MHz × 0.866 (the ttsky25b tile calibration), and block 530 MHz × 0.843 (both ttsky25b rings re-extracted with today's flow: 18 inv 611 → ~515 measured, 36 inv 337 → ~285). The earlier ~459 was the block's 530 × the tile factor. 24 inverters would give ~416 (−4 %), no better. Sweep and details: docs/history.md "NINV sweep (2026-10-12)".
+2. ~~Extracted-tile deck c / rc on the final layout~~: done 2026-10-11 (`docs/archive/verify_2026-10-11.md`).
+3. ~~Joined RX on the extracted tile, mixed `--pex`~~: mixed `--pex` done (−94 / −92 dBm detect). The full 400 µs extracted-tile joined run is ~8 days on sim-0, so a 30 µs on/off pair at −92 dBm stands in for it (`docs/archive/verify_2026-10-11.md`). Rerun after any block change.
+3a. ~~Close the verification gaps~~: phases 1–3 of `docs/archive/plan_verify_gaps.md` done 2026-10-12/13 (`docs/verify_supply_mc.md`, `docs/verify_system_2.md`). **Sensitivity −92 dBm at 10–50 °C for 2/3 to 3/4 of chips, −90 dBm at 85 °C.** Findings, none fixed, with what each means for performance: `docs/verify_system_2.md` "Findings" (worst: comparator mismatch vs trim step: rerun 2026-10-13 with distinct samples, 26–34 % of chips miss −92 dBm and 8–10 % reach only about −88 dBm, at tt / ss / fs alike; `tx_ls_en` fails at VDPWR 1.71 / VAPWR 3.6 V). Phase 4 (decap flatten + full rerun) only if a finding leads to a design change. **Comparator trim redesign (2026-10-13, branch `comp-trim`, not merged): Matt picked H135** (mirror W 8 L 2, trim pair W 8, Rdeg 0.85 MΩ, vref 1.35 V; `docs/verify_supply_mc.md` 2.2): ≥ 99 % of chips at −92 dBm at every 1.8 V corner (was 66–78 %), −94 dBm becomes a best case. Block, tile (check_top clean) and `gds/` rebuilt with the stub fix (5a) and the decap flatten (phase 4.1); mixed signal −92 dBm detects, servo settled at 0.66 ms. **Supply:** Matt, good 1.8 / 3.3 V (measured 1.80–1.81 / 3.30 V on 3 boards).
+4. **Re-export and precheck** after any layout change: `layout/export_tt.sh`, push, the GitHub `gds` action (TT precheck) must pass. Antenna: 7 violations inside the macro (unchanged since the TX move); confirm the TT precheck accepts them.
+5. **Sign off the layout compromises** (Matt): tx_p's neck through the chain, now a 3.4 µm dog-leg (the stage gap is pinched on alternate sides by each `amp_dpc`'s top-plate strap; wider needs a chain change for ~0.01 dB; arm R tx_p 1.15 / tx_n 1.25 Ω); decap as laid out ~43 pF VAPWR / 11 pF VDPWR vs 50 / 30 targets; sc_phi 10–20 µm from the avg / comp inputs (intent ≥ 20); det / lpf not shielded.
+5a. ~~**Layout tidy, next time the tile is rebuilt (found 2026-10-12, harmless):** comp_ct's **inp pin is a dead-end stub.**~~ **Fixed 2026-10-13 (branch `comp-trim`):** inp's met4 riser goes straight to a met4 pin where `avg` arrives; route 12.2 → 7.6 µm, no stub, inn unchanged (docs/layout.md comp_ct v3). In `gds/` the top-level `avg` route (`layout/gen/top_nets.py:51`) hops the comp_ct VDD met3 rail on met4 at chip (136.8–139.8, 173.5) and lands on the *top* of inp's met3 run, not on the pin. The rest of that run, ~22 µm down to chip y 152.3 plus the bend out through the gap in the VDD rail (cell x 36.85–37.35, the N-edge pin from `PIN_X` in `layout/gen/comp_ct.py:85`), connects to nothing. inn is fine: lpf meets its pin through the other gap. Cost: a few fF on avg (Cavg 3.7 pF) and a little VDD-rail coupling (~1000× down); LVS and the extracted sims already include it. **Fix:** either move inp's pin in `comp_ct.py` to where avg arrives (the riser end, cell x ≈ 16 under the rail) and drop the long run and its rail gap, or make the top-level router land `avg` on the existing pin. Then DRC / LVS, `tb_comp_ct --pex`, mixed `--pex`, re-export and precheck (step 4). Not worth reopening the layout for alone.
+6. Not blocking: the macro's max-slew warnings (marginal, mostly ss). Power, optional: a wider mid VGND strap (~3 µm fits) in place of the `VGND_RXL` landing; decap at the load (`docs/power.md` proposal 5: |Z| is still flat, ≈ R, to 500 MHz).
+
+**Parked:** 63-chip Gold code (e2e first), tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real radios), wire-as-matching antenna idea, SDR bench tests (not needed).
+
+### How to run things
+- **sim-0** (k8s pod inside the image, no docker): on a new pod run `bash tools/pod_setup.sh` first (git identity + push via `$GITHUB_TOKEN` from the pod spec, magic 8.3.642, pyvisa; prints the CPU quota). `tools/osic` / `tools/osic-mac` run commands directly via `tools/osic-inimage`; system `python3` has numpy and cocotb. Since 2026-10-12 the pod has 28 CPUs / 64 GB: **the threads of all running ngspice add up to ≤ 28** (tile-pex decks up to 3 at once at 8 threads; small decks single-threaded, up to ~24). Check `/sys/fs/cgroup/cpu.max` on a new pod. Extract with magic 8.3.642: `OSIC_MAGIC=$HOME/.local/magic642/bin tools/osic bash layout/pex.sh <block>` (the image's 8.3.684 drops substrate C).
+- cocotb: `cd verilog/test && PATH=$HOME/work/asic-workshop/venv/bin:/usr/bin:/bin make` (~12 min); gate level: add `GL=1 SIM_BUILD=sim_build_gl COCOTB_RESULTS_FILE=results_gl.xml` (~35 min; the default netlist is `macros/radio_digital/radio_digital.nl.v`). On the Mac: `tools/osic-mac bash -c 'cd verilog/test && make COCOTB_CONFIG=cocotb-config ...'` (RTL ~8 min, GL ~17 min). Run it as `bash -c 'cd verilog/test && …'`: `make -C` breaks the Makefile's `$(PWD)`, and a backgrounded `cd` may not stick. With the login PATH, oss-cad-suite's python (no numpy) gets picked up and the run dies at import. `COCOTB_TEST_FILTER` takes one test name (a `|` alternative matched nothing).
+- Generators: `python3 xschem/gen/<x>.py`. Netlist: `tools/osic bash -c 'xschem -n -s -q -o build xschem/<tb>.sch'` (grep the netlist for `IS MISSING`).
+- Simulate in `build/` via `tools/osic`. Analysis/plots: `~/work/asic-workshop/venv/bin/python` (system python has no numpy).
+- `tools/osic` copies the tracked root `.spiceinit` into `build/` each run.
+- **Don't run ngspice processes in parallel on the Linux host** (each uses 8 threads); on Matt's Mac two at once is fine. **Don't edit a script while it's running.**
+- **All the xschem/ngspice traps and speed lessons are in `docs/sim_learnings.md`.** Read that before writing a new testbench.
+- **On Matt's Mac** (repo at /Users/mattvenn/asic/ook-asic-radio): `tools/osic` only works on the Linux host. Use `tools/osic-mac <cmd>` instead (same image, sky130A via `~/asic/.designinit`). The sim scripts take `OSIC=$PWD/tools/osic-mac`.
+
+
 ## Extracted-tile sims: c-mode anomalies, TX loss, tx_ls resized and TX corner re-floorplanned (2026-10-10, branch tx-ls-swap)
-Handoff `docs/handoff_sim.md` steps 1-3. Runners: `sim/top/tb_tile.py` (whole deck), `sim/top/tb_tile_tx.py` (TX only: drop / keep C per net, extra C, scaled devices, kn / kp / corner / temp what-ifs).
+Handoff `docs/archive/handoff_sim.md` steps 1-3. Runners: `sim/top/tb_tile.py` (whole deck), `sim/top/tb_tile_tx.py` (TX only: drop / keep C per net, extra C, scaled devices, kn / kp / corner / temp what-ifs).
 - **c-mode anomalies (lpf 0.89 V, off current 1.59 µA) were a failed op, not the layout.** The tile's digital-pin stubs (`nc_*`: the macro isn't extracted) carry wiring C and no DC path, so the op hit a singular matrix, gmin and source stepping failed and ngspice fell back to a transient op that returned unsettled nodes (lpf behind 2.95 MΩ × 3.7 pF). `tb_tile.py` ties them to VGND through 1 GΩ: c = lvs (lpf 1.4915 V, off 0.910 µA), det at −60 dBm 1.204 V (sch 1.206).
 - **TX loss split (old layout, c mode +2.32 dBm, 532 MHz; ring-C-only +3.93):** a / b (ls → drv, 8.9 / 12.9 fF) +1.48 dB; tx_drv internal C +0.7; ls internal +0.2; output C (ua[3]/[4], ~80 fF) +0.05; enable path 0 dB but the 8 ns on / off edges; the frequency shift itself ~0.4 dB at most. Mechanism: the p arm's duty 38 → 22 %, tx_ls's A rises through a 1.68 µm 5 V PMOS only after B falls. The block extractions already had about that a / b C: ls and drv were never extracted together before.
 - **Full RC, old layout:** RX = c (2.985 mA, det / lpf 1.491 V, −60 dBm det 1.203 V); TX 514 MHz +2.11 dBm.
@@ -17,7 +129,7 @@ Handoff `docs/handoff_sim.md` steps 1-3. Runners: `sim/top/tb_tile.py` (whole de
   - **Mixed-signal with extracted baseband blocks:** `python3 sim/mixed/gen_mixed.py --pex -94` (lpf_rc / avg_sc / comp_ct / r2r from `layout/pex/`), run `mixed_-94_pex.cir` from `build/mixed`, `plot_mixed.py -94_pex` (~15 min). Note `gen_det.py`'s detector model idles at 1.439 V (schematic) vs 1.49 V extracted.
 
 ## Top level: tile assembled, routed, DRC / LVS clean (2026-10-09 evening)
-Handoff `docs/handoff_toplevel.md`. Flow: `layout/gen/decap.py` (decap parts) → `layout/gen/top.py` (template pins,
+Handoff `docs/archive/handoff_toplevel.md`. Flow: `layout/gen/decap.py` (decap parts) → `layout/gen/top.py` (template pins,
 placement from `floorplan.json`, straps, power joins) → `layout/gen/route.py` + `layout/gen/top_nets.py` (router and
 net list) → `build/top/tt_um_mattvenn_radio.gds`. Checks: `layout/check_top.sh`. Details and lessons:
 `docs/layout.md` "Top level".
@@ -35,7 +147,7 @@ net list) → `build/top/tt_um_mattvenn_radio.gds`. Checks: `layout/check_top.sh
   - The top of xdeca part 1 is MOS-only (the TT staircase needs met3/met4 there), xdecd parts 1/2 are MOS-only,
     xdecd part 4 is dropped (it sat in the TT channel).
   - The VAPWR decaps sit 7–33 Ω from the straps (rough mesh solve, `tools/power_r.py`): a power-delivery session is
-    to measure this properly (`docs/handoff_power.md`).
+    to measure this properly (`docs/archive/handoff_power.md`).
 - **Routing:** all 95 nets.
   - The TT bus is fixed geometry, a two-layer channel above xdeca part 2.
   - tx_p necks to 2 µm through a 2.6 µm gap between the chain's stage MIMs (EM fine, ~0.5 Ω): **open for Matt**.
@@ -55,7 +167,7 @@ net list) → `build/top/tt_um_mattvenn_radio.gds`. Checks: `layout/check_top.sh
   - lpf idle 1.52 / 1.49 / **0.89** V.
   - TX 485 / 679 / 532 MHz, +4.05 / +2.87 / +2.32 dBm, on 3.2 / 3.8 / 8.2 ns.
   - **Unexplained:** with wiring C, lpf's DC level and the off current change, which capacitors can't do (lpf's
-    devices are identical in both extractions). The TX loses 1.7 dB and slows. Handed to `docs/handoff_sim.md`.
+    devices are identical in both extractions). The TX loses 1.7 dB and slows. Handed to `docs/archive/handoff_sim.md`.
 
 ## Blocks and macro to the chosen floorplan (layout 5, 2026-10-09)
 - **Digital macro re-hardened at 200 × 220 µm** (from 260 × 190; `openlane/radio_digital`, final run `l5b_200x220`, views in `macros/radio_digital/`).
@@ -573,7 +685,7 @@ Ring (nand2_2 + 22 inv_2, 3.2 fF/stage) → thin W 9/3 inverter (the load the ri
 
 ## Digital re-harden (LibreLane v3, openlane/radio_digital/config.json, 2026-10-08; before clock gating, see "Clock gating" above for the final 260 × 190)
 - **Run:** `tools/longrun harden tools/osic bash -c 'cd openlane/radio_digital && librelane --pdk sky130A --run-tag <tag> --overwrite config.json'` (~5–10 min).
-  - `config.json` replaces the OpenLane 1 `config.tcl` (kept for reference). The root Makefile's `harden` target is still the OpenLane 1 flow and doesn't work here.
+  - `config.json` replaces the OpenLane 1 `config.tcl` (and the root Makefile's OpenLane 1 `harden` target; both removed 2026-11-22).
 - **Synthesis:** 27,704 µm² of cells, 55 % flip-flops (717).
   - `rd_gold.v`'s LFSR step functions became wires: Yosys' pre-synthesis check flags function-local wires in always blocks as undriven (a false positive; the post-synthesis check was clean). cocotb 15/15 after the change.
 - **Size trials:**

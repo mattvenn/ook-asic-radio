@@ -76,4 +76,4 @@ commits; other sessions push to `main` too).
 
 ## Don't
 - Don't edit the layout generators (`layout/gen/top.py`, `route.py`, `top_nets.py`, `decap.py`, block generators):
-  report what needs changing. A power-delivery session is working from `docs/handoff_power.md` at the same time.
+  report what needs changing. A power-delivery session is working from `docs/archive/handoff_power.md` at the same time.

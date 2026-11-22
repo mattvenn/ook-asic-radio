@@ -103,7 +103,7 @@ In order. Each item: the command, what passes, the reference.
 1. **Gate-level cocotb** on the re-hardened netlist.
    - `cd verilog/test && make GL=1` (`build/gl_models` per the Makefile). Check `results.xml` for `<failure`.
    - Pass: 16/16, including `test_lna_lo_strap`.
-2. **Full rerun** of the verification set: `sim/rerun/sched.py sim/rerun/jobs_2026-10-13.py` (~10 h on sim-0), against `docs/verify_2026-10-13.md`.
+2. **Full rerun** of the verification set: `sim/rerun/sched.py sim/rerun/jobs_2026-10-13.py` (~10 h on sim-0), against `docs/archive/verify_2026-10-13.md`.
    - **Expect port-order fallout:** radio_analog, lna_chain and the TT top have a new pin (`lna_lo_n`, after `dbg_en` / `vcm`). Netlists made by xschem pick it up. Scripts that hard-code instance lines or swap extracted subckts by position may not: fix them so the strap is off (`vglo` 1.8 / `lna_lo_n` tied high).
    - Pass: everything within the 2026-10-13 tolerances, except the chain and RX numbers, which should drop by the shunt's 0.65–0.8 dB.
 3. **Chain stability on the final extraction**, both strap states (this extends the table above):

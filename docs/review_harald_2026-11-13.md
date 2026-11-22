@@ -90,10 +90,10 @@ change that. Demos should be cabled with attenuators, or done in a shielded room
 ## Decisions (Matt, 2026-11-13)
 
 - 1–3: done in this commit.
-- 4, 5, 6: one session, branch `chain-stability-ac`, [handoff_chain_stability_ac.md](handoff_chain_stability_ac.md).
-- 7: one session, branch `digital-eqy`, [handoff_eqy.md](handoff_eqy.md).
+- 4, 5, 6: one session, branch `chain-stability-ac`, [handoff_chain_stability_ac.md](archive/handoff_chain_stability_ac.md).
+- 7: one session, branch `digital-eqy`, [handoff_eqy.md](archive/handoff_eqy.md).
 - 8: first a sketch of tall, thin stage cells, to see if a straight chain fits in the U's box (it can also be
-  flipped, input on the left): branch `chain-tall-stages`, [handoff_tall_stages.md](handoff_tall_stages.md).
+  flipped, input on the left): branch `chain-tall-stages`, [handoff_tall_stages.md](archive/handoff_tall_stages.md).
 - 9–11: later, once 4–6 have reported.
 - 12 and up: only after any LNA changes are made.
 
@@ -112,5 +112,5 @@ change that. Demos should be cabled with attenuators, or done in a shielded room
 | 11 Resistive-feedback input | Shelved. |
 | 12, 13 Long runners, 14 Adapter board, 15 EM chamber | On the to-do list ([TODO.md](../TODO.md)). 12 and 13 are due now that the LNA has changed, once the tile PEX is in. |
 | Point 10 Comparator (more differential, push-pull) | Shelved (Matt, 2026-11-14). |
-| Point 11 Multiple vias | Rule in `docs/layout.md` "Checklist" (flared junction with a via array, Matt's sketch); sweep of every block and the tile handed off: branch `via-arrays`, [handoff_via_arrays.md](handoff_via_arrays.md). |
+| Point 11 Multiple vias | Rule in `docs/layout.md` "Checklist" (flared junction with a via array, Matt's sketch); sweep of every block and the tile handed off: branch `via-arrays`, [handoff_via_arrays.md](archive/handoff_via_arrays.md). |
 

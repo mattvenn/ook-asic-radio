@@ -1,6 +1,6 @@
 # Handoff: equivalence check of the digital macro (branch `digital-eqy`)
 
-From Harald Pretl's design review ([review_harald_2026-11-13.md](review_harald_2026-11-13.md), action 7). Written
+From Harald Pretl's design review ([review_harald_2026-11-13.md](../review_harald_2026-11-13.md), action 7). Written
 2026-11-13. Paste the prompt at the end into a session on sim-0 or Matt's Mac.
 
 ## Why
@@ -74,7 +74,7 @@ the macro. Push to `digital-eqy` only. Matt merges.
 ## Prompt
 
 ```
-Read docs/agent_start.md, then docs/handoff_eqy.md, and do it on branch digital-eqy
+Read docs/agent_start.md, then docs/archive/handoff_eqy.md, and do it on branch digital-eqy
 (git fetch && git checkout digital-eqy). Don't change the RTL or the macro. Push to that branch in small commits;
 stop and report if eqy finds a real mismatch, and when the check and the planted-bug self-test are done.
 ```

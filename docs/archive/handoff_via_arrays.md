@@ -1,6 +1,6 @@
 # Handoff: via arrays at every junction (branch `via-arrays`)
 
-From Harald Pretl's design review ([review_harald_2026-11-13.md](review_harald_2026-11-13.md), point 11). Written
+From Harald Pretl's design review ([review_harald_2026-11-13.md](../review_harald_2026-11-13.md), point 11). Written
 2026-11-14. Paste the prompt at the end into a session on sim-0.
 
 ## Why
@@ -73,7 +73,7 @@ The analog blocks in the tile (`layout/floorplan/floorplan.json`): `tx_drv`, `tx
 ## Prompt
 
 ```
-Read docs/agent_start.md, then docs/handoff_via_arrays.md, and do it on branch via-arrays
+Read docs/agent_start.md, then docs/archive/handoff_via_arrays.md, and do it on branch via-arrays
 (git fetch && git checkout -b via-arrays origin/main). No circuit, pin or outline changes. Commit the via audit
 baseline first, then fix block by block. Push in small commits; stop and report when the tile is rebuilt and
 clean, or if a block needs a pin or outline change.

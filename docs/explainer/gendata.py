@@ -213,7 +213,7 @@ def baseband(lvl):
 
 
 # Link model settings: tt with the H135 comparator, as e2e_h135_tt in sim/rerun/jobs_2026-10-13.py
-# (docs/verify_2026-10-13.md: -94 dBm 27/48, -92 dBm 48/48).
+# (docs/archive/verify_2026-10-13.md: -94 dBm 27/48, -92 dBm 48/48).
 MODEL = {'nf_db': 11.0, 'brf': 450e6, 'slope_mv_db': 13.4, 'offset_mv': 1.26, 'trim_mv': 0.127, 'noise_mv': 0.3,
          'levels': list(range(-110, -24, 2)), 'sends': 12, 'seed': 7}
 MODEL_CACHE = os.path.join(B, 'explainer_model.json')   # the sweep takes ~2 min: rerun only when MODEL changes

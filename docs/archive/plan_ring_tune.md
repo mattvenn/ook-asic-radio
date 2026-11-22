@@ -2,7 +2,7 @@
 
 > **Not pursued (2026-10-12):** the tunable ring was considered too much of a stretch goal for this shuttle. Phase 1 was started (taps + varactors looked feasible, but the fine control path needed more work) and then dropped. The TX frequency is set by `NINV` instead (STATUS next step 1).
 
-Why, and the numbers behind it: [trim_433.md](trim_433.md). This is the work plan. It has six phases. Each phase
+Why, and the numbers behind it: [trim_433.md](../trim_433.md). This is the work plan. It has six phases. Each phase
 ends at a **gate where Matt reviews and approves** before the next phase starts. Nothing merges to `main`
 until gate 5: all work happens on a branch (`ring-tune`), so `main` stays a tapeout-ready fallback (the
 untrimmed ring, `NINV` 22 or 24) the whole time.
@@ -16,7 +16,7 @@ untrimmed ring, `NINV` 22 or 24) the whole time.
 | Coarse / fine overlap | fine range ≥ 1.3 × the largest coarse step, at every corner |
 | FM from the control path | ≤ 10 kHz (ΣΔ ripple, DAC glitches) |
 | Jitter / wander | not worse than the current ring by more than 2× (bench: 45 kHz std) |
-| TX power at the 433.92 setting | within 0.5 dB of today's (extracted tile RC +3.13 dBm, docs/verify_2026-10-11.md), arm duty within today's range |
+| TX power at the 433.92 setting | within 0.5 dB of today's (extracted tile RC +3.13 dBm, docs/archive/verify_2026-10-11.md), arm duty within today's range |
 | Off state | both arms low; with the ring free-running, carrier leakage ≥ 40 dB below on |
 | RX | unchanged: every RX regression number identical, or within its noise |
 | Area | ≤ 1.5k µm² analog; macro ≤ 210 × 220 µm |
@@ -217,11 +217,11 @@ and the updated area / utilisation.
      5 fine at tt; the codes nearest 433.92 at ss / ff), power at the 433.92 code, the off state, and
      free-running leakage.
    - **RX regression:** RX current, idle det / lpf, det at −60 dBm and the all-off current. Each must match
-     the last sign-off numbers (docs/verify_2026-10-11.md).
+     the last sign-off numbers (docs/archive/verify_2026-10-11.md).
 2. **Mixed signal on the extracted blocks** (`gen_mixed.py --pex`, first run 2026-10-11): −94 and −70 dBm bursts
    detected, so the `trim` branch hasn't hurt the servo loop.
 3. **Joined RX on the extracted tile** (`tb_tile_joined.py`): the 30 µs on / off pair at −92 dBm that stands in
-   for the ~8-day full run (docs/verify_2026-10-11.md), now including the `trim` branch.
+   for the ~8-day full run (docs/archive/verify_2026-10-11.md), now including the `trim` branch.
 4. **Calibration end to end:** `model/tune.py` run on the extracted-tile frequency tables (tt / ss / ff).
    Show it converges to 433.92 ± 10 kHz at each corner, plus the predicted silicon code with the ×0.866
    factor.
@@ -256,7 +256,7 @@ Rough effort:
 | 6. E2E | 2 days of work + ~1 day of unattended runs | rc ~1 h, joined 10+ h |
 
 About **2.5–3 weeks** in total, against a November 2026 tapeout. Phase 6 reruns the extracted-tile checks from
-docs/verify_2026-10-11.md, which any block change requires anyway.
+docs/archive/verify_2026-10-11.md, which any block change requires anyway.
 
 **Risks and fallbacks:**
 - **Varactor tuning too weak under full swing** (phase 1). Fallback: more nodes, more coarse bits, or B's

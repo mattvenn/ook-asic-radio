@@ -183,7 +183,7 @@ is far from 2× margin). Also via3 at the west strap 107 %.
 3. A strap in decap part 1 (x ~251–273, 6 µm): only if 2 can't reach the mid straps.
 
 ## After the fix (2026-10-10, branch power-fix, case A, 0.5 µm mesh)
-The routed tile with the fixes from `docs/handoff_power_fix.md` (steps 1 and 2), branch `power-fix`
+The routed tile with the fixes from `docs/archive/handoff_power_fix.md` (steps 1 and 2), branch `power-fix`
 (final: `VDPWR_TX` widened, see below). Picture of the new power routing: `docs/images/power_fix_routing.png`
 (`tools/power_routing_draw.py`). DRC 0, LVS match, precheck pass; magic reported no shorts in the
 extraction copy. Raw results: `sim/power/results/2026-10-10/*_A_fix*`.

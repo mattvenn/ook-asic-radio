@@ -1,6 +1,6 @@
 """Top-level nets for layout/gen/route.py, in routing order. Connectivity from
 xschem/gen/top.py (radio_analog + tt_um_mattvenn_radio); routing intent from
-docs/handoff_toplevel.md "Nets and routing intent".
+docs/archive/handoff_toplevel.md "Nets and routing intent".
 
 A terminal is a list of tags (any one of them may be hit): 'inst.pin' for a block pin,
 the bare name for a tile pin, 'NET@w|m|e' for a power strap (west / mid / east set).
@@ -226,7 +226,7 @@ def tt_bus():
     P = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../build/top/pins.json')))
     tt = ['clk', 'rst_n'] + [f'{b}[{k}]' for b in ('ui_in', 'uio_in', 'uo_out', 'uio_out', 'uio_oe')
                              for k in range(8)]
-    DEF = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../mag/tt_analog_3x2_3v3.def')
+    DEF = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../floorplan/tt_analog_3x2_3v3.def')
     import re
     txt = open(DEF).read()
     xpin = {}

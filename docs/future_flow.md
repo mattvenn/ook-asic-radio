@@ -88,5 +88,5 @@ accepted:                    # warnings the designer has decided about, with the
 
 ## Where things are now
 - Floorplan page and tools: `layout/floorplan/page/` (engine, placer, pinfit, refine, pinreport, check); spec in `docs/floorplan_spec.md`.
-- The chosen floorplan and the handoff for step 3 done by hand: `layout/floorplan/pins.md`, `floorplan.json`, `docs/handoff_pins_reharden.md`.
+- The chosen floorplan and the handoff for step 3 done by hand: `layout/floorplan/pins.md`, `floorplan.json`, `docs/archive/handoff_pins_reharden.md`.
 - Still open in this design: the `lna_chain` fold (rule 2).
