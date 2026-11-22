@@ -2,13 +2,11 @@
 This file is used to generate your project datasheet.
 -->
 
-[![Made with Claude](https://img.shields.io/badge/Made%20with-Claude-D97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code)
-
 ## How it works
 
 A 433 MHz on-off-keyed (OOK) radio. Two boards running this project talk to each other using bare-wire dipole antennas and no other external parts. The estimated range is about 80 m in good conditions; it hasn't been measured yet.
 
-This project was designed with an AI agent (Claude) doing most of the work, with Matt Venn setting the direction, checking it and signing off. The design log and session transcripts are in the repo.
+This project was designed with an AI agent (Claude) doing most of the work, with Matt Venn setting the direction, checking it and signing off ([made with Claude](https://claude.com/claude-code)). The design log and session transcripts are in the repo.
 
 - **Interactive explainer:** [click through the link, TX and RX with simulated waveforms](https://mattvenn.github.io/ook-asic-radio/docs/explainer.html).
 - **Article:** [Can AI design an analog chip? I built a radio to find out](https://www.zerotoasiccourse.com/post/ai_codesigned_radio/) ([zerotoasiccourse.com/radio](https://zerotoasiccourse.com/radio)).

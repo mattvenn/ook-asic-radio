@@ -29,7 +29,28 @@ jobs:
 
       # The viewer job deploys the gds_render artifact as the Pages site, so the
       # explainer rides along: <pages>/docs/explainer.html
+      # Overwriting straight after the TT action's upload can race (409: the delete misses the artifact
+      # GitHub hasn't listed yet), so wait first and retry once.
+      - name: Wait for the gds_render artifact to settle
+        run: sleep 15
+
       - name: Add the explainer to the Pages site
+        id: explainer
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: gds_render
+          path: |
+            gds_render.png
+            docs/explainer.html
+          overwrite: true
+
+      - name: Wait before retrying
+        if: steps.explainer.outcome == 'failure'
+        run: sleep 30
+
+      - name: Add the explainer to the Pages site (retry)
+        if: steps.explainer.outcome == 'failure'
         uses: actions/upload-artifact@v7
         with:
           name: gds_render
