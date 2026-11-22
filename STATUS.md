@@ -48,9 +48,8 @@ design: **TODO.md**. Repo: github.com/mattvenn/ook-asic-radio (`main`, the only 
    `info.yaml` Matt will update.
 2. **TT submission:** mark the project as dangerous; RX adapter board; EM chamber booking (TODO.md).
 3. **After any layout change:** `layout/export_tt.sh`, push, and the GitHub `gds` action (TT precheck) must pass.
-4. Not blocking, from before the tall chain (check they still apply before acting): the macro's max-slew warnings
-   (marginal, mostly ss); layout compromises for Matt to sign off (decap as laid out ~43 pF VAPWR / 11 pF VDPWR
-   against 50 / 30 targets, `sc_phi` 10–20 µm from the avg / comp inputs, det / lpf not shielded).
+4. Not blocking, from before the tall chain (check it still applies before acting): the macro's max-slew warnings
+   (marginal, mostly ss). The layout compromises were signed off by Matt on 2026-11-22 (docs/history.md).
 
 **Parked:** 63-chip Gold code, tnt's `rf_top` SRAM (if data mode needs buffers), dipole tuning (wait for real
 radios), wire-as-matching antenna, SDR bench tests, the tunable TX ring

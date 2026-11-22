@@ -3,6 +3,22 @@
 Moved out of STATUS.md (2026-10-08) to keep the start-up read short. Sections are in the order they were
 written; grep for the block or topic you need.
 
+## 2026-11-22: layout compromises signed off (Matt)
+
+Measured on a fresh coupling-C extraction of the submitted tile (`layout/pex_tile.sh c`, magic 8.3.642):
+
+- **Decap as laid out** (~43 pF VAPWR / 11 pF VDPWR against 50 / 30 targets): accepted, nothing more can be done
+  without a new floorplan.
+- **`sc_phi1/2` 10–20 µm from the avg / comp inputs:** accepted. Coupling: `lpf` 0.43 + 0.39 fF (on 10.9 pF),
+  `avg` 0.33 fF (on 9.1 pF), `det` none. Each edge moves `lpf` ~70 µV and `avg` ~65 µV the same way, the same in
+  every sample, and the comparator is sampled at the same point of the pattern (tick at div 129, 3 clocks after
+  `sc_phi2` falls). So it's a fixed offset, under one trim step (87 µV), which the trim servo removes. Not
+  in the mixed bench (it uses block extractions); not simulated, on the strength of the numbers.
+- **`det` / `lpf` not shielded:** accepted. Into `det` from outside its blocks: the `ua[1]` debug-pin wire 1.9 fF,
+  the debug switch enables 1.3 / 0.5 fF (static), each RF chain output ~0.14 fF in balanced p/n pairs, `tx_en`
+  0.05 fF, no clocks. A floating `ua[1]` drives nothing, and anything picked up on it is far above the 14 kHz LPF.
+  Into `lpf`: the clocks above, `avg` (1.9 fF, its neighbour by design) and the comparator's own nodes.
+
 ## 2026-11-22: `tools/osic` exit status fixed, tall-cell GDS drift explained
 
 STATUS.md open item 4 as it stood:
