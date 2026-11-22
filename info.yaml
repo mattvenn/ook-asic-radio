@@ -3,7 +3,7 @@ project:
   title:        "433 MHz OOK radio"      # Project title
   author:       "Matt Venn"      # Your name
   discord:      "mattvenn"      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "433 MHz on-off-keyed radio link: ring-oscillator TX, envelope-detector RX, Gold-code correlation"      # One line description of what your project does
+  description:  "433 MHz on-off-keyed radio link: ring-oscillator TX, log-detector RX, Gold-code correlation"      # One line description of what your project does
   language:     "Analog" # other examples include Verilog, Amaranth, VHDL, etc
   clock_hz:     10000000       # Clock frequency in Hz (or 0 if not applicable)
 

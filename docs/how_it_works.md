@@ -10,7 +10,7 @@ To click through it instead, with simulated waveforms at each block: [interactiv
 
 ![block diagram](images/block_diagram.png)
 
-- **RX (top):** the dipole on ua[3]/ua[2] feeds a 6-stage amplifier chain (`lna_chain`). Each stage's output taps into the log detector (`log_det`), which turns RF power into a DC level. That level is filtered (`lpf_rc`) and compared (`comp_ct`) against its own slow average (`avg_sc`), plus a fine trim from the DAC (`r2r`). The comparator bit goes to the digital macro. `bias_gen` supplies every block's currents.
+- **RX (top):** the dipole on ua[3]/ua[2] feeds a 6-stage amplifier chain (`lna_chain_t`). Each stage's output taps into the log detector (`log_det_t`), which turns RF power into a DC level. That level is filtered (`lpf_rc`) and compared (`comp_ct`) against its own slow average (`avg_sc`), plus a fine trim from the DAC (`r2r`). The comparator bit goes to the digital macro. `bias_gen` supplies every block's currents.
 - **TX (bottom):** the digital macro keys the ring oscillator (`tx_ring`). The level shifter (`tx_ls`) turns it into two opposite-phase 3.3 V signals, one driver per dipole arm (`tx_drv`, ua[4]/ua[5]).
 - Dashed lines are enables from the digital. This is the "Block diagram" view of the floorplanning tool ([layout/floorplan](../layout/floorplan)).
 
@@ -90,7 +90,7 @@ None of this has been measured on this chip yet: see [bringup.md](bringup.md).
 
 | Spec | Value | From |
 |---|---|---|
-| Sensitivity, at the pins | −92 dBm | Mixed-signal: 6/6 on the schematic and 6/6 on the extracted baseband ([verify_2026-10-13.md](archive/verify_2026-10-13.md)) |
+| Sensitivity, at the pins | −92 dBm | Mixed-signal on the tall chain: 95 % over burst timing on the schematic baseband, 6/6 extracted, after the `SHIFT_DB` recalibration ([verify_tall.md](verify_tall.md)). Device noise in transient suggests ~1.5 dB worse (same report, §5); being checked |
 | | for ≥ 99 % of chips at every 1.8 V corner, 10–50 °C | Schematic Monte Carlo of the comparator alone (200 mismatch samples per corner); each sample's trim step mapped to dBm with the model. Not extracted ([verify_supply_mc.md](verify_supply_mc.md) "Trim redesign candidates") |
 | | −94 dBm about half the time on a typical chip | Model (27/48 sends) and mixed-signal (2/6) |
 | | −90 dBm at 85 °C (outside the verified range) | Schematic ([verify_system_2.md](verify_system_2.md)) |

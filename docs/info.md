@@ -2,6 +2,8 @@
 This file is used to generate your project datasheet.
 -->
 
+[![Made with Claude](https://img.shields.io/badge/Made%20with-Claude-D97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code)
+
 ## How it works
 
 A 433 MHz on-off-keyed (OOK) radio. Two boards running this project talk to each other using bare-wire dipole antennas.
@@ -23,7 +25,7 @@ The full description covers theory, specs, schematics and layout: [docs/how_it_w
 **Debug:**
 - `uio[3]` always outputs the raw comparator bits.
 - `uio[4..7]` show burst detected, toggle, trim direction and TX active.
-- The mode is latched at reset, and only when `uio[7:4]` = `1010`. Raw mode (`uio[1:0]` = `01`) lets `uio[2]` key the transmitter directly, in either role: on an RX board the receiver stays on, so `uio[3]` shows the chip hearing its own transmission (a loopback test). Release `uio[2]` after reset if you also strapped debug with it. Debug (`uio[2]` = 1) connects the detector output to `ua[1]`. Monopole fallback (`uio[3]` = 1) drives `ua[4]` only. `uio[7:4]` = `1011` does the same as `1010` and also selects **low LNA gain** (about 10 dB less): a fallback in case the receiver chain oscillates, at the cost of about 3 dB of sensitivity. Use the normal `1010` (or no straps) first. Details are in the [pin map](https://github.com/mattvenn/ook-asic-radio/blob/main/PLAN.md#draft-pin-map-finalize-against-tt-demo-pcb).
+- The mode is latched at reset, and only when `uio[7:4]` = `1010`. Raw mode (`uio[1:0]` = `01`) lets `uio[2]` key the transmitter directly, in either role: on an RX board the receiver stays on, so `uio[3]` shows the chip hearing its own transmission (a loopback test). Release `uio[2]` after reset if you also strapped debug with it. Debug (`uio[2]` = 1) connects the detector output to `ua[1]`. Monopole fallback (`uio[3]` = 1) drives `ua[4]` only. `uio[7:4]` = `1011` does the same as `1010` and also selects **low LNA gain** (about 10 dB less): a fallback in case the receiver chain oscillates, at the cost of about 5 dB of sensitivity. Use the normal `1010` (or no straps) first. Details are in the [pin map](https://github.com/mattvenn/ook-asic-radio/blob/main/PLAN.md#pin-map).
 
 ## External hardware
 

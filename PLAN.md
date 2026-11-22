@@ -106,21 +106,26 @@ Area, cost and legality are not constraints. Workflow: measure, then model, then
 | Digital | **Size:** ~40,500 µm² placed as is. It fits a 3×2; if space is needed, clock-gate the chip registers first (−8,400 µm², `dlclkp` has sky130 silicon evidence). ~10 MHz clock. Trim servo; 4 × 127-bit chip registers; sequential popcount (127 cycles per chip-phase, 4 phases per 1040-clock chip); 2-of-3 burst timing; LED toggle with holdoff; correlation score to the 7-seg; Gold TX chip generator (two 7-bit LFSRs, `model/gold.py`); data mode: Gold sync + Manchester (half-bit 1s counts) + CRC; UART only at the RP2350 interface |
 | Isolation | quiet digital during RX; separate analog supply routing, guard rings, decoupling capacitance in spare area; keep the chip's own ~10 MHz clock harmonics (every 10 MHz through the band) well below the LNA's compression point; clock-gate unused logic during reception |
 
-## Draft pin map (finalize against tt-demo-pcb)
+## Pin map
+The pins as built (2026-11-22). The source of truth is `info.yaml`; `tools/check_pinout.py` checks it against the top schematic and the `radio_digital` macro. The RTL header (`verilog/rtl/radio_digital.v`) has the details.
+
 | Pin | Function |
 |---|---|
-| `ui_in[6:0]` | code (TX: send; RX: match) |
-| `ui_in[7]` | role: 0 = RX, 1 = TX |
+| `ui_in[6:0]` | code (TX: send; RX: match), debounced 50 ms |
+| `ui_in[7]` | role, latched at reset: 1 = TX, 0 = RX |
 | `rst_n` / code change | TX sends a packet (×3) on reset release and on any code change |
-| `uo_out[7:0]` | 7-seg: TX status / RX match LED, link-quality bar (correlation score), DP = detection |
-| `uio[0]` | mode select with `uio[1]` (strapped/latched at reset): code (default) / data / raw |
-| `uio[1]` | mode select (second bit). **Floating `uio` on a bare board must give code mode.** Check whether TT's `uio` pads give a defined default level; if not, enter data/raw mode only via an explicit command (magic header on the UART pin), never on pin levels alone |
-| `uio[2]` | data mode: UART in (TX) / UART out (RX). **Raw TX: key input** (drives the ring enable directly) |
-| `uio[3]` | **raw RX: comparator bit stream** (always available; doubles as debug) |
-| `uio[4..7]` | debug: burst detected, pair/toggle event, trim-servo direction, TX active |
-| `ua[0]` / `ua[1]` | RX dipole: differential LNA input |
-| `ua[3]` / `ua[4]` | TX dipole: antiphase buffer outputs. The header position depends on where TT places the project, so it's not necessarily adjacent; see the antenna assembly note |
-| `ua[2]` | debug: detector output `det`, through a transmission gate that is **on only in debug mode** (strap: magic `1010` + `uio_in[2]` = 1 at reset). Off, det is isolated from the pin. On, a scope sees det (656 kHz bandwidth), or an AWG can drive det (×0.65 from 50 Ω) to test the baseband without RF. Thin devices: keep the pin within 0–1.8 V |
+| `uo_out[6:0]` | 7-seg. RX: link quality 0–9 for ~1.7 s after a detection, else `-`. TX: `1`..`3` while sending, `t` idle. Raw mode: `r` |
+| `uo_out[7]` | dp: LED toggle (RX) / `tx_en` (TX) / comparator bit (raw RX) |
+| `uio[7:4]` in, at reset | strap magic: `1010` enables the straps below; `1011` does too and selects low LNA gain. Anything else (floating included): no straps, code mode, full gain, both TX arms, debug off |
+| `uio[1:0]` in, at reset | mode, only with the magic: `00` code (default), `01` raw, `10` / `11` reserved (code mode) |
+| `uio[2]` in | at reset, with the magic: 1 = debug (det on `ua[1]`). Raw mode: TX key (drives `tx_en` directly) |
+| `uio[3]` in, at reset | with the magic: 1 = monopole fallback (drive `ua[4]` only) |
+| `uio[3]` out | raw comparator bit (all modes) |
+| `uio[7:4]` out | burst detected, toggle event, trim-servo direction, TX active. `uio_oe` = `11111000` after reset, 0 during reset (so the straps can be driven) |
+| `ua[0]` | unused, a met4 stub (TT analog pins start at `ua[0]`) |
+| `ua[1]` | debug: detector output `det`, through a transmission gate that is **on only in debug mode**. On, a scope sees det (656 kHz bandwidth), or an AWG can drive det (×0.65 from 50 Ω) to test the baseband without RF. Thin devices: keep the pin within 0–1.8 V |
+| `ua[3]` / `ua[2]` | RX dipole +/−: differential LNA input |
+| `ua[4]` / `ua[5]` | TX dipole +/−: antiphase drivers from VAPWR. The header position depends on where TT places the project; see the antenna assembly note |
 
 ## Bursts and false-trigger protection
 - **Code mode:**
