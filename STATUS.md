@@ -43,7 +43,8 @@ design: **TODO.md**. Repo: github.com/mattvenn/ook-asic-radio (`main`, the only 
 ## Open
 
 1. **Public numbers:** README, `docs/info.md` and `docs/how_it_works.md` updated to −90 dBm reliable and about 70 m
-   (Matt, 2026-11-22). The explainer stays at −92 dBm / 80 m for now (Matt's call); `info.yaml` Matt will update.
+   (Matt, 2026-11-22). The explainer and `docs/bringup.md`'s expected values stay at −92 dBm / 80 m until there's silicon (Matt's call);
+   `info.yaml` Matt will update.
 2. **TT submission:** mark the project as dangerous; RX adapter board; EM chamber booking (TODO.md).
 3. **After any layout change:** `layout/export_tt.sh`, push, and the GitHub `gds` action (TT precheck) must pass.
 4. Not blocking, from before the tall chain (check they still apply before acting): the macro's max-slew warnings
