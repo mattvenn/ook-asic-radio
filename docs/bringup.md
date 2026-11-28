@@ -27,11 +27,24 @@ Base it on `bench/fw/ringkey.py`. It already selects a project with the shuttle 
 
 - `PROJECT = 'tt_um_mattvenn_radio'`, with a 10 MHz project clock.
 - **Strapped reset** (raw / debug / monopole modes). The straps are read on the first clock edge after `rst_n` goes high, and `uio[7:3]` become outputs on the second. So use the clock to make the hand-over clean:
-  1. Clock running. Hold reset. The RP2350 drives `uio[7:4]` = `1010` (or `1011`: the same straps plus LNA low gain), `uio[1:0]` = mode, `uio[2]` = debug, `uio[3]` = monopole.
+  1. Clock running. Hold reset. The RP2350 drives `uio[7:4]` = `1010` (or `1011`: the same straps plus LNA low gain), `uio[1:0]` = mode, `uio[2]` = debug, `uio[3]` = monopole, and sets the role on `ui_in[7]` (also latched at reset).
   2. Stop the clock. Release reset. Pulse the clock once: the straps are latched.
   3. Set the RP2350's `uio[7:3]` to inputs. Then restart the clock: the chip turns its outputs on.
 
   This avoids any time where the RP2350 and the chip both drive `uio[7:4]`.
+
+  The setups the tests use (`x` = don't care):
+
+  | Setup | `ui_in[7]` | `uio[7:4]` | `uio[3]` | `uio[2]` | `uio[1:0]` | After reset | Tests |
+  |---|---|---|---|---|---|---|---|
+  | Normal | 1 TX / 0 RX | not `101x` (e.g. `0000`) | x | x | x | TX: sends at once, then `t`; RX: `-` | D1–D4, D7, T9–T11, R1, R2, R4, R6–R12, L2–L5, L8 |
+  | Raw | 1 or 0 | `1010` | 0 | **0** | `01` | `uio[2]` is the TX key; display `r` | D5, T1–T7, L6, L7 |
+  | Debug | 0 | `1010` | 0 | 1 | **`00`** | `uio[2]` ignored; det on `ua[1]` | R0, R3, R5, R13 |
+  | Debug + low gain | 0 | `1011` | 0 | 1 | **`00`** | as debug, ~10 dB less chain gain | R0 fallback, R13 |
+  | Monopole, code | 1 | `1010` | 1 | 0 | `00` | sends at once on `ua[4]` only | T8, L1 |
+  | Monopole, raw | 1 | `1010` | 1 | 0 | `01` | `uio[2]` keys `ua[4]` only | T8 |
+
+  **Don't strap debug in raw mode by accident.** In raw mode `uio[2]` keys the TX directly, so with `uio[2]` = 1 for debug the TX is on through reset (the mode is latched on every clock while reset is held), while the clock is stopped, and until the RP2350 drives `uio[2]` low. On an RX board the chip then hears itself: `ua[1]` pinned low and `uio[3]` stuck, which is exactly what R0 calls oscillation. So the debug setups use mode `00`, and the firmware should drive `uio[1:0]` explicitly on every strapped reset rather than leave them at the last test's values.
 - PIO keying of `uio[2]`: steady, square wave at a given rate, Manchester bytes.
 - PIO sampling of `uio[3]` at a fixed rate (≥ 77 kS/s) into a buffer, for the raw-RX tests.
 - A counter for the `uio[5]` toggle pulse (it is one clock long, 100 ns: use an edge-triggered PIO, not polling).
@@ -46,8 +59,8 @@ Generate test patterns from the model: `model/gold.py` `gold(k)` gives the 127-c
 | # | Test | Expected | Result |
 |---|---|---|---|
 | D1 | Select the project, 10 MHz clock, `ui_in[7]` = 0, reset | display `-`, dp off | |
-| D2 | `ui_in[7]` = 1, reset | display `t` | |
-| D3 | Supply current, RX role vs TX role idle | RX ~3 mA more on VDPWR; TX idle: ~0 on VAPWR | |
+| D2 | `ui_in[7]` = 1, reset | a send straight away: display `1` `2` `3` with `uio[7]` high for 59.6 ms, starting ~0.1 ms after reset (the first chip tick), then `t` | |
+| D3 | Supply current, RX role vs TX role idle (TX: measure after the reset send, display `t`) | RX ~3 mA more on VDPWR; TX idle: ~0 on VAPWR | |
 | D4 | `uio[7:3]` direction after reset | outputs (`uio_oe` = `11111000`); `uio[2:0]` inputs | |
 | D5 | Strapped reset, raw mode (`1010`, mode `01`) | display `r` | |
 | D6 | Reset without the `1010` pattern, mode `01` on `uio[1:0]` | normal mode (`-` or `t`): the straps are ignored | |
@@ -69,8 +82,8 @@ One board, TX role unless noted. Use a DC block and ≥ 20 dB of attenuation bet
 | T5 | Harmonics | Same capture, H2 and H3 | record in dBc (the old ring: H2 −21 dBc) | |
 | T6 | VAPWR current | Steady on vs off | ~13 mA on, ~0 off | |
 | T7 | Keying edges and chirp | Raw mode, `uio[2]` square wave 1 kHz; `bench/keying.py` | on/off in a few ns at the pin (PLAN.md). Record how long the frequency takes to settle after turn-on, compared with one chip (104 µs) | |
-| T8 | Monopole strap | Strapped reset with `uio[3]` = 1, keyed | `ua[4]` carries the carrier, `ua[5]` stays low | |
-| T9 | Code-mode burst timing | Code mode, change the code. Scope a 1 MΩ probe near the antenna (or the SDR envelope) and `uio[7]` | 3 bursts of 13.2 ms with 6.7 ms gaps, 59.6 ms in all, inside `uio[7]` high | |
+| T8 | Monopole strap | Monopole, raw (key `uio[2]`), or monopole, code (the reset sends) | `ua[4]` carries the carrier, `ua[5]` stays low | |
+| T9 | Code-mode burst timing | Code mode, reset or change the code (reset sends at once; a code change waits ~50 ms for the debounce). Scope a 1 MΩ probe near the antenna (or the SDR envelope) and `uio[7]` | 3 bursts of 13.2 ms with 6.7 ms gaps, 59.6 ms in all, inside `uio[7]` high | |
 | T10 | Code-mode chip pattern | Decode the T9 envelope at 104 µs per chip | matches `gold(code)` for 3 codes (e.g. 0, 1, 127) | |
 | T11 | Off is off | Code mode, idle: SDR at max gain near the board | no carrier between sends | |
 
@@ -82,10 +95,10 @@ One board, RX role (`ui_in[7]` = 0). Do R1–R3 with no antenna fitted.
 
 | # | Test | How | Expected | Result |
 |---|---|---|---|---|
-| R0 | Chain oscillation check | No antenna, then with the antenna. Debug strap (`1010`, `uio[2]` = 1), `ua[1]` on a scope; VDPWR current; an SDR or a near-field probe over the chip, 300–700 MHz | `ua[1]` near its idle level (R3), no tone. **Oscillation looks like:** `ua[1]` pinned well below idle (as if a strong signal were present, ~1.2 V or lower), `uio[3]` stuck, extra supply current, a tone on the probe. If so, reset with `1011` (+ `uio[2]` = 1): the LNA low-gain strap cuts ~10 dB; repeat this test | |
+| R0 | Chain oscillation check | No antenna, then with the antenna. Debug strap (`1010`, `uio[2]` = 1, mode `00`: not raw, see Demo-board firmware), `ua[1]` on a scope; VDPWR current; an SDR or a near-field probe over the chip, 300–700 MHz | `ua[1]` near its idle level (R3), no tone. **Oscillation looks like:** `ua[1]` pinned well below idle (as if a strong signal were present, ~1.2 V or lower), `uio[3]` stuck, extra supply current, a tone on the probe. If so, reset with `1011` (+ `uio[2]` = 1, mode `00`): the LNA low-gain strap cuts ~10 dB; repeat this test | |
 | R1 | Idle | Scope `uio[3]` (comparator) and `uio[6]` (trim direction) | both toggle, roughly 50 % duty: the servo dithers the threshold around the noise | |
 | R2 | RX current | VDPWR, RX vs TX role idle | ~3 mA difference | |
-| R3 | Detector, idle | Debug strap (`1010`, `uio[2]` = 1). 1 MΩ probe on `ua[1]` | ~1.49 V, quiet | |
+| R3 | Detector, idle | Debug strap (`1010`, `uio[2]` = 1, mode `00`). 1 MΩ probe on `ua[1]` | ~1.49 V, quiet | |
 | R4 | Debug off | Normal reset | `ua[1]` floats: it doesn't follow det | |
 | R5 | Baseband injection (no RF) | Debug mode. AWG (50 Ω) on `ua[1]`: it drives det at ×0.65 through the debug switch. Send `gold(code)` as steps of ~20 mV at 104 µs per chip around the idle level. Stay within 0–1.8 V | `uio[3]` follows the pattern, `uio[4]` opens, the LED toggles, the display shows a quality digit. A wrong code doesn't toggle | |
 | R6 | Detector curve | Signal generator, CW at the T2 frequency, into `ua[3]` (single-ended through a DC block, `ua[2]` open, which costs ~6 dB; or through a balun). Sweep −100 → −20 dBm in 5 dB steps, record `ua[1]` | falls ~13 mV/dB, straight over ~70 dB; ~1.21 V at −60 dBm (less the input loss) | |
